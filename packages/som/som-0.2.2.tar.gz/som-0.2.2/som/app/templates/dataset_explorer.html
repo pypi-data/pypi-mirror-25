@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>WordFish Dataset Explorer</title>
+        <script type="text/javascript">
+	    document.write('<style type="text/css">.menu-tree-preloader { display:block; } .menu-tree { display:none; }</style>');
+        </script>
+        <script src="{{ url_for('static', filename='js/codemirror.js') }}"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror.css') }}" rel='stylesheet' type='text/css'>
+        <link href="{{ url_for('static', filename='css/dataset_explorer.css') }}" rel='stylesheet' type='text/css'>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel='stylesheet' type='text/css'>
+    </head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <h1>Collection Explorer</h1>
+                <p class="alert alert-info">{{ collection_name }}</p>
+                <div class="menu-tree-container">
+                    <div class="menu-tree-preloader">
+                        <img src="{{ url_for('static', filename='img/preload.gif') }}">
+                    </div>
+                    <div class="menu-tree">
+                    <ul>
+                    {% for entity in entities %}
+                        {% set entityid = entity["entity"]["id"].split('/') %}
+                        <li>{{ entityid[-1] }}  
+                        {% if "images" in entity["entity"] %}
+                            <ul>
+                            {% set lastfolder = "pizzaboop" %}
+                            {% for image in entity["entity"]["images"] %}
+                                {% set imageid = image["original"].split('/') %}
+                                {% set foldername = imageid[-2] %}
+                                {% if foldername != lastfolder %}
+                                {% if lastfolder != "pizzaboop" %}
+                                </ul>
+                                </li>
+                                {% endif %}
+                                <li>{{ foldername }}
+                                <ul>
+                                    <li><a class="image" data-url="{{ image["original"] }}">{{ imageid[-1] }}</a></li>
+                                    {% if 'metadata' in image %}
+                                    {% set metaid = image["metadata"].split('/') %}
+                                    <li><a class="json" data-url="{{ image["metadata"] }}">{{ metaid[-1] }}</a></li>
+                                    {% endif %}
+                                {% else %}
+                                    <li><a class="image" data-url="{{ image["original"] }}">{{ imageid[-1] }}</a></li>
+                                    {% if 'metadata' in image %}
+                                    {% set metaid = image["metadata"].split('/') %}
+                                    <li><a class="json" data-url="{{ image["metadata"] }}">{{ metaid[-1] }}</a></li>
+                                    {% endif %}
+                                {% endif %}
+                                {% set lastfolder = foldername %}
+                                {% if loop.last %}
+                                </ul>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            </ul>
+                        {% endif %}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    {% if metadata %}
+                    <li><a href="{{ metadata }}">metadata</a></li>
+                    {% endif %}
+                    </div>
+                </div>
+        </div>
+        <div class="col-md-9">
+
+           <div id='content'></div>
+
+        </div>
+</div>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="{{ url_for('static', filename='js/dataset_explorer.js') }}"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function(){
+
+          // Clicking an image shows it. Right now we assume png
+          $('.image').click(function(){
+              var file = $(this).attr('data-url');
+              console.log(file);
+              // In future can use this to change display of image type
+              var extension = file.substr((file.lastIndexOf('.') +1));
+              $("#content").text("");
+              $("#content").append("<img src='" + file + "' width='100%'>");
+          })
+
+          $('.json').click(function(){
+              var file = $(this).attr('data-url');
+              console.log(file);
+              $("#content").text("");
+              $("#content").append('<textarea id="editor"></textarea>');
+              var textarea = document.getElementById('editor');
+              $.getJSON(file, function( data ) {
+                  var editor = CodeMirror.fromTextArea('editor', {
+                      height: "600px",
+                      mode: "application/ld+json",
+                      lineWrapping: true,
+                      parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
+                      content: JSON.stringify(data,null,2),
+                      stylesheet: "css/jscolors.css",
+                      path: "js/"
+                  });
+              });
+
+          })
+
+        })
+    </script>
+</body>
+</html>
