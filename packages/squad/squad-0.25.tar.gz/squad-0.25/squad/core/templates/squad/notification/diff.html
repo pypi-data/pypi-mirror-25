@@ -1,0 +1,152 @@
+{% load squad %}
+<html>
+  <head>
+    <style type='text/css'>
+body {
+  font-family: sans-serif;
+  font-size: 12px;
+}
+h1 {
+  border-bottom: 1px solid #babdb6;
+}
+table.table-bordered {
+  border-collapse: collapse;
+}
+table.table-bordered td,
+table.table-bordered th {
+  border: 1px solid #2e3436;
+  padding: 0.25em;
+}
+table.table-bordered td.pass {
+  background: #8ae234;
+  color: #214203;
+}
+table.table-bordered td.fail {
+  background: #ef2929;
+  color: #260000;
+}
+.footer {
+  padding: 0.25em;
+  margin-top: 2em;
+}
+.footer, .footer a:link, .footer a:visited {
+  color: #babdb6;
+}
+    </style>
+  </head>
+  <body>
+    <h1>Summary</h1>
+    <ul>
+      <li><strong>Tests:</strong>   {{summary.tests_total}}</li>
+      <li><strong>Failed:</strong>  {{summary.tests_fail}}</li>
+      <li><strong>Passed:</strong>  {{summary.tests_pass}}</li>
+      <li><strong>Skipped:</strong>  {{summary.tests_skip}}</li>
+      <li><strong>Build:</strong>   {{build.version}}</li>
+      <li><a href="{{settings.BASE_URL}}/{{build.project}}/build/{{build.version}}">See details</a></li>
+    </ul>
+    {% if metadata %}
+    <ul>
+      {% for key, value in metadata.items %}
+      <li><strong>{{key}}:</strong> {{value|urlize}}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h1>Regressions{%if previous_build %} (compared to build {{previous_build.version}}){% endif %}</h1>
+    {% if regressions %}
+    <ul>
+      {% for env, tests in regressions.items %}
+      <li><strong>{{env}}:</strong>
+        <ul>
+          {% for test in tests %}
+          <li>{{test}}</li>
+          {% endfor %}
+        </ul>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <em>(none)</em>
+    {% endif %}
+
+
+    <h1>Failures</h1>
+    {% if summary.failures %}
+    <ul>
+      {% for env, tests in summary.failures.items %}
+      <li>
+        <strong>{{env}}:</strong>
+        <ul>
+          {% for test in tests %}
+          <li>
+            <a href="{{settings.BASE_URL}}/{{build.project}}/build/{{build.version}}/testrun/{{test.test_run.job_id}}">{{test.full_name}}</a>
+            {% if test.test_run.log_file %}
+            <a href="{{settings.BASE_URL}}/{{build.project}}/build/{{build.version}}/testrun/{{test.test_run.job_id}}/log">(log)</a>
+            {% endif %}
+            {% if test.history.since %}
+              &mdash;
+              {% if test.history.last_different %}
+                {% with build=test.history.since.test_run.build %}
+                failing since build {{build.version}}, from {{build.datetime}}
+                {% endwith %}
+              {% else %}
+                never passed
+              {% endif %}
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <em>(none)</em>
+    {% endif %}
+
+
+    <h1>All changes detected{%if previous_build %} (compared to build {{previous_build.version}}){% endif %}</h1>
+    {% with comparison=notification.comparison %}
+    <table class='table table-bordered test-results'>
+      <tr>
+        <td rowspan='2'></td>
+        {% for environment in comparison.all_environments %}
+        <th colspan='{{comparison.builds|length}}'>
+          {{environment}}
+        </th>
+        {% endfor %}
+      </tr>
+      <tr>
+        {% for environment in comparison.all_environments %}
+        {% for build in comparison.builds %}
+        <th>
+          {{build.version}}
+        </th>
+        {% endfor %}
+        {% endfor %}
+      </tr>
+      {% for test, results in comparison.diff.items %}
+      <tr>
+        <th>{{test}}</th>
+        {% for environment in comparison.all_environments %}
+        {% for build in comparison.builds %}
+        {% with result=results|test_result_by_build:build|test_result_by_env:environment %}
+        <td class='{{result}}'>
+          {% if result %}
+          <strong>{{result}}</strong>
+          {% else %}
+          <i>n/a</i>
+          {% endif %}
+        </td>
+        {% endwith %}
+        {% endfor %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+    {% endwith %}
+
+    <div class='footer'>
+    Sent by <a href="{{settings.BASE_URL}}">{{settings.SITE_NAME}}</a>
+    </div>
+  </body>
+</html>

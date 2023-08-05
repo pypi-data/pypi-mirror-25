@@ -1,0 +1,39 @@
+#!/bin/sh
+
+set -eu
+
+if [ $# -lt 2 ]; then
+  echo "usage: [DAYS=n] $0 TEAM PROJECT [ENVIRONMENT]"
+  exit 1
+fi
+
+TEAM="$1"
+PROJECT="$2"
+ENVIRONMENT="${3:-}"
+days=${DAYS:-10}
+
+if ! which faketime >/dev/null; then
+  echo "E: please install faketime first"
+  exit 1
+fi
+
+if [ -z "${AUTH_TOKEN:-}" ]; then
+  export AUTH_TOKEN="$(openssl rand -hex 16)"
+fi
+basedir="$(dirname "$0")"
+
+export AUTH_TOKEN=$(./manage.py shell <<EOF
+from squad.core.models import Group
+
+group, _ = Group.objects.get_or_create(slug='$TEAM')
+project, _ = group.projects.get_or_create(slug='$PROJECT')
+token, _ = project.tokens.get_or_create(description='submit-test-data')
+print(token.key)
+EOF
+)
+
+for i in $(seq ${days} -1 0); do
+  build=$((days - i))
+  faketime "$i days ago" $(dirname $0)/submit-test-data "$TEAM" "$PROJECT" "$build" "$ENVIRONMENT"
+  echo "submitted data for $i days ago"
+done
