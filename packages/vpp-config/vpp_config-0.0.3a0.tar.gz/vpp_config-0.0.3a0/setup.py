@@ -1,0 +1,21 @@
+from setuptools import setup
+
+setup(name="vpp_config",
+      version="0.0.3A",
+      author="John DeNisco",
+      author_email="jdenisco@cisco.com",
+      description="VPP Configuration Utility",
+      license = 'Apache-2.0',
+      keywords="vppconfig",
+      url = 'https://wiki.fd.io/view/VPP/VPP_CONFIG',
+      py_modules=['vpp_config'],
+      packages=['lib'],
+      scripts=['scripts/vpp-config'],
+      data_files=[('/usr/share/vpp/vpp-config/scripts', ['scripts/dpdk-devbind.py']),
+                  ('/usr/share/vpp/vpp-config/configs', ['data/auto-config.yaml']),
+                  ('/usr/share/vpp/vpp-config/dryrun/sysctl.d', ['data/80-vpp.conf.template']),
+                  ('/usr/share/vpp/vpp-config/dryrun/default', ['data/grub.template']),
+                  ('/usr/share/vpp/vpp-config/dryrun/vpp', ['data/startup.conf.template']),
+      ],
+      long_description="The VPP configuration utility can be used to easily configure VPP.",
+      )
