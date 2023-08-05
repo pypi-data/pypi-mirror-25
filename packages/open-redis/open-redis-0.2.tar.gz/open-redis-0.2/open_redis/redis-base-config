@@ -1,0 +1,73 @@
+daemonize no
+pidfile {DEPLOY_LOCATION}/redis.pid
+port {DEPLOY_PORT}
+tcp-backlog 511
+
+# Close the connection after a client is idle for N seconds (0 to disable)
+timeout 0
+
+tcp-keepalive 60
+
+loglevel notice
+
+logfile {DEPLOY_LOCATION}/logs/redis.log
+
+databases 16
+
+# Options about how often (and if) to save to disk
+save 900 1
+save 300 10
+save 60 10000
+
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+
+# The filename where to dump the DB
+dbfilename redis-db-dump.rdb
+# The dump directory
+dir {DEPLOY_LOCATION}
+
+# Replication Details
+slave-serve-stale-data yes
+slave-read-only yes
+repl-diskless-sync no
+repl-diskless-sync-delay 5
+repl-disable-tcp-nodelay no
+
+slave-priority 100
+maxmemory-policy noeviction
+# maxmemory <bytes>
+appendonly no
+
+# The name of the append only file (default: "appendonly.aof")
+appendfilename "appendonly.aof"
+appendfsync everysec
+no-appendfsync-on-rewrite no
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+aof-load-truncated yes
+lua-time-limit 5000
+
+
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+latency-monitor-threshold 0
+notify-keyspace-events ""
+
+
+## "Advanced"
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+list-max-ziplist-entries 512
+list-max-ziplist-value 64
+set-max-intset-entries 512
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+hll-sparse-max-bytes 3000
+activerehashing yes
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit slave 256mb 64mb 60
+client-output-buffer-limit pubsub 32mb 8mb 60
+hz 10
+aof-rewrite-incremental-fsync yes
