@@ -1,0 +1,896 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "PKGCHECK" "1" "Sep 22, 2017" "0.5.4" "pkgcheck"
+.SH NAME
+pkgcheck \- pkgcore-based QA utility
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.sp
+pkgcheck [\-h] [–version] [–debug] [\-q] [\-v] [–color BOOLEAN] [–add\-config SECTION KEY VALUE] [–new\-config SECTION KEY VALUE] [–empty\-config] [–config PATH] {scan,replay,show} …
+.SH DESCRIPTION
+.sp
+pkgcheck is a QA utility based on \fBpkgcore\fP(5) similar to \fBrepoman\fP(1)
+from portage.
+.SH OPTIONAL ARGUMENTS
+.INDENT 0.0
+.TP
+.B \-h\fP,\fB  \-\-help
+Show this help message and exit. To get more
+information see the related man page.
+.TP
+.B \-\-version
+Show this program’s version information and exit.
+.sp
+When running from within a git repo or a version
+installed from git the latest commit hash and date will
+be shown.
+.TP
+.B \-\-debug
+Enable debug checks and show verbose debug output.
+.TP
+.B \-q\fP,\fB  \-\-quiet
+Suppress non\-error, informational messages.
+.TP
+.B \-v\fP,\fB  \-\-verbose
+Increase the verbosity of various output.
+.TP
+.BI \-\-color \ BOOLEAN
+Toggle colored output support. This can be used to forcibly
+enable color support when piping output or other sitations
+where stdout is not a tty.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B –add\-config SECTION KEY VALUE
+modify an existing configuration section
+.TP
+.B –new\-config SECTION KEY VALUE
+add a new configuration section
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-empty\-config
+do not load user/system configuration
+.TP
+.BI \-\-config \ PATH
+override location of config files
+.UNINDENT
+.SH SUBCOMMANDS
+.sp
+check applets
+.SS Pkgcheck Scan \- Scan Targets For Qa Issues
+.SS Synopsis
+.sp
+pkgcheck scan [\-h] [–debug] [\-q] [\-v] [–color BOOLEAN] [\-r REPO] [\-s SUITE] [\-R REPORTER] [\-c CHECK] [\-C CHECKSET] [\-k KEYWORD] [\-S SCOPE] [–profiles\-base PROFILES_DIR] [\-p PROFILE] [–reset\-caching\-per {version,package,category}] [–metadata\-xsd METADATA_XSD] [–metadata\-xsd\-required METADATA_XSD_REQUIRED] [–glsa\-dir GLSA_LOCATION] [\-a ARCH] [–source\-arches ARCH] [TARGET [TARGET …]]
+.SS Positional Arguments
+.INDENT 0.0
+.TP
+.B TARGET
+optional target atom(s)
+.UNINDENT
+.SS Optional Arguments
+.INDENT 0.0
+.TP
+.B \-h\fP,\fB  \-\-help
+Show this help message and exit. To get more
+information see the related man page.
+.TP
+.B \-\-debug
+Enable debug checks and show verbose debug output.
+.TP
+.B \-q\fP,\fB  \-\-quiet
+Suppress non\-error, informational messages.
+.TP
+.B \-v\fP,\fB  \-\-verbose
+Increase the verbosity of various output.
+.TP
+.BI \-\-color \ BOOLEAN
+Toggle colored output support. This can be used to forcibly
+enable color support when piping output or other sitations
+where stdout is not a tty.
+.UNINDENT
+.SS Main Options
+.INDENT 0.0
+.TP
+.BI \-r \ REPO\fP,\fB \ \-\-repo \ REPO
+repo to pull packages from
+.TP
+.BI \-s \ SUITE\fP,\fB \ \-\-suite \ SUITE
+specify the configuration suite to use
+.TP
+.BI \-R \ REPORTER\fP,\fB \ \-\-reporter \ REPORTER
+Select a reporter to use for scan output.
+.sp
+Use ‘pkgcheck show –reporters’ to see available options.
+.UNINDENT
+.SS Check Selection
+.INDENT 0.0
+.TP
+.BI \-c \ CHECK\fP,\fB \ \-\-checks \ CHECK
+limit checks to regex or package/class matching (comma\-separated list)
+.TP
+.BI \-C \ CHECKSET\fP,\fB \ \-\-checkset \ CHECKSET
+preconfigured set of checks to run
+.TP
+.BI \-k \ KEYWORD\fP,\fB \ \-\-keywords \ KEYWORD
+Comma separated list of keywords to enable and disable for
+scanning. Any keywords specified in this fashion will be the
+only keywords that get reported, skipping any disabled keywords.
+.sp
+To specify disabled keywords prefix them with ‘\-‘. Note that when
+starting the argument list with a disabled keyword an equals sign must
+be used, e.g. \-k=\-keyword, otherwise the disabled keyword argument is
+treated as an option.
+.sp
+The special arguments of ‘errors’ and ‘warnings’ correspond to the
+lists of error and warning keywords, respectively. Therefore, to only
+scan for errors and ignore all QA warnings use the ‘errors’ argument to
+\-k/–keywords.
+.sp
+Use ‘pkgcheck show –keywords’ or the list below to see available options.
+.TP
+.BI \-S \ SCOPE\fP,\fB \ \-\-scopes \ SCOPE
+Comma separated list of scopes to enable and disable for scanning. Any
+scopes specified in this fashion will affect the keywords that get
+reported. For example, running pkgcheck with only the ‘repo’ scope
+enabled will cause only repo\-level keywords to be scanned for and
+reported.
+.sp
+To specify disabled scopes prefix them with ‘\-‘ the same as for
+\-k/–keywords option.
+.UNINDENT
+.SS Plugin Options
+.INDENT 0.0
+.TP
+.BI \-\-metadata\-xsd \ METADATA_XSD
+location to cache \fI\%https://www.gentoo.org/xml\-schema/metadata.xsd\fP
+.TP
+.BI \-\-metadata\-xsd\-required \ METADATA_XSD_REQUIRED
+if metadata.xsd cannot be fetched (no connection for example), treat it as a failure rather than warning and ignoring.
+.TP
+.BI \-\-glsa\-dir \ GLSA_LOCATION
+source directory for glsas; tries to autodetermine it, may be required if no glsa dirs are known
+.TP
+.BI \-\-source\-arches \ ARCH
+Comma separated list of arches to compare against for
+lagging stabilization.
+.sp
+The default arches are all stable arches (unless –arches is specified).
+.UNINDENT
+.SS Profiles
+.INDENT 0.0
+.TP
+.BI \-\-profiles\-base \ PROFILES_DIR
+The path to the base profiles directory. This will override the
+default usage of profiles bundled in the target repository;
+primarily for testing.
+.TP
+.BI \-p \ PROFILE\fP,\fB \ \-\-profiles \ PROFILE
+Comma separated list of profiles to enable and disable for
+scanning. Any profiles specified in this fashion will be the
+only profiles that get scanned, skipping any disabled profiles.
+In addition, if no profiles are explicitly enabled, all
+profiles defined in the target repo’s profiles.desc file will be
+scanned.
+.sp
+To specify disabled profiles prefix them with ‘\-‘. Note that
+when starting the argument list with a disabled profile an
+equals sign must be used, e.g. \-p=\-path/to/profile, otherwise
+the disabled profile argument is treated as an option.
+.sp
+The special keywords of stable, dev, exp, and deprecated correspond to the
+lists of stable, development, experimental, and deprecated profiles,
+respectively. Therefore, to only scan all stable profiles
+pass the ‘stable’ argument to –profiles.
+.UNINDENT
+.SS Query Caching
+.INDENT 0.0
+.TP
+.B –reset\-caching\-per {version,package,category}
+control how often the cache is cleared (version, package or category)
+.UNINDENT
+.SS Arches
+.INDENT 0.0
+.TP
+.BI \-a \ ARCH\fP,\fB \ \-\-arches \ ARCH
+Comma separated list of arches to enable and disable.
+.sp
+To specify disabled arches prefix them with ‘\-‘. Note that when
+starting the argument list with a disabled arch an equals sign
+must be used, e.g. \-a=\-arch, otherwise the disabled arch
+argument is treated as an option.
+.sp
+By default all repo defined arches are used; however,
+stable\-related checks (e.g. UnstableOnly) default to the set of
+arches having stable profiles in the target repo.
+.UNINDENT
+.SS Pkgcheck Replay \- Replay Previous Results Streams From Pkgcheck, Feeding The Results Into A Reporter. Currently Only Supports Replaying Streams From Pickled\-based Reporters. Useful If You Need To Delay Acting On Results Until It Can Be Done In One Minimal Window (say Updating A Database), Or Want To Generate Several Different Reports Without Using A Config Defined Multiplex Reporter.
+.SS Synopsis
+.sp
+pkgcheck replay [\-h] [–debug] [\-q] [\-v] [–color BOOLEAN] [–out OUT] pickle_file reporter
+.SS Positional Arguments
+.INDENT 0.0
+.TP
+.B pickle_file
+pickled results file
+.TP
+.B reporter
+python namespace path reporter to replay it into
+.UNINDENT
+.SS Optional Arguments
+.INDENT 0.0
+.TP
+.B \-h\fP,\fB  \-\-help
+Show this help message and exit. To get more
+information see the related man page.
+.TP
+.B \-\-debug
+Enable debug checks and show verbose debug output.
+.TP
+.B \-q\fP,\fB  \-\-quiet
+Suppress non\-error, informational messages.
+.TP
+.B \-v\fP,\fB  \-\-verbose
+Increase the verbosity of various output.
+.TP
+.BI \-\-color \ BOOLEAN
+Toggle colored output support. This can be used to forcibly
+enable color support when piping output or other sitations
+where stdout is not a tty.
+.TP
+.BI \-\-out \ OUT
+redirect reporters output to a file
+.UNINDENT
+.SS Pkgcheck Show \- Show Various Pkgcheck Info
+.SS Synopsis
+.sp
+pkgcheck show [\-h] [–debug] [\-q] [\-v] [–color BOOLEAN] [–keywords] [–checks] [–reporters]
+.SS Optional Arguments
+.INDENT 0.0
+.TP
+.B \-h\fP,\fB  \-\-help
+Show this help message and exit. To get more
+information see the related man page.
+.TP
+.B \-\-debug
+Enable debug checks and show verbose debug output.
+.TP
+.B \-q\fP,\fB  \-\-quiet
+Suppress non\-error, informational messages.
+.TP
+.B \-v\fP,\fB  \-\-verbose
+Increase the verbosity of various output.
+.TP
+.BI \-\-color \ BOOLEAN
+Toggle colored output support. This can be used to forcibly
+enable color support when piping output or other sitations
+where stdout is not a tty.
+.UNINDENT
+.SS List Options
+.INDENT 0.0
+.TP
+.B \-\-keywords
+List all available keywords.
+.sp
+Use \-v/–verbose to show keywords sorted into the scope they run at
+(repository, category, package, or version) along with their
+descriptions.
+.TP
+.B \-\-checks
+List all available checks.
+.sp
+Use \-v/–verbose to show descriptions and possible keyword results for
+each check.
+.TP
+.B \-\-reporters
+List all available reporters.
+.sp
+Use \-v/–verbose to show reporter descriptions.
+.UNINDENT
+.SH KEYWORDS
+.sp
+List of result keywords that can be produced by pkgcheck separated by scope.
+.sp
+Use \(gapkgcheck –list\-keywords\(ga to see the list. Note that running in verbose
+mode (e.g. \(gapkgcheck –list\-keywords \-v\(ga) will colorize and sort the output
+into scopes.
+.SS Repository scope
+.INDENT 0.0
+.TP
+.B ArchesWithoutProfiles
+Arches without corresponding profile listings.
+.TP
+.B BadPackageUpdate
+Badly formatted package update in profiles/updates files.
+.TP
+.B BadProfileEntry
+Badly formatted entry in a profiles file.
+.TP
+.B MovedPackageUpdate
+Entry for package already moved in profiles/updates files.
+.TP
+.B MultiMovePackageUpdate
+Entry for package moved multiple times in profiles/updates files.
+.TP
+.B NonexistentProfilePath
+Specified profile path doesn’t exist.
+.TP
+.B OldMultiMovePackageUpdate
+Old entry for removed package moved multiple times in profiles/updates files.
+.sp
+This means that the reported pkg has been moved at least three times and finally removed from the tree. All the related lines should be removed from the update files.
+.TP
+.B OldPackageUpdate
+Old entry for removed package in profiles/updates files.
+.TP
+.B UnknownCategories
+Category directories that aren’t listed in a repo’s categories.
+.sp
+Or the categories of the repo’s masters as well.
+.TP
+.B UnknownLicenses
+License(s) listed in license group(s) that don’t exist.
+.TP
+.B UnknownProfileArches
+Unknown arches used in profiles.
+.TP
+.B UnknownProfilePackageUse
+Profile files include entries with USE flags that aren’t used on any matching packages.
+.TP
+.B UnknownProfilePackages
+Profile files include package entries that don’t exist in the repo.
+.TP
+.B UnknownProfileStatus
+Unknown status used for profiles.
+.TP
+.B UnknownProfileUse
+Profile files include USE flags that don’t exist.
+.TP
+.B UnusedEclasses
+Unused eclasses detected.
+.TP
+.B UnusedGlobalFlags
+Unused use.desc flag(s).
+.TP
+.B UnusedLicenses
+Unused license(s) detected.
+.TP
+.B UnusedMirrors
+Unused mirrors detected.
+.TP
+.B UnusedProfileDirs
+Unused profile directories detected.
+.UNINDENT
+.SS Category scope
+.INDENT 0.0
+.TP
+.B CatBadlyFormedXml
+Badly formed category metadata.xml.
+.TP
+.B CatInvalidXml
+Invalid category metadata.xml.
+.TP
+.B CatMetadataXmlEmptyElement
+Empty element in category metadata.xml file.
+.TP
+.B CatMetadataXmlIndentation
+Inconsistent indentation in category metadata.xml file.
+.sp
+Either all tabs or all spaces should be used, not a mixture of both.
+.TP
+.B CatMetadataXmlInvalidCatRef
+Invalid category reference in category metadata.xml.
+.TP
+.B CatMetadataXmlInvalidPkgRef
+Invalid package reference in category metadata.xml.
+.TP
+.B CatMissingMetadataXml
+Category is missing metadata.xml.
+.UNINDENT
+.SS Package scope
+.INDENT 0.0
+.TP
+.B DuplicateFiles
+Two or more identical files in FILESDIR.
+.TP
+.B EmptyFile
+File in FILESDIR is empty.
+.TP
+.B ExecutableFile
+File has executable bit, but doesn’t need it.
+.TP
+.B Glep31Violation
+File doesn’t abide by glep31 requirements.
+.TP
+.B InvalidPN
+Ebuilds that have invalid package names.
+.TP
+.B InvalidUtf8
+File isn’t utf8 compliant.
+.TP
+.B MismatchedPN
+Ebuilds that have different names than their parent directory.
+.TP
+.B PkgBadlyFormedXml
+Badly formed package metadata.xml.
+.TP
+.B PkgInvalidXml
+Invalid package metadata.xml.
+.TP
+.B PkgMetadataXmlEmptyElement
+Empty element in package metadata.xml file.
+.TP
+.B PkgMetadataXmlIndentation
+Inconsistent indentation in package metadata.xml file.
+.sp
+Either all tabs or all spaces should be used, not a mixture of both.
+.TP
+.B PkgMetadataXmlInvalidCatRef
+Invalid category reference in package metadata.xml.
+.TP
+.B PkgMetadataXmlInvalidPkgRef
+Invalid package reference in package metadata.xml.
+.TP
+.B PkgMissingMetadataXml
+Package is missing metadata.xml.
+.TP
+.B SizeViolation
+File in $FILESDIR is too large (current limit is 20k).
+.TP
+.B UnknownManifest
+Manifest entries not matching any SRC_URI targets.
+.TP
+.B UnnecessaryManifest
+Manifest entries for non\-DIST targets on a repo with thin manifests enabled.
+.TP
+.B UnstableOnly
+Package/keywords that are strictly unstable.
+.TP
+.B UnusedLocalFlags
+Unused local USE flag(s).
+.UNINDENT
+.SS Version scope
+.INDENT 0.0
+.TP
+.B AbsoluteSymlink
+Ebuild uses dosym with absolute paths instead of relative.
+.TP
+.B BadFilename
+URI uses unspecific or poor filename(s).
+.sp
+Archive filenames should be disambiguated using ‘\->’ to rename them.
+.TP
+.B BadInsIntoDir
+Ebuild uses insinto where more compact commands exist.
+.TP
+.B BadProto
+URI uses an unsupported protocol.
+.sp
+Valid protocols are currently: http, https, and ftp
+.TP
+.B BadRestricts
+Package’s RESTRICT metadata has unknown/deprecated entries.
+.TP
+.B ConflictingChksums
+Checksum conflict detected between two files.
+.TP
+.B CrappyDescription
+Package’s description sucks in some fashion.
+.TP
+.B DeprecatedEAPI
+Package’s EAPI is deprecated according to repo metadata.
+.TP
+.B DeprecatedEclass
+Package uses an eclass that is deprecated/abandoned.
+.TP
+.B DoubleEmptyLine
+Unneeded blank lines found.
+.TP
+.B DroppedKeywords
+Arch keywords dropped during version bumping.
+.TP
+.B HttpsAvailable
+Ebuild contains a \fI\%http://\fP link that should use \fI\%https://\fP instead.
+.TP
+.B LaggingStable
+Arch that is behind another from a stabling standpoint.
+.TP
+.B MetadataError
+Problem detected with a package’s metadata.
+.TP
+.B MissingChksum
+A file in the chksum data lacks required checksums.
+.TP
+.B MissingLicense
+Used license(s) have no matching license file(s).
+.TP
+.B MissingManifest
+SRC_URI targets missing from Manifest file.
+.TP
+.B MissingSlotDep
+Missing slot value in dependencies.
+.TP
+.B MissingUri
+RESTRICT=fetch isn’t set, yet no full URI exists.
+.TP
+.B NoFinalNewline
+Ebuild’s last line does not have a final newline.
+.TP
+.B NonExistentDeps
+No matches exist for a depset element.
+.TP
+.B NonsolvableDeps
+No potential solution for a depset attribute.
+.TP
+.B PortageInternals
+Ebuild uses a function or variable internal to portage.
+.TP
+.B RedundantVersion
+Redundant version(s) of a package in a specific slot.
+.TP
+.B RequiredUseDefaults
+Default USE flag settings don’t satisfy REQUIRED_USE.
+.TP
+.B StaleUnstable
+Packages with unstable keywords over a month old.
+.TP
+.B StupidKeywords
+Packages using \fB\-*\fP; use package.mask instead.
+.TP
+.B TrailingEmptyLine
+Unneeded trailing blank lines found.
+.TP
+.B UnstatedIUSE
+pkg is reliant on conditionals that aren’t in IUSE
+.TP
+.B UnusedInMastersEclasses
+Eclasses detected that are unused in the master repo(s).
+.sp
+In other words, they’re likely to be removed so should be copied to the overlay.
+.TP
+.B UnusedInMastersGlobalFlags
+Global USE flags detected that are unused in the master repo(s).
+.sp
+In other words, they’re likely to be removed so should be copied to the overlay.
+.TP
+.B UnusedInMastersLicenses
+Licenses detected that are unused in the master repo(s).
+.sp
+In other words, they’re likely to be removed so should be copied to the overlay.
+.TP
+.B UnusedInMastersMirrors
+Mirrors detected that are unused in the master repo(s).
+.sp
+In other words, they’re likely to be removed so should be copied to the overlay.
+.TP
+.B VisibleVcsPkg
+Package is VCS\-based, but visible.
+.TP
+.B VulnerablePackage
+Packages marked as vulnerable by GLSAs.
+.TP
+.B WhitespaceFound
+Leading or trailing whitespace found.
+.TP
+.B WrongIndentFound
+Incorrect indentation whitespace found.
+.UNINDENT
+.SH CHECKS
+.SS Repository scope
+.INDENT 0.0
+.TP
+.B LicenseGroupsCheck
+Scan license groups for unknown licenses.
+.sp
+(known results: UnknownLicenses)
+.TP
+.B PackageUpdatesCheck
+Scan profiles/updates/* for outdated entries and other issues.
+.sp
+(known results: BadPackageUpdate, MovedPackageUpdate, MultiMovePackageUpdate, OldMultiMovePackageUpdate, OldPackageUpdate)
+.TP
+.B ProfilesCheck
+Scan repo profiles for unknown flags/packages.
+.sp
+(known results: BadProfileEntry, UnknownProfilePackageUse, UnknownProfilePackages, UnknownProfileUse)
+.TP
+.B RepoProfilesReport
+Scan repo for various profiles directory issues.
+.sp
+Including unknown arches in profiles, arches without profiles, and unknown categories.
+.sp
+(known results: ArchesWithoutProfiles, NonexistentProfilePath, UnknownCategories, UnknownProfileArches, UnknownProfileStatus, UnusedProfileDirs)
+.TP
+.B UnusedEclassesCheck
+Check for unused eclasses.
+.sp
+(known results: UnusedEclasses, UnusedInMastersEclasses)
+.TP
+.B UnusedGlobalFlagsCheck
+Check for unused use.desc entries.
+.sp
+(known results: UnusedGlobalFlags, UnusedInMastersGlobalFlags)
+.TP
+.B UnusedLicensesCheck
+Check for unused license files.
+.sp
+(known results: UnusedInMastersLicenses, UnusedLicenses)
+.TP
+.B UnusedMirrorsCheck
+Check for unused mirrors.
+.sp
+(known results: UnusedInMastersMirrors, UnusedMirrors)
+.UNINDENT
+.SS Category scope
+.INDENT 0.0
+.TP
+.B CategoryMetadataXmlCheck
+Category level metadata.xml scans.
+.sp
+(known results: CatBadlyFormedXml, CatInvalidXml, CatMetadataXmlEmptyElement, CatMetadataXmlIndentation, CatMetadataXmlInvalidCatRef, CatMetadataXmlInvalidPkgRef, CatMissingMetadataXml)
+.UNINDENT
+.SS Package scope
+.INDENT 0.0
+.TP
+.B PackageMetadataXmlCheck
+Package level metadata.xml scans.
+.sp
+(known results: PkgBadlyFormedXml, PkgInvalidXml, PkgMetadataXmlEmptyElement, PkgMetadataXmlIndentation, PkgMetadataXmlInvalidCatRef, PkgMetadataXmlInvalidPkgRef, PkgMissingMetadataXml)
+.UNINDENT
+.SS Version scope
+.INDENT 0.0
+.TP
+.B AbsoluteSymlinkCheck
+Scan ebuild for dosym absolute path usage instead of relative.
+.sp
+(known results: AbsoluteSymlink)
+.TP
+.B BadInsIntoCheck
+Scan ebuild for bad insinto usage.
+.sp
+(known results: BadInsIntoDir)
+.TP
+.B DependencyReport
+Check DEPEND, RDEPEND, and PDEPEND.
+.sp
+(known results: MetadataError, UnstatedIUSE)
+.TP
+.B DeprecatedEAPIReport
+Scan for deprecated EAPIs.
+.sp
+(known results: DeprecatedEAPI)
+.TP
+.B DeprecatedEclassReport
+Scan for deprecated eclass usage.
+.sp
+deprecated eclasses: 64\-bit, autotools\-multilib, autotools\-utils, base, bash\-completion, boost\-utils, clutter, confutils, darcs, db4\-fix, debian, distutils, embassy\-2.10, embassy\-2.9, fdo\-mime, games, gcc, gems, git, git\-2, gnustep\-old, gpe, gst\-plugins\-bad, gst\-plugins\-base, gst\-plugins\-good, gst\-plugins\-ugly, gst\-plugins10, gtk\-engines, gtk\-engines2, inherit, jakarta\-commons, java\-pkg, java\-utils, kde\-base, kde\-i18n, kde\-source, kde4\-meta\-pkg, kmod, koffice\-i18n, mono, motif, mozconfig, mozconfig\-2, mozcoreconf, mozilla, myth, pcmcia, perl\-post, php, php\-2, php\-ext, php\-ext\-base, php\-ext\-pecl, php\-ext\-pecl\-r1, php\-ext\-source, php\-ext\-source\-r1, php\-lib, php\-pear, php\-sapi, php5\-sapi, php5\-sapi\-r1, php5\-sapi\-r2, php5\-sapi\-r3, python, python\-distutils\-ng, qt3, qt4, ruby, ruby\-gnome2, tla, vim, webapp\-apache, x\-modular, xfconf, xfree
+.sp
+(known results: DeprecatedEclass)
+.TP
+.B DescriptionReport
+DESCRIPTION checks.
+.sp
+Check on length (<=250), too short (<5), or generic (lifted from eclass or just using the package’s name.
+.sp
+(known results: CrappyDescription)
+.TP
+.B DroppedKeywordsReport
+Scan packages for keyword dropping across versions.
+.sp
+(known results: DroppedKeywords)
+.TP
+.B HttpsAvailableCheck
+Scan ebuild for \fI\%http://\fP links that should use \fI\%https://\fP\&.
+.sp
+(known results: HttpsAvailable)
+.TP
+.B IUSEMetadataReport
+IUSE validity checks.
+.sp
+(known results: MetadataError, UnstatedIUSE)
+.TP
+.B ImlateReport
+Scan for ebuilds that are lagging in stabilization.
+.sp
+(known results: LaggingStable)
+.TP
+.B KeywordsReport
+Check package keywords for sanity; empty keywords, and \-* are flagged.
+.sp
+(known results: MetadataError, StupidKeywords)
+.TP
+.B LicenseMetadataReport
+LICENSE validity checks.
+.sp
+(known results: MetadataError, MissingLicense, UnstatedIUSE)
+.TP
+.B ManifestReport
+Manifest related checks.
+.sp
+Verify that the Manifest file exists, doesn’t have missing or extraneous entries, and that the required hashes are in use.
+.sp
+(known results: ConflictingChksums, MissingChksum, MissingManifest, UnknownManifest, UnnecessaryManifest)
+.TP
+.B MissingSlotDepReport
+Check for missing slot dependencies.
+.sp
+(known results: MissingSlotDep, UnstatedIUSE)
+.TP
+.B PkgDirReport
+Actual ebuild directory scans; file size, glep31 rule enforcement.
+.sp
+(known results: DuplicateFiles, EmptyFile, ExecutableFile, Glep31Violation, InvalidPN, InvalidUtf8, MismatchedPN, SizeViolation)
+.TP
+.B PortageInternalsCheck
+Scan ebuild for portage internals usage.
+.sp
+(known results: PortageInternals)
+.TP
+.B RedundantVersionReport
+Scan for overshadowed package versions.
+.sp
+Scan for versions that are likely shadowed by later versions from a keywords standpoint (ignoring \-9999 versioned packages)  Example: pkga\-1 is keyworded amd64, pkga\-2 is amd64. pkga\-1 can potentially be removed.
+.sp
+(known results: RedundantVersion)
+.TP
+.B RequiredUSEMetadataReport
+REQUIRED_USE validity checks.
+.sp
+(known results: MetadataError, RequiredUseDefaults, UnstatedIUSE)
+.TP
+.B RestrictsReport
+check over RESTRICT, looking for unknown restricts
+.sp
+valid restricts: binchecks, bindist, fetch, installsources, mirror, primaryuri, splitdebug, strip, test, userpriv
+.sp
+(known results: BadRestricts, UnstatedIUSE)
+.TP
+.B SrcUriReport
+SRC_URI related checks.
+.sp
+Verify that URIs are valid, fetchable, using a supported protocol, and don’t use unspecific filenames.
+.sp
+(known results: BadFilename, BadProto, MetadataError, MissingUri, UnstatedIUSE)
+.TP
+.B StaleUnstableReport
+Ebuilds that have sat unstable for over a month.
+.sp
+(known results: StaleUnstable)
+.TP
+.B TreeVulnerabilitiesReport
+Scan for vulnerable ebuilds in the tree.
+.sp
+Requires a GLSA directory for vulnerability info.
+.sp
+(known results: VulnerablePackage)
+.TP
+.B UnstableOnlyReport
+Scan for packages that have just unstable keywords.
+.sp
+(known results: UnstableOnly)
+.TP
+.B UnusedLocalFlagsReport
+Check for unused local USE flags in metadata.xml.
+.sp
+(known results: UnstatedIUSE, UnusedLocalFlags)
+.TP
+.B VisibilityReport
+Visibility dependency scans.
+.sp
+Check that at least one solution is possible for a pkg, checking all profiles (defined by arch.list) visibility modifiers per stable/unstable keyword.
+.sp
+(known results: NonExistentDeps, NonsolvableDeps, VisibleVcsPkg)
+.TP
+.B WhitespaceCheck
+Scan ebuild for useless whitespace.
+.sp
+(known results: DoubleEmptyLine, NoFinalNewline, TrailingEmptyLine, WhitespaceFound, WrongIndentFound)
+.UNINDENT
+.SH REPORTERS
+.INDENT 0.0
+.TP
+.B BinaryPickleStream
+Dump a binary pickle stream (highest protocol).
+.sp
+For details of the stream, see PickleStream.
+.TP
+.B FancyReporter
+grouped colored output
+.sp
+Example:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+sys\-apps/portage
+  WrongIndentFound: sys\-apps/portage\-2.1\-r2.ebuild has whitespace in indentation on line 169
+  NonsolvableDeps: sys\-apps/portage\-2.1\-r2: rdepends  ppc\-macos: unsolvable default\-darwin/macos/10.4, solutions: [ >=app\-misc/pax\-utils\-0.1.13 ]
+  StaleUnstableKeyword: sys\-apps/portage\-2.1\-r2: no change in 75 days, keywords [ ~x86\-fbsd ]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.TP
+.B JsonReporter
+Dump a json feed of reports.
+.sp
+Note that the format is newline\-delimited JSON with each line being related
+to a separate report. To merge the objects together something like jq can
+be leveraged similar to the following:
+.INDENT 7.0
+.INDENT 3.5
+jq \-c \-s ‘reduce.[]as$x({};.*$x)’ orig.json > new.json
+.UNINDENT
+.UNINDENT
+.TP
+.B NullReporter
+reporter used for timing tests; no output
+.TP
+.B PickleStream
+Generate a stream of pickled objects.
+.sp
+For each specific target for checks, a header is pickled
+detailing the checks used, possible results, and search
+criteria.
+.TP
+.B StrReporter
+Simple string reporter, pkgcheck\-0.1 behaviour.
+.sp
+Example:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+sys\-apps/portage\-2.1\-r2: sys\-apps/portage\-2.1\-r2.ebuild has whitespace in indentation on line 169
+sys\-apps/portage\-2.1\-r2: rdepends  ppc\-macos: unsolvable default\-darwin/macos/10.4, solutions: [ >=app\-misc/pax\-utils\-0.1.13 ]
+sys\-apps/portage\-2.1\-r2: no change in 75 days, keywords [ ~x86\-fbsd ]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.TP
+.B XmlReporter
+dump an xml feed of reports
+.UNINDENT
+.SH REPORTING BUGS
+.sp
+Please submit an issue via github:
+.sp
+\fI\%https://github.com/pkgcore/pkgcheck/issues\fP
+.sp
+You can also stop by #pkgcore on freenode.
+.SH SEE ALSO
+.sp
+\fBpkgcore\fP(5), \fBrepoman\fP(1)
+.SH COPYRIGHT
+2006-2017, pkgcheck contributors
+.\" Generated by docutils manpage writer.
+.
