@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cppa:CPP xmlns:cppa="http://docs.oasis-open.org/ebcore/ns/cppa/v3.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://docs.oasis-open.org/ebxmlcppa/cppa-3.0 ../../../cppa3-xsd/cppa3.xsd">
+    <cppa:ProfileInfo>
+        <cppa:ProfileIdentifier>Acpp</cppa:ProfileIdentifier>
+    </cppa:ProfileInfo>
+    <cppa:PartyInfo>
+        <cppa:PartyName xml:lang="en">Party A</cppa:PartyName>
+        <cppa:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:iso6523:0000">A</cppa:PartyId>
+    </cppa:PartyInfo>
+    <cppa:ServiceSpecification>
+        <cppa:PartyRole name="Buyer"/>
+        <cppa:CounterPartyRole name="Seller"/>
+        <cppa:ServiceBinding>
+            <cppa:Service>Ordering</cppa:Service>
+            <cppa:ActionBinding id="ab1" action="PlaceOrder" sendOrReceive="send">
+                <cppa:ChannelId>ch1</cppa:ChannelId>
+            </cppa:ActionBinding>
+            <cppa:ActionBinding id="ab2" action="ConfirmOrder" sendOrReceive="receive">
+                <cppa:ChannelId>ch4</cppa:ChannelId>
+            </cppa:ActionBinding>
+        </cppa:ServiceBinding>
+    </cppa:ServiceSpecification>
+    <cppa:ebMS3Channel id="ch1" actorOrRole="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/nextmsh">
+        <cppa:Description xml:lang="en">Multihop user message in multihop</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+        <cppa:ErrorHandling>
+            <cppa:ReceiverErrorsReportChannelId>ch2</cppa:ReceiverErrorsReportChannelId>
+        </cppa:ErrorHandling>
+        <cppa:ReceiptHandling>
+            <cppa:ReceiptChannelId>ch3</cppa:ReceiptChannelId>
+        </cppa:ReceiptHandling>
+    </cppa:ebMS3Channel>
+    <cppa:ebMS3Channel id="ch2" actorOrRole="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/nextmsh"
+         asResponse="true">
+        <cppa:Description xml:lang="en">Return channel for ebMS3 errors in multihop</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+        <cppa:Addressing>
+            <cppa:Endpoint>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/icloud</cppa:Endpoint>
+            <cppa:Action name="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/oneWay.error" />
+        </cppa:Addressing>
+    </cppa:ebMS3Channel>
+    <cppa:ebMS3Channel id="ch3" actorOrRole="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/nextmsh" 
+        asResponse="true">
+        <cppa:Description xml:lang="en">Return channel for ebMS3 receipts in multihop</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+        <cppa:Addressing>
+            <cppa:Endpoint>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/icloud</cppa:Endpoint>
+            <cppa:Action name="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/oneWay.receipt" />
+        </cppa:Addressing>
+    </cppa:ebMS3Channel>
+    <cppa:ebMS3Channel id="ch4" actorOrRole="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/nextmsh">
+        <cppa:Description xml:lang="en">This channel is the backchannel of a pull request</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+        <cppa:ErrorHandling>
+            <cppa:ReceiverErrorsReportChannelId>ch6</cppa:ReceiverErrorsReportChannelId>
+        </cppa:ErrorHandling>
+        <cppa:ReceiptHandling>
+            <cppa:ReceiptChannelId>ch7</cppa:ReceiptChannelId>
+        </cppa:ReceiptHandling>
+        <cppa:PullHandling>
+            <cppa:PullChannelId>ch5</cppa:PullChannelId>
+        </cppa:PullHandling>
+    </cppa:ebMS3Channel>
+    <cppa:ebMS3Channel id="ch5" addressing="icloud-pull">
+        <cppa:Description xml:lang="en">Forward channel for multihop pull request</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+    </cppa:ebMS3Channel>
+    <cppa:ebMS3Channel id="ch6" addressing="icloud-error">
+        <cppa:Description xml:lang="en">Forward channel for ebMS3 errors on previously pulled messages</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+    </cppa:ebMS3Channel>
+    <cppa:ebMS3Channel id="ch7" addressing="icloud-receipt">
+        <cppa:Description xml:lang="en">Forward channel for ebMS3 receipts on previously pulled messages</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+    </cppa:ebMS3Channel>    
+    <cppa:Addressing id="icloud-receipt">
+        <cppa:Endpoint>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/icloud</cppa:Endpoint>
+        <cppa:Action name="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/oneWay.receipt" />
+        <cppa:ebMS3InferredRoutingInput>
+            <cppa:ActionSuffix>.response</cppa:ActionSuffix>
+        </cppa:ebMS3InferredRoutingInput>
+    </cppa:Addressing>
+    <cppa:Addressing id="icloud-error">
+        <cppa:Endpoint>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/icloud</cppa:Endpoint>
+        <cppa:Action name="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/oneWay.error" />
+        <cppa:ebMS3InferredRoutingInput>
+            <cppa:ActionSuffix>.error</cppa:ActionSuffix>
+        </cppa:ebMS3InferredRoutingInput>
+    </cppa:Addressing>
+    <cppa:Addressing id="icloud-pull">
+        <cppa:Endpoint>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/part2/200811/icloud</cppa:Endpoint>
+        <cppa:Action name="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/oneWay.pull" />
+        <cppa:ebMS3InferredRoutingInput>
+            <cppa:ActionSuffix>.pull</cppa:ActionSuffix>
+        </cppa:ebMS3InferredRoutingInput>
+    </cppa:Addressing>
+</cppa:CPP>
