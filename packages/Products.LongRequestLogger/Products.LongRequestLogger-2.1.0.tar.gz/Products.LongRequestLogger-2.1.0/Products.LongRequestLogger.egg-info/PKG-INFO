@@ -1,0 +1,146 @@
+Metadata-Version: 1.1
+Name: Products.LongRequestLogger
+Version: 2.1.0
+Summary: Dumps sequential stack traces of long-running Zope2 requests
+Home-page: https://github.com/zopefoundation/Products.LongRequestLogger
+Author: Nexedi SA
+Author-email: erp5-dev@erp5.org
+License: ZPL
+Description: Introduction
+        ============
+        
+        This product dumps stack traces of long running requests of a Zope2 instance to
+        a log file. If a request takes more than a configured timeout, it's stack trace
+        will be dumped periodically to a log file.
+        
+        It was authored by Leonardo Rochael Almeida, and made possible with developer
+        time generously donated by `Nexedi <http://www.nexedi.com/>`_, and with design
+        input from Sébastien Robin and Julien Muchembled.
+        
+        .. WARNING:: Products.LongRequestLogger does not work if
+           `sauna.reload <https://pypi.python.org/pypi/sauna.reload>`_ is enabled.
+        
+        Installation
+        ============
+        
+        Buildout Installation
+        ---------------------
+        
+        Add "Products.LongRequestLogger" to the list of eggs of the part
+        that defines your Zope instance.
+        
+        Configuration
+        =============
+        
+        Add (or change) a "<product-config LongRequestLogger>" section of your
+        zope.conf to something like this::
+        
+            <product-config LongRequestLogger>
+                logfile $INSTANCE/log/longrequest.log0.log
+                timeout 4
+                interval 2
+            </product-config>
+        
+        The following variables are recognised:
+        
+         * "logfile": This is a mandatory variable. Its absence means the
+           LongRequestLogger monkey-patch to the publication machinery will not be
+           applied. It should point to a file where you want the long requests to be
+           logged.
+        
+         * "timeout": The amount of seconds after which long requests
+           start being logged. Accepts floating point values and defaults to 2.
+        
+         * "interval": The frequency at which long requests will have
+           their stack trace logged once they have exceeded their 'timeout' above.
+           Defaults to 1 and accepts floating point values.
+        
+        Interpreting results
+        ====================
+        
+        It's important to keep in mind a few important facts about the behaviour of
+        Zope2 applications and threads while looking at the results:
+        
+         1. Each thread only handles one request at a time.
+         
+         2. Slow requests will usually have tracebacks with a common top part and a
+            variable bottom part. The key to the cause of the slowdown in a request
+            will be in the limit of both.
+        
+        If you're in a pinch and don't want to parse the file to rank the slowest
+        URLs for investigation, pick up a time in seconds that's a multiple of your
+        interval plus the timeout and grep for it. For the default settings, of
+        time-out and interval, you will find log entries for 4 then 6 then 8 seconds,
+        so you can do a grep like::
+        
+         $ grep -n "Running for 8" longrequest.log 
+        
+        And decide with URLs show up more. Then you can open the log file, go to the
+        line number reported and navigate the tracebacks by searching up and down
+        the file for the same thread id (the number after "Thread" in the reported
+        lines). Then analise the difference between the tracebacks of a single request
+        to get a hint on what this particular request is doing and why it is slowing
+        down.
+        
+        By doing this for a number of similar requests you will be able to come up with
+        optimisations or a caching strategy.
+        
+        
+        Changelog
+        =========
+        
+        2.1.0 (2017-09-11)
+        ------------------
+        
+        - Log exceptions that are raised while dumping the request. Unprintable
+          requests caused the monitor thread to die, resulting in EPIPE errors
+          in the ZPublisher wrapper.
+        
+        - Do never repeat request information, traceback or SQL query if unchanged.
+        
+        2.0.0 (2015-11-04)
+        ------------------
+        
+        - Configuration is now done with a "product-config" section in zope.conf,
+          instead of environment variables.
+        
+        - Log queries executed by ZMySQLDA.
+        
+        - Consolidate stack trace output to a single line if it's the same as the
+          previous stack trace.
+        
+        - Remove the seemly unused mechanism for changing the behaviour at runtime by
+          changing environment variables, like redirecting logging to a different
+          filename, stopping the logging or changing the timeouts. Log rotation still
+          works normally.
+        
+        - Stop creating and ending one extra thread per request. Instead, a single
+          monitoring thread is launched at startup.
+        
+        - Drop compatibility with Python < 2.6.
+        
+        1.1.0 (2012-09-10)
+        ------------------
+        
+        - Some refactoring for code readability.
+        
+        - Use a `os.pipe()` pair and `select.select()` instead of
+          `threading.Condition` to signal when the monitor should stop tracing
+          the original thread. This avoids a performance bottleneck in some
+          VMWare installations, which seem not to have good performance for locks
+          in certain conditions.
+        
+        - Integrate the logging mechanism with Zope's signal handling and ZConfig's
+          rotating file handler so that USR2 signals will cause the long request log
+          to get reopened analogous to the access and event log.
+        
+        1.0.0 (2010-10-28)
+        ------------------
+        
+        - Initial release
+        
+Keywords: performance zope2 plone erp5
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Framework :: Zope2
+Classifier: Intended Audience :: System Administrators
