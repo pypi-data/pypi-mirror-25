@@ -1,0 +1,731 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Replication Rules Architecture &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Rules Workflow" href="rules_workflow.html" />
+    <link rel="prev" title="Rucio Database Schema" href="overview_Database_Schema.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="rules_workflow.html" title="Rules Workflow"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview_Database_Schema.html" title="Rucio Database Schema"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="replication-rules-architecture">
+<h1>Replication Rules Architecture<a class="headerlink" href="#replication-rules-architecture" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Permalink to this headline">¶</a></h2>
+<p>The replication rules are managed by two components in Rucio.</p>
+<ul>
+<li><p class="first">Rules Core module</p>
+<p>The rules core module offers functions which are directly called by the API or
+other core components. The main functionality offered are creating, listing
+and deleting replication rules.</p>
+</li>
+<li><p class="first">Rules daemon: Rucio-Judge</p>
+<p>The rules daemon is responsible for making sure that replication rules are
+correct when datasets/containers are changed. The judge also takes care of the
+deletion of expired rules and re-evaluates replication rules which are in the
+STUCK state.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="database-schema">
+<h2>Database Schema<a class="headerlink" href="#database-schema" title="Permalink to this headline">¶</a></h2>
+<p>There are two tables which hold the information concerning all replication rules
+and locks.</p>
+<p><strong>Rules</strong></p>
+<p><strong>Locks</strong></p>
+<p>Also relevant are the <strong>DataIdentifier</strong> table, holding all data identifiers, the <strong>DataIdentifierAssociation</strong> table, expressing the relation between child and parent dids as well as the <strong>RSEFileAssociation</strong> table, which is the catalog of all physical replicas.</p>
+</div>
+<div class="section" id="relevant-system-interactions">
+<h2>Relevant System interactions<a class="headerlink" href="#relevant-system-interactions" title="Permalink to this headline">¶</a></h2>
+<p>Besides listing and searching replication rules, there are 6 Rucio interactions which are relevant for the rule component.</p>
+<ul>
+<li><p class="first">Creating a replication rule</p>
+<p>A replication rule is always created for a specific did (file, dataset, container). When the rule is created it is evaluated immediately, thus creating all replica locks and, if necessary, file transfers. This action is directly linked to the core method:</p>
+<dl class="function">
+<dt id="rucio.core.rule.add_replication_rule">
+<code class="descclassname">rucio.core.rule.</code><code class="descname">add_replication_rule</code><span class="sig-paren">(</span><em>dids</em>, <em>account</em>, <em>…</em><span class="sig-paren">)</span><a class="headerlink" href="#rucio.core.rule.add_replication_rule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><p class="first">Deleting a replication rule</p>
+<p>Replication rules can be deleted by their owner (or an privileged
+account). The removal of the rule and it’s associated locks is done by the
+core function:</p>
+<dl class="function">
+<dt id="rucio.core.rule.delete_replication_rule">
+<code class="descclassname">rucio.core.rule.</code><code class="descname">delete_replication_rule</code><span class="sig-paren">(</span><em>rule_id</em>, <em>…</em><span class="sig-paren">)</span><a class="headerlink" href="#rucio.core.rule.delete_replication_rule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><p class="first">Adding a did to a parent did</p>
+<p>Attaching a data identifier to a dataset or container has to trigger a rule
+evaluation, as all parent rules have to be applied to the new children as
+well. The method flags the did for re-evaluation in the DID table. This re-evaluation is done asynchronously by the Rucio-Judge. The action is directly linked to the core method:</p>
+<dl class="function">
+<dt id="rucio.core.did.attach_identifier">
+<code class="descclassname">rucio.core.did.</code><code class="descname">attach_identifier</code><span class="sig-paren">(</span><em>scope</em>, <em>name</em>, <em>dids</em>, <em>…</em><span class="sig-paren">)</span><a class="headerlink" href="#rucio.core.did.attach_identifier" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><p class="first">Removing a did from a parent did</p>
+<p>When removing dids from a dataset or container, the previously matching rules
+may not match anymore. Thus the respective locks have to be removed from the
+files. The method flags the did for re-evaluation in the DID table. This is done asynchronously by the Rucio-Judge. This action is linked to the core method:</p>
+<dl class="function">
+<dt id="rucio.core.did.detach_identifier">
+<code class="descclassname">rucio.core.did.</code><code class="descname">detach_identifier</code><span class="sig-paren">(</span><em>scope</em>, <em>name</em>, <em>dids</em>, <em>…</em><span class="sig-paren">)</span><a class="headerlink" href="#rucio.core.did.detach_identifier" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><p class="first">Successfully finishing a transfer</p>
+<p>When a transfer finishes the state of all affected locks (one new replica can affect many locks) and rules have to be
+updated. This action is linked to the core method:</p>
+<dl class="function">
+<dt id="rucio.core.rule.successful_transfer">
+<code class="descclassname">rucio.core.rule.</code><code class="descname">successful_transfer</code><span class="sig-paren">(</span><em>scope</em>, <em>name</em>, <em>rse_id</em><span class="sig-paren">)</span><a class="headerlink" href="#rucio.core.rule.successful_transfer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><p class="first">Failing a transfer</p>
+<p>When a transfer fails the state of all affected locks and rules has to be
+updated, so that the Rucio-Judge can make new decisions to repair the
+rule. This action is linked to the core method:</p>
+<dl class="function">
+<dt id="rucio.core.rule.failed_transfer">
+<code class="descclassname">rucio.core.rule.</code><code class="descname">failed_transfer</code><span class="sig-paren">(</span><em>scope</em>, <em>name</em>, <em>rse_id</em><span class="sig-paren">)</span><a class="headerlink" href="#rucio.core.rule.failed_transfer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+</div>
+<div class="section" id="general-workflow">
+<h2>General Workflow<a class="headerlink" href="#general-workflow" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="adding-replication-rules">
+<span id="id1"></span><h3>Adding replication rules<a class="headerlink" href="#adding-replication-rules" title="Permalink to this headline">¶</a></h3>
+<p>This section describes the general workflow when adding replication rules. There
+are basically three different cases that have to be considered. Rules added to a
+file, dataset or container.</p>
+digraph E1 {
+    label=&quot;Rule on file&quot;;
+    rule1 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    file1 [label=&quot;File&quot;];
+    rule1:sw -&gt; file1:ne [color=darkgreen, label=&quot;add&quot;, fontcolor=darkgreen];
+}digraph E2 {
+    label=&quot;Rule on dataset&quot;;
+    rule2 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    dataset2 [shape=box, label=&quot;Dataset&quot;];
+    files2_1 [label=&quot;File1&quot;];
+    files2_2 [label=&quot;File2&quot;];
+    files2_3 [label=&quot;File3&quot;];
+    dataset2 -&gt; files2_1;
+    dataset2 -&gt; files2_2;
+    dataset2 -&gt; files2_3;
+    rule2:sw -&gt; dataset2:ne [color=darkgreen, label=&quot;add&quot;, fontcolor=darkgreen];
+}digraph E3 {
+   label=&quot;Rule on container&quot;;
+   rule3 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+   container3[shape=house, label=&quot;Container&quot;];
+   dataset3[shape=box, label=&quot;Dataset&quot;];
+   files3_1 [label=&quot;File1&quot;];
+   files3_2 [label=&quot;File2&quot;];
+   files3_3 [label=&quot;File3&quot;];
+   container3 -&gt; dataset3;
+   dataset3 -&gt; files3_1;
+   dataset3 -&gt; files3_2;
+   dataset3 -&gt; files3_3;
+   rule3:sw -&gt; container3:ne [color=darkgreen, label=&quot;add&quot;, fontcolor=darkgreen];
+}<p>The general workflow when adding a rule is described as follows: (Ignore lines
+2, 6, 7 and 9 for the moment)</p>
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24</pre></div></td><td class="code"><div class="highlight"><pre>Create a DB transaction
+<span class="hll">Row-Lock the did in the did table
+</span>Resolve the RSE expression to a list of potential RSEs
+Get the current quota/usage values of the account for each RSE
+Create the replication rule in the ReplicationRule table
+<span class="hll">if did.type==CONTAINER:
+</span><span class="hll">       Row-Lock all child datasets and containers in the did table
+</span>Resolve the did to it&#39;s files and get all associated ReplicaLocks
+<span class="hll">Row-Lock all these ReplicaLocks (Actually done in the same query as 8.)
+</span>if grouping==NONE:
+    for each file:
+        Pick N rses for the file considering filesize, quota, weights and existing locks of the file
+if grouping==ALL:
+    Calculate size of all files
+    Calculate the current coverage (in bytes) of the files on the rses
+    Pick n rses considering the sum-size, quota, weights and rse coverage
+if grouping==DATASET:
+    for each dataset:
+        Calculate the size of all files in the dataset
+        Calculate the current coverage (in bytes) of the files in the dataset on rses
+        Pick n rses considering the dataset-size, quota, weights and rse coverage
+Create the locks in the database
+Create the necessary transfers
+Commit the DB transaction
+</pre></div>
+</td></tr></table></div>
+<p>Right now, the decisions in line 12, 16 and 21 where to create the new replica locks are done as follows:</p>
+<ol class="arabic simple">
+<li>Exclude all potential RSEs which do not have enough quota to hold the file/dataset/container.</li>
+<li>If the RSEs already hold replica locks of the concerned replicas, sort these RSEs by number of replica locks.</li>
+<li>Pick the first N RSEs out of the list.</li>
+<li>If RSEs hold the same amount of replica locks (or no locks at all) pick N RSEs according to the RSE weights.</li>
+</ol>
+<p>Example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">DatasetA</span> <span class="o">=</span> <span class="p">[</span><span class="n">File0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">File9</span><span class="p">]</span> <span class="k">with</span> <span class="mi">100</span> <span class="n">MB</span> <span class="n">per</span> <span class="n">file</span>
+<span class="n">potential</span> <span class="n">RSEs</span><span class="p">:</span>
+    <span class="n">RSEA</span> <span class="o">...</span> <span class="mi">1300</span> <span class="n">MB</span> <span class="n">quota</span><span class="p">,</span> <span class="mi">3</span> <span class="n">replicas</span> <span class="n">of</span> <span class="n">DatasetA</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">0.1</span>
+    <span class="n">RSEB</span> <span class="o">...</span> <span class="mi">400</span> <span class="n">MB</span> <span class="n">quota</span><span class="p">,</span> <span class="mi">5</span> <span class="n">replicas</span> <span class="n">of</span> <span class="n">DatasetA</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">10</span>
+    <span class="n">RSEC</span> <span class="o">...</span> <span class="mi">4000</span> <span class="n">MB</span> <span class="n">quota</span><span class="p">,</span> <span class="mi">0</span> <span class="n">replicas</span> <span class="n">of</span> <span class="n">DatasetA</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">100</span>
+    <span class="n">RSED</span> <span class="o">...</span> <span class="mi">3000</span> <span class="n">MB</span> <span class="n">quota</span><span class="p">,</span> <span class="mi">0</span> <span class="n">replicas</span> <span class="n">of</span> <span class="n">DatasetA</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">50</span>
+<span class="n">Rule</span><span class="p">:</span> <span class="mi">2</span> <span class="n">replicas</span><span class="p">,</span> <span class="n">DATASET</span> <span class="n">grouping</span>
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li>Exclude all potential RSEs which do not have enough quota (RSE B gets excluded); potential RSEs = [RSEA, RSEC, RSED].</li>
+<li>RSEA already holds replicas, put RSEA to priority List; priorityRSEs = [RSEA].</li>
+<li>Pick the first 2 RSEs out of the priorityRSEs list; (There is only 1 entry); RSEA is picked, 1 remaining RSE to pick.</li>
+<li>RSEC and RSED left in potential RSE list; Pick according to weights; (Random pick according to weights) RSEC gets picked.</li>
+</ol>
+<p>Result: Put replica locks on RSEA and RSEC.</p>
+</div>
+<div class="section" id="deleting-replication-rules">
+<span id="id2"></span><h3>Deleting replication rules<a class="headerlink" href="#deleting-replication-rules" title="Permalink to this headline">¶</a></h3>
+<p>This section describes the general workflow when deleting replication rules.</p>
+digraph E1 {
+    label=&quot;Rule on file&quot;;
+    rule1 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    file1 [label=&quot;File&quot;];
+    rule1:sw -&gt; file1:ne [color=red, label=&quot;del&quot;, fontcolor=red];
+}digraph E2 {
+    label=&quot;Rule on dataset&quot;;
+    rule2 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    dataset2 [shape=box, label=&quot;Dataset&quot;];
+    files2_1 [label=&quot;File1&quot;];
+    files2_2 [label=&quot;File2&quot;];
+    files2_3 [label=&quot;File3&quot;];
+    dataset2 -&gt; files2_1;
+    dataset2 -&gt; files2_2;
+    dataset2 -&gt; files2_3;
+    rule2:sw -&gt; dataset2:ne [color=red, label=&quot;del&quot;, fontcolor=red];
+  }digraph E3 {
+    label=&quot;Rule on container&quot;;
+    rule3 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    container3[shape=house, label=&quot;Container&quot;];
+    dataset3[shape=box, label=&quot;Dataset&quot;];
+    files3_1 [label=&quot;File1&quot;];
+    files3_2 [label=&quot;File2&quot;];
+    files3_3 [label=&quot;File3&quot;];
+    container3 -&gt; dataset3;
+    dataset3 -&gt; files3_1;
+    dataset3 -&gt; files3_2;
+    dataset3 -&gt; files3_3;
+    rule3:sw -&gt; container3:ne [color=red, label=&quot;del&quot;, fontcolor=red];
+}<p>The general workflow when deleting a rule is described as follows: (Ignore lines
+2 and 11 for the moment)</p>
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14</pre></div></td><td class="code"><div class="highlight"><pre>Create a DB transaction
+<span class="hll">Row-Lock the replication rule in the ReplicationRule table
+</span>if state==OK:  # There are no running transfers!
+    Delete the replication rule from the ReplicationRule table (Locks will be deleted cascading)
+if state==SUSPENDED:  # There are no running transfers!
+    Delete the replication rule from the ReplicationRule table (Locks will be deleted cascading)
+if state==STUCK:  # There are no running transfers!
+    Delete the replication rule from the ReplicationRule table (Locks will be deleted cascading)
+if state==REPLICATING:  # There are running transfers which may have to be cancelled
+    Get all ReplicaLocks for all files affected by this rule
+<span class="hll">    Row-Lock the Locks in the ReplicaLocks table (Will be done in the same query)
+</span>    for each file:
+        If the lock is REPLICATING and there are no other Locks, cancel the transfer
+Commit transaction
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="re-evaluating-a-did-something-has-been-added">
+<span id="re-evaluate-did-add"></span><h3>Re-Evaluating a DID (Something has been added)<a class="headerlink" href="#re-evaluating-a-did-something-has-been-added" title="Permalink to this headline">¶</a></h3>
+<p>When files are added to datasets or datasets/containers to containers, the
+affecting rules have to be re-evaluated and Locks have to be set on the new
+children.</p>
+digraph E1 {
+    label=&quot;Rule on file&quot;;
+    np[label=&quot;Not possible&quot;, shape=text]
+}digraph E2 {
+    label=&quot;Rule on dataset&quot;;
+    rule2 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    dataset2 [shape=box, label=&quot;Dataset&quot;];
+    files2_1 [label=&quot;File1&quot;];
+    files2_2 [label=&quot;File2&quot;];
+    files2_3 [label=&quot;File3&quot;];
+    files2_4 [label=&quot;File4&quot;];
+    dataset2 -&gt; files2_1;
+    dataset2 -&gt; files2_2;
+    dataset2 -&gt; files2_3;
+    dataset2 -&gt; files2_4 [color=darkgreen, label=&quot;attach&quot;, fontcolor=darkgreen];
+    rule2:sw -&gt; dataset2:ne;
+}digraph E3 {
+    label=&quot;Rule on container&quot;;
+    rule3 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    container3[shape=house, label=&quot;Container&quot;];
+    dataset3_1[shape=box, label=&quot;Dataset1&quot;];
+    dataset3_2[shape=box, label=&quot;Dataset2&quot;]
+    files3_1 [label=&quot;File1&quot;];
+    files3_2 [label=&quot;File2&quot;];
+    files3_3 [label=&quot;File3&quot;];
+    files3_4 [label=&quot;File4&quot;];
+    container3 -&gt; dataset3_1;
+    dataset3_1 -&gt; files3_1;
+    dataset3_1 -&gt; files3_2;
+    dataset3_1 -&gt; files3_3;
+    dataset3_1 -&gt; files3_4 [color=darkgreen, label=&quot;attach&quot;, fontcolor=darkgreen];
+    files3_5 [label=&quot;File4&quot;];
+    files3_6 [label=&quot;File5&quot;];
+    files3_7 [label=&quot;File6&quot;];
+    dataset3_2 -&gt; files3_5;
+    dataset3_2 -&gt; files3_6;
+    dataset3_2 -&gt; files3_7;
+    container3 -&gt; dataset3_2 [color=darkgreen, label=&quot;attach&quot;, fontcolor=darkgreen];
+    rule3:sw -&gt; container3:ne;
+}<p>The general workflow when re-evaluating a rule is described as follows: (Ignore lines
+3, 5, 7, 9, 12 and 14 for the moment)</p>
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23</pre></div></td><td class="code"><div class="highlight"><pre>Create a DB transaction
+Pickup the next did which needs re-evaluation
+<span class="hll">Row-Lock this did in the DID table
+</span>Get all parent dids (Go up the tree)
+<span class="hll">Row-Lock these parent dids in the DID table
+</span>Get all replication rules from the parent dids and the did itself
+<span class="hll">Row-Lock these rules in the Rule table
+</span>Get all the newly attached children of the DID
+<span class="hll">Row-Lock these dids in the did table
+</span>if these new child dids are DATASETS or CONTAINERS:
+    Follow the tree down the path to get all new_files
+<span class="hll">    Row-Lock all intermediate datasets and containers in the DID table
+</span>Get the ReplicaLocks for all new files
+<span class="hll">Row-Lock these ReplicaLocks in the Lock Table
+</span>for all rules found in the parents:
+    Resolve RSE Expression and fetch Quotas
+    if rule.grouping == DATASET or CONTAINER:
+        Based on the existing locks get the grouping decision which has been made before
+    For the new files make the lock decisions and create transfers (Same algorithm as in Add Replication Rule)
+    If same grouping is not possible due to quota, pick another RSE
+    If anything of the above fails, mark the rule as STUCK
+Mark the did as re_evaluated
+Commit the transaction
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="re-evaluating-a-did-something-has-been-removed">
+<span id="re-evaluate-did-del"></span><h3>Re-Evaluating a DID (Something has been removed)<a class="headerlink" href="#re-evaluating-a-did-something-has-been-removed" title="Permalink to this headline">¶</a></h3>
+<p>When files are removed from datasets or datasets/containers from containers, the
+affecting rules have to be re-evaluated and Locks have to be removed.</p>
+digraph E1 {
+    label=&quot;Rule on file&quot;;
+    np[label=&quot;Not possible&quot;, shape=text]
+}digraph E2 {
+    label=&quot;Rule on dataset&quot;;
+    rule2 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    dataset2 [shape=box, label=&quot;Dataset&quot;];
+    files2_1 [label=&quot;File1&quot;];
+    files2_2 [label=&quot;File2&quot;];
+    files2_3 [label=&quot;File3&quot;];
+    files2_4 [label=&quot;File4&quot;];
+    dataset2 -&gt; files2_1;
+    dataset2 -&gt; files2_2;
+    dataset2 -&gt; files2_3;
+    dataset2 -&gt; files2_4 [color=red, label=&quot;detach&quot;, fontcolor=red];
+    rule2:sw -&gt; dataset2:ne;
+}digraph E3 {
+    label=&quot;Rule on container&quot;;
+    rule3 [shape=diamond, label=&quot;Rule&quot;, style=filled,color=&quot;lightblue&quot;];
+    container3[shape=house, label=&quot;Container&quot;];
+    dataset3_1[shape=box, label=&quot;Dataset1&quot;];
+    dataset3_2[shape=box, label=&quot;Dataset2&quot;]
+    files3_1 [label=&quot;File1&quot;];
+    files3_2 [label=&quot;File2&quot;];
+    files3_3 [label=&quot;File3&quot;];
+    files3_4 [label=&quot;File4&quot;];
+    container3 -&gt; dataset3_1;
+    dataset3_1 -&gt; files3_1;
+    dataset3_1 -&gt; files3_2;
+    dataset3_1 -&gt; files3_3;
+    dataset3_1 -&gt; files3_4 [color=red, label=&quot;detach&quot;, fontcolor=red];
+    files3_5 [label=&quot;File4&quot;];
+    files3_6 [label=&quot;File5&quot;];
+    files3_7 [label=&quot;File6&quot;];
+    dataset3_2 -&gt; files3_5;
+    dataset3_2 -&gt; files3_6;
+    dataset3_2 -&gt; files3_7;
+    container3 -&gt; dataset3_2 [color=red, label=&quot;detach&quot;, fontcolor=red];
+    rule3:sw -&gt; container3:ne;
+}<p>The general workflow when re-evaluating a rule is described as follows: (Ignore lines
+3, 5, 7, and 11 for the moment)</p>
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14</pre></div></td><td class="code"><div class="highlight"><pre>Create a DB transaction
+Pickup the next did which needs re-evaluation
+<span class="hll">Row-Lock this did in the DID table
+</span>Get all parent dids (Go up the tree)
+<span class="hll">Row-Lock these parent dids in the DID table
+</span>Get all replication rules from the parent dids and the did itself
+<span class="hll">Row-Lock these rules in the Rule table
+</span>Get all the files of the did (Does not consider the removed ones)
+for each rule:
+    Get all locks of the rule
+<span class="hll">    Row-Lock these locks
+</span>    if there is no file for the lock, the lock can be deleted
+Mark the did as re_evaluated
+Commit the transaction
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="updating-locks-on-successful-failed-transfer">
+<span id="updating-locks"></span><h3>Updating locks on successful/failed transfer<a class="headerlink" href="#updating-locks-on-successful-failed-transfer" title="Permalink to this headline">¶</a></h3>
+<p>If a transfer is successful or fails, all the locks for the file on this RSE
+have to be updated.</p>
+<p>On successful transfer (Ignore line 3 for now)</p>
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7</pre></div></td><td class="code"><div class="highlight"><pre>Create a DB transaction
+Get all the locks of the transferred file on the rse
+<span class="hll">Row-Lock these locks
+</span>for each lock:
+    Update Lock state to OK
+    Check if the replication rule of the lock has any REPLICATING locks left, if not mark the rule as OK
+Commit the transaction
+</pre></div>
+</td></tr></table></div>
+<p>On failed  transfer (Ignore line 3 for now)</p>
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7</pre></div></td><td class="code"><div class="highlight"><pre>Create a DB transaction
+Get all the locks of the transferred file on the rse
+<span class="hll">Row-Lock these locks
+</span>for each lock:
+    Update Lock state to STUCK
+    Check if the replication rule of the lock has any REPLICATING locks lefts, if not mark the rule as STUCK
+Commit the transaction
+</pre></div>
+</td></tr></table></div>
+</div>
+</div>
+<div class="section" id="race-conditions-and-concurrency-problems">
+<h2>Race-Conditions and concurrency problems<a class="headerlink" href="#race-conditions-and-concurrency-problems" title="Permalink to this headline">¶</a></h2>
+<p>This section specifically describes the race-conditions and concurrency issues
+that could bring the rules out of sync with the actual files. As this is very
+critical and cannot be detected easily, it is very important to prevent this
+issues in the first place.</p>
+<ol class="arabic">
+<li><p class="first">A rule is applied to a did while some did in the structure (higher or lower) is being changed concurrently</p>
+<ul>
+<li><p class="first"><a class="reference internal" href="#adding-replication-rules"><span class="std std-ref">Adding replication rules</span></a> line 8 would read a did listing which could be invalid at t+1 and thus not apply the rule to every file. We therefore make the following requirement: <strong>Whenever a did is changed or a rule is applied/evaluated on a did the session needs to acquire a row-lock of the did in the did table!</strong> Thus we  add line 2:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">the</span> <span class="n">did</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">did</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>As every action needs to acquire a lock in the did table, only a single session can change the did. However, also dids lower in the structure could be changed concurrently. To prevent this we add line 6 and 7:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="k">if</span> <span class="n">did</span><span class="o">.</span><span class="n">type</span><span class="o">==</span><span class="n">CONTAINER</span><span class="p">:</span>
+    <span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="nb">all</span> <span class="n">child</span> <span class="n">datasets</span> <span class="ow">and</span> <span class="n">containers</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">did</span> <span class="n">table</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference internal" href="#re-evaluate-did-add"><span class="std std-ref">Re-Evaluating a DID (Something has been added)</span></a> To prevent changes of the did itself we add line 3:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">this</span> <span class="n">did</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">DID</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>Line 4 would read a did listing of higher-level dids  which could be invalid at t+1 and thus not apply the rules correctly. We add line 5:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">parent</span> <span class="n">dids</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">DID</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>Line 8 would read a did listing of lower-level dids which could be invalid at t+1 and thus not apply the rules correctly. We add line 9:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">dids</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">did</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>Also line 12 is added for the same purpose:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="nb">all</span> <span class="n">intermediate</span> <span class="n">datasets</span> <span class="ow">and</span> <span class="n">containers</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">DID</span> <span class="n">table</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference internal" href="#re-evaluate-did-del"><span class="std std-ref">Re-Evaluating a DID (Something has been removed)</span></a> Line 8 could end up with a wrong did listing at t+1. To prevent changes of the did itself we add line 3:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">this</span> <span class="n">did</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">DID</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>Line 4 could end up with an inconsistent listing at t+1. As parent dids have to be prevented from changing as well, line 5 is added:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">parent</span> <span class="n">dids</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">DID</span> <span class="n">table</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">When a did is attached to a parent-did, this parent-did has to be row-locked as well.</p>
+</li>
+<li><p class="first">When a did is detached from a parent-did, this parent-did has to be row-locked as well.</p>
+</li>
+</ul>
+</li>
+<li><p class="first">While a did is re-evaluated, other rules (applying to the did) are changed concurrently</p>
+<ul>
+<li><p class="first"><a class="reference internal" href="#adding-replication-rules"><span class="std std-ref">Adding replication rules</span></a> Line 8 would maybe get the right ReplicaLocks, but when creating the new locks (under the assumption that another lock is already there) this creates problems when these locks are deleted concurrently; Thus, when these locks get deleted while they are used as assumption for re-evaluation, it could happen that a lock is being created without a file replica (and without a transfer to create one). The solution is in line 9:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="nb">all</span> <span class="n">these</span> <span class="n">ReplicaLocks</span> <span class="p">(</span><span class="n">Actually</span> <span class="n">done</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">same</span> <span class="n">query</span> <span class="k">as</span> <span class="mf">8.</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>By row-locking all the ReplicaLocks, it is not possible that a lock is being deleted while it is used as an assumption for re-evaluation.</p>
+</li>
+<li><p class="first"><a class="reference internal" href="#deleting-replication-rules"><span class="std std-ref">Deleting replication rules</span></a> As the adding part is requesting row-locks for the rule and locks, it is important the the deletion part does the same. Line 2:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">the</span> <span class="n">replication</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">ReplicationRule</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>Line 11:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">the</span> <span class="n">Locks</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">ReplicaLocks</span> <span class="n">table</span> <span class="p">(</span><span class="n">Will</span> <span class="n">be</span> <span class="n">done</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">same</span> <span class="n">query</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference internal" href="#re-evaluate-did-add"><span class="std std-ref">Re-Evaluating a DID (Something has been added)</span></a> These rule and replica-lock locks have also be requested in the re-evaluation part. Line 7:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">rules</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">Rule</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>and line 14:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">ReplicaLocks</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">Lock</span> <span class="n">Table</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference internal" href="#re-evaluate-did-del"><span class="std std-ref">Re-Evaluating a DID (Something has been removed)</span></a> The same thing also applies for the deletion part. Rules and Locks have to be row-locked as they cannot be used by another session concurrently. Line 7:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">rules</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">Rule</span> <span class="n">table</span>
+</pre></div>
+</div>
+<p>Line 11:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">locks</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference internal" href="#updating-locks"><span class="std std-ref">Updating locks on successful/failed transfer</span></a> also when updating locks on successful/failed transfers, these locks have to be row-locked. Line 3:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Row</span><span class="o">-</span><span class="n">Lock</span> <span class="n">these</span> <span class="n">locks</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Replication Rules Architecture</a><ul>
+<li><a class="reference internal" href="#architecture-overview">Architecture Overview</a></li>
+<li><a class="reference internal" href="#database-schema">Database Schema</a></li>
+<li><a class="reference internal" href="#relevant-system-interactions">Relevant System interactions</a></li>
+<li><a class="reference internal" href="#general-workflow">General Workflow</a><ul>
+<li><a class="reference internal" href="#adding-replication-rules">Adding replication rules</a></li>
+<li><a class="reference internal" href="#deleting-replication-rules">Deleting replication rules</a></li>
+<li><a class="reference internal" href="#re-evaluating-a-did-something-has-been-added">Re-Evaluating a DID (Something has been added)</a></li>
+<li><a class="reference internal" href="#re-evaluating-a-did-something-has-been-removed">Re-Evaluating a DID (Something has been removed)</a></li>
+<li><a class="reference internal" href="#updating-locks-on-successful-failed-transfer">Updating locks on successful/failed transfer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#race-conditions-and-concurrency-problems">Race-Conditions and concurrency problems</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="overview_Database_Schema.html"
+                        title="previous chapter">Rucio Database Schema</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="rules_workflow.html"
+                        title="next chapter">Rules Workflow</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/overview_Rules.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="rules_workflow.html" title="Rules Workflow"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="overview_Database_Schema.html" title="Rucio Database Schema"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
