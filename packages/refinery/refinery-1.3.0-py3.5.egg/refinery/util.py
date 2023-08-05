@@ -1,0 +1,13 @@
+from .hashcacher_window import RESERVED_WINDOWS_FILENAME_MAP,\
+     INVALID_PATH_CHARS
+from os.path import sep as PATHDIV
+from supyr_struct.defs.util import *
+
+
+def is_protected(tagpath):
+    return tagpath in RESERVED_WINDOWS_FILENAME_MAP or (
+        not INVALID_PATH_CHARS.isdisjoint(set(tagpath)))
+
+
+def fourcc(value):
+    return value.to_bytes(4, byteorder='big').decode(encoding='latin-1')
