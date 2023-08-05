@@ -1,0 +1,98 @@
+Foundation Forms for Django
+===========================
+
+A reusable Django application for rendering forms with [Foundation for Sites][].
+
+[Foundation for Sites]: http://foundation.zurb.com/sites/docs/
+
+Requirements
+------------
+
+- Python 3
+- Django >= 1.11
+- Foundation for Sites 6.x
+
+Note that this application does not include Foundation for Sites assets so that
+you can customize it as you need. Get started by reading its [documentation][]!
+
+[documentation]: http://foundation.zurb.com/sites/getting-started.html
+
+Features
+--------
+
+* Displays the field label as well as its help text
+* Renders the Django base Widgets following the [Forms component][]'s guidelines
+* Shows the field errors as needed and sets the proper CSS classes on the field
+  label and the input
+
+[Forms component]: http://foundation.zurb.com/sites/docs/forms.html
+
+Installation
+------------
+
+1.  Install Foundation Forms for Django:
+
+        pip install django-fsforms
+
+2.  Add it to the `INSTALLED_APPS` in your `settings.py`:
+
+    ```python
+    INSTALLED_APPS = (
+        ...
+        'fsforms',
+        ...
+    )
+    ```
+
+3. Change the `FORM_RENDERER` still in your `settings.py` to use the
+   Foundation Forms' one:
+
+    ```python
+    FORM_RENDERER = 'fsforms.renderers.FoundationTemplates'
+    ```
+
+Usage
+-----
+
+In your template, you will just have to load `fsforms` then use either the
+`fsfield` filter on a field for a basic usage, or the `fsfield` tag for
+tunning up the output.
+
+```django
+{% load fsforms %}
+
+<form action="/url/to/submit/" method="post">
+  {% csrf_token %}
+  <ul class="no-bullet">
+    <li>{{ form.simple_field|fsfield }}</li>
+    <li>{% fsfield form.other_field label_class="my-field" %}</li>
+  </ul>
+  <div class="button-holder">
+    <button type="submit" class="button">Submit</button>
+  </div>
+</form>
+```
+
+Here are the special arguments you can pass to the `fsfield` tag:
+- `show_label`: a boolean which turns on or off the label output. Note that
+  label of choices widgets will always be displayed.
+- `label_class`: a string which contains additional CSS classes to apply to
+  the label element.
+- `show_errors`: a boolean which turns on or off the field errors' output as
+  well as the CSS classes applied to the elements - e.g. `is-invalid-input`
+  and `is-invalid-label`. Default is `True`.
+- `as_list`: a boolean which controls the rendering of choices widgets - i.e.
+  RadioSelect and CheckboxSelectMultiple. When set to `True` - the default,
+  the fields will be rendered inline and wrapped inside a fieldset as suggested
+  by the Forms component. Otherwise, they will be rendered as a list.
+
+All the remaining arguments will be added to the widget attributes. As regards
+the `required` one, you can alter its value too but only with client-side
+effect. It means that if a field is defined as required in the form class and
+you pass `required=False` to the tag, it will appear as non-required to the
+user but will still be validated at the form's submission.
+
+License
+-------
+
+You can use this under GNU AGPLv3+. See [LICENSE](LICENSE) file for details.

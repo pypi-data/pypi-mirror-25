@@ -1,0 +1,55 @@
+{% if field.is_hidden %}
+  {{ field }}
+{% else %}{% spaceless %}
+  {% if is_list_choices %}
+    {% if as_list %}
+      {% if field.label %}
+        <label{% if label_class %} class="{{ label_class }}"{% endif %}>
+          {{ field.label|safe }}{% if field.field.required %}<span class="asterisk">*</span>{% endif %}
+        </label>
+      {% endif %}
+
+      {{ field }}
+    {% else %}
+      <fieldset class="choices-holder">
+        {% if field.label %}
+          <legend>
+            {{ field.label|safe }}{% if field.field.required %}<span class="asterisk">*</span>{% endif %}
+          </legend>
+        {% endif %}
+
+        {% for option in field %}
+          {{ option }}
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+  {% elif show_label and field.label %}
+    {% if is_checkbox %}
+      <div class="checkbox-holder">
+        {{ field }}
+    {% endif %}
+
+    <label for="{{ field.id_for_label }}"{% if label_class %} class="{{ label_class }}"{% endif %}>
+      {{ field.label|safe }}{% if field.field.required %}<span class="asterisk">*</span>{% endif %}
+      {% if not is_checkbox %}{{ field }}{% endif %}
+    </label>
+
+    {% if is_checkbox %}
+      </div>
+    {% endif %}
+  {% else %}
+    {{ field }}
+  {% endif %}
+
+  {% if show_errors %}
+    {% for error in field.errors %}
+      <span id="error_{{ forloop.counter }}_{{ field_id }}" class="form-error is-visible{% if not forloop.last %} compact{% endif %}">
+        {{ error }}
+      </span>
+    {% endfor %}
+  {% endif %}
+
+  {% if field.help_text %}
+    <{% if field.help_text|first == '<' %}div{% else %}p{% endif %} id="helptext_{{ field_id }}" class="help-text">{{ field.help_text|safe }}</{% if field.help_text|first == '<' %}div{% else %}p{% endif %}>
+  {% endif %}
+{% endspaceless %}{% endif %}
