@@ -1,0 +1,159 @@
+Metadata-Version: 1.1
+Name: cachelper
+Version: 0.3.0
+Summary: A collection of cache helpers
+Home-page: https://github.com/suzaku/cachelper
+Author: Satoru Logic
+Author-email: satorulogic@gmail.com
+License: MIT
+Description: cachelper
+        ##########
+        
+        .. image:: https://travis-ci.org/suzaku/cachelper.svg?branch=master
+            :target: https://travis-ci.org/suzaku/cachelper
+        .. image:: https://img.shields.io/pypi/v/cachelper.svg
+            :target: https://pypi.python.org/pypi/cachelper
+        
+        Useful cache helpers in one package!
+        
+        .. image:: https://app.codesponsor.io/embed/MY7qFCdB7bDgiBqdjtV9ASYi/suzaku/cachelper.svg
+            :width: 888px
+            :height: 68px
+            :alt: Sponsor
+            :target: https://app.codesponsor.io/link/MY7qFCdB7bDgiBqdjtV9ASYi/suzaku/cachelper
+        
+        Install
+        *******
+        
+        .. code-block:: bash
+        
+            pip install cachelper
+        
+        Helpers
+        *******
+        
+        In memory cache
+        ===============
+        
+        memoize
+        ---------------
+        
+        Caching function return values in memory.
+        
+        
+        .. code-block:: python
+        
+            import cachelper
+        
+            @cachelper.memoize()
+            def fibo(n):
+                if n in (0, 1):
+                    return 1
+                return fibo(n - 1) + fibo(n - 2)
+        
+            fibo(10)
+        
+        Cache with Redis/Memcached
+        ==============================
+        
+        Using the HelperMixin
+        ---------------------
+        
+        ``HelperMixin`` can be used with any cache client classes that implement the following methods:
+        
+        - ``def get(self, key)``
+        - ``def set(self, key, value, timeout=None)``
+        - ``def delete(self, key)``
+        - ``def get_many(self, keys)``
+        - ``def set_many(self, mapping, timeout=None)``
+        
+        For example, `RedisCache` from `werkzeug` is one such class:
+        
+        .. code-block:: python
+        
+            from redis import StrictRedis
+            from werkzeug.contrib.cache import RedisCache as _RedisCache
+        
+            from cachelper import HelperMixin
+        
+            class RedisCache(_RedisCache, HelperMixin):
+                '''werkzeug.contrib.cache.RedisCache mixed with HelperMixin'''
+        
+                def get_many(self, keys):
+                    return super().get_many(*keys)
+        
+            rds = StrictRedis()
+            cache = RedisCache(rds)
+        
+        This mixin defines these methods: ``call``, ``map``, ``__call__``.
+        If your class already defines methods of the same name, the mixin methods may not work correctly.
+        
+        
+        cache decorator
+        ---------------
+        
+        Add cache by decorating a function or method.
+        
+        .. code-block:: python
+        
+            @cache("key-{user_id}", timeout=300)
+            def get_name(user_id):
+                # Fetch user name from database
+                ...
+        
+        The cache key template can also be a function which acts as a key factory:
+        
+        .. code-block:: python
+        
+            def name_key(user_id):
+                return "key-%s" % user_id
+        
+            @cache(name_key, timeout=300)
+            def get_name(user_id):
+                # Fetch user name from database
+                ...
+        
+        Just make sure the key factory function accepts the same parameters as the cached
+        function and returns the key.
+        
+        cached function calls
+        ------------------------------
+        
+        Sometimes we don't want to cache all calls to a specific function.
+        So the decorator is not suitable, we may cache the call instead the function in this case:
+        
+        
+        .. code-block:: python
+        
+            def get_name(user_id):
+                # Fetch user name from database
+                ...
+        
+            user_id = 42
+            key = "key-{user_id}".format(user_id=user_id)
+            cache.call(lambda: get_name(user_id), key, timeout=300)
+        
+        cached multiple calls
+        ------------------------------
+        
+        For most cache backends, it's much faster to get or set caches in bulk.
+        
+        .. code-block:: python
+        
+            def get_name(user_id):
+                # Fetch user name from database
+                ...
+        
+            user_ids = [1, 2, 42, 1984]
+            names = cache.map("key-{user_id}", get_name, user_ids, timeout=300)
+        
+Keywords: cache
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
