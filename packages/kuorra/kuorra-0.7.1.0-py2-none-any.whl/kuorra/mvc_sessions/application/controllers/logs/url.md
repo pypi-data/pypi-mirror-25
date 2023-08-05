@@ -1,0 +1,1 @@
+'/logs', 'application.controllers.logs.index.Index',
