@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+import argparse
+import asyncio
+import logging
+import logging.config
+import os.path
+import sys
+import time
+
+import smokesignal
+from syncrypt.app import SyncryptApp
+from syncrypt.config import AppConfig, Config
+from syncrypt.models import Vault
+from syncrypt.utils.daemon import Daemon
+from syncrypt.utils.logging import setup_logging
+
+# Register builtins
+import syncrypt.builtins.sqlite_log
+
+LOGLEVELS = ['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG']
+
+parser = argparse.ArgumentParser(description='Run Syncrypt client')
+parser.add_argument('-d,--detach', action='store_true',
+        dest='detach', help='Detach from console')
+parser.add_argument('-c,--config', action='store', type=str,
+        dest='config', help='Config file')
+parser.add_argument('-l', metavar='LOGLEVEL', type=str, default='INFO',
+        dest='loglevel', choices=LOGLEVELS, help='Log level: ' + ', '.join(LOGLEVELS))
+
+config = parser.parse_args()
+
+app_config = AppConfig(config.config)
+
+# setup logging
+log_dir = os.path.join(app_config.config_dir, 'logs')
+os.makedirs(log_dir, exist_ok=True)
+setup_logging(config.loglevel, logfile=os.path.join(log_dir, 'syncrypt_daemon.log'))
+
+
+def run_syncrypt():
+    app = SyncryptApp(app_config)
+
+    smokesignal.emit('pre_setup', app=app)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(app.start())
+    loop.run_until_complete(app.initialize())
+
+    smokesignal.emit('post_setup', app=app)
+
+    loop.run_until_complete(app.wait_for_shutdown())
+
+    smokesignal.emit('shutdown', app=app)
+
+    return app.restart_flag
+
+
+if config.detach:
+    class SyncryptDaemon(Daemon):
+        def run(self):
+            while run_syncrypt():
+                time.sleep(2)
+    syncryptd = SyncryptDaemon('/tmp/syncrypt.pid')
+    getattr(syncryptd, config.command)()
+else:
+    while run_syncrypt():
+        time.sleep(2)
+

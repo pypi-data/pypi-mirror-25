@@ -1,0 +1,381 @@
+#!/usr/bin/env python
+import argparse
+import logging
+import logging.config
+import os.path
+import sys
+
+import asyncio
+from syncrypt import __project__, __version__
+from syncrypt.app import SyncryptApp
+from syncrypt.app.cli import CLIAuthenticationProvider
+from syncrypt.config import AppConfig
+from syncrypt.models import Vault
+from syncrypt.utils.logging import setup_logging
+
+COPYRIGHT = '''Syncrypt v{version}
+(c) 2016-2017 Syncrypt UG | https://syncrypt.space
+Licensed under the GPLv3 | Source: https://github.com/syncrypt/client'''\
+    .format(version=__version__)
+
+LOGLEVELS = ['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG']
+
+class SyncryptCmd():
+    command = None
+    description = None
+
+    def configure_parser(self, parser):
+        parser.add_argument('-l', metavar='LOGLEVEL', type=str, default='INFO',
+                dest='loglevel', choices=LOGLEVELS,
+                help='log level: ' + ', '.join(LOGLEVELS)+ ' (default: INFO)')
+        parser.add_argument('-c', metavar='CONFIG', type=str, default=None,
+                dest='config', help='work with another config file')
+
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(
+                description=self.description,
+                prog='%s %s' % ('syncrypt', self.command)
+            )
+        self.configure_parser(self.parser)
+        self.config = None
+        self.vault_dirs = []
+
+    def parse(self, args):
+        self.config = self.parser.parse_args(args)
+
+    def setup(self):
+        self.app_config = AppConfig(self.config.config)
+        setup_logging(self.config.loglevel)
+        self.loop = asyncio.get_event_loop()
+        self.app = SyncryptApp(self.app_config,
+                auth_provider=CLIAuthenticationProvider(),
+                vault_dirs=self.vault_dirs)
+        self.loop.run_until_complete(self.app.initialize())
+
+    def shutdown(self):
+        self.loop.run_until_complete(self.app.close())
+        self.loop.close()
+
+    def run(self):
+        raise NotImplementedError()
+
+class SingleVaultCmd(SyncryptCmd):
+    '''command that supports only a single vault directory'''
+
+    def __init__(self):
+        super(SingleVaultCmd, self).__init__()
+        # By default, we operate in the current directory
+        self.vault_dirs = ['.']
+
+    def configure_parser(self, parser):
+        super(SingleVaultCmd, self).configure_parser(parser)
+        parser.add_argument('-d', metavar='DIRECTORY', type=str,
+                default='.', dest='directory', help='directory (default: .)')
+
+    def setup(self):
+        self.vault_dirs = [self.config.directory]
+        super(SingleVaultCmd, self).setup()
+
+class MultipleVaultCmd(SyncryptCmd):
+    '''command that supports multiple vault directories'''
+
+    def __init__(self):
+        super(MultipleVaultCmd, self).__init__()
+        # By default, we operate in the current directory
+        self.vault_dirs = ['.']
+
+    def configure_parser(self, parser):
+        super(MultipleVaultCmd, self).configure_parser(parser)
+        parser.add_argument('-d', metavar='DIRECTORY', type=str,
+                action='append', dest='directory', help='directory (default: .)')
+
+    def setup(self):
+        # For now, each command will work on a default AppConfig object. When
+        # you want app-level configuration, use ``syncrypt_daemon``.
+        if self.config.directory: # not None and not empty
+            self.vault_dirs = self.config.directory
+        super(MultipleVaultCmd, self).setup()
+
+
+class NoVaultCmd(SyncryptCmd):
+    '''command that operates without a vault'''
+    pass
+
+
+class Clone(NoVaultCmd):
+    command = 'clone'
+    description = 'clone a remote vault to a local directory'
+
+    def configure_parser(self, parser):
+        super(Clone, self).configure_parser(parser)
+        parser.add_argument('vault_id', help='vault id or name')
+        parser.add_argument('directory', nargs='?', help='local directory')
+
+    def run(self):
+        try:
+            from uuid import UUID
+            vault_id = str(UUID(self.config.vault_id))
+            vault_name = None
+        except ValueError:
+            vault_id = None
+            vault_name = self.config.vault_id
+
+        if vault_id:
+            vault = self.loop.run_until_complete(self.app.clone(vault_id,
+                    self.config.directory or vault_id))
+        else:
+            vault = self.loop.run_until_complete(self.app.clone_by_name(vault_name,
+                    self.config.directory or vault_name))
+
+        if vault:
+            self.loop.run_until_complete(self.app.pull_vault(vault))
+
+
+class Pull(MultipleVaultCmd):
+    command = 'pull'
+    description = 'pull all files from the latest revision'
+
+    def configure_parser(self, parser):
+        super(Pull, self).configure_parser(parser)
+        parser.add_argument('-f', '--full', action='store_true',
+                help='retrieve complete history instead of changes')
+
+    def run(self):
+        self.loop.run_until_complete(self.app.pull(full=self.config.full))
+
+
+class AddUser(SingleVaultCmd):
+    command = 'add-user'
+    description = 'add another user to this vault'
+
+    def configure_parser(self, parser):
+        super(AddUser, self).configure_parser(parser)
+        parser.add_argument('email', help='the user\'s email')
+
+    def run(self):
+        self.loop.run_until_complete(self.app.add_user(self.config.email))
+
+
+class DeleteVault(MultipleVaultCmd):
+    command = 'delete-vault'
+    description = 'permanently delete this vault from server (use with care)'
+
+    def run(self):
+        self.loop.run_until_complete(self.app.delete_vaults())
+
+class UploadVaultKey(SingleVaultCmd):
+    command = 'upload-vault-key'
+    description = 'upload the vault key encrypted with my user key'
+
+    def run(self):
+        self.loop.run_until_complete(self.app.upload_vault_key())
+
+class Vaults(NoVaultCmd):
+    command = 'vaults'
+    description = 'list vaults'
+
+    def configure_parser(self, parser):
+        super(Vaults, self).configure_parser(parser)
+        parser.add_argument('-a', '--all', dest='all', action='store_true',
+                help='also list vaults without key')
+
+    def run(self):
+        if self.config.all:
+            self.loop.run_until_complete(self.app.list_all_vaults())
+        else:
+            self.loop.run_until_complete(self.app.list_vaults())
+
+class Keys(NoVaultCmd):
+    command = 'keys'
+    description = 'list keys'
+
+    def configure_parser(self, parser):
+        super(Keys, self).configure_parser(parser)
+        parser.add_argument('-u', '--user', action='store', dest='user',
+                help='user email to list keys for')
+        parser.add_argument('--upload', action='store_true',
+                help='upload your public keys to the server')
+        parser.add_argument('--art', action='store_true', dest='art',
+                help='show ascii art for each key')
+
+    def run(self):
+        if self.config.upload:
+            self.loop.run_until_complete(self.app.upload_identity())
+        else:
+            self.loop.run_until_complete(
+                    self.app.list_keys(self.config.user, with_art=self.config.art)
+                )
+
+class Push(MultipleVaultCmd):
+    command = 'push'
+    description = 'push local changes to the server'
+
+    def configure_parser(self, parser):
+        super(Push, self).configure_parser(parser)
+
+    def run(self):
+        self.loop.run_until_complete(self.app.push())
+
+
+class Watch(MultipleVaultCmd):
+    command = 'watch'
+    description = 'watch directory for changes'
+
+    def run(self):
+        self.loop.run_until_complete(self.app.start())
+        self.loop.run_forever()
+
+
+class Init(SingleVaultCmd):
+    command = 'init'
+    description = 'register the directory as a Syncrypt vault'
+
+    def configure_parser(self, parser):
+        super(Init, self).configure_parser(parser)
+        parser.add_argument('--host', help='remote host (default: storage.syncrypt.space)')
+        parser.add_argument('-k', '--upload-vault-key', action='store_true',
+                dest='upload_vault_key', help='upload encrypted vault key')
+
+    def run(self):
+        self.loop.run_until_complete(self.app.init(host=self.config.host,
+            upload_vault_key=self.config.upload_vault_key))
+
+
+class Info(MultipleVaultCmd):
+    command = 'info'
+    description = 'show vault information'
+
+    def run(self):
+        self.loop.run_until_complete(self.app.info())
+
+
+class ConfigSet(SingleVaultCmd):
+    command = 'set'
+    description = 'set a vault config parameter'
+
+    def configure_parser(self, parser):
+        super(ConfigSet, self).configure_parser(parser)
+        parser.add_argument('setting', help='the thing to set')
+        parser.add_argument('value', help='the value to set it to')
+
+    def run(self):
+        self.loop.run_until_complete(
+            self.app.set(self.config.setting, self.config.value)
+        )
+
+
+class ConfigUnset(SingleVaultCmd):
+    command = 'unset'
+    description = 'unset a vault config parameter'
+
+    def configure_parser(self, parser):
+        super(ConfigUnset, self).configure_parser(parser)
+        parser.add_argument('setting', help='the thing to unset')
+
+    def run(self):
+        self.loop.run_until_complete(self.app.unset(self.config.setting))
+
+
+class Log(MultipleVaultCmd):
+    command = 'log'
+    description = 'show recent changes (file uploads, deletions, etc)'
+
+    def configure_parser(self, parser):
+        super(Log, self).configure_parser(parser)
+        parser.add_argument('-v', '--verbose', action='store_true',
+                help='print more information')
+
+    def run(self):
+        self.loop.run_until_complete(self.app.print_log(self.config.verbose))
+
+
+class Login(NoVaultCmd):
+    command = 'login'
+    description = 'login to server and store auth token'
+
+    def run(self):
+        self.loop.run_until_complete(self.app.login())
+
+
+class Export(SingleVaultCmd):
+    command = 'export'
+    description = 'export vault config and keys to backup or share'
+
+    def configure_parser(self, parser):
+        super(Export, self).configure_parser(parser)
+        parser.add_argument('-o', '--output', dest='filename', help='export filename')
+
+    def run(self):
+        self.loop.run_until_complete(self.app.export_package(self.config.filename))
+
+
+class Import(SingleVaultCmd):
+    command = 'import'
+    description = 'import vault package that has previously been exported'
+
+    def configure_parser(self, parser):
+        super(Import, self).configure_parser(parser)
+        parser.add_argument(dest='filename', help='filename of the package')
+        parser.add_argument(dest='target', help='vault folder to create')
+
+    def run(self):
+        self.loop.run_until_complete(
+                self.app.import_package(
+                    self.config.filename,
+                    self.config.target))
+
+
+class CheckUpdate(NoVaultCmd):
+    command = 'check-update'
+    description = 'compare the installed version to the latest one'
+
+    def run(self):
+        self.loop.run_until_complete(self.app.check_update())
+
+
+COMMANDS = [Login(), CheckUpdate(), Init(), Vaults(), Clone(), Pull(), Push(),
+        Watch(), AddUser(), UploadVaultKey(), DeleteVault(), Info(), Log(),
+        ConfigSet(), ConfigUnset(), Export(), Import(), Keys()]
+COMMAND_NAMES = [c.command for c in COMMANDS]
+
+global_parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    usage='''syncrypt <command> [<args>]
+
+''' + COPYRIGHT  + '''
+
+available commands:
+''' + '\n'.join([
+    '  {0.command:11s} {0.description}'.format(c) for c in COMMANDS
+    ]))
+
+global_parser.add_argument('command', help='Subcommand to run', choices=COMMAND_NAMES, nargs='?')
+global_parser.add_argument('-v', '--version', action='store_true', help='Show version information')
+
+if __name__ == '__main__':
+    # setlocale() is called here so that strftime will use the correct user
+    # locale when formatting datetime objects.
+    import locale
+    locale.setlocale(locale.LC_TIME, '')
+
+    try:
+        # Use uvloop if available (currently only on *nix and py 3.5)
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    except ImportError:
+        pass
+
+    args = global_parser.parse_args(sys.argv[1:2])
+
+    if args.version:
+        print(COPYRIGHT)
+    elif args.command:
+        for c in COMMANDS:
+            if c.command == args.command:
+                c.parse(sys.argv[2:])
+                c.setup()
+                c.run()
+                c.shutdown()
+    else:
+        global_parser.print_help()
+
