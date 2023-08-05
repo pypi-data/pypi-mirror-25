@@ -1,0 +1,179 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Subscribing &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Deploying fedmsg" href="deployment.html" />
+    <link rel="prev" title="Publishing" href="publishing.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="subscribing">
+<h1>Subscribing<a class="headerlink" href="#subscribing" title="Permalink to this headline">¶</a></h1>
+<p>There are two approaches to subscribing to messages that have been published.</p>
+<div class="section" id="the-generator-approach">
+<h2>The Generator Approach<a class="headerlink" href="#the-generator-approach" title="Permalink to this headline">¶</a></h2>
+<p>The first approach is to use the <a class="reference internal" href="api.html#fedmsg.tail_messages" title="fedmsg.tail_messages"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.tail_messages()</span></code></a> API. This returns
+a generator that yields messages as they arrive:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fedmsg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">tail_messages</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span> <span class="n">topic</span><span class="p">,</span> <span class="n">msg</span>
+</pre></div>
+</div>
+<p>For this to print anything, you need to be <a class="reference internal" href="publishing.html"><span class="doc">Publishing</span></a> messages.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This approach only works with messages published via ZeroMQ. If you
+are <a class="reference internal" href="publishing.html#publishing-sans-zmq"><span class="std std-ref">Publishing Without ZeroMQ</span></a> then you will need to use
+<a class="reference internal" href="#consumer-approach"><span class="std std-ref">The Consumer Approach</span></a>.</p>
+</div>
+</div>
+<div class="section" id="the-consumer-approach">
+<span id="consumer-approach"></span><h2>The Consumer Approach<a class="headerlink" href="#the-consumer-approach" title="Permalink to this headline">¶</a></h2>
+<p>This approach requires a bit more work, but provides several advantages. Namely, it
+manages workers for you and supports replaying missed messages via a network service.</p>
+<p>The first step is to write a class which extends <a class="reference internal" href="api.html#fedmsg.consumers.FedmsgConsumer" title="fedmsg.consumers.FedmsgConsumer"><code class="xref py py-class docutils literal"><span class="pre">fedmsg.consumers.FedmsgConsumer</span></code></a>.
+The class documentation covers the details of implementing a consumer.</p>
+<p>After you have implemented your consumer class and registered it under the
+<code class="docutils literal"><span class="pre">moksha.consumer</span></code> Python entry-point, you need to start the <a class="reference internal" href="commands.html#command-hub"><span class="std std-ref">fedmsg-hub</span></a> service,
+which will create your class in one or more worker threads and pass messages to these
+workers as they arrive.</p>
+<p>To see a working example of this pattern, investigate the <code class="xref py py-mod docutils literal"><span class="pre">fedmsg.consumers.relay</span></code>
+module.</p>
+<div class="section" id="consuming-non-zeromq-messages">
+<h3>Consuming Non-ZeroMQ Messages<a class="headerlink" href="#consuming-non-zeromq-messages" title="Permalink to this headline">¶</a></h3>
+<p>In order to consume messages with STOMP, you will need to set the <a class="reference internal" href="configuration.html#conf-stomp"><span class="std std-ref">STOMP Configuration</span></a>
+options.</p>
+</div>
+</div>
+<div class="section" id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Permalink to this headline">¶</a></h2>
+<p>When using fedmsg, messages will be lost. Your applications and services should
+be prepared to receive duplicate messages. Always provide a way for the application
+or service to recover gracefully for a lost or duplicate message.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publishing.html">Publishing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Subscribing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-generator-approach">The Generator Approach</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-consumer-approach">The Consumer Approach</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="publishing.html" title="previous chapter">Publishing</a></li>
+      <li>Next: <a href="deployment.html" title="next chapter">Deploying fedmsg</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/subscribing.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

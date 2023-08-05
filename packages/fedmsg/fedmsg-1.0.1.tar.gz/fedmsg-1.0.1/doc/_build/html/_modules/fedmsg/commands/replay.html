@@ -1,0 +1,220 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg.commands.replay &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg.commands.replay</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 - 2014 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">fedmsg</span>
+<span class="kn">from</span> <span class="nn">fedmsg.commands</span> <span class="k">import</span> <span class="n">BaseCommand</span>
+
+
+<span class="k">class</span> <span class="nc">ReplayCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Replay a message from the datagrepper history on your local bus.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        $ fedmsg-dg-replay --msg-id 2014-8909e1e9-2a46-4e53-9a0e-f5415a9bedcf</span>
+
+<span class="sd">    This depends on there being a datagrepper instance available to query.  The</span>
+<span class="sd">    default is to query the Fedora Project history at</span>
+<span class="sd">    https://apps.fedoraproject.org/datagrepper</span>
+
+<span class="sd">    This also requires that the local configuration be pointed at a</span>
+<span class="sd">    ``fedmsg-relay`` instance.</span>
+
+<span class="sd">    The message is stripped of its original credentials.  Local credentials are</span>
+<span class="sd">    applied if :ref:`conf-sign_messages` is set to ``True``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;fedmsg-dg-replay&quot;</span>
+    <span class="n">extra_args</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">([</span><span class="s1">&#39;--msg-id&#39;</span><span class="p">],</span> <span class="p">{</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;msg_id&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="s1">&#39;The msg_id of the message you want to replay.&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}),</span>
+        <span class="p">([</span><span class="s1">&#39;--datagrepper-url&#39;</span><span class="p">],</span> <span class="p">{</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;datagrepper_url&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="s1">&#39;The URL of a datagrepper instance to query for history.&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="s1">&#39;https://apps.fedoraproject.org/datagrepper&#39;</span><span class="p">,</span>
+        <span class="p">}),</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;active&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;relay_inbound&#39;</span>
+        <span class="n">fedmsg</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;msg_id&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">idx</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--msg-id is required&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Retrieving </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;datagrepper_url&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/id&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">idx</span><span class="p">})</span>
+
+        <span class="n">code</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span>
+        <span class="k">if</span> <span class="n">code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;datagrepper request of </span><span class="si">%r</span><span class="s2"> failed. Status: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">code</span><span class="p">))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="n">modname</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">topic</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Broadcasting </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">fedmsg</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">modname</span><span class="o">=</span><span class="n">modname</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="n">topic</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;OK.&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="replay"><a class="viewcode-back" href="../../../commands.html#fedmsg.commands.replay.replay">[docs]</a><span class="k">def</span> <span class="nf">replay</span><span class="p">():</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">ReplayCommand</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">command</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../fedmsg.html">fedmsg</a><ul>
+  <li><a href="../commands.html">fedmsg.commands</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

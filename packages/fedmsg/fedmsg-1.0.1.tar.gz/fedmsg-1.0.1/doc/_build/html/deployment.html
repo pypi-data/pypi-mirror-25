@@ -1,0 +1,391 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Deploying fedmsg &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="Subscribing" href="subscribing.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="deploying-fedmsg">
+<h1>Deploying fedmsg<a class="headerlink" href="#deploying-fedmsg" title="Permalink to this headline">¶</a></h1>
+<p>Elsewhere, the emphasis in fedmsg docs is on how to subscribe to an existing fedmsg
+deployment; how do I listen for koji builds from Fedora Infrastructure?  This
+document, on the other hand, is directed at those who want to deploy fedmsg for
+their own systems.</p>
+<p>This document also only goes as far as setting things up for a single machine.
+You typically deploy fedmsg across an <em>infrastructure</em> but if you just want to
+try it out for “proof-of-concept”, these are the docs for you.</p>
+<p>Lastly, the emphasis here is on the practical – there will be lots of
+examples.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Caveat:  fedmsg is deployed at a couple different sites:</p>
+<ul class="simple">
+<li>Fedora Infrastructure</li>
+<li><a class="reference external" href="http://data.gouv.fr">data.gouv.fr</a></li>
+<li>to some extent, Debian Infrastructure</li>
+</ul>
+<p class="last">We wrote this document much later afterwards, so, if you come across errors,
+or things that don’t work right.  Please <a class="reference external" href="https://github.com/fedora-infra/fedmsg/issues/new">report it</a>.</p>
+</div>
+<div class="section" id="the-basics">
+<h2>The basics<a class="headerlink" href="#the-basics" title="Permalink to this headline">¶</a></h2>
+<p>First install fedmsg:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo dnf install fedmsg
+</pre></div>
+</div>
+<p>Now you have some <code class="docutils literal"><span class="pre">fedmsg-*</span></code> cli tools like <code class="docutils literal"><span class="pre">fedmsg-tail</span></code> and
+<code class="docutils literal"><span class="pre">fedmsg-logger</span></code>.</p>
+<p>On Fedora systems, fedmsg is configured by default to subscribe to Fedora
+Infrastructure’s bus.  Since you are deploying for your own site, you don’t
+want that.  So edit <code class="docutils literal"><span class="pre">/etc/fedmsg.d/endpoints.py</span></code> and <em>comment out the whole
+“fedora-infrastructure” section</em>, like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1">#&quot;fedora-infrastructure&quot;: [</span>
+<span class="c1">#    &quot;tcp://hub.fedoraproject.org:9940&quot;,</span>
+<span class="c1">#    #&quot;tcp://stg.fedoraproject.org:9940&quot;,</span>
+<span class="c1">#],</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="starting-fedmsg-relay">
+<h2>Starting fedmsg-relay<a class="headerlink" href="#starting-fedmsg-relay" title="Permalink to this headline">¶</a></h2>
+<p>Not all fedmsg interactions require the relay, but publishing messages from a
+terminal does.</p>
+<p>Install fedmsg-relay and start it:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo dnf install fedmsg-relay
+$ sudo systemctl restart fedmsg-relay
+$ sudo systemctl enable fedmsg-relay
+</pre></div>
+</div>
+<p>It has a pid file in <code class="docutils literal"><span class="pre">/var/run/fedmsg/fedmsg-relay.pid</span></code> and you can view the
+logs in <code class="docutils literal"><span class="pre">journalctl</span> <span class="pre">--follow</span></code>.  On other systems you can find the logs in
+<code class="docutils literal"><span class="pre">/var/log/fedmsg/fedmsg-relay.log</span></code>.</p>
+<p>Out of the box, it should be listening for incoming messages on
+<code class="docutils literal"><span class="pre">tcp://127.0.0.1:2003</span></code> and re-publishing them indiscriminately at
+<code class="docutils literal"><span class="pre">tcp://127.0.0.1:4001</span></code>.  It is fine to keep these defaults.</p>
+</div>
+<div class="section" id="test-it-out">
+<h2>Test it out<a class="headerlink" href="#test-it-out" title="Permalink to this headline">¶</a></h2>
+<p>Try a test!  Open two terminals:</p>
+<ul class="simple">
+<li>In the first, type <code class="docutils literal"><span class="pre">fedmsg-tail</span> <span class="pre">--really-pretty</span></code></li>
+<li>In the second, type <code class="docutils literal"><span class="pre">echo</span> <span class="pre">&quot;Hello</span> <span class="pre">world&quot;</span> <span class="pre">|</span> <span class="pre">fedmsg-logger</span></code></li>
+</ul>
+<p>You should see the JSON representation of your message show up in the first
+terminal.  It should look something like this.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;username&quot;</span><span class="o">:</span> <span class="s2">&quot;root&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;i&quot;</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="s2">&quot;timestamp&quot;</span><span class="o">:</span> <span class="mi">1393878837</span><span class="p">,</span>
+  <span class="s2">&quot;msg_id&quot;</span><span class="o">:</span> <span class="s2">&quot;2014-f1c49f0b-5caf-49e6-b79a-cc54bcfac602&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;topic&quot;</span><span class="o">:</span> <span class="s2">&quot;org.fedoraproject.dev.logger.log&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;msg&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;log&quot;</span><span class="o">:</span> <span class="s2">&quot;Hello world&quot;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These are two handy tools for debugging the configuration of your
+bus.</p>
+</div>
+<div class="section" id="branching-out-to-two-machines">
+<h2>Branching out to two machines<a class="headerlink" href="#branching-out-to-two-machines" title="Permalink to this headline">¶</a></h2>
+<p>Everything is tied together in fedmsg by the <a class="reference internal" href="configuration.html#conf-endpoints"><span class="std std-ref">endpoints</span></a> dict.  It lets</p>
+<ul class="simple">
+<li>A publishing service know what port it should be publishing on.</li>
+<li>A consuming service know where the publisher is so it can connect there.</li>
+</ul>
+<p>Let’s say you have two machines <code class="docutils literal"><span class="pre">hostA</span></code> and <code class="docutils literal"><span class="pre">hostB</span></code>.  If you installed that
+fedmsg-relay on <code class="docutils literal"><span class="pre">hostA</span></code> as discussed above, then the config file in
+<code class="docutils literal"><span class="pre">/etc/fedmsg.d/relay.py</span></code> is going to have values like
+<code class="docutils literal"><span class="pre">tcp://127.0.0.1:4001</span></code>.  That address will only work for local connectivity.
+Try changing <em>all</em> occurences of <code class="docutils literal"><span class="pre">127.0.0.1</span></code> in that file to <code class="docutils literal"><span class="pre">hostA</span></code> so
+that it looks something like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">endpoints</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;relay_outbound&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;tcp://hostA:4001&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">},</span>
+    <span class="n">relay_inbound</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">&quot;tcp://hostA:2003&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>To confirm that something’s not immediately broken, you can go through the
+tests of doing <code class="docutils literal"><span class="pre">fedmsg-logger</span></code> and <code class="docutils literal"><span class="pre">fedmsg-tail</span></code> on <code class="docutils literal"><span class="pre">hostA</span></code> again (all
+“local”).</p>
+<p>Copy that relay.py file over to <code class="docutils literal"><span class="pre">hostB</span></code> with <code class="docutils literal"><span class="pre">scp</span> <span class="pre">/etc/fedmsg.d/relay.py</span>
+<span class="pre">hostB:/etc/fedmsg.d/relay.py</span></code></p>
+<p>You should now be able to run <code class="docutils literal"><span class="pre">fedmsg-tail</span></code> on <code class="docutils literal"><span class="pre">hostA</span></code> and have it receive
+a message from <code class="docutils literal"><span class="pre">fedmsg-logger</span></code> on <code class="docutils literal"><span class="pre">hostB</span></code> and vice versa have a
+<code class="docutils literal"><span class="pre">fedmsg-tail</span></code> session on <code class="docutils literal"><span class="pre">hostB</span></code> receive a <code class="docutils literal"><span class="pre">fedmsg-logger</span></code> statement from
+<code class="docutils literal"><span class="pre">hostA</span></code>.</p>
+<p>The key here is that fedmsg works by having a <strong>shared configuration</strong> that is
+distributed to all machines.  <code class="docutils literal"><span class="pre">hostA</span></code> only knows where to publish by reading in
+the config and <code class="docutils literal"><span class="pre">hostB</span></code> only knows where to consume by reading in the config.  If
+the configs are not the same, then there’s going to be a mis-match and your
+messages won’t arrive… anywhere.</p>
+<p>It’s a far leap ahead, but you’re welcome to browse the <a class="reference external" href="https://infrastructure.fedoraproject.org/cgit/ansible.git/tree/roles/fedmsg/base">configuration we’re
+using in production for Fedora Infrastructure</a>.</p>
+</div>
+<div class="section" id="store-all-messages">
+<h2>Store all messages<a class="headerlink" href="#store-all-messages" title="Permalink to this headline">¶</a></h2>
+<p>And now for a different topic.</p>
+<p>We use a tool called <a class="reference external" href="https://github.com/fedora-infra/datanommer">datanommer</a>
+to store all the messages that come across the bus in a postgres database.
+Using whatever relational database you like should be possible just by
+modifying the config.</p>
+<div class="section" id="setting-up-postgres">
+<h3>Setting up postgres<a class="headerlink" href="#setting-up-postgres" title="Permalink to this headline">¶</a></h3>
+<p>Here, set up a postgres database:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo dnf install postgresql-server python-psycopg2
+$ postgresql-setup initdb
+</pre></div>
+</div>
+<p>Edit the <code class="docutils literal"><span class="pre">/var/lib/pgsql/data/pg_hba.conf</span></code> as the user postgres. You might
+find a line like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">host</span> <span class="nb">all</span> <span class="nb">all</span> <span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="o">/</span><span class="mi">32</span> <span class="n">ident</span> <span class="n">sameuser</span>
+<span class="n">host</span> <span class="nb">all</span> <span class="nb">all</span> <span class="p">::</span><span class="mi">1</span><span class="o">/</span><span class="mi">128</span> <span class="n">ident</span> <span class="n">sameuser</span>
+</pre></div>
+</div>
+<p>Instead of that line, change it to this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">host</span> <span class="nb">all</span> <span class="nb">all</span> <span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="o">/</span><span class="mi">32</span> <span class="n">trust</span>
+<span class="n">host</span> <span class="nb">all</span> <span class="nb">all</span> <span class="p">::</span><span class="mi">1</span><span class="o">/</span><span class="mi">128</span> <span class="n">trust</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Using <code class="docutils literal"><span class="pre">trust</span></code> is super unsafe long term.  That means that anyone
+with any password will be able to connect locally.  That’s fine for our
+little one-box test here, but you’ll want to use md5 or kerberos or
+something long term.</p>
+</div>
+<p>Start up postgres:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ systemctl start postgresql
+$ systemctl enable postgresql
+</pre></div>
+</div>
+<p>Create a database user and the db itself for datanommer and friends:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo -u postgres createuser -SDRPE datanommer
+$ sudo -u postgres createdb -E utf8 datanommer -O datanommer
+</pre></div>
+</div>
+</div>
+<div class="section" id="setting-up-datanommer">
+<h3>Setting up datanommer<a class="headerlink" href="#setting-up-datanommer" title="Permalink to this headline">¶</a></h3>
+<p>Install it:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo dnf install fedmsg-hub python-datanommer-consumer datanommer-commands
+</pre></div>
+</div>
+<p>Edit the configuration to 1) be enabled, 2) point at your newly created
+postgres db.  Edit <code class="docutils literal"><span class="pre">/etc/fedmsg.d/datanommer.py</span></code> and change the whole thing
+to look like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;datanommer.enabled&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">&#39;datanommer.sqlalchemy.url&#39;</span><span class="p">:</span> <span class="s1">&#39;postgresql://datanommer:password@localhost/datanommer&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Run the following command from the <code class="docutils literal"><span class="pre">datanommer-commands</span></code> package to set up
+the tables.  It will read in that connection url from
+<code class="docutils literal"><span class="pre">/etc/fedmsg.d/datanommer.py</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ datanommer-create-db
+</pre></div>
+</div>
+<p>Start the <code class="docutils literal"><span class="pre">fedmsg-hub</span></code> daemon, which will pick up the datanommer plugin,
+which will in turn read in that connection string, start listening for
+messages, and store them all in the db.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo systemctl start fedmsg-hub
+$ sudo systemctl enable fedmsg-hub
+</pre></div>
+</div>
+<p>You can check <code class="docutils literal"><span class="pre">journalctl</span> <span class="pre">--follow</span></code> for logs.</p>
+<p>Try testing again with <code class="docutils literal"><span class="pre">fedmsg-logger</span></code>.  After publishing a message, you
+should see it in the datanommer stats if you run <code class="docutils literal"><span class="pre">datanommer-stats</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ datanommer-stats
+[2014-03-03 20:34:43][    fedmsg    INFO] logger has 2 entries
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="querying-datanommer-with-datagrepper">
+<h2>Querying datanommer with datagrepper<a class="headerlink" href="#querying-datanommer-with-datagrepper" title="Permalink to this headline">¶</a></h2>
+<p>You can, of course, query datanommer with SQL yourself (and there’s a python
+API for directly querying in the <code class="docutils literal"><span class="pre">datanommer.models</span></code> module).  For the rest
+here is the HTTP API we have called “datagrepper”.  Let’s set it up:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo dnf install datagrepper mod_wsgi
+</pre></div>
+</div>
+<p>Add a config file for it in <code class="docutils literal"><span class="pre">/etc/httpd/conf.d/datagrepper.conf</span></code> with these contents:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">LoadModule</span> <span class="n">wsgi_module</span> <span class="n">modules</span><span class="o">/</span><span class="n">mod_wsgi</span><span class="o">.</span><span class="n">so</span>
+
+<span class="c1"># Static resources for the datagrepper app.</span>
+<span class="n">Alias</span> <span class="o">/</span><span class="n">datagrepper</span><span class="o">/</span><span class="n">css</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python2</span><span class="o">.</span><span class="mi">7</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">datagrepper</span><span class="o">/</span><span class="n">static</span><span class="o">/</span><span class="n">css</span>
+
+<span class="n">WSGIDaemonProcess</span> <span class="n">datagrepper</span> <span class="n">user</span><span class="o">=</span><span class="n">fedmsg</span> <span class="n">group</span><span class="o">=</span><span class="n">fedmsg</span> <span class="n">maximum</span><span class="o">-</span><span class="n">requests</span><span class="o">=</span><span class="mi">50000</span> <span class="n">display</span><span class="o">-</span><span class="n">name</span><span class="o">=</span><span class="n">datagrepper</span> <span class="n">processes</span><span class="o">=</span><span class="mi">8</span> <span class="n">threads</span><span class="o">=</span><span class="mi">4</span> <span class="n">inactivity</span><span class="o">-</span><span class="n">timeout</span><span class="o">=</span><span class="mi">300</span>
+<span class="n">WSGISocketPrefix</span> <span class="n">run</span><span class="o">/</span><span class="n">wsgi</span>
+<span class="n">WSGIRestrictStdout</span> <span class="n">Off</span>
+<span class="n">WSGIRestrictSignal</span> <span class="n">Off</span>
+<span class="n">WSGIPythonOptimize</span> <span class="mi">1</span>
+
+<span class="n">WSGIScriptAlias</span> <span class="o">/</span><span class="n">datagrepper</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">datagrepper</span><span class="o">/</span><span class="n">apache</span><span class="o">/</span><span class="n">datagrepper</span><span class="o">.</span><span class="n">wsgi</span>
+
+<span class="o">&lt;</span><span class="n">Directory</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">datagrepper</span><span class="o">/&gt;</span>
+  <span class="n">WSGIProcessGroup</span> <span class="n">datagrepper</span>
+  <span class="c1"># XXX - The syntax for this is different for different versions of apache</span>
+  <span class="n">Require</span> <span class="nb">all</span> <span class="n">granted</span>
+<span class="o">&lt;/</span><span class="n">Directory</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Finally, start up httpd with:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo systemctl restart httpd
+$ sudo systemctl enable httpd
+</pre></div>
+</div>
+<p>And it should just work.  Open a web browser and try to visit
+<code class="docutils literal"><span class="pre">http://localhost/datagrepper/</span></code>.</p>
+<p>The whole point of datagrepper is its API, which you might experiment with
+using the httpie tool:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ sudo dnf install httpie
+$ http get http://localhost/datagrepper/raw/ order==desc
+</pre></div>
+</div>
+</div>
+<div class="section" id="outro">
+<h2>Outro<a class="headerlink" href="#outro" title="Permalink to this headline">¶</a></h2>
+<p>This document is a work in progress.  Future topics may include selinux and <a class="reference internal" href="api.html#api-crypto"><span class="std std-ref">Cryptography and Message Signing</span></a>.</p>
+<p>Let us know what you’d like to know if it is missing.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="subscribing.html">Subscribing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deploying fedmsg</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-basics">The basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#starting-fedmsg-relay">Starting fedmsg-relay</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#test-it-out">Test it out</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#branching-out-to-two-machines">Branching out to two machines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#store-all-messages">Store all messages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#querying-datanommer-with-datagrepper">Querying datanommer with datagrepper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#outro">Outro</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="subscribing.html" title="previous chapter">Subscribing</a></li>
+      <li>Next: <a href="changelog.html" title="next chapter">Changelog</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/deployment.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

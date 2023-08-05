@@ -1,0 +1,521 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg.meta.base &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg.meta.base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 - 2014 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="c1">#           Luke Macken &lt;lmacken@redhat.com&gt;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">six</span>
+
+
+<div class="viewcode-block" id="add_metaclass"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.add_metaclass">[docs]</a><span class="k">def</span> <span class="nf">add_metaclass</span><span class="p">(</span><span class="n">metaclass</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compat shim for el7. &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">six</span><span class="p">,</span> <span class="s1">&#39;add_metaclass&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">six</span><span class="o">.</span><span class="n">add_metaclass</span><span class="p">(</span><span class="n">metaclass</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Do nothing.  It&#39;s not worth it.</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">klass</span><span class="p">:</span> <span class="n">klass</span></div>
+
+
+<div class="viewcode-block" id="BaseProcessor"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor">[docs]</a><span class="k">class</span> <span class="nc">BaseProcessor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Base Processor.  Without being extended, this doesn&#39;t actually handle</span>
+<span class="sd">    any messages.</span>
+
+<span class="sd">    Processors require that an ``internationalization_callable`` be passed to</span>
+<span class="sd">    them at instantiation.  Internationalization is often done at import time,</span>
+<span class="sd">    but we handle it at runtime so that a single process may translate fedmsg</span>
+<span class="sd">    messages into multiple languages.  Think: an IRC bot that runs</span>
+<span class="sd">    #fedora-fedmsg, #fedora-fedmsg-es, #fedora-fedmsg-it.  Or: a twitter bot</span>
+<span class="sd">    that posts to multiple language-specific accounts.</span>
+
+<span class="sd">    That feature is currently unused, but fedmsg.meta supports future</span>
+<span class="sd">    internationalization (there may be bugs to work out).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># These six properties must be overridden by child-classes.</span>
+    <span class="c1"># They can be used by applications to give more context to messages.  If</span>
+    <span class="c1"># the BodhiProcessor can handle a message, then our caller&#39;s code can use</span>
+    <span class="c1"># these attributes to say &quot;btw, this message is from Bodhi, the Fedora</span>
+    <span class="c1"># update system.  It lives at https://admin.fedoraproject.org/updates/</span>
+    <span class="c1"># and you can read more about it at https://fedoraproject.org/wiki/Bodhi&quot;</span>
+    <span class="vm">__name__</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__description__</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__link__</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__docs__</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__obj__</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__icon__</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># An automatically generated regex to match messages for this processor</span>
+    <span class="n">__prefix__</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">conglomerators</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">topic_prefix_re</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">internationalization_callable</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_</span> <span class="o">=</span> <span class="n">internationalization_callable</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must declare a __name__&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__description__</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must declare a __description__&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__link__</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must declare a __link__&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__docs__</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must declare a __docs__&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__obj__</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must declare a __obj__&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Build a regular expression used to match message topics for us</span>
+        <span class="c1"># A subclass may hardcode what topic prefix they are expecting (the</span>
+        <span class="c1"># fedora plugin hardcodes fedora and the debian hardcodes debian).  For</span>
+        <span class="c1"># backwards-compatibility reasons, if the subclassing plugin does not</span>
+        <span class="c1"># hardcode a topic_prefix, then the global one is taken from config.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">topic_prefix_re</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topic_prefix_re</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;topic_prefix_re&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__prefix__</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;^</span><span class="si">%s</span><span class="s1">\.(</span><span class="si">%s</span><span class="s1">)(\.(.*))?$&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topic_prefix_re</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conglomerators</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conglomerators</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conglomerator_objects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">conglomerator_class</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conglomerators</span><span class="p">):</span>
+            <span class="n">conglomerator</span> <span class="o">=</span> <span class="n">conglomerator_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conglomerator_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conglomerator</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseProcessor.conglomerate"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.conglomerate">[docs]</a>    <span class="k">def</span> <span class="nf">conglomerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Given N messages, return another list that has some of them</span>
+<span class="sd">        grouped together into a common &#39;item&#39;.</span>
+
+<span class="sd">        A conglomeration of messages should be of the following form::</span>
+
+<span class="sd">          {</span>
+<span class="sd">            &#39;subtitle&#39;: &#39;relrod pushed commits to ghc and 487 other packages&#39;,</span>
+<span class="sd">            &#39;link&#39;: None,  # This could be something.</span>
+<span class="sd">            &#39;icon&#39;: &#39;https://that-git-logo&#39;,</span>
+<span class="sd">            &#39;secondary_icon&#39;: &#39;https://that-relrod-avatar&#39;,</span>
+<span class="sd">            &#39;start_time&#39;: some_timestamp,</span>
+<span class="sd">            &#39;end_time&#39;: some_other_timestamp,</span>
+<span class="sd">            &#39;human_time&#39;: &#39;5 minutes ago&#39;,</span>
+<span class="sd">            &#39;usernames&#39;: [&#39;relrod&#39;],</span>
+<span class="sd">            &#39;packages&#39;: [&#39;ghc&#39;, &#39;nethack&#39;, ... ],</span>
+<span class="sd">            &#39;topics&#39;: [&#39;org.fedoraproject.prod.git.receive&#39;],</span>
+<span class="sd">            &#39;categories&#39;: [&#39;git&#39;],</span>
+<span class="sd">            &#39;msg_ids&#39;: {</span>
+<span class="sd">                &#39;2014-abcde&#39;: {</span>
+<span class="sd">                    &#39;subtitle&#39;: &#39;relrod pushed some commits to ghc&#39;,</span>
+<span class="sd">                    &#39;title&#39;: &#39;git.receive&#39;,</span>
+<span class="sd">                    &#39;link&#39;: &#39;http://...&#39;,</span>
+<span class="sd">                    &#39;icon&#39;: &#39;http://...&#39;,</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;2014-bcdef&#39;: {</span>
+<span class="sd">                    &#39;subtitle&#39;: &#39;relrod pushed some commits to nethack&#39;,</span>
+<span class="sd">                    &#39;title&#39;: &#39;git.receive&#39;,</span>
+<span class="sd">                    &#39;link&#39;: &#39;http://...&#39;,</span>
+<span class="sd">                    &#39;icon&#39;: &#39;http://...&#39;,</span>
+<span class="sd">                },</span>
+<span class="sd">            },</span>
+<span class="sd">          }</span>
+
+<span class="sd">        The telltale sign that an entry in a list of messages represents a</span>
+<span class="sd">        conglomerate message is the presence of the plural ``msg_ids`` field.</span>
+<span class="sd">        In contrast, ungrouped singular messages should bear a singular</span>
+<span class="sd">        ``msg_id`` field.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">conglomerator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conglomerator_objects</span><span class="p">:</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="n">conglomerator</span><span class="o">.</span><span class="n">conglomerate</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">messages</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.handle_msg"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.handle_msg">[docs]</a>    <span class="k">def</span> <span class="nf">handle_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If we can handle the given message, return the remainder of the topic.</span>
+
+<span class="sd">        Returns None if we can&#39;t handle the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__prefix__</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.title"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.title">[docs]</a>    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;/topic/&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">3</span><span class="p">:])</span>
+        <span class="k">return</span> <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.subtitle"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.subtitle">[docs]</a>    <span class="k">def</span> <span class="nf">subtitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a &quot;subtitle&quot; for the message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.subjective"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.subjective">[docs]</a>    <span class="k">def</span> <span class="nf">subjective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a &quot;subjective&quot; subtitle for the message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.long_form"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.long_form">[docs]</a>    <span class="k">def</span> <span class="nf">long_form</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return some paragraphs of text about a message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.lexer"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.lexer">[docs]</a>    <span class="k">def</span> <span class="nf">lexer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a pygments lexer that can be applied to the long_form.</span>
+
+<span class="sd">        Returns None if no lexer is associated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.link"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.link">[docs]</a>    <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a &quot;link&quot; for the message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.icon"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.icon">[docs]</a>    <span class="k">def</span> <span class="nf">icon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a &quot;icon&quot; for the message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__icon__</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.secondary_icon"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.secondary_icon">[docs]</a>    <span class="k">def</span> <span class="nf">secondary_icon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a &quot;secondary icon&quot; for the message. &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.usernames"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.usernames">[docs]</a>    <span class="k">def</span> <span class="nf">usernames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a set of FAS usernames associated with a message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">()</span></div>
+
+    <span class="c1"># XXX - this is intentionally not stubbed out at the &#39;base&#39; level of the</span>
+    <span class="c1"># class inheritance hierarchy.  In fedmsg/meta/__init__.py, we check for</span>
+    <span class="c1"># the existance of this method on the subclass and do something special if</span>
+    <span class="c1"># it is absent (if it is unimplemented by the subclass).</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="bp">NotImplemented</span>
+
+<div class="viewcode-block" id="BaseProcessor.packages"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.packages">[docs]</a>    <span class="k">def</span> <span class="nf">packages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a set of package names associated with a message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.objects"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.objects">[docs]</a>    <span class="k">def</span> <span class="nf">objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a set of objects associated with a message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.emails"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.emails">[docs]</a>    <span class="k">def</span> <span class="nf">emails</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a dict of emails associated with a message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BaseProcessor.avatars"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseProcessor.avatars">[docs]</a>    <span class="k">def</span> <span class="nf">avatars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a dict of avatar URLs associated with a message. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="BaseConglomerator"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator">[docs]</a><span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">BaseConglomerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Base Conglomerator.  This abstract base class must be extended.</span>
+
+<span class="sd">    fedmsg.meta &quot;conglomerators&quot; are similar to but different from the</span>
+<span class="sd">    fedmsg.meta &quot;processors&quot;.  Where processors take a single message are</span>
+<span class="sd">    return metadata about them (subtitle, a list of usernames, etc..),</span>
+<span class="sd">    conglomerators take multiple messages and return a reduced subset of</span>
+<span class="sd">    &quot;conglomerate&quot; messages.  Think: there are 100 messages where pbrobinson</span>
+<span class="sd">    built 100 different packages in koji -- we can just represent those in a UI</span>
+<span class="sd">    somewhere as a single message &quot;pbrobinson built 100 different packages</span>
+<span class="sd">    (click for details)&quot;.</span>
+
+<span class="sd">    This BaseConglomerator is meant to be extended many times over to provide</span>
+<span class="sd">    plugins that know how to conglomerate different combinations of messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">processor</span><span class="p">,</span> <span class="n">internationalization_callable</span><span class="p">,</span> <span class="o">**</span><span class="n">conf</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">processor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_</span> <span class="o">=</span> <span class="n">internationalization_callable</span>
+
+<div class="viewcode-block" id="BaseConglomerator.conglomerate"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.conglomerate">[docs]</a>    <span class="k">def</span> <span class="nf">conglomerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lexers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">conf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Top-level API entry point.  Given a list of messages, transform it</span>
+<span class="sd">        into a list of conglomerates where possible.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indices</span><span class="p">,</span> <span class="n">constituents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_constituents</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">conf</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">constituents</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+                <span class="n">messages</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">constituents</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">lexers</span><span class="o">=</span><span class="n">lexers</span><span class="p">,</span> <span class="o">**</span><span class="n">conf</span><span class="p">)</span>
+            <span class="n">messages</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+            <span class="n">indices</span><span class="p">,</span> <span class="n">constituents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_constituents</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">messages</span></div>
+
+<div class="viewcode-block" id="BaseConglomerator.skip"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.skip">[docs]</a>    <span class="k">def</span> <span class="nf">skip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="c1"># Skip ones that have already been squashed.</span>
+        <span class="k">if</span> <span class="s1">&#39;msg_ids&#39;</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># Skip ones we have no idea about</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_handle</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="BaseConglomerator.select_constituents"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.select_constituents">[docs]</a>    <span class="k">def</span> <span class="nf">select_constituents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; From a list of messages, return a subset that can be merged &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">primary</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">messages</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># If we have one that looks good, find its siblings further down</span>
+            <span class="n">constituents</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">secondary</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">messages</span><span class="p">))[</span><span class="n">base</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="n">secondary</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+                    <span class="n">constituents</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">j</span><span class="p">,</span> <span class="n">secondary</span><span class="p">))</span>
+
+            <span class="c1"># If we found any, then return them and expect to be called afresh</span>
+            <span class="k">if</span> <span class="n">constituents</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">primary</span><span class="p">)]</span> <span class="o">+</span> <span class="n">constituents</span><span class="p">)</span>
+
+        <span class="c1"># If we&#39;re done, we&#39;re done.</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="BaseConglomerator.produce_template"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.produce_template">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">produce_template</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">constituents</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">lexers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Helper function used by `merge`.</span>
+<span class="sd">        Produces the beginnings of a merged conglomerate message that needs to</span>
+<span class="sd">        be later filled out by a subclass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_extract_timestamp</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;timetuple&#39;</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">constituents</span><span class="p">)</span>
+        <span class="n">timestamps</span> <span class="o">=</span> <span class="p">[</span><span class="n">_extract_timestamp</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">constituents</span><span class="p">]</span>
+        <span class="n">average_timestamp</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">timestamps</span><span class="p">)</span> <span class="o">/</span> <span class="n">N</span>
+
+        <span class="c1"># Avoid circular import</span>
+        <span class="kn">import</span> <span class="nn">fedmsg.meta</span> <span class="k">as</span> <span class="nn">fm</span>
+        <span class="c1"># Optional, so, avoid importing it at the topmost level</span>
+        <span class="kn">import</span> <span class="nn">arrow</span>
+
+        <span class="n">usernames</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">msg2usernames</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">constituents</span><span class="p">],</span> <span class="p">[]))</span>
+        <span class="n">packages</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">msg2packages</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">constituents</span><span class="p">],</span> <span class="p">[]))</span>
+        <span class="n">topics</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">constituents</span><span class="p">])</span>
+        <span class="n">categories</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">topics</span><span class="p">])</span>
+
+        <span class="c1"># Include metadata about constituent messages in the aggregate</span>
+        <span class="c1"># http://da.gd/12Eso</span>
+        <span class="n">msg_ids</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span>
+            <span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;msg_id&#39;</span><span class="p">],</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2title</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;subtitle&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2subtitle</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;subjective&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2subjective</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;link&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2link</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;icon&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2icon</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;__icon__&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span>
+                    <span class="n">fm</span><span class="o">.</span><span class="n">msg2processor</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span> <span class="s1">&#39;__icon__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="s1">&#39;secondary_icon&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2secondary_icon</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;usernames&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2usernames</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;packages&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2packages</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;objects&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2objects</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+                <span class="s1">&#39;long_form&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2long_form</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+            <span class="p">})</span> <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">constituents</span><span class="p">])</span>
+
+        <span class="c1"># If the user asks for it, stuff in a pygments lexer too!</span>
+        <span class="k">if</span> <span class="n">lexers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">constituents</span><span class="p">:</span>
+                <span class="n">msg_ids</span><span class="p">[</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;msg_id&#39;</span><span class="p">]][</span><span class="s1">&#39;lexer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2lexer</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="n">timestamps</span><span class="p">),</span>
+            <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">timestamps</span><span class="p">),</span>
+            <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">average_timestamp</span><span class="p">,</span>
+            <span class="s1">&#39;human_time&#39;</span><span class="p">:</span> <span class="n">arrow</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">average_timestamp</span><span class="p">)</span><span class="o">.</span><span class="n">humanize</span><span class="p">(),</span>
+            <span class="s1">&#39;msg_ids&#39;</span><span class="p">:</span> <span class="n">msg_ids</span><span class="p">,</span>
+            <span class="s1">&#39;usernames&#39;</span><span class="p">:</span> <span class="n">usernames</span><span class="p">,</span>
+            <span class="s1">&#39;packages&#39;</span><span class="p">:</span> <span class="n">packages</span><span class="p">,</span>
+            <span class="s1">&#39;topics&#39;</span><span class="p">:</span> <span class="n">topics</span><span class="p">,</span>
+            <span class="s1">&#39;categories&#39;</span><span class="p">:</span> <span class="n">categories</span><span class="p">,</span>
+            <span class="s1">&#39;icon&#39;</span><span class="p">:</span> <span class="n">fm</span><span class="o">.</span><span class="n">msg2icon</span><span class="p">(</span><span class="n">constituents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">**</span><span class="n">config</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="BaseConglomerator.list_to_series"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.list_to_series">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">list_to_series</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">oxford_comma</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convert a list of things into a comma-separated string.</span>
+
+<span class="sd">        &gt;&gt;&gt; list_to_series([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;])</span>
+<span class="sd">        &#39;a, b, and 2 others&#39;</span>
+<span class="sd">        &gt;&gt;&gt; list_to_series([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;], N=4, oxford_comma=False)</span>
+<span class="sd">        &#39;a, b, c and d&#39;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">items</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;(nothing)&quot;</span>
+
+        <span class="c1"># uniqify items + sort them to have predictable (==testable) ordering</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">items</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">N</span><span class="p">:</span>
+            <span class="n">items</span><span class="p">[</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">%i</span><span class="s2"> others&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">-</span> <span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
+        <span class="n">first</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">conjunction</span> <span class="o">=</span> <span class="s2">&quot; and &quot;</span>
+        <span class="k">if</span> <span class="n">oxford_comma</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">conjunction</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="n">conjunction</span>
+
+        <span class="k">return</span> <span class="n">first</span> <span class="o">+</span> <span class="n">conjunction</span> <span class="o">+</span> <span class="n">items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="BaseConglomerator.can_handle"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.can_handle">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">can_handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return true if we should begin to consider a given message. &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="BaseConglomerator.matches"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.matches">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return true if message a can be paired with message b. &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="BaseConglomerator.merge"><a class="viewcode-back" href="../../../api.html#fedmsg.meta.base.BaseConglomerator.merge">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constituents</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Given N presumably matching messages, return one merged message &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../fedmsg.html">fedmsg</a><ul>
+  <li><a href="../meta.html">fedmsg.meta</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

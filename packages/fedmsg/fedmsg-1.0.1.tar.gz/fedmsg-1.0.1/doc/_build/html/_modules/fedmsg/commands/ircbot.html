@@ -1,0 +1,196 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg.commands.ircbot &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg.commands.ircbot</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="c1">#           Ryan Brown</span>
+<span class="c1">#</span>
+<span class="c1"># -*- coding; utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Description: A bot that takes a config and puts messages matching given</span>
+<span class="sd">regexes in specified IRC channels.  See :ref:`conf-irc` for options.</span>
+
+<span class="sd">Think of it like a one-way firehose that spews fedmsg messages to IRC.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">fedmsg.commands</span> <span class="k">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span> <span class="nn">fedmsg.consumers.ircbot</span> <span class="k">import</span> <span class="n">IRCBotConsumer</span>
+
+
+<span class="k">class</span> <span class="nc">IRCCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Relay messages from the bus to any number of IRC channels.</span>
+
+<span class="sd">    This is highly configurable by way of the :ref:`conf-irc` config value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;fedmsg-irc&quot;</span>
+    <span class="n">extra_args</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Do just like in fedmsg.commands.hub and mangle fedmsg-config.py to</span>
+        <span class="c1"># work with moksha&#39;s expected configuration.</span>
+        <span class="n">moksha_options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">zmq_subscribe_endpoints</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span> <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;endpoints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">moksha_options</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">IRCBotConsumer</span><span class="o">.</span><span class="n">config_key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="kn">from</span> <span class="nn">moksha.hub</span> <span class="k">import</span> <span class="n">main</span>
+        <span class="n">main</span><span class="p">(</span>
+            <span class="c1"># Pass in our config dict</span>
+            <span class="n">options</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+            <span class="c1"># Only run this *one* consumer</span>
+            <span class="n">consumers</span><span class="o">=</span><span class="p">[</span><span class="n">IRCBotConsumer</span><span class="p">],</span>
+            <span class="c1"># Tell moksah to quiet its logging</span>
+            <span class="n">framework</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="ircbot"><a class="viewcode-back" href="../../../commands.html#fedmsg.commands.ircbot.ircbot">[docs]</a><span class="k">def</span> <span class="nf">ircbot</span><span class="p">():</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">IRCCommand</span><span class="p">()</span>
+    <span class="n">command</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../fedmsg.html">fedmsg</a><ul>
+  <li><a href="../commands.html">fedmsg.commands</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,235 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; Federated Message Bus Client API &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="kn">import</span> <span class="nn">fedmsg.core</span>
+<span class="kn">import</span> <span class="nn">fedmsg.config</span>
+
+<span class="n">__local</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;init&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;send_message&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;publish&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;destroy&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;tail_messages&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;__local&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="init"><a class="viewcode-back" href="../api.html#fedmsg.init">[docs]</a><span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialize an instance of :class:`fedmsg.core.FedMsgContext`.</span>
+
+<span class="sd">    The config is loaded with :func:`fedmsg.config.load_config` and updated</span>
+<span class="sd">    by any keyword arguments.  This config is used to initialize the context</span>
+<span class="sd">    object.</span>
+
+<span class="sd">    The object is stored in a thread local as</span>
+<span class="sd">    :data:`fedmsg.__local.__context`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">__local</span><span class="p">,</span> <span class="s1">&#39;__context&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;fedmsg already initialized&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Read config from CLI args and a config file</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">([],</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="c1"># Override the defaults with whatever the user explicitly passes in.</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="n">__local</span><span class="o">.</span><span class="n">__context</span> <span class="o">=</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">FedMsgContext</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">__local</span><span class="o">.</span><span class="n">__context</span></div>
+
+
+<span class="k">def</span> <span class="nf">API_function</span><span class="p">(</span><span class="n">doc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">api_function</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="n">scrub</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">args</span>
+
+        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">__local</span><span class="p">,</span> <span class="s1">&#39;__context&#39;</span><span class="p">):</span>
+                <span class="n">config_overrides</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">scrub</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">config_overrides</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="n">config_overrides</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
+
+                <span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">config_overrides</span><span class="p">)</span>
+                <span class="k">assert</span><span class="p">(</span><span class="n">__local</span><span class="o">.</span><span class="n">__context</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">doc</span><span class="p">:</span>
+            <span class="n">_wrapper</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_wrapper</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">doc</span>
+        <span class="k">return</span> <span class="n">_wrapper</span>
+    <span class="k">return</span> <span class="n">api_function</span>
+
+
+<div class="viewcode-block" id="publish"><a class="viewcode-back" href="../api.html#fedmsg.publish">[docs]</a><span class="nd">@API_function</span><span class="p">(</span><span class="n">doc</span><span class="o">=</span><span class="n">fedmsg</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">FedMsgContext</span><span class="o">.</span><span class="n">publish</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="n">topic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">__local</span><span class="o">.</span><span class="n">__context</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span></div>
+
+
+<span class="c1"># This is old-school, and deprecated.</span>
+<span class="n">send_message</span> <span class="o">=</span> <span class="n">publish</span>
+
+
+<div class="viewcode-block" id="destroy"><a class="viewcode-back" href="../api.html#fedmsg.destroy">[docs]</a><span class="nd">@API_function</span><span class="p">(</span><span class="n">doc</span><span class="o">=</span><span class="n">fedmsg</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">FedMsgContext</span><span class="o">.</span><span class="n">destroy</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">__local</span><span class="p">,</span> <span class="s1">&#39;__context&#39;</span><span class="p">):</span>
+        <span class="n">__local</span><span class="o">.</span><span class="n">__context</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">__local</span><span class="o">.</span><span class="n">__context</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="tail_messages"><a class="viewcode-back" href="../api.html#fedmsg.tail_messages">[docs]</a><span class="nd">@API_function</span><span class="p">(</span><span class="n">doc</span><span class="o">=</span><span class="n">fedmsg</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">FedMsgContext</span><span class="o">.</span><span class="n">tail_messages</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">tail_messages</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">__local</span><span class="o">.</span><span class="n">__context</span><span class="o">.</span><span class="n">tail_messages</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">item</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

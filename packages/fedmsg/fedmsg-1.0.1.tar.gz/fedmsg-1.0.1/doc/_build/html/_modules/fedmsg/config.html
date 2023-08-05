@@ -1,0 +1,496 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg.config &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg.config</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 - 2014 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module handles loading, processing and validation of all configuration.</span>
+
+<span class="sd">The configuration values used at runtime are determined by checking in</span>
+<span class="sd">the following order:</span>
+
+<span class="sd">    - Built-in defaults</span>
+<span class="sd">    - All Python files in the /etc/fedmsg.d/ directory</span>
+<span class="sd">    - All Python files in the ~/.fedmsg.d/ directory</span>
+<span class="sd">    - All Python files in the current working directory&#39;s fedmsg.d/ directory</span>
+<span class="sd">    - Command line arguments</span>
+
+<span class="sd">For example, if a config value does not appear in either the config file or on</span>
+<span class="sd">the command line, then the built-in default is used.  If a value appears in</span>
+<span class="sd">both the config file and as a command line argument, then the command line</span>
+<span class="sd">value is used.</span>
+
+<span class="sd">You can print the runtime configuration to the terminal by using the</span>
+<span class="sd">``fedmsg-config`` command implemented by</span>
+<span class="sd">:func:`fedmsg.commands.config.config`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">kitchen.iterutils</span> <span class="k">import</span> <span class="n">iterate</span>
+<span class="kn">from</span> <span class="nn">fedmsg.encoding</span> <span class="k">import</span> <span class="n">pretty_dumps</span>
+
+
+<span class="n">bare_format</span> <span class="o">=</span> <span class="s2">&quot;[</span><span class="si">%(asctime)s</span><span class="s2">][</span><span class="si">%(name)10s</span><span class="s2"> </span><span class="si">%(levelname)7s</span><span class="s2">] </span><span class="si">%(message)s</span><span class="s2">&quot;</span>
+
+<span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">topic_prefix</span><span class="o">=</span><span class="s2">&quot;org.fedoraproject&quot;</span><span class="p">,</span>
+    <span class="n">environment</span><span class="o">=</span><span class="s2">&quot;dev&quot;</span><span class="p">,</span>
+    <span class="n">io_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">post_init_sleep</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">print_config</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">high_water_mark</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># zero means no limit</span>
+    <span class="n">zmq_linger</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>    <span class="c1"># Wait one second before timing out on fedmsg-relay</span>
+    <span class="n">active</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>       <span class="c1"># if active, &quot;connect&quot;, else &quot;bind&quot;</span>
+                        <span class="c1"># Generally active is true only for fedmsg-logger</span>
+    <span class="n">persistent_store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># an object.  See the fedmsg.replay module.</span>
+    <span class="n">logging</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">version</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">formatters</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">bare</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;datefmt&quot;</span><span class="p">:</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="n">bare_format</span>
+            <span class="p">},</span>
+        <span class="p">),</span>
+        <span class="n">handlers</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">console</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="s2">&quot;logging.StreamHandler&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;formatter&quot;</span><span class="p">:</span> <span class="s2">&quot;bare&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;stream&quot;</span><span class="p">:</span> <span class="s2">&quot;ext://sys.stdout&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">),</span>
+        <span class="n">loggers</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">fedmsg</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;propagate&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;handlers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;console&quot;</span><span class="p">],</span>
+            <span class="p">},</span>
+            <span class="n">moksha</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;propagate&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;handlers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;console&quot;</span><span class="p">],</span>
+            <span class="p">},</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">__cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<div class="viewcode-block" id="load_config"><a class="viewcode-back" href="../../api.html#fedmsg.config.load_config">[docs]</a><span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="n">extra_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">filenames</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">invalidate_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">fedmsg_command</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">disable_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Setup a runtime config dict by integrating the following sources</span>
+<span class="sd">    (ordered by precedence):</span>
+
+<span class="sd">      - defaults (unless disable_defaults = True)</span>
+<span class="sd">      - config file</span>
+<span class="sd">      - command line arguments</span>
+
+<span class="sd">    If the ``fedmsg_command`` argument is False, no command line arguments are</span>
+<span class="sd">    checked.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">__cache</span>
+
+    <span class="k">if</span> <span class="n">invalidate_cache</span><span class="p">:</span>
+        <span class="n">__cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">__cache</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">__cache</span>
+
+    <span class="c1"># Coerce defaults if arguments are not supplied.</span>
+    <span class="n">extra_args</span> <span class="o">=</span> <span class="n">extra_args</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="n">doc</span> <span class="o">=</span> <span class="n">doc</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">disable_defaults</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_process_config_file</span><span class="p">(</span><span class="n">filenames</span><span class="o">=</span><span class="n">filenames</span><span class="p">))</span>
+
+    <span class="c1"># This is optional (and defaults to false) so that only &#39;fedmsg-*&#39; commands</span>
+    <span class="c1"># are required to provide these arguments.</span>
+    <span class="c1"># For instance, the moksha-hub command takes a &#39;-v&#39; argument and internally</span>
+    <span class="c1"># makes calls to fedmsg.  We don&#39;t want to impose all of fedmsg&#39;s CLI</span>
+    <span class="c1"># option constraints on programs that use fedmsg, so we make it optional.</span>
+    <span class="k">if</span> <span class="n">fedmsg_command</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_process_arguments</span><span class="p">(</span><span class="n">extra_args</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="n">config</span><span class="p">))</span>
+
+    <span class="c1"># If the user specified a config file on the command line, then start over</span>
+    <span class="c1"># but read in that file instead.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filenames</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;config_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">load_config</span><span class="p">(</span><span class="n">extra_args</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span>
+                           <span class="n">filenames</span><span class="o">=</span><span class="p">[</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;config_filename&#39;</span><span class="p">]],</span>
+                           <span class="n">fedmsg_command</span><span class="o">=</span><span class="n">fedmsg_command</span><span class="p">,</span>
+                           <span class="n">disable_defaults</span><span class="o">=</span><span class="n">disable_defaults</span><span class="p">)</span>
+
+    <span class="c1"># Just a little debug option.  :)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;print_config&#39;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">pretty_dumps</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">disable_defaults</span> <span class="ow">and</span> <span class="s1">&#39;endpoints&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No config value &#39;endpoints&#39; found.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;endpoints&#39;</span><span class="p">,</span> <span class="p">{}),</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The &#39;endpoints&#39; config value must be a dict.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s1">&#39;endpoints&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;endpoints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span>
+            <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">iterate</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;endpoints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">])</span>
+
+    <span class="k">if</span> <span class="s1">&#39;srv_endpoints&#39;</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;srv_endpoints&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">dns.resolver</span> <span class="k">import</span> <span class="n">query</span><span class="p">,</span> <span class="n">NXDOMAIN</span><span class="p">,</span> <span class="n">Timeout</span><span class="p">,</span> <span class="n">NoNameservers</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;srv_endpoints&#39;</span><span class="p">]:</span>
+            <span class="n">urls</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">records</span> <span class="o">=</span> <span class="n">query</span><span class="p">(</span><span class="s1">&#39;_fedmsg._tcp.</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="s1">&#39;SRV&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">NXDOMAIN</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;There is no appropriate SRV records &quot;</span> <span class="o">+</span>
+                              <span class="s2">&quot;for </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="k">except</span> <span class="n">Timeout</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The DNS query for the SRV records of&quot;</span> <span class="o">+</span>
+                              <span class="s2">&quot; </span><span class="si">{0}</span><span class="s2"> timed out.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="k">except</span> <span class="n">NoNameservers</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;No name server is available, please &quot;</span> <span class="o">+</span>
+                              <span class="s2">&quot;check the configuration&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+                <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;tcp://</span><span class="si">{hostname}</span><span class="s1">:</span><span class="si">{port}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">hostname</span><span class="o">=</span><span class="n">rec</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">to_text</span><span class="p">(),</span>
+                    <span class="n">port</span><span class="o">=</span><span class="n">rec</span><span class="o">.</span><span class="n">port</span>
+                <span class="p">))</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;endpoints&#39;</span><span class="p">][</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">iterate</span><span class="p">(</span><span class="n">urls</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="s1">&#39;topic_prefix_re&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">and</span> <span class="s1">&#39;topic_prefix&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="c1"># Turn &quot;org.fedoraproject&quot; into &quot;org\.fedoraproject\.[^\W\d_]+&quot;</span>
+        <span class="n">config</span><span class="p">[</span><span class="s1">&#39;topic_prefix_re&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;topic_prefix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;\.&#39;</span><span class="p">)</span>\
+            <span class="o">+</span> <span class="s1">&#39;\.[^\W\d_]+&#39;</span>
+
+    <span class="n">__cache</span> <span class="o">=</span> <span class="n">config</span>
+    <span class="k">return</span> <span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="build_parser"><a class="viewcode-back" href="../../api.html#fedmsg.config.build_parser">[docs]</a><span class="k">def</span> <span class="nf">build_parser</span><span class="p">(</span><span class="n">declared_args</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prog</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the global :class:`argparse.ArgumentParser` used by all fedmsg</span>
+<span class="sd">    commands.</span>
+
+<span class="sd">    Extra arguments can be supplied with the `declared_args` argument.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config</span> <span class="o">=</span> <span class="n">config</span> <span class="ow">or</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+    <span class="n">prog</span> <span class="o">=</span> <span class="n">prog</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">doc</span><span class="p">),</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
+        <span class="n">prog</span><span class="o">=</span><span class="n">prog</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--io-threads&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;io_threads&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of io threads for 0mq to use&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;io_threads&#39;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--topic-prefix&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;topic_prefix&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix for the topic of each message sent.&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;topic_prefix&#39;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--post-init-sleep&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;post_init_sleep&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of seconds to sleep after initializing.&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;post_init_sleep&#39;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--config-filename&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;config_filename&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Config file to use.&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--print-config&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;print_config&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Simply print out the configuration and exit.  No action taken.&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--timeout&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;timeout&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Timeout in seconds for any blocking zmq operations.&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--high-water-mark&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;high_water_mark&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Limit on the number of messages in the queue before blocking.&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;high_water_mark&#39;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--linger&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;zmq_linger&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of milliseconds to wait before timing out connections.&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;zmq_linger&#39;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="ow">in</span> <span class="n">declared_args</span><span class="p">:</span>
+        <span class="c1"># Replace the hard-coded extra_args default with the config file value</span>
+        <span class="c1"># (if it exists)</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">]]):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Having slurped smart defaults from the config file, add the CLI arg.</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parser</span></div>
+
+
+<span class="k">def</span> <span class="nf">_process_arguments</span><span class="p">(</span><span class="n">declared_args</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">build_parser</span><span class="p">(</span><span class="n">declared_args</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">_get_kwargs</span><span class="p">())</span>
+
+
+<span class="k">def</span> <span class="nf">_gather_configs_in</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return list of fully qualified python filenames in the given dir &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">([</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fname</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">)</span>
+        <span class="p">])</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+
+<span class="k">def</span> <span class="nf">_recursive_update</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Little helper function that does what d1.update(d2) does,</span>
+<span class="sd">    but works nice and recursively with dicts of dicts of dicts.</span>
+
+<span class="sd">    It&#39;s not necessarily very efficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">d2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d2</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">_recursive_update</span><span class="p">(</span><span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">d2</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">d2</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">d1</span><span class="p">):</span>
+        <span class="n">d1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">d2</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">d1</span>
+
+
+<div class="viewcode-block" id="execfile"><a class="viewcode-back" href="../../api.html#fedmsg.config.execfile">[docs]</a><span class="k">def</span> <span class="nf">execfile</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">variables</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This is builtin in python2, but we have to roll our own on py3. &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;exec&#39;</span><span class="p">)</span>
+        <span class="n">exec</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">variables</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_process_config_file</span><span class="p">(</span><span class="n">filenames</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">filenames</span> <span class="ow">or</span> <span class="p">[]</span>
+
+    <span class="c1"># Validate that these files are really files</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%r</span><span class="s2"> is not a file.&quot;</span> <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>
+
+    <span class="c1"># If nothing specified, look in the default locations</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;/etc/fedmsg-config.py&#39;</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/.fedmsg-config.py&#39;</span><span class="p">),</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;/fedmsg-config.py&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">folders</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;/etc/fedmsg.d/&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/.fedmsg.d/&#39;</span><span class="p">),</span>
+                   <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;/fedmsg.d/&#39;</span><span class="p">,</span> <span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;VIRTUAL_ENV&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+            <span class="n">folders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;VIRTUAL_ENV&#39;</span><span class="p">],</span> <span class="s1">&#39;etc/fedmsg.d&#39;</span><span class="p">))</span>
+
+        <span class="n">filenames</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_gather_configs_in</span><span class="p">,</span> <span class="n">folders</span><span class="p">),</span> <span class="p">[])</span> <span class="o">+</span> <span class="n">filenames</span>
+
+    <span class="c1"># Each .ini file should really be a python module that</span>
+    <span class="c1"># builds a config dict.</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">execfile</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">variables</span><span class="p">)</span>
+                <span class="n">config</span> <span class="o">=</span> <span class="n">_recursive_update</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">variables</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">config</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../fedmsg.html">fedmsg</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

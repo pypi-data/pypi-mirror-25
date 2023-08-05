@@ -1,0 +1,245 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg.commands.relay &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg.commands.relay</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">zmq</span>
+
+<span class="kn">from</span> <span class="nn">moksha.hub</span> <span class="k">import</span> <span class="n">main</span>
+<span class="kn">from</span> <span class="nn">moksha.hub.monitoring</span> <span class="k">import</span> <span class="n">MonitoringProducer</span>
+
+<span class="kn">from</span> <span class="nn">fedmsg.commands</span> <span class="k">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span> <span class="nn">fedmsg.consumers.relay</span> <span class="k">import</span> <span class="n">RelayConsumer</span><span class="p">,</span> <span class="n">SigningRelayConsumer</span>
+
+<span class="kn">from</span> <span class="nn">kitchen.iterutils</span> <span class="k">import</span> <span class="n">iterate</span>
+
+
+<span class="k">class</span> <span class="nc">RelayCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Relay connections from active loggers to the bus.</span>
+
+<span class="sd">    ``fedmsg-relay`` is a service which binds to two ports, listens for</span>
+<span class="sd">    messages on one and emits them on the other.  ``fedmsg-logger``</span>
+<span class="sd">    requires that an instance of ``fedmsg-relay`` be running *somewhere*</span>
+<span class="sd">    and that it&#39;s inbound address be listed in the config as one of the entries</span>
+<span class="sd">    in :ref:`conf-relay_inbound`.</span>
+
+<span class="sd">    ``fedmsg-relay`` becomes a necessity for integration points that cannot</span>
+<span class="sd">    bind consistently to and serve from a port.  See :doc:`topology` for the</span>
+<span class="sd">    mile-high view.  More specifically, ``fedmsg-relay`` is a</span>
+<span class="sd">    SUB.bind()-&gt;PUB.bind() relay.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;fedmsg-relay&#39;</span>
+    <span class="n">relay_consumer</span> <span class="o">=</span> <span class="n">RelayConsumer</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Do just like in fedmsg.commands.hub and mangle fedmsg.d/ to work</span>
+        <span class="c1"># with moksha&#39;s expected configuration.</span>
+        <span class="n">moksha_options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">zmq_subscribe_endpoints</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">iterate</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;relay_inbound&#39;</span><span class="p">]</span>
+            <span class="p">))),</span>
+            <span class="n">zmq_subscribe_method</span><span class="o">=</span><span class="s2">&quot;bind&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">moksha_options</span><span class="p">)</span>
+
+        <span class="c1"># Flip the special bit that allows the RelayConsumer to run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relay_consumer</span><span class="o">.</span><span class="n">config_key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">for</span> <span class="n">publish_endpoint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;endpoints&#39;</span><span class="p">][</span><span class="s1">&#39;relay_outbound&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;zmq_publish_endpoints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">publish_endpoint</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">main</span><span class="p">(</span>
+                    <span class="c1"># Pass in our config dict</span>
+                    <span class="n">options</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+                    <span class="c1"># Only run this *one* consumer</span>
+                    <span class="n">consumers</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relay_consumer</span><span class="p">],</span>
+                    <span class="n">producers</span><span class="o">=</span><span class="p">[</span><span class="n">MonitoringProducer</span><span class="p">],</span>
+                    <span class="c1"># Tell moksha to quiet its logging.</span>
+                    <span class="n">framework</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">zmq</span><span class="o">.</span><span class="n">ZMQError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed to bind to </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">publish_endpoint</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Failed to bind to any outbound endpoints.&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SigningRelayCommand</span><span class="p">(</span><span class="n">RelayCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Relay messages, signing them before re-publishing them.&quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;fedmsg-signing-relay&#39;</span>
+    <span class="n">relay_consumer</span> <span class="o">=</span> <span class="n">SigningRelayConsumer</span>
+
+
+<div class="viewcode-block" id="relay"><a class="viewcode-back" href="../../../commands.html#fedmsg.commands.relay.relay">[docs]</a><span class="k">def</span> <span class="nf">relay</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Relay messages from an inbound subscription socket to an outbound publishing socket.</span>
+
+<span class="sd">    This service binds to two sockets, :ref:`conf-relay-inbound` and</span>
+<span class="sd">    :ref:`conf-relay-outbound`. The inbound socket is a ZeroMQ SUB socket and the</span>
+<span class="sd">    outbound socket is a ZeroMQ PUB socket.</span>
+
+<span class="sd">    Tools like ``fedmsg-logger`` require that an instance of ``fedmsg-relay`` be running</span>
+<span class="sd">    *somewhere* and that it&#39;s inbound address be listed in the config as one of the</span>
+<span class="sd">    entries in :ref:`conf-relay-inbound`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">RelayCommand</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">command</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="signing_relay"><a class="viewcode-back" href="../../../commands.html#fedmsg.commands.relay.signing_relay">[docs]</a><span class="k">def</span> <span class="nf">signing_relay</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sign and relay fedmsgs.</span>
+
+<span class="sd">    This relay behaves like the default relay, except that messages it receives</span>
+<span class="sd">    are signed with the certificate referenced in the ``signing_relay`` key of</span>
+<span class="sd">    the ``certnames`` dictionary in the fedmsg configuration.</span>
+
+<span class="sd">    This allows users to send unsigned messages on a trusted network and have a single</span>
+<span class="sd">    exit point to an untrusted network that is cryptographically signed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">SigningRelayCommand</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../fedmsg.html">fedmsg</a><ul>
+  <li><a href="../commands.html">fedmsg.commands</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

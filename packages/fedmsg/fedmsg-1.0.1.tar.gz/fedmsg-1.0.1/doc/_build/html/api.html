@@ -1,0 +1,1198 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Developer Interface &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Changelog" href="changelog.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="developer-interface">
+<h1>Developer Interface<a class="headerlink" href="#developer-interface" title="Permalink to this headline">¶</a></h1>
+<p>This documentation covers the public interfaces fedmsg provides. Unless otherwise noted,
+all documented interfaces follow <a class="reference external" href="http://semver.org/">Semantic Versioning 2.0.0</a>. If the interface you depend
+on is not documented here, it may change without warning in a minor release.</p>
+<div class="section" id="python">
+<span id="api-python"></span><h2>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-fedmsg">
+<span id="sending-and-receiving-messages"></span><span id="api-send-receive"></span><h3>Sending and Receiving Messages<a class="headerlink" href="#module-fedmsg" title="Permalink to this headline">¶</a></h3>
+<p>Federated Message Bus Client API</p>
+<dl class="function">
+<dt id="fedmsg.init">
+<code class="descclassname">fedmsg.</code><code class="descname">init</code><span class="sig-paren">(</span><em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg.html#init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize an instance of <code class="xref py py-class docutils literal"><span class="pre">fedmsg.core.FedMsgContext</span></code>.</p>
+<p>The config is loaded with <a class="reference internal" href="#fedmsg.config.load_config" title="fedmsg.config.load_config"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.config.load_config()</span></code></a> and updated
+by any keyword arguments.  This config is used to initialize the context
+object.</p>
+<p>The object is stored in a thread local as
+<code class="xref py py-data docutils literal"><span class="pre">fedmsg.__local.__context</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.destroy">
+<code class="descclassname">fedmsg.</code><code class="descname">destroy</code><span class="sig-paren">(</span><em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg.html#destroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.destroy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroy a fedmsg context</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.publish">
+<code class="descclassname">fedmsg.</code><code class="descname">publish</code><span class="sig-paren">(</span><em>topic=None</em>, <em>msg=None</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg.html#publish"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message over the publishing zeromq socket.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fedmsg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fedmsg</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic</span><span class="o">=</span><span class="s1">&#39;testing&#39;</span><span class="p">,</span> <span class="n">modname</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="s2">&quot;Hello World&quot;</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">})</span>
+</pre></div>
+</div>
+<p>The above snippet will send the message <code class="docutils literal"><span class="pre">'{test:</span> <span class="pre">&quot;Hello</span> <span class="pre">World&quot;}'</span></code>
+over the <code class="docutils literal"><span class="pre">&lt;topic_prefix&gt;.dev.test.testing</span></code> topic. The fully qualified
+topic of a message is constructed out of the following pieces:</p>
+<blockquote>
+<div>&lt;<a class="reference internal" href="configuration.html#conf-topic-prefix"><span class="std std-ref">topic_prefix</span></a>&gt;.&lt;<a class="reference internal" href="configuration.html#conf-environment"><span class="std std-ref">environment</span></a>&gt;.&lt;<code class="docutils literal"><span class="pre">modname</span></code>&gt;.&lt;<code class="docutils literal"><span class="pre">topic</span></code>&gt;</div></blockquote>
+<p>This function (and other API functions) do a little bit more
+heavy lifting than they let on.  If the “zeromq context” is not yet
+initialized, <a class="reference internal" href="#fedmsg.init" title="fedmsg.init"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.init()</span></code></a> is called to construct it and
+store it as <code class="xref py py-data docutils literal"><span class="pre">fedmsg.__local.__context</span></code> before anything else is
+done.</p>
+<p><strong>An example from Fedora Tagger – SQLAlchemy encoding</strong></p>
+<p>Here’s an example from
+<a class="reference external" href="https://github.com/fedora-infra/fedora-tagger">fedora-tagger</a> that
+sends the information about a new tag over
+<code class="docutils literal"><span class="pre">org.fedoraproject.{dev,stg,prod}.fedoratagger.tag.update</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fedmsg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fedmsg</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic</span><span class="o">=</span><span class="s1">&#39;tag.update&#39;</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="n">tag</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Note that the <cite>tag</cite> and <cite>user</cite> objects are SQLAlchemy objects defined
+by tagger.  They both have <code class="docutils literal"><span class="pre">.__json__()</span></code> methods which
+<a class="reference internal" href="#fedmsg.publish" title="fedmsg.publish"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.publish()</span></code></a> uses to encode both objects as stringified
+JSON for you.  Under the hood, specifically, <code class="docutils literal"><span class="pre">.publish</span></code> uses
+<a class="reference internal" href="#module-fedmsg.encoding" title="fedmsg.encoding"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.encoding</span></code></a> to do this.</p>
+<p><code class="docutils literal"><span class="pre">fedmsg</span></code> has also guessed the module name (<code class="docutils literal"><span class="pre">modname</span></code>) of it’s
+caller and inserted it into the topic for you.  The code from which
+we stole the above snippet lives in
+<code class="docutils literal"><span class="pre">fedoratagger.controllers.root</span></code>.  <code class="docutils literal"><span class="pre">fedmsg</span></code> figured that out and
+stripped it down to just <code class="docutils literal"><span class="pre">fedoratagger</span></code> for the final topic of
+<code class="docutils literal"><span class="pre">org.fedoraproject.{dev,stg,prod}.fedoratagger.tag.update</span></code>.</p>
+<p><strong>Shell Usage</strong></p>
+<p>You could also use the <code class="docutils literal"><span class="pre">fedmsg-logger</span></code> from a shell script like so:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ echo &quot;Hello, world.&quot; | fedmsg-logger --topic testing
+$ echo &#39;{&quot;foo&quot;: &quot;bar&quot;}&#39; | fedmsg-logger --json-input
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>topic</strong> (<em>unicode</em>) – The message topic suffix. This suffix is joined to the
+configured topic prefix (e.g. <code class="docutils literal"><span class="pre">org.fedoraproject</span></code>), environment
+(e.g. <code class="docutils literal"><span class="pre">prod</span></code>, <code class="docutils literal"><span class="pre">dev</span></code>, etc.), and modname.</li>
+<li><strong>msg</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – A message to publish. This message will be JSON-encoded
+prior to being sent, so the object must be composed of JSON-
+serializable data types. Please note that if this is already a
+string JSON serialization will be applied to that string.</li>
+<li><strong>modname</strong> (<em>unicode</em>) – The module name that is publishing the message. If this
+is omitted, <code class="docutils literal"><span class="pre">fedmsg</span></code> will try to guess the name of the module
+that called it and use that to produce an intelligent topic.
+Specifying <code class="docutils literal"><span class="pre">modname</span></code> explicitly overrides this behavior.</li>
+<li><strong>pre_fire_hook</strong> (<em>function</em>) – A callable that will be called with a single
+argument – the dict of the constructed message – just before it
+is handed off to ZeroMQ for publication.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.tail_messages">
+<code class="descclassname">fedmsg.</code><code class="descname">tail_messages</code><span class="sig-paren">(</span><em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg.html#tail_messages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.tail_messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subscribe to messages published on the sockets listed in <a class="reference internal" href="configuration.html#conf-endpoints"><span class="std std-ref">endpoints</span></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>topic</strong> (<em>six.text_type</em>) – The topic to subscribe to. The default is to
+subscribe to all topics.</li>
+<li><strong>passive</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal"><span class="pre">True</span></code>, bind to the <a class="reference internal" href="configuration.html#conf-endpoints"><span class="std std-ref">endpoints</span></a> sockets
+instead of connecting to them. Defaults to <code class="docutils literal"><span class="pre">False</span></code>.</li>
+<li><strong>**kw</strong> – Additional keyword arguments. Currently none are used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><p class="first last"><em>tuple</em> – A 4-tuple in the form (name, endpoint, topic, message).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="fedmsg.consumers.FedmsgConsumer">
+<em class="property">class </em><code class="descclassname">fedmsg.consumers.</code><code class="descname">FedmsgConsumer</code><span class="sig-paren">(</span><em>hub</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/consumers.html#FedmsgConsumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.consumers.FedmsgConsumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for fedmsg consumers.</p>
+<p>This class inherits from <code class="xref py py-class docutils literal"><span class="pre">moksha.hub.api.consumer.Consumer</span></code> and you
+should familiarize yourself with this class as well.</p>
+<p>To create a consumer, you must inherit this class and do the following:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">Declare the class on the <code class="docutils literal"><span class="pre">moksha.consumers</span></code> python entry-point:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">setup</span><span class="p">(</span>
+    <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;moksha.consumer&#39;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s1">&#39;your_consumer = python.path:YourConsumerClass&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Implement the <code class="docutils literal"><span class="pre">consume(self,</span> <span class="pre">message)</span></code> method on the class.</p>
+</li>
+<li><p class="first">Set the attributes documented below</p>
+</li>
+</ul>
+</div></blockquote>
+<dl class="attribute">
+<dt id="fedmsg.FedmsgConsumer.validate_signatures">
+<code class="descname">validate_signatures</code><a class="headerlink" href="#fedmsg.FedmsgConsumer.validate_signatures" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – If <code class="docutils literal"><span class="pre">False</span></code>, message authenticity will not be
+checked. This is helpful if you’re developing or building a special-case
+consumer. For example, the consumer used by <a class="reference internal" href="commands.html#command-relay"><span class="std std-ref">fedmsg-relay</span></a> sets
+<code class="docutils literal"><span class="pre">validate_signatures</span> <span class="pre">=</span> <span class="pre">False</span></code> so that it can transparently forward along
+everything and let the terminal endpoints decide whether or not to consume
+particular messages.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fedmsg.FedmsgConsumer.topic">
+<code class="descname">topic</code><a class="headerlink" href="#fedmsg.FedmsgConsumer.topic" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str or list</em> – This attribute is required. Either a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>
+or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> that are topics that this consumer
+is interested in receiving messages for. To receive all messages, use
+an empty string.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fedmsg.FedmsgConsumer.config_key">
+<code class="descname">config_key</code><a class="headerlink" href="#fedmsg.FedmsgConsumer.config_key" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The name of the configuration key used to enable or disable
+this consumer. If this key is not present in the fedmsg configuration or
+does not have a value of <code class="docutils literal"><span class="pre">True</span></code>, <a class="reference internal" href="commands.html#command-hub"><span class="std std-ref">fedmsg-hub</span></a> will not run the
+consumer.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fedmsg.FedmsgConsumer.replay_name">
+<code class="descname">replay_name</code><a class="headerlink" href="#fedmsg.FedmsgConsumer.replay_name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The name of the replay endpoint where the system should
+query for playback in case of missed messages. It must match a service
+key in <a class="reference internal" href="configuration.html#conf-replay-endpoints"><span class="std std-ref">replay_endpoints</span></a>. This attribute is optional.</p>
+</dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hub</strong> (<em>moksha.hub.hub.MokshaCentralHub</em>) – The Moksha Hub that is initializing this
+consumer.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-fedmsg.config">
+<span id="configuration"></span><span id="api-config"></span><h3>Configuration<a class="headerlink" href="#module-fedmsg.config" title="Permalink to this headline">¶</a></h3>
+<p>This module handles loading, processing and validation of all configuration.</p>
+<p>The configuration values used at runtime are determined by checking in
+the following order:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Built-in defaults</li>
+<li>All Python files in the /etc/fedmsg.d/ directory</li>
+<li>All Python files in the ~/.fedmsg.d/ directory</li>
+<li>All Python files in the current working directory’s fedmsg.d/ directory</li>
+<li>Command line arguments</li>
+</ul>
+</div></blockquote>
+<p>For example, if a config value does not appear in either the config file or on
+the command line, then the built-in default is used.  If a value appears in
+both the config file and as a command line argument, then the command line
+value is used.</p>
+<p>You can print the runtime configuration to the terminal by using the
+<code class="docutils literal"><span class="pre">fedmsg-config</span></code> command implemented by
+<code class="xref py py-func docutils literal"><span class="pre">fedmsg.commands.config.config()</span></code>.</p>
+<dl class="function">
+<dt id="fedmsg.config.load_config">
+<code class="descclassname">fedmsg.config.</code><code class="descname">load_config</code><span class="sig-paren">(</span><em>extra_args=None</em>, <em>doc=None</em>, <em>filenames=None</em>, <em>invalidate_cache=False</em>, <em>fedmsg_command=False</em>, <em>disable_defaults=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/config.html#load_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.config.load_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup a runtime config dict by integrating the following sources
+(ordered by precedence):</p>
+<blockquote>
+<div><ul class="simple">
+<li>defaults (unless disable_defaults = True)</li>
+<li>config file</li>
+<li>command line arguments</li>
+</ul>
+</div></blockquote>
+<p>If the <code class="docutils literal"><span class="pre">fedmsg_command</span></code> argument is False, no command line arguments are
+checked.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.config.build_parser">
+<code class="descclassname">fedmsg.config.</code><code class="descname">build_parser</code><span class="sig-paren">(</span><em>declared_args</em>, <em>doc</em>, <em>config=None</em>, <em>prog=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/config.html#build_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.config.build_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the global <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">argparse.ArgumentParser</span></code></a> used by all fedmsg
+commands.</p>
+<p>Extra arguments can be supplied with the <cite>declared_args</cite> argument.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.config.execfile">
+<code class="descclassname">fedmsg.config.</code><code class="descname">execfile</code><span class="sig-paren">(</span><em>fname</em>, <em>variables</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/config.html#execfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.config.execfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is builtin in python2, but we have to roll our own on py3.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-fedmsg.crypto">
+<span id="cryptography-and-message-signing"></span><span id="api-crypto"></span><h3>Cryptography and Message Signing<a class="headerlink" href="#module-fedmsg.crypto" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">fedmsg.crypto</span></code> - Cryptographic component of fedmsg.</p>
+<div class="section" id="introduction">
+<h4>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h4>
+<p>In general, we assume that ‘everything on the bus is public’.  Even though all
+the zmq endpoints are firewalled off from the outside world with iptables, we
+do have a forwarding service setup that indiscriminantly
+forwards all messages to anyone who wants them.
+(See <a class="reference internal" href="commands.html#fedmsg.commands.gateway.gateway" title="fedmsg.commands.gateway.gateway"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.commands.gateway.gateway</span></code></a> for that service.)
+So, the issue is not encrypting messages so they can’t be read.  It is up to
+sensitive services like FAS to <em>not send</em> sensitive information in the first
+place (like passwords, for instance).</p>
+<p>However, since at some point, services will respond to and act on messages that
+come across the bus, we need facilities for guaranteeing a message comes from
+where it <em>ought</em> to come from.  (Tangentially, message consumers need a simple
+way to declare where they expect their messages to come from and have
+the filtering and validation handled for them).</p>
+<p>There should also be a convenient way to turn crypto off both globally and
+locally.  Justification: a developer may want to work out a bug without any
+messages being signed or validated.  In production, certain senders may send
+non-critical data from a corner of Fedora Infrastructure in which it’s
+difficult to sign messages.  A consumer of those messages should be allowed
+to ignore validation for those and only those expected unsigned messages</p>
+<p>Two backend methods are available to accomplish this:</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto.x509</span></code></li>
+<li><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto.gpg</span></code></li>
+</ul>
+</div></blockquote>
+<p>Which backend is used is configured by the <a class="reference internal" href="configuration.html#conf-crypto-backend"><span class="std std-ref">crypto_backend</span></a> configuration
+value.</p>
+</div>
+<div class="section" id="certificates">
+<h4>Certificates<a class="headerlink" href="#certificates" title="Permalink to this headline">¶</a></h4>
+<p>To accomplish message signing, fedmsg must be able to read certificates and a
+private key on disk in the case of the <code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto.x509</span></code> backend
+or to read public and private GnuPG keys in the came of the
+<code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto.gpg</span></code> backend.  For message validation, it only need be
+able to read the x509 certificate or gpg public key.  Exactly <em>which</em>
+certificates are used are determined by looking up the <code class="docutils literal"><span class="pre">certname</span></code> in the
+<a class="reference internal" href="configuration.html#conf-certnames"><span class="std std-ref">certnames</span></a> config dict.</p>
+<p>We use a large number of certs for the deployment of fedmsg.  We have one cert
+per <cite>service-host</cite>.  For example, if we have 3 fedmsg-enabled services and each
+service runs on 10 hosts, then we have 30 unique certificate/key pairs in all.</p>
+<p>The intent is to create difficulty for attackers.  If a low-security service on
+a particular box is compromised, we don’t want the attacker automatically have
+access to the same certificate used for signing high-security service messages.</p>
+<p>Furthermore, attempts are made at the sysadmin-level to ensure that
+fedmsg-enabled services run as users that have exclusive read access to their
+own keys.  See the <a class="reference external" href="http://infrastructure.fedoraproject.org/infra/docs/fedmsg-certs.txt">Fedora Infrastructure SOP</a> for
+more information (including how to generate new certs/bring up new services).</p>
+</div>
+<div class="section" id="routing-policy">
+<h4>Routing Policy<a class="headerlink" href="#routing-policy" title="Permalink to this headline">¶</a></h4>
+<p>Messages are also checked to see if the name of the certificate they bear and
+the topic they’re routed on match up in a <a class="reference internal" href="configuration.html#conf-routing-policy"><span class="std std-ref">routing_policy</span></a> dict.  Is the
+build server allowed to send messages about wiki updates?  Not if the routing
+policy has anything to say about it.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">By analogy, “signature validation is to authentication as
+routing policy checks are to authorization.”</p>
+</div>
+<p>If the topic of a message appears in the <a class="reference internal" href="configuration.html#conf-routing-policy"><span class="std std-ref">routing_policy</span></a>, the name borne
+on the certificate must also appear under the associated list of permitted
+publishers or the message is marked invalid.</p>
+<p>If the topic of a message does <em>not</em> appear in the <a class="reference internal" href="configuration.html#conf-routing-policy"><span class="std std-ref">routing_policy</span></a>, two
+different courses of action are possible:</p>
+<blockquote>
+<div><ul class="simple">
+<li>If <a class="reference internal" href="configuration.html#conf-routing-nitpicky"><span class="std std-ref">routing_nitpicky</span></a> is set to <code class="docutils literal"><span class="pre">False</span></code>, then the message is
+given the green light.  Our routing policy doesn’t have anything
+specific to say about messages of this topic and so who are we to deny
+it passage, right?</li>
+<li>If <a class="reference internal" href="configuration.html#conf-routing-nitpicky"><span class="std std-ref">routing_nitpicky</span></a> is set to <code class="docutils literal"><span class="pre">True</span></code>, then we deny the message
+and mark it as invalid.</li>
+</ul>
+</div></blockquote>
+<p>Typically, you’ll deploy fedmsg with nitpicky mode turned off.  You can build
+your policy over time as you determine what services will be sending what
+messages.  Once deployment of fedmsg reaches a certain level of stability, you
+can turn nitpicky mode on for enhanced security, but by doing so you may break
+certain message paths that you’ve forgotten to include in your routing policy.</p>
+</div>
+<div class="section" id="id1">
+<h4>Configuration<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p>By convention, configuration values for <a class="reference internal" href="#module-fedmsg.crypto" title="fedmsg.crypto"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto</span></code></a> are kept in
+<code class="docutils literal"><span class="pre">/etc/fedmsg.d/ssl.py</span></code>, although technically they can be kept in any
+config <code class="docutils literal"><span class="pre">dict</span></code> in <code class="docutils literal"><span class="pre">/etc/fedmsg.d</span></code> (or in any of the config locations checked
+by <a class="reference internal" href="#module-fedmsg.config" title="fedmsg.config"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.config</span></code></a>).</p>
+<p>The cryptography routines expect the following values to be defined:</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference internal" href="configuration.html#conf-crypto-backend"><span class="std std-ref">crypto_backend</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-crypto-validate-backends"><span class="std std-ref">crypto_validate_backends</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-sign-messages"><span class="std std-ref">sign_messages</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-validate-signatures"><span class="std std-ref">validate_signatures</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-ssldir"><span class="std std-ref">ssldir</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-crl-location"><span class="std std-ref">crl_location</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-crl-cache"><span class="std std-ref">crl_cache</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-crl-cache-expiry"><span class="std std-ref">crl_cache_expiry</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-certnames"><span class="std std-ref">certnames</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-routing-policy"><span class="std std-ref">routing_policy</span></a></li>
+<li><a class="reference internal" href="configuration.html#conf-routing-nitpicky"><span class="std std-ref">routing_nitpicky</span></a></li>
+</ul>
+</div></blockquote>
+<p>For general information on configuration, see <a class="reference internal" href="#module-fedmsg.config" title="fedmsg.config"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.config</span></code></a>.</p>
+</div>
+<div class="section" id="module-contents">
+<h4>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="#module-fedmsg.crypto" title="fedmsg.crypto"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto</span></code></a> encapsulates standalone functions for:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Message signing.</li>
+<li>Signature validation.</li>
+<li>Stripping crypto information for view.</li>
+</ul>
+</div></blockquote>
+<p>See <code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto.x509</span></code> and <code class="xref py py-mod docutils literal"><span class="pre">fedmsg.crypto.gpg</span></code> for
+implementation details.</p>
+<dl class="function">
+<dt id="fedmsg.crypto.init">
+<code class="descclassname">fedmsg.crypto.</code><code class="descname">init</code><span class="sig-paren">(</span><em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/crypto.html#init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.crypto.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the crypto backend.</p>
+<p>The backend can be one of two plugins:</p>
+<blockquote>
+<div><ul class="simple">
+<li>‘x509’ - Uses x509 certificates.</li>
+<li>‘gpg’ - Uses GnuPG keys.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.crypto.sign">
+<code class="descclassname">fedmsg.crypto.</code><code class="descname">sign</code><span class="sig-paren">(</span><em>message</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/crypto.html#sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.crypto.sign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert two new fields into the message dict and return it.</p>
+<p>Those fields are:</p>
+<blockquote>
+<div><ul class="simple">
+<li>‘signature’ - the computed message digest of the JSON repr.</li>
+<li>‘certificate’ - the base64 certificate or gpg key of the signator.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.crypto.strip_credentials">
+<code class="descclassname">fedmsg.crypto.</code><code class="descname">strip_credentials</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/crypto.html#strip_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.crypto.strip_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strip credentials from a message dict.</p>
+<p>A new dict is returned without either <cite>signature</cite> or <cite>certificate</cite> keys.
+This method can be called safely; the original dict is not modified.</p>
+<p>This function is applicable using either using the x509 or gpg backends.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.crypto.validate">
+<code class="descclassname">fedmsg.crypto.</code><code class="descname">validate</code><span class="sig-paren">(</span><em>message</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/crypto.html#validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.crypto.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true or false if the message is signed appropriately.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.crypto.validate_signed_by">
+<code class="descclassname">fedmsg.crypto.</code><code class="descname">validate_signed_by</code><span class="sig-paren">(</span><em>message</em>, <em>signer</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/crypto.html#validate_signed_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.crypto.validate_signed_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate that a message was signed by a particular certificate.</p>
+<p>This works much like <code class="docutils literal"><span class="pre">validate(...)</span></code>, but additionally accepts a
+<code class="docutils literal"><span class="pre">signer</span></code> argument.  It will reject a message for any of the regular
+circumstances, but will also reject it if its not signed by a cert with the
+argued name.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-fedmsg.encoding">
+<span id="message-encoding"></span><h3>Message Encoding<a class="headerlink" href="#module-fedmsg.encoding" title="Permalink to this headline">¶</a></h3>
+<p>fedmsg messages are encoded as JSON.</p>
+<p>Use the functions <a class="reference internal" href="#fedmsg.encoding.loads" title="fedmsg.encoding.loads"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.encoding.loads()</span></code></a>, <a class="reference internal" href="#fedmsg.encoding.dumps" title="fedmsg.encoding.dumps"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.encoding.dumps()</span></code></a>,
+and <a class="reference internal" href="#fedmsg.encoding.pretty_dumps" title="fedmsg.encoding.pretty_dumps"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.encoding.pretty_dumps()</span></code></a> to encode/decode.</p>
+<p>When serializing objects (usually python dicts) with
+<a class="reference internal" href="#fedmsg.encoding.dumps" title="fedmsg.encoding.dumps"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.encoding.dumps()</span></code></a> and <a class="reference internal" href="#fedmsg.encoding.pretty_dumps" title="fedmsg.encoding.pretty_dumps"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.encoding.pretty_dumps()</span></code></a>, the
+following exceptions to normal JSON serialization are observed.</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></code></a> objects are correctly converted to seconds since
+the epoch.</li>
+<li>For objects that are not JSON serializable, if they have a <code class="docutils literal"><span class="pre">.__json__()</span></code>
+method, that will be used instead.</li>
+<li>SQLAlchemy models that do not specify a <code class="docutils literal"><span class="pre">.__json__()</span></code> method will be run
+through <a class="reference internal" href="#fedmsg.encoding.sqla.to_json" title="fedmsg.encoding.sqla.to_json"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.encoding.sqla.to_json()</span></code></a> which recursively produces a
+dict of all attributes and relations of the object(!)  Be careful using
+this, as you might expose information to the bus that you do not want to.
+See <a class="reference internal" href="#api-crypto"><span class="std std-ref">Cryptography and Message Signing</span></a> for considerations.</li>
+</ul>
+</div></blockquote>
+<dl class="function">
+<dt id="fedmsg.encoding.loads">
+<code class="descclassname">fedmsg.encoding.</code><code class="descname">loads</code><span class="sig-paren">(</span><em>s</em>, <em>*</em>, <em>encoding=None</em>, <em>cls=None</em>, <em>object_hook=None</em>, <em>parse_float=None</em>, <em>parse_int=None</em>, <em>parse_constant=None</em>, <em>object_pairs_hook=None</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/json.html#loads"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.encoding.loads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserialize <code class="docutils literal"><span class="pre">s</span></code> (a <code class="docutils literal"><span class="pre">str</span></code>, <code class="docutils literal"><span class="pre">bytes</span></code> or <code class="docutils literal"><span class="pre">bytearray</span></code> instance
+containing a JSON document) to a Python object.</p>
+<p><code class="docutils literal"><span class="pre">object_hook</span></code> is an optional function that will be called with the
+result of any object literal decode (a <code class="docutils literal"><span class="pre">dict</span></code>). The return value of
+<code class="docutils literal"><span class="pre">object_hook</span></code> will be used instead of the <code class="docutils literal"><span class="pre">dict</span></code>. This feature
+can be used to implement custom decoders (e.g. JSON-RPC class hinting).</p>
+<p><code class="docutils literal"><span class="pre">object_pairs_hook</span></code> is an optional function that will be called with the
+result of any object literal decoded with an ordered list of pairs.  The
+return value of <code class="docutils literal"><span class="pre">object_pairs_hook</span></code> will be used instead of the <code class="docutils literal"><span class="pre">dict</span></code>.
+This feature can be used to implement custom decoders that rely on the
+order that the key and value pairs are decoded (for example,
+collections.OrderedDict will remember the order of insertion). If
+<code class="docutils literal"><span class="pre">object_hook</span></code> is also defined, the <code class="docutils literal"><span class="pre">object_pairs_hook</span></code> takes priority.</p>
+<p><code class="docutils literal"><span class="pre">parse_float</span></code>, if specified, will be called with the string
+of every JSON float to be decoded. By default this is equivalent to
+float(num_str). This can be used to use another datatype or parser
+for JSON floats (e.g. decimal.Decimal).</p>
+<p><code class="docutils literal"><span class="pre">parse_int</span></code>, if specified, will be called with the string
+of every JSON int to be decoded. By default this is equivalent to
+int(num_str). This can be used to use another datatype or parser
+for JSON integers (e.g. float).</p>
+<p><code class="docutils literal"><span class="pre">parse_constant</span></code>, if specified, will be called with one of the
+following strings: -Infinity, Infinity, NaN.
+This can be used to raise an exception if invalid JSON numbers
+are encountered.</p>
+<p>To use a custom <code class="docutils literal"><span class="pre">JSONDecoder</span></code> subclass, specify it with the <code class="docutils literal"><span class="pre">cls</span></code>
+kwarg; otherwise <code class="docutils literal"><span class="pre">JSONDecoder</span></code> is used.</p>
+<p>The <code class="docutils literal"><span class="pre">encoding</span></code> argument is ignored and deprecated.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.encoding.dumps">
+<code class="descclassname">fedmsg.encoding.</code><code class="descname">dumps</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#fedmsg.encoding.dumps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON string representation of a Python data structure.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">json.encoder</span> <span class="k">import</span> <span class="n">JSONEncoder</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">JSONEncoder</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">({</span><span class="s2">&quot;foo&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span> <span class="s2">&quot;baz&quot;</span><span class="p">]})</span>
+<span class="go">&#39;{&quot;foo&quot;: [&quot;bar&quot;, &quot;baz&quot;]}&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.encoding.pretty_dumps">
+<code class="descclassname">fedmsg.encoding.</code><code class="descname">pretty_dumps</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#fedmsg.encoding.pretty_dumps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON string representation of a Python data structure.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">json.encoder</span> <span class="k">import</span> <span class="n">JSONEncoder</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">JSONEncoder</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">({</span><span class="s2">&quot;foo&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span> <span class="s2">&quot;baz&quot;</span><span class="p">]})</span>
+<span class="go">&#39;{&quot;foo&quot;: [&quot;bar&quot;, &quot;baz&quot;]}&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<div class="section" id="module-fedmsg.encoding.sqla">
+<span id="sqlalchemy-encoding-utilities"></span><h4>SQLAlchemy Encoding Utilities<a class="headerlink" href="#module-fedmsg.encoding.sqla" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="#module-fedmsg.encoding.sqla" title="fedmsg.encoding.sqla"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.encoding.sqla</span></code></a> houses utility functions for JSONifying
+sqlalchemy models that do not define their own <code class="docutils literal"><span class="pre">.__json__()</span></code> methods.</p>
+<p>Use at your own risk.  <a class="reference internal" href="#fedmsg.encoding.sqla.to_json" title="fedmsg.encoding.sqla.to_json"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.encoding.sqla.to_json()</span></code></a> will expose all
+attributes and relations of your sqlalchemy object and may expose information
+you not want it to.  See <a class="reference internal" href="#api-crypto"><span class="std std-ref">Cryptography and Message Signing</span></a> for considerations.</p>
+<dl class="function">
+<dt id="fedmsg.encoding.sqla.expand">
+<code class="descclassname">fedmsg.encoding.sqla.</code><code class="descname">expand</code><span class="sig-paren">(</span><em>obj</em>, <em>relation</em>, <em>seen</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/encoding/sqla.html#expand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.encoding.sqla.expand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the to_json or id of a sqlalchemy relationship.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.encoding.sqla.to_json">
+<code class="descclassname">fedmsg.encoding.sqla.</code><code class="descname">to_json</code><span class="sig-paren">(</span><em>obj</em>, <em>seen=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/encoding/sqla.html#to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.encoding.sqla.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the object.</p>
+<p>Recursively evaluates to_json(…) on its relationships.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-fedmsg.meta">
+<span id="natural-language-representation-of-messages"></span><h3>“Natural Language” Representation of Messages<a class="headerlink" href="#module-fedmsg.meta" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference internal" href="#module-fedmsg.meta" title="fedmsg.meta"><code class="xref py py-mod docutils literal"><span class="pre">fedmsg.meta</span></code></a> handles the conversion of fedmsg messages
+(dict-like json objects) into internationalized human-readable
+strings:  strings like <code class="docutils literal"><span class="pre">&quot;nirik</span> <span class="pre">voted</span> <span class="pre">on</span> <span class="pre">a</span> <span class="pre">tag</span> <span class="pre">in</span> <span class="pre">tagger&quot;</span></code> and
+<code class="docutils literal"><span class="pre">&quot;lmacken</span> <span class="pre">commented</span> <span class="pre">on</span> <span class="pre">a</span> <span class="pre">bodhi</span> <span class="pre">update.&quot;</span></code></p>
+<p>The intent is to use the module 1) in the <code class="docutils literal"><span class="pre">fedmsg-irc</span></code> bot and 2) in the
+gnome-shell desktop notification widget.  The sky is the limit, though.</p>
+<p>The primary entry point is <a class="reference internal" href="#fedmsg.meta.msg2repr" title="fedmsg.meta.msg2repr"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.meta.msg2repr()</span></code></a> which takes a dict and
+returns the string representation.  Portions of that string are in turn
+produced by <a class="reference internal" href="#fedmsg.meta.msg2title" title="fedmsg.meta.msg2title"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.meta.msg2title()</span></code></a>, <a class="reference internal" href="#fedmsg.meta.msg2subtitle" title="fedmsg.meta.msg2subtitle"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.meta.msg2subtitle()</span></code></a>,
+and <a class="reference internal" href="#fedmsg.meta.msg2link" title="fedmsg.meta.msg2link"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.meta.msg2link()</span></code></a>.</p>
+<p>Message processing is handled by a list of MessageProcessors (instances of
+<a class="reference internal" href="#fedmsg.meta.base.BaseProcessor" title="fedmsg.meta.base.BaseProcessor"><code class="xref py py-class docutils literal"><span class="pre">fedmsg.meta.base.BaseProcessor</span></code></a>) which are discovered on a setuptools
+<strong>entry-point</strong>.  Messages for which no MessageProcessor exists are
+handled gracefully.</p>
+<p>The original deployment of fedmsg in <cite>Fedora Infrastructure</cite> uses metadata
+providers/message processors from a plugin called
+<a class="reference external" href="https://github.com/fedora-infra/fedmsg_meta_fedora_infrastructure">fedmsg_meta_fedora_infrastructure</a>.
+If you’d like to add your own processors for your own deployment, you’ll need
+to extend <a class="reference internal" href="#fedmsg.meta.base.BaseProcessor" title="fedmsg.meta.base.BaseProcessor"><code class="xref py py-class docutils literal"><span class="pre">fedmsg.meta.base.BaseProcessor</span></code></a> and override the appropriate
+methods.  If you package up your processor and expose it on the <code class="docutils literal"><span class="pre">fedmsg.meta</span></code>
+entry-point, your new class will need to be added to the
+<a class="reference internal" href="#fedmsg.meta.processors" title="fedmsg.meta.processors"><code class="xref py py-data docutils literal"><span class="pre">fedmsg.meta.processors</span></code></a> list at runtime.</p>
+<p>End users can have multiple plugin sets installed simultaneously.</p>
+<dl class="exception">
+<dt id="fedmsg.meta.ProcessorsNotInitialized">
+<em class="property">exception </em><code class="descclassname">fedmsg.meta.</code><code class="descname">ProcessorsNotInitialized</code><a class="reference internal" href="_modules/fedmsg/meta.html#ProcessorsNotInitialized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.ProcessorsNotInitialized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.conglomerate">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">conglomerate</code><span class="sig-paren">(</span><em>messages</em>, <em>subject=None</em>, <em>lexers=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#conglomerate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.conglomerate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of messages with some of them grouped into conglomerate
+messages.  Conglomerate messages represent several other messages.</p>
+<p>For example, you might pass this function a list of 40 messages.
+38 of those are git.commit messages, 1 is a bodhi.update message, and 1 is
+a badge.award message.  This function could return a list of three
+messages, one representing the 38 git commit messages, one representing the
+bodhi.update message, and one representing the badge.award message.</p>
+<p>The <code class="docutils literal"><span class="pre">subject</span></code> argument is optional and will return “subjective”
+representations if possible (see msg2subjective(…)).</p>
+<p>Functionality is provided by fedmsg.meta plugins on a “best effort” basis.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.legacy_condition">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">legacy_condition</code><span class="sig-paren">(</span><em>cls</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#legacy_condition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.legacy_condition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.make_processors">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">make_processors</code><span class="sig-paren">(</span><em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#make_processors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.make_processors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize all of the text processors.</p>
+<p>You’ll need to call this once before using any of the other functions in
+this module.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fedmsg.config</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fedmsg.meta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">([],</span> <span class="kc">None</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fedmsg</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">make_processors</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">text</span> <span class="o">=</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">msg2repr</span><span class="p">(</span><span class="n">some_message_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2agent">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2agent</code><span class="sig-paren">(</span><em>msg</em>, <em>processor=None</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the single username who is the “agent” for an event.</p>
+<p>An “agent” is the one responsible for the event taking place, for example,
+if one person gives karma to another, then both usernames are returned by
+msg2usernames, but only the one who gave the karma is returned by
+msg2agent.</p>
+<p>If the processor registered to handle the message does not provide an
+agent method, then the <em>first</em> user returned by msg2usernames is returned
+(whether that is correct or not).  Here we assume that if a processor
+implements <cite>agent</cite>, then it knows what it is doing and we should trust
+that.  But if it does not implement it, we’ll try our best guess.</p>
+<p>If there are no users returned by msg2usernames, then None is returned.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2avatars">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2avatars</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2avatars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2avatars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict mapping of usernames to avatar URLs.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2emails">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2emails</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2emails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2emails" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict mapping of usernames to email addresses.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2icon">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2icon</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2icon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2icon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a primary icon associated with a message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2lexer">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2lexer</code><span class="sig-paren">(</span><em>msg</em>, <em>processor=None</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2lexer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2lexer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Pygments lexer able to parse the long_form of this message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2link">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2link</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a URL associated with a message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2long_form">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2long_form</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2long_form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2long_form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a ‘long form’ text representation of a message.</p>
+<p>For most message, this will just default to the terse subtitle, but for
+some messages a long paragraph-structured block of text may be returned.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2objects">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2objects</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2objects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of objects associated with a message.</p>
+<p>“objects” here is the “objects” from english grammar.. meaning, the thing
+in the message upon which action is being done.  The “subject” is the
+user and the “object” is the packages, or the wiki articles, or the blog
+posts.</p>
+<p>Where possible, use slash-delimited names for objects (as in wiki URLs).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2packages">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2packages</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2packages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2packages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of package names associated with a message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2processor">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2processor</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2processor" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a given message return the text processor that can handle it.</p>
+<p>This will raise a <a class="reference internal" href="#fedmsg.meta.ProcessorsNotInitialized" title="fedmsg.meta.ProcessorsNotInitialized"><code class="xref py py-class docutils literal"><span class="pre">fedmsg.meta.ProcessorsNotInitialized</span></code></a> exception
+if <a class="reference internal" href="#fedmsg.meta.make_processors" title="fedmsg.meta.make_processors"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.meta.make_processors()</span></code></a> hasn’t been called yet.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2repr">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2repr</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2repr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2repr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a human-readable or “natural language” representation of a
+dict-like fedmsg message.  Think of this as the ‘top-most level’ function
+in this module.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2secondary_icon">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2secondary_icon</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2secondary_icon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2secondary_icon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a secondary icon associated with a message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2subjective">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2subjective</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2subjective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2subjective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a human-readable text representation of a dict-like
+fedmsg message from the subjective perspective of a user.</p>
+<p>For example, if the subject viewing the message is “oddshocks”
+and the message would normally translate into “oddshocks commented on
+ticket #174”, it would instead translate into “you commented on ticket
+#174”.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2subtitle">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2subtitle</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2subtitle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2subtitle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a ‘subtitle’ or secondary text associated with a message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2title">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2title</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2title"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a ‘title’ or primary text associated with a message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.msg2usernames">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">msg2usernames</code><span class="sig-paren">(</span><em>msg</em>, <em>legacy=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#msg2usernames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.msg2usernames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of FAS usernames associated with a message.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.with_processor">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">with_processor</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta.html#with_processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.with_processor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="fedmsg.meta.processors">
+<code class="descclassname">fedmsg.meta.</code><code class="descname">processors</code><em class="property"> = ProcessorsNotInitialized('You must first call fedmsg.meta.make_processors(**config)',)</em><a class="headerlink" href="#fedmsg.meta.processors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-fedmsg.meta.base"></span><dl class="class">
+<dt id="fedmsg.meta.base.BaseConglomerator">
+<em class="property">class </em><code class="descclassname">fedmsg.meta.base.</code><code class="descname">BaseConglomerator</code><span class="sig-paren">(</span><em>processor</em>, <em>internationalization_callable</em>, <em>**conf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base Conglomerator.  This abstract base class must be extended.</p>
+<p>fedmsg.meta “conglomerators” are similar to but different from the
+fedmsg.meta “processors”.  Where processors take a single message are
+return metadata about them (subtitle, a list of usernames, etc..),
+conglomerators take multiple messages and return a reduced subset of
+“conglomerate” messages.  Think: there are 100 messages where pbrobinson
+built 100 different packages in koji – we can just represent those in a UI
+somewhere as a single message “pbrobinson built 100 different packages
+(click for details)”.</p>
+<p>This BaseConglomerator is meant to be extended many times over to provide
+plugins that know how to conglomerate different combinations of messages.</p>
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseConglomerator.can_handle">
+<code class="descname">can_handle</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.can_handle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.can_handle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if we should begin to consider a given message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseConglomerator.conglomerate">
+<code class="descname">conglomerate</code><span class="sig-paren">(</span><em>messages</em>, <em>subject=None</em>, <em>lexers=False</em>, <em>**conf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.conglomerate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.conglomerate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level API entry point.  Given a list of messages, transform it
+into a list of conglomerates where possible.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="fedmsg.meta.base.BaseConglomerator.list_to_series">
+<em class="property">static </em><code class="descname">list_to_series</code><span class="sig-paren">(</span><em>items</em>, <em>N=3</em>, <em>oxford_comma=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.list_to_series"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.list_to_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a list of things into a comma-separated string.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">list_to_series</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">])</span>
+<span class="go">&#39;a, b, and 2 others&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">list_to_series</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">],</span> <span class="n">N</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">oxford_comma</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">&#39;a, b, c and d&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseConglomerator.matches">
+<code class="descname">matches</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.matches"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.matches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if message a can be paired with message b.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseConglomerator.merge">
+<code class="descname">merge</code><span class="sig-paren">(</span><em>constituents</em>, <em>subject</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given N presumably matching messages, return one merged message</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="fedmsg.meta.base.BaseConglomerator.produce_template">
+<em class="property">classmethod </em><code class="descname">produce_template</code><span class="sig-paren">(</span><em>constituents</em>, <em>subject</em>, <em>lexers=False</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.produce_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.produce_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function used by <cite>merge</cite>.
+Produces the beginnings of a merged conglomerate message that needs to
+be later filled out by a subclass.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseConglomerator.select_constituents">
+<code class="descname">select_constituents</code><span class="sig-paren">(</span><em>messages</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.select_constituents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.select_constituents" title="Permalink to this definition">¶</a></dt>
+<dd><p>From a list of messages, return a subset that can be merged</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseConglomerator.skip">
+<code class="descname">skip</code><span class="sig-paren">(</span><em>message</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseConglomerator.skip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseConglomerator.skip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="fedmsg.meta.base.BaseProcessor">
+<em class="property">class </em><code class="descclassname">fedmsg.meta.base.</code><code class="descname">BaseProcessor</code><span class="sig-paren">(</span><em>internationalization_callable</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base Processor.  Without being extended, this doesn’t actually handle
+any messages.</p>
+<p>Processors require that an <code class="docutils literal"><span class="pre">internationalization_callable</span></code> be passed to
+them at instantiation.  Internationalization is often done at import time,
+but we handle it at runtime so that a single process may translate fedmsg
+messages into multiple languages.  Think: an IRC bot that runs
+#fedora-fedmsg, #fedora-fedmsg-es, #fedora-fedmsg-it.  Or: a twitter bot
+that posts to multiple language-specific accounts.</p>
+<p>That feature is currently unused, but fedmsg.meta supports future
+internationalization (there may be bugs to work out).</p>
+<dl class="attribute">
+<dt id="fedmsg.meta.base.BaseProcessor.agent">
+<code class="descname">agent</code><em class="property"> = NotImplemented</em><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.agent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.avatars">
+<code class="descname">avatars</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.avatars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.avatars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict of avatar URLs associated with a message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.conglomerate">
+<code class="descname">conglomerate</code><span class="sig-paren">(</span><em>messages</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.conglomerate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.conglomerate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given N messages, return another list that has some of them
+grouped together into a common ‘item’.</p>
+<p>A conglomeration of messages should be of the following form:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s1">&#39;subtitle&#39;</span><span class="p">:</span> <span class="s1">&#39;relrod pushed commits to ghc and 487 other packages&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;link&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># This could be something.</span>
+  <span class="s1">&#39;icon&#39;</span><span class="p">:</span> <span class="s1">&#39;https://that-git-logo&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;secondary_icon&#39;</span><span class="p">:</span> <span class="s1">&#39;https://that-relrod-avatar&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="n">some_timestamp</span><span class="p">,</span>
+  <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="n">some_other_timestamp</span><span class="p">,</span>
+  <span class="s1">&#39;human_time&#39;</span><span class="p">:</span> <span class="s1">&#39;5 minutes ago&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;usernames&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;relrod&#39;</span><span class="p">],</span>
+  <span class="s1">&#39;packages&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ghc&#39;</span><span class="p">,</span> <span class="s1">&#39;nethack&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">],</span>
+  <span class="s1">&#39;topics&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;org.fedoraproject.prod.git.receive&#39;</span><span class="p">],</span>
+  <span class="s1">&#39;categories&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;git&#39;</span><span class="p">],</span>
+  <span class="s1">&#39;msg_ids&#39;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s1">&#39;2014-abcde&#39;</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s1">&#39;subtitle&#39;</span><span class="p">:</span> <span class="s1">&#39;relrod pushed some commits to ghc&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;git.receive&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;link&#39;</span><span class="p">:</span> <span class="s1">&#39;http://...&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;icon&#39;</span><span class="p">:</span> <span class="s1">&#39;http://...&#39;</span><span class="p">,</span>
+      <span class="p">},</span>
+      <span class="s1">&#39;2014-bcdef&#39;</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s1">&#39;subtitle&#39;</span><span class="p">:</span> <span class="s1">&#39;relrod pushed some commits to nethack&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;git.receive&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;link&#39;</span><span class="p">:</span> <span class="s1">&#39;http://...&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;icon&#39;</span><span class="p">:</span> <span class="s1">&#39;http://...&#39;</span><span class="p">,</span>
+      <span class="p">},</span>
+  <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The telltale sign that an entry in a list of messages represents a
+conglomerate message is the presence of the plural <code class="docutils literal"><span class="pre">msg_ids</span></code> field.
+In contrast, ungrouped singular messages should bear a singular
+<code class="docutils literal"><span class="pre">msg_id</span></code> field.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fedmsg.meta.base.BaseProcessor.conglomerators">
+<code class="descname">conglomerators</code><em class="property"> = None</em><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.conglomerators" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.emails">
+<code class="descname">emails</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.emails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.emails" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict of emails associated with a message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.handle_msg">
+<code class="descname">handle_msg</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.handle_msg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.handle_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>If we can handle the given message, return the remainder of the topic.</p>
+<p>Returns None if we can’t handle the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.icon">
+<code class="descname">icon</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.icon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.icon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a “icon” for the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.lexer">
+<code class="descname">lexer</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.lexer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.lexer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a pygments lexer that can be applied to the long_form.</p>
+<p>Returns None if no lexer is associated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.link">
+<code class="descname">link</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a “link” for the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.long_form">
+<code class="descname">long_form</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.long_form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.long_form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return some paragraphs of text about a message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.objects">
+<code class="descname">objects</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.objects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of objects associated with a message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.packages">
+<code class="descname">packages</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.packages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.packages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of package names associated with a message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.secondary_icon">
+<code class="descname">secondary_icon</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.secondary_icon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.secondary_icon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a “secondary icon” for the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.subjective">
+<code class="descname">subjective</code><span class="sig-paren">(</span><em>msg</em>, <em>subject</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.subjective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.subjective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a “subjective” subtitle for the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.subtitle">
+<code class="descname">subtitle</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.subtitle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.subtitle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a “subtitle” for the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.title">
+<code class="descname">title</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.title"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.title" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="fedmsg.meta.base.BaseProcessor.topic_prefix_re">
+<code class="descname">topic_prefix_re</code><em class="property"> = None</em><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.topic_prefix_re" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fedmsg.meta.base.BaseProcessor.usernames">
+<code class="descname">usernames</code><span class="sig-paren">(</span><em>msg</em>, <em>**config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#BaseProcessor.usernames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.BaseProcessor.usernames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of FAS usernames associated with a message.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.meta.base.add_metaclass">
+<code class="descclassname">fedmsg.meta.base.</code><code class="descname">add_metaclass</code><span class="sig-paren">(</span><em>metaclass</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/meta/base.html#add_metaclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.meta.base.add_metaclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compat shim for el7.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-fedmsg.replay">
+<span id="replay"></span><h3>Replay<a class="headerlink" href="#module-fedmsg.replay" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="fedmsg.replay.check_for_replay">
+<code class="descclassname">fedmsg.replay.</code><code class="descname">check_for_replay</code><span class="sig-paren">(</span><em>name</em>, <em>names_to_seq_id</em>, <em>msg</em>, <em>config</em>, <em>context=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/replay.html#check_for_replay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.replay.check_for_replay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check to see if messages need to be replayed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The consumer’s name.</li>
+<li><strong>names_to_seq_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – A dictionary that maps names to the last seen sequence ID.</li>
+<li><strong>msg</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – The latest message that has arrived.</li>
+<li><strong>config</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – A configuration dictionary. This dictionary should contain, at a
+minimum, two keys. The first key, ‘replay_endpoints’, should be a dictionary
+that maps <code class="docutils literal"><span class="pre">name</span></code> to a ZeroMQ socket. The second key, ‘io_threads’, is an
+integer used to initialize the ZeroMQ context.</li>
+<li><strong>context</strong> (<a class="reference external" href="https://pyzmq.readthedocs.io/en/stable/api/zmq.html#zmq.Context" title="(in PyZMQ v16.0.2)"><em>zmq.Context</em></a>) – The ZeroMQ context to use. If a context is not provided,
+one will be created.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A list of message dictionaries.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)">list</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="fedmsg.replay.get_replay">
+<code class="descclassname">fedmsg.replay.</code><code class="descname">get_replay</code><span class="sig-paren">(</span><em>name</em>, <em>query</em>, <em>config</em>, <em>context=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fedmsg/replay.html#get_replay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fedmsg.replay.get_replay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the replay endpoint for missed messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The replay endpoint name.</li>
+<li><strong>query</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – <p>A dictionary used to query the replay endpoint for messages.
+Queries are dictionaries with the following any of the following keys:</p>
+<ul>
+<li>’seq_ids’: A <code class="docutils literal"><span class="pre">list</span></code> of <code class="docutils literal"><span class="pre">int</span></code>, matching the seq_id attributes
+of the messages. It should return at most as many messages as the
+length of the list, assuming no duplicate.</li>
+<li>’seq_id’: A single <code class="docutils literal"><span class="pre">int</span></code> matching the seq_id attribute of the message.
+Should return a single message. It is intended as a shorthand for
+singleton <code class="docutils literal"><span class="pre">seq_ids</span></code> queries.</li>
+<li>’seq_id_range’: A two-tuple of <code class="docutils literal"><span class="pre">int</span></code> defining a range of seq_id to check.</li>
+<li>’msg_ids’: A <code class="docutils literal"><span class="pre">list</span></code> of UUIDs matching the msg_id attribute of the messages.</li>
+<li>’msg_id’: A single UUID for the msg_id attribute.</li>
+<li>’time’: A tuple of two timestamps. It will return all messages emitted in between.</li>
+</ul>
+</li>
+<li><strong>config</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – A configuration dictionary. This dictionary should contain, at a
+minimum, two keys. The first key, ‘replay_endpoints’, should be a dictionary
+that maps <code class="docutils literal"><span class="pre">name</span></code> to a ZeroMQ socket. The second key, ‘io_threads’, is an
+integer used to initialize the ZeroMQ context.</li>
+<li><strong>context</strong> (<a class="reference external" href="https://pyzmq.readthedocs.io/en/stable/api/zmq.html#zmq.Context" title="(in PyZMQ v16.0.2)"><em>zmq.Context</em></a>) – The ZeroMQ context to use. If a context is not provided,
+one will be created.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A generator that yields message dictionaries.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">generator</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="the-fedmsg-protocol">
+<h2>The fedmsg Protocol<a class="headerlink" href="#the-fedmsg-protocol" title="Permalink to this headline">¶</a></h2>
+<p>fedmsg uses <a class="reference external" href="https://rfc.zeromq.org/spec:29/PUBSUB/">ZeroMQ Publish-Subscribe</a> (PUBSUB) sockets for the messages sent by
+<a class="reference internal" href="#fedmsg.publish" title="fedmsg.publish"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.publish()</span></code></a> and the messages received by <a class="reference internal" href="#fedmsg.tail_messages" title="fedmsg.tail_messages"><code class="xref py py-func docutils literal"><span class="pre">fedmsg.tail_messages()</span></code></a>
+or by way of the Moksha Hub-Consumer approach.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The message format described below is <em>not</em> part of the public API at this time.</p>
+</div>
+<p>The published ZeroMQ message consists of a multi-part message of exactly two frames,
+formatted on the wire as follows:</p>
+<ul class="simple">
+<li>Frame 0: The message topic against which subscribers will perform a binary comparison.</li>
+<li>Frame 1: The JSON-serialized, UTF-8 encoded message.</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#python">Python</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-fedmsg">Sending and Receiving Messages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-fedmsg.config">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-fedmsg.crypto">Cryptography and Message Signing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-fedmsg.encoding">Message Encoding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-fedmsg.meta">“Natural Language” Representation of Messages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-fedmsg.replay">Replay</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-fedmsg-protocol">The fedmsg Protocol</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="changelog.html" title="previous chapter">Changelog</a></li>
+      <li>Next: <a href="contributing.html" title="next chapter">Contributing</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

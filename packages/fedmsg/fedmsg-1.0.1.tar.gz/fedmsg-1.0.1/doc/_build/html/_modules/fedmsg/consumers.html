@@ -1,0 +1,453 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg.consumers &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg.consumers</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 - 2014 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">psutil</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">moksha.hub.api.consumer</span>
+<span class="kn">import</span> <span class="nn">six</span>
+
+<span class="kn">import</span> <span class="nn">fedmsg.crypto</span>
+<span class="kn">import</span> <span class="nn">fedmsg.encoding</span>
+<span class="kn">from</span> <span class="nn">fedmsg.replay</span> <span class="k">import</span> <span class="n">check_for_replay</span>
+
+
+<div class="viewcode-block" id="FedmsgConsumer"><a class="viewcode-back" href="../../api.html#fedmsg.consumers.FedmsgConsumer">[docs]</a><span class="k">class</span> <span class="nc">FedmsgConsumer</span><span class="p">(</span><span class="n">moksha</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">consumer</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for fedmsg consumers.</span>
+
+<span class="sd">    This class inherits from :class:`moksha.hub.api.consumer.Consumer` and you</span>
+<span class="sd">    should familiarize yourself with this class as well.</span>
+
+<span class="sd">    To create a consumer, you must inherit this class and do the following:</span>
+
+<span class="sd">        * Declare the class on the ``moksha.consumers`` python entry-point::</span>
+
+<span class="sd">              setup(</span>
+<span class="sd">                  entry_points={</span>
+<span class="sd">                      &#39;moksha.consumer&#39;: (</span>
+<span class="sd">                          &#39;your_consumer = python.path:YourConsumerClass&#39;,</span>
+<span class="sd">                      ),</span>
+<span class="sd">                  },</span>
+<span class="sd">              )</span>
+
+<span class="sd">        * Implement the ``consume(self, message)`` method on the class.</span>
+
+<span class="sd">        * Set the attributes documented below</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        validate_signatures (bool): If ``False``, message authenticity will not be</span>
+<span class="sd">            checked. This is helpful if you&#39;re developing or building a special-case</span>
+<span class="sd">            consumer. For example, the consumer used by :ref:`command-relay` sets</span>
+<span class="sd">            ``validate_signatures = False`` so that it can transparently forward along</span>
+<span class="sd">            everything and let the terminal endpoints decide whether or not to consume</span>
+<span class="sd">            particular messages.</span>
+
+<span class="sd">        topic (str or list): This attribute is required. Either a :class:`str`</span>
+<span class="sd">            or :class:`list` of :class:`str` that are topics that this consumer</span>
+<span class="sd">            is interested in receiving messages for. To receive all messages, use</span>
+<span class="sd">            an empty string.</span>
+
+<span class="sd">        config_key (str): The name of the configuration key used to enable or disable</span>
+<span class="sd">            this consumer. If this key is not present in the fedmsg configuration or</span>
+<span class="sd">            does not have a value of ``True``, :ref:`command-hub` will not run the</span>
+<span class="sd">            consumer.</span>
+
+<span class="sd">        replay_name (str): The name of the replay endpoint where the system should</span>
+<span class="sd">            query for playback in case of missed messages. It must match a service</span>
+<span class="sd">            key in :ref:`conf-replay-endpoints`. This attribute is optional.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hub (moksha.hub.hub.MokshaCentralHub): The Moksha Hub that is initializing this</span>
+<span class="sd">            consumer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">validate_signatures</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">config_key</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hub</span><span class="p">):</span>
+        <span class="n">module</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_key</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2"> must declare a &#39;config_key&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">module</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config_key</span><span class="p">,</span> <span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_key</span><span class="p">)</span>
+        <span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_key</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;* disabled by config - </span><span class="si">%s</span><span class="s1">:</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;  enabled by config  - </span><span class="si">%s</span><span class="s1">:</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+        <span class="c1"># This call &quot;completes&quot; registration of this consumer with the hub.</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FedmsgConsumer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">hub</span><span class="p">)</span>
+
+        <span class="c1"># Now, re-get our logger to override the one moksha assigns us.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_signatures</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate_signatures</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;validate_signatures&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;replay_name&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name_to_seq_id</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">replay_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;replay_endpoints&quot;</span><span class="p">,</span> <span class="p">{}):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name_to_seq_id</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">replay_name</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># Check if we have a status file to see if we have a backlog or not.</span>
+        <span class="c1"># Create its directory if it doesn&#39;t exist.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_directory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status_directory&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_lock</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_directory</span><span class="p">:</span>
+
+            <span class="c1"># Extract proc name and handle differences between py2.6 and py2.7</span>
+            <span class="n">proc_name</span> <span class="o">=</span> <span class="n">current_proc</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">proc_name</span><span class="p">):</span>
+                <span class="n">proc_name</span> <span class="o">=</span> <span class="n">proc_name</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status_directory</span><span class="p">,</span> <span class="n">proc_name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
+            <span class="n">topmost_directory</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">topmost_directory</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">topmost_directory</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">datagrepper_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;datagrepper_url&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">datagrepper_url</span><span class="p">:</span>
+            <span class="c1"># First, try to read in the status from a previous run and fire off</span>
+            <span class="c1"># a thread to set up our workload.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Backlog handling setup.  status: </span><span class="si">%r</span><span class="s2">, url: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">datagrepper_url</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_lock</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">moksha</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">reactor</span><span class="o">.</span><span class="n">reactor</span><span class="o">.</span><span class="n">callInThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backlog</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No backlog handling.  status: </span><span class="si">%r</span><span class="s2">, url: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">datagrepper_url</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_backlog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find all the datagrepper messages between &#39;then&#39; and &#39;now&#39;.</span>
+
+<span class="sd">        Put those on our work queue.</span>
+
+<span class="sd">        Should be called in a thread so as not to block the hub at startup.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Status contents are </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Skipping backlog retrieval.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">last</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">][</span><span class="s1">&#39;body&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">last</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">last</span><span class="p">)</span>
+
+        <span class="n">then</span> <span class="o">=</span> <span class="n">last</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+
+        <span class="n">retrieved</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_datagrepper_results</span><span class="p">(</span><span class="n">then</span><span class="p">,</span> <span class="n">now</span><span class="p">):</span>
+            <span class="c1"># Take the messages from datagrepper and remove any keys that were</span>
+            <span class="c1"># artificially added to the message.  The presence of these would</span>
+            <span class="c1"># otherwise cause message crypto validation to fail.</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fix_datagrepper_message</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;msg_id&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">last</span><span class="p">[</span><span class="s1">&#39;msg_id&#39;</span><span class="p">]:</span>
+                <span class="n">retrieved</span> <span class="o">=</span> <span class="n">retrieved</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">incoming</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">message</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Already seen </span><span class="si">%r</span><span class="s2">; Skipping.&quot;</span> <span class="o">%</span> <span class="n">last</span><span class="p">[</span><span class="s1">&#39;msg_id&#39;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Retrieved </span><span class="si">%i</span><span class="s2"> messages from datagrepper.&quot;</span> <span class="o">%</span> <span class="n">retrieved</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_datagrepper_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">then</span><span class="p">,</span> <span class="n">now</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_make_query</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datagrepper_url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">rows_per_page</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">then</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;asc&#39;</span>
+            <span class="p">))</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+        <span class="c1"># Grab the first page of results</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_make_query</span><span class="p">()</span>
+
+        <span class="c1"># Grab and smash subsequent pages if there are any</span>
+        <span class="n">interesting_topics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topic</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interesting_topics</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">interesting_topics</span> <span class="o">=</span> <span class="p">[</span><span class="n">interesting_topics</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pages&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Retrieving datagrepper page </span><span class="si">%i</span><span class="s2"> of </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">page</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pages&#39;</span><span class="p">]))</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">_make_query</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;raw_messages&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">topic</span> <span class="ow">in</span> <span class="n">interesting_topics</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">topic</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                        <span class="k">yield</span> <span class="n">message</span>
+                        <span class="k">break</span>
+
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate the message before the consumer processes it.</span>
+
+<span class="sd">        This needs to raise an exception, caught by moksha.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message (dict): The message as a dictionary. This must, at a minimum,</span>
+<span class="sd">                contain the &#39;topic&#39; key with a unicode string value and &#39;body&#39; key</span>
+<span class="sd">                with a dictionary value. However, the message might also be an object</span>
+<span class="sd">                with a ``__json__`` method that returns a dict with a &#39;body&#39; key that</span>
+<span class="sd">                can be a unicode string that is JSON-encoded.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeWarning: If the message is not valid.</span>
+<span class="sd">            UnicodeDecodeError: If the message body is not unicode or UTF-8 and also</span>
+<span class="sd">                happens to contain invalid UTF-8 binary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="s1">&#39;__json__&#39;</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">__json__</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">],</span> <span class="n">six</span><span class="o">.</span><span class="n">text_type</span><span class="p">):</span>
+                <span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">],</span> <span class="n">six</span><span class="o">.</span><span class="n">binary_type</span><span class="p">):</span>
+                <span class="c1"># Try to decode the message body as UTF-8 since it&#39;s very likely</span>
+                <span class="c1"># that that was the encoding used. This API should eventually only</span>
+                <span class="c1"># accept unicode strings inside messages. If a UnicodeDecodeError</span>
+                <span class="c1"># happens, let that bubble up.</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Message body is not unicode&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+                <span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+        <span class="c1"># Massage STOMP messages into a more compatible format.</span>
+        <span class="k">if</span> <span class="s1">&#39;topic&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">]:</span>
+            <span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;topic&#39;</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;topic&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+        <span class="c1"># If we&#39;re not validating, then everything is valid.</span>
+        <span class="c1"># If this is turned on globally, our child class can override it.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_signatures</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># We assume these match inside fedmsg.crypto, so we should enforce it.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">][</span><span class="s1">&#39;topic&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeWarning</span><span class="p">(</span><span class="s2">&quot;Topic envelope mismatch.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">],</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeWarning</span><span class="p">(</span><span class="s2">&quot;Failed to authn message.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Received invalid message </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Pass along headers if present.  May be useful to filters or</span>
+        <span class="c1"># fedmsg.meta routines.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;headers&#39;</span> <span class="ow">in</span> <span class="n">message</span> <span class="ow">and</span> <span class="s1">&#39;body&#39;</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+            <span class="n">message</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">][</span><span class="s1">&#39;headers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;headers&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;replay_name&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">check_for_replay</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">replay_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_to_seq_id</span><span class="p">,</span>
+                    <span class="n">message</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">config</span><span class="p">):</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                    <span class="nb">super</span><span class="p">(</span><span class="n">FedmsgConsumer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_consume</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">RuntimeWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Received invalid message </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">FedmsgConsumer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_consume</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pre_consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_status</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;pre&#39;</span><span class="p">,</span>
+        <span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">post_consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_status</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;post&#39;</span><span class="p">,</span>
+        <span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">save_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_lock</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">status_lock</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">fedmsg</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span></div>
+
+
+<span class="k">def</span> <span class="nf">current_proc</span><span class="p">():</span>
+    <span class="n">mypid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="n">psutil</span><span class="o">.</span><span class="n">process_iter</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">pid</span> <span class="o">==</span> <span class="n">mypid</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">proc</span>
+
+    <span class="c1"># This should be impossible.</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not find process </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">mypid</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../fedmsg.html">fedmsg</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

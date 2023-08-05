@@ -1,0 +1,245 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>fedmsg.commands.logger &#8212; fedmsg 1.0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fedmsg.commands.logger</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This file is part of fedmsg.</span>
+<span class="c1"># Copyright (C) 2012 - 2015 Red Hat, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is free software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU Lesser General Public</span>
+<span class="c1"># License as published by the Free Software Foundation; either</span>
+<span class="c1"># version 2.1 of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># fedmsg is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
+<span class="c1"># Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public</span>
+<span class="c1"># License along with fedmsg; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA</span>
+<span class="c1">#</span>
+<span class="c1"># Authors:  Ralph Bean &lt;rbean@redhat.com&gt;</span>
+<span class="c1">#</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">fedmsg</span>
+<span class="kn">import</span> <span class="nn">fedmsg.encoding</span>
+<span class="kn">from</span> <span class="nn">fedmsg.commands</span> <span class="k">import</span> <span class="n">BaseCommand</span>
+
+
+<span class="k">class</span> <span class="nc">LoggerCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Emit log messages to the FI bus.</span>
+
+<span class="sd">    If the fedmsg-relay service is not running at the address specified in</span>
+<span class="sd">    the config, then this command will *hang* until that service becomes</span>
+<span class="sd">    available.</span>
+
+<span class="sd">    If --message is not specified, this command accepts messages from stdin.</span>
+
+<span class="sd">    Some examples::</span>
+
+<span class="sd">        $ echo &#39;{&quot;a&quot;: 1}&#39; | fedmsg-logger --json-input</span>
+<span class="sd">        $ echo &quot;Hai there.&quot; | fedmsg-logger --modname=git --topic=repo.update</span>
+<span class="sd">        $ fedmsg-logger --message=&quot;This is a message.&quot;</span>
+<span class="sd">        $ fedmsg-logger --message=&#39;{&quot;a&quot;: 1}&#39; --json-input</span>
+
+<span class="sd">    Note that when using --json-input, you must send valid JSON, including</span>
+<span class="sd">    the use of double quotes as opposed to single quotes:</span>
+
+<span class="sd">        &#39;{&quot;a&quot;: 1}&#39; is good.</span>
+<span class="sd">        &quot;{&#39;a&#39;: 1}&quot; is bad.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;fedmsg-logger&#39;</span>
+    <span class="n">extra_args</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">([</span><span class="s1">&#39;--message&#39;</span><span class="p">],</span> <span class="p">{</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;logger_message&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="s2">&quot;The message to send.&quot;</span><span class="p">,</span>
+        <span class="p">}),</span>
+        <span class="p">([</span><span class="s1">&#39;--json-input&#39;</span><span class="p">],</span> <span class="p">{</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;json_input&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;action&#39;</span><span class="p">:</span> <span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="s2">&quot;Take each line of input as JSON.&quot;</span><span class="p">,</span>
+        <span class="p">}),</span>
+        <span class="p">([</span><span class="s1">&#39;--topic&#39;</span><span class="p">],</span> <span class="p">{</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;topic&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;metavar&#39;</span><span class="p">:</span> <span class="s2">&quot;TOPIC&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="s2">&quot;Think org.fedoraproject.dev.logger.TOPIC&quot;</span><span class="p">,</span>
+        <span class="p">}),</span>
+        <span class="p">([</span><span class="s1">&#39;--modname&#39;</span><span class="p">],</span> <span class="p">{</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;modname&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;metavar&#39;</span><span class="p">:</span> <span class="s2">&quot;MODNAME&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="s2">&quot;logger&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="s2">&quot;More control over the topic. Think org.fp.MODNAME.TOPIC.&quot;</span><span class="p">,</span>
+        <span class="p">}),</span>
+        <span class="p">([</span><span class="s1">&#39;--cert-prefix&#39;</span><span class="p">],</span> <span class="p">{</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;cert_prefix&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;metavar&#39;</span><span class="p">:</span> <span class="s2">&quot;CERT_PREFIX&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="s2">&quot;shell&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="s2">&quot;Specify a different cert from /etc/pki/fedmsg&quot;</span><span class="p">,</span>
+        <span class="p">}),</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_log_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kw</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">kw</span><span class="p">[</span><span class="s1">&#39;json_input&#39;</span><span class="p">]:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">fedmsg</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;log&#39;</span><span class="p">:</span> <span class="n">message</span><span class="p">}</span>
+
+        <span class="n">fedmsg</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">topic</span><span class="o">=</span><span class="n">kw</span><span class="p">[</span><span class="s1">&#39;topic&#39;</span><span class="p">],</span>
+            <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span>
+            <span class="n">modname</span><span class="o">=</span><span class="n">kw</span><span class="p">[</span><span class="s1">&#39;modname&#39;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LoggerCommand</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;active&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;relay_inbound&#39;</span>
+        <span class="n">fedmsg</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;logger_message&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;logger_message&#39;</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;json_input&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">while</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_log_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="logger"><a class="viewcode-back" href="../../../commands.html#fedmsg.commands.logger.logger">[docs]</a><span class="k">def</span> <span class="nf">logger</span><span class="p">():</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">LoggerCommand</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">command</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/fedmsg.png" alt="Logo"/>
+    
+    <h1 class="logo logo-name">fedmsg</h1>
+    
+  </a>
+</p>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=fedora-infra&repo=fedmsg&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../commands.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publishing.html">Publishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../subscribing.html">Subscribing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deploying fedmsg</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">Developer Interface</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../fedmsg.html">fedmsg</a><ul>
+  <li><a href="../commands.html">fedmsg.commands</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2012 - 2017, Red Hat. Inc, and others.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
