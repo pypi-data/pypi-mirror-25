@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
+<link rel="stylesheet" href="{{url_for('static', filename='bootstrap-toggle.min.css')}}">
+{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Welcome to the CMDOWS interface!</h1>
+    {% include 'message.html' %}
+    <p>
+        The uploaded graph has the name {{ graph.graph.get('name') }} and is of type {{ graph.__class__.__name__ }}.<br>
+        The graph is available at <a href="{{ request.url_root }}{{ temp_id }}">{{ request.url_root }}{{ temp_id }}</a>. To delete all files <a href="{{ temp_id }}/delete">click here</a>.<br>
+        Below you can find some statistics and some processing options.<br><br>
+    </p>
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><span class="glyphicon glyphicon-scale" aria-hidden="true"></span> Data graph information</h3>
+                </div>
+                <div class="panel-body">
+                    <div id="morris-bar-chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <span class="glyphicon glyphicon-file huge" aria-hidden="true"></span>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <div class="huge">PDF</div>
+                            <div>(X)DSM visualization</div>
+                        </div>
+                    </div>
+                </div>
+                <a onclick="pdf()" id="pdf">
+                    <div class="panel-body">
+                        <span class="pull-left">Create</span>
+                        <span class="pull-right"><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></span>
+                        <div class="clearfix"></div>
+                    </div>
+                </a>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <span class="glyphicon glyphicon-globe huge" aria-hidden="true"></span>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <div class="huge">HTML</div>
+                            <div>(X)DSM visualization</div>
+                        </div>
+                    </div>
+                </div>
+                <a onclick="vispack()" id="vispack">
+                    <div class="panel-body">
+                        <div class="pull-left">Create</div>
+                        <span class="pull-right">
+                            <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></span>
+                        <div class="clearfix"></div>
+                    </div>
+                </a>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <span class="glyphicon glyphicon-align-left huge" aria-hidden="true"></span>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <div class="huge">XML</div>
+                            <div>CMDOWS file</div>
+                        </div>
+                    </div>
+                </div>
+                <a onclick="cmdows()" id="cmdows">
+                    <div class="panel-body">
+                        <span class="pull-left">Create</span>
+                        <span class="pull-right"><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></span>
+                        <div class="clearfix"></div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Settings</h3>
+                </div>
+                <div class="panel-body blue">
+                    Save XML files in a pretty style <input id="pretty_print" class="off" type="checkbox" data-toggle="toggle" title="XML pretty style" checked>
+                    <br>
+                    Create PDF files with compressed labels <input id="compressed_labels" class="off" type="checkbox" data-toggle="toggle" title="PDF compressed labels" checked>
+                    <br>
+                    {% if functions %}
+                    <br>
+                    Determine the function order for the DSM visualizations (just drag and drop the items):
+                    <br>
+                    <ol id='function_order'>
+                        {% for function in functions %}
+                        <li>{{ function }}</li>
+                        {% endfor %}
+                    </ol>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
+<script src="//code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
+<script src="{{url_for('static', filename='bootstrap-toggle.min.js')}}"></script>
+
+<script>
+// Bar chart logic
+Morris.Bar({
+    element: 'morris-bar-chart',
+    data: [{
+        type: 'Nodes',
+        amount: {{ graph.number_of_nodes() }}
+    }, {
+        type: 'Functions',
+        amount: {{ graph.find_all_nodes(category='function')|length }}
+    }, {
+        type: 'Variables',
+        amount: {{ graph.find_all_nodes(category='variable')|length }}
+    }, {
+        type: 'Edges',
+        amount: {{ graph.number_of_edges() }}
+    }],
+    xkey: 'type',
+    ykeys: ['amount'],
+    labels: ['Amount'],
+    barRatio: 0.4,
+    xLabelAngle: 35,
+    hideHover: 'auto',
+    resize: true
+});
+</script>
+<script>
+// Settings logic
+jQuery(document).ready(function($) {
+    // Clone relevant divs
+    var cmdows_clone = $("#cmdows").html();
+    var vispack_clone = $("#vispack").html();
+    var pdf_clone = $("#pdf").html();
+
+    // Activate toggle switch
+    $('input[type="checkbox"]').bootstrapToggle();
+
+    // Recognize toggle switch change
+    $('#pretty_print').change(function () {
+        var cmdows_elem = $("#cmdows");
+        cmdows_elem.empty().html(cmdows_clone);
+        cmdows_elem.attr('onclick', 'cmdows()');
+        cmdows_elem.removeAttr('href');
+    });
+    $('#compressed_labels').change(function () {
+        var pdf_elem = $("#pdf");
+        pdf_elem.empty().html(pdf_clone);
+        pdf_elem.attr('onclick', 'pdf()');
+        pdf_elem.removeAttr('href');
+    });
+    $('#function_order').sortable({
+        update: function () {
+            var pdf_elem = $("#pdf");
+            var vispack_elem = $("#vispack");
+            pdf_elem.empty().html(pdf_clone);
+            pdf_elem.attr('onclick', 'pdf()');
+            pdf_elem.removeAttr('href');
+            vispack_elem.empty().html(vispack_clone);
+            vispack_elem.attr('onclick', 'vispack()');
+            vispack_elem.removeAttr('href');
+        }
+    });
+});
+</script>
+<script>
+// AJAX logic
+function pdf() {
+    var url = '{{ temp_id }}/pdf?reset=True';
+    if (document.getElementById('compressed_labels').checked) {
+        url += '&compressed_labels=True';
+    }
+    var function_order = [];
+    $('#function_order').find('> li').each(function() { function_order.push($(this).text()) });
+    // Timestamp needs to be added to prevent caching
+    url += '&timestamp='+new Date().getTime();
+    $.ajax({
+        type: 'GET',
+        url: url,
+        data: {function_order: JSON.stringify(function_order)},
+        contentType: 'application/json;charset=UTF-8',
+        beforeSend: function () {
+            var pdf_elem = $("#pdf");
+            pdf_elem.find('.pull-left').html('A (X)DSM PDF file is currently being created...');
+            pdf_elem.find('.pull-right').html('<span class="glyphicon glyphicon-refresh spin" aria-hidden="true"></span>');
+        },
+        success: function () {
+            var pdf_elem = $("#pdf");
+            pdf_elem.find('.pull-left').html('A (X)DSM PDF file was successfully created. Click here to download it.');
+            pdf_elem.find('.pull-right').html('<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>');
+            pdf_elem.attr('href', '{{ temp_id }}/pdf?timestamp='+new Date().getTime());
+            pdf_elem.removeAttr('onclick');
+        },
+        error: function () {
+            var pdf_elem = $("#pdf");
+            pdf_elem.find('.pull-left').html('A (X)DSM PDF file could not be created. Click here to try again with detailed error messages it.');
+            pdf_elem.find('.pull-right').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>');
+            pdf_elem.attr('href', '{{ temp_id }}/pdf?timestamp='+new Date().getTime());
+            pdf_elem.removeAttr('onclick');
+        }
+    });
+    return false;
+}
+
+function vispack() {
+    var function_order = [];
+    $('#function_order').find('> li').each(function() { function_order.push($(this).text()) });
+    $.ajax({
+        type: 'GET',
+        url: '{{ temp_id }}/vispack?reset=True',
+        data: {function_order: JSON.stringify(function_order)},
+        contentType: 'application/json;charset=UTF-8',
+        beforeSend:function(){
+            var vispack_elem = $("#vispack");
+            vispack_elem.find('.pull-left').not('.progress').html('A dynamic (X)DSM HTML package is currently being created. This might take a while...');
+            vispack_elem.find('.pull-right').html('<span class="glyphicon glyphicon-refresh spin" aria-hidden="true"></span>');
+        },
+        success:function(){
+            var vispack_elem = $("#vispack");
+            vispack_elem.find('.pull-left').not('.progress').html('A dynamic (X)DSM HTML package was successfully created. Click here to download it.');
+            vispack_elem.find('.pull-right').html('<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>');
+            vispack_elem.attr('href','{{ temp_id }}/vispack?timestamp='+new Date().getTime());
+            vispack_elem.removeAttr('onclick');
+        },
+        error:function(){
+            var vispack_elem = $("#vispack");
+            vispack_elem.find('.pull-left').not('.progress').html('A dynamic (X)DSM HTML package package could not be created created. Click here to try again with detailed error messages it.');
+            vispack_elem.find('.pull-right').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>');
+            vispack_elem.attr('href','{{ temp_id }}/vispack?timestamp='+new Date().getTime());
+            vispack_elem.removeAttr('onclick');
+        }
+    });
+    return false;
+}
+
+function cmdows() {
+    var url = '{{ temp_id }}/cmdows?reset=True';
+    if (document.getElementById('pretty_print').checked) {
+        url += '&pretty_print=True';
+    }
+    // Timestamp needs to be added to prevent caching
+    url += '&timestamp='+new Date().getTime();
+    $.ajax({
+        type: 'GET',
+        url: url,
+        beforeSend:function(){
+            var cmdows_elem = $("#cmdows");
+            cmdows_elem.find('.pull-left').html('A CMDOWS XML file is currently being created...');
+            cmdows_elem.find('.pull-right').html('<span class="glyphicon glyphicon-refresh spin" aria-hidden="true"></span>');
+        },
+        success:function(){
+            var cmdows_elem = $("#cmdows");
+            cmdows_elem.find('.pull-left').html('A CMDOWS XML file was successfully created. Click here to download it.');
+            cmdows_elem.find('.pull-right').html('<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>');
+            cmdows_elem.attr('href','{{ temp_id }}/cmdows?timestamp='+new Date().getTime());
+            cmdows_elem.removeAttr('onclick');
+        },
+        error:function(){
+            var cmdows_elem = $("#cmdows");
+            cmdows_elem.find('.pull-left').html('A CMDOWS XML file could not be created created. Click here to try again with detailed error messages it.');
+            cmdows_elem.find('.pull-right').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>');
+            cmdows_elem.attr('href','{{ temp_id }}/cmdows?timestamp='+new Date().getTime());
+            cmdows_elem.removeAttr('onclick');
+            }
+    });
+    return false;
+}
+</script>
+{% endblock %}

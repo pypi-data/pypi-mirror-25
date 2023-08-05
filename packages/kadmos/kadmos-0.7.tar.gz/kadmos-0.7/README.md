@@ -1,0 +1,90 @@
+Introduction
+=============
+
+KADMOS (Knowledge- and graph-based Agile Design with Multidisciplinary Optimization System) is a new software system which is currently being developed in the [AGILE](http://www.agile-project.eu/) innovation project. It aims at increasing the agility of aircraft design teams that perform multidisciplinary design optimization (MDO). By increased agility, an MDO-based development process is meant that better fits the iterative nature of performing aircraft design. KADMOS has been developed on the notion that performing MDO is analogous to performing music with a large symphonic orchestra, however, in the MDO domain a music notation system is missing, which prevents us from composing large, complex pieces. 
+
+Repository Structure
+====================
+
+The repository is structured as follows:
+
+- dist/
+
+	  contains copies of all major distributions of KADMOS
+
+- docs/
+
+      contains the documentation
+
+- examples/
+
+      contains two example knowlegde bases and scripts
+	  
+	 
+- kadmos/
+
+      contains the main code for KADMOS
+
+	  - cmdows
+	  
+		 contains tools for interacting with CMDOWS files
+	  
+      - external
+
+         contains mainly third party scripts used at various parts in the code
+
+      - graph
+
+         contains the main graph-based logic for KADMOS
+
+      - interface
+
+         contains a script for launching a web-based interface for accessing a few KADMOS functionalities
+
+      - knowledgebase
+
+         contains the definition of a knowledge base model
+
+      - utilities
+
+         contains several helper functions
+
+      - vispack
+
+         contains source files for the VISTOMS visualizations
+
+- license.md
+
+      contains the license
+
+- readme.md
+
+      contains this document
+
+
+Credits
+=======
+
+KADMOS is currently being developed at [TU Delft](https://tudelft.nl) by [Imco van Gent](https://bitbucket.org/imcovangent/) as an open source project. KADMOS can still be considered as an early beta and is subjected to change. Ideas and improvement suggestions are greatly appreciated!
+
+
+Changelog
+=========
+
+## 0.8 (XX/XX/2017)
+
+- Matching KADMOS with CMDOWS 0.8
+- Revisting KnowledgeBase class
+
+## 0.7 (08/09/2017)
+
+- Matching KADMOS with CMDOWS 0.7
+- General improvements and enhancements
+
+## 0.6 
+
+- Skipped
+
+## 0.5 (31/05/17)
+
+- First public release of KADMOS
