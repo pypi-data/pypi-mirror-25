@@ -1,0 +1,25 @@
+include_rules
+
+SUBS += cli/built-in.o
+SUBS += cpu/built-in.o
+SUBS += core/built-in.o
+
+ifeq (@(TUP_PLATFORM),macosx)
+LDFLAGS += `python-config --ldflags`
+endif
+
+ifeq (@(TUP_PLATFORM),linux)
+LDFLAGS += `python2-config --ldflags`
+LDFLAGS += -lrt -lm
+endif
+
+LDFLAGS += -lelf
+
+#: foreach *.c |> !cc |> {objs}
+#: {objs} $(SUBS) |> !ld |> simulator
+#!ld = |> ^ LINK %o^ $(CC) $(LDFLAGS) %f -o %o |>
+ifeq (@(DEBUG_SYMBOLS),y)
+: <objs> |> ^c LINK %o^ $(CC) %<objs> $(LDFLAGS) -o %o |> simulator
+else
+: <objs> |> ^ LINK %o^ $(CC) %<objs> $(LDFLAGS) -o %o |> simulator
+endif

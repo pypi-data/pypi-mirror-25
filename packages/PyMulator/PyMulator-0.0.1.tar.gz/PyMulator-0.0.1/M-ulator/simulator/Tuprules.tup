@@ -1,0 +1,127 @@
+ifndef PLATFORM
+error The variable PLATFORM must be defined. Did you forget to set up a variant?
+endif
+
+ifndef CPU_PROFILE
+error The variable CPU_PROFILE must be defined. Did you forget to set up a variant?
+endif
+
+ifndef CPU
+error The variable CPU must be defined. Did you forget to set up a variant?
+endif
+
+CFLAGS += -std=gnu11
+CFLAGS += -Wall -Wextra -Werror
+CFLAGS += -Wstrict-prototypes
+CFLAGS += -Wno-type-limits
+CFLAGS += -fno-strict-overflow
+CFLAGS += -Wformat=2 -Winit-self -Wmissing-include-dirs -Wunused-parameter
+CFLAGS += -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wfloat-equal
+CFLAGS += -Wwrite-strings -Waggregate-return -Wstrict-prototypes
+CFLAGS += -Wmissing-field-initializers -Wmissing-format-attribute
+CFLAGS += -Winline -Wvolatile-register-var -Wdisabled-optimization
+CFLAGS += -Wshadow -Wpacked
+
+#-Wshorten-64-to-32     -- clang only
+
+#-Wcast-align           -- non-templatized state causes lots of these, should be fixed someday
+#-Wconversion           -- introduces a lot of annoying cases, maybe revisit someday
+#-Wunreachable-code     -- just too annoying to have during development
+#-Wpadded               -- Most of these are just argument passing structs
+#-Wnested-externs       -- I use these extensively, despite the seemingly weird scope rules
+#-Wredundant-decls      -- ^^ which leads to a ton of noise with this warning
+#-Wmissing-prototypes   -- all of the constructors are missing prototypes
+#-Wmissing-declarations -- gcc considers the constructors as missing decl's
+#-Wmissing-noreturn     -- causes too much noise on not implemented paths
+
+CFLAGS += -I$(TUP_CWD)
+CFLAGS += -pthread -D_GNU_SOURCE
+
+CFLAGS += -D@(CPU_PROFILE)
+CFLAGS += -DCPU='"@(CPU)"'
+CFLAGS += -DMEMMAP_HEADER='"cpu/@(PLATFORM)/memmap.h"'
+CFLAGS += -DSTATIC_ROM_HEADER='"cpu/@(PLATFORM)/static_rom.h"'
+
+ifeq (@(DECOMPILE),y)
+CFLAGS += -DHAVE_DECOMPILE
+endif
+
+ifeq (@(HAVE_MEMTRACE),y)
+CFLAGS += -DHAVE_MEMTRACE
+endif
+
+ifeq (@(HAVE_REPLAY),y)
+CFLAGS += -DHAVE_REPLAY
+endif
+
+ifeq (@(NO_PIPELINE),y)
+CFLAGS += -DNO_PIPELINE
+endif
+
+ifeq (@(FAVOR_SPEED),y)
+CFLAGS += -DFAVOR_SPEED
+CFLAGS += -DNDEBUG
+endif
+
+
+ifeq (@(OPTIMIZE),y)
+CFLAGS += -O3
+
+# This is a poor proxy for clang vs gcc, but tup doesn't seem to have a great
+# way of detecting which compiler is currently running
+ifeq (@(TUP_PLATFORM),macosx)
+OPTFLAGS += -ffast-math
+else
+OPTFLAGS += -fgcse-sm -fgcse-las -fgcse-after-reload
+OPTFLAGS += -funsafe-loop-optimizations -Wunsafe-loop-optimizations
+OPTFLAGS += -fsched-pressure -fsched-spec-load -fsched-spec-load-dangerous
+OPTFLAGS += -fsched2-use-superblocks
+OPTFLAGS += -fipa-pta
+OPTFLAGS += -floop-interchange -floop-strip-mine -floop-block
+OPTFLAGS += -fgraphite-identity -floop-flatten
+OPTFLAGS += -ftree-loop-im -ftree-loop-ivcanon -fivopts
+OPTFLAGS += -fvect-cost-model -fvariable-expansion-in-unroller
+OPTFLAGS += -freorder-blocks-and-partition
+OPTFLAGS += -fweb -ftracer -frename-registers
+OPTFLAGS += -fbranch-target-load-optimize2
+#OPTFLAGS += -fsection-anchors -- not on x64
+
+OPTFLAGS += -ffast-math
+
+OPTFLAGS += -fno-fat-lto-objects
+endif
+CFLAGS  += $(OPTFLAGS)
+
+ifneq (@(DEBUG_SYMBOLS),y)
+CFLAGS += -flto
+LDFLAGS += $(OPTFLAGS) -flto
+endif
+endif
+
+ifeq (@(DEBUG_SYMBOLS),y)
+CFLAGS  += -g
+LDFLAGS += -g
+endif
+
+ifeq (@(DEBUG_LEVEL),1)
+CFLAGS += -DDEBUG1
+endif
+ifeq (@(DEBUG_LEVEL),2)
+CFLAGS += -DDEBUG1
+CFLAGS += -DDEBUG2
+endif
+
+ifeq (@(TUP_PLATFORM),linux)
+LDFLAGS += -pthread
+endif
+
+CC = cc
+LD = ld
+
+&MEMMAP = cpu/@(PLATFORM)/memmap.h
+
+ifeq (@(DEBUG_SYMBOLS),y)
+!cc = | &(MEMMAP) |> ^c CC %f^ $(CC) %f $(CFLAGS) -c -o %o |> %B.o
+else
+!cc = | &(MEMMAP) |> ^ CC %f^ $(CC) %f $(CFLAGS) -c -o %o |> %B.o
+endif
