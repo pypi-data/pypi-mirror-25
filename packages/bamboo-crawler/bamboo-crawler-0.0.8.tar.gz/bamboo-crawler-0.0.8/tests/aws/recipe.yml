@@ -1,0 +1,81 @@
+fetch_task:
+  input:
+    type: ConstantInputter
+    options:
+      value: http://127.0.0.1:4000/robots.txt
+  process:
+    type: HTTPCrawler
+  output:
+    type: StdoutOutputter
+
+
+user_agent:
+  input:
+    type: ConstantInputter
+    options:
+      value: http://127.0.0.1:4000/user-agent
+  process:
+    type: HTTPCrawler
+    options:
+      headers:
+        user-agent: Testing User Agent
+  output:
+    type: StdoutOutputter
+
+
+constant_inputter_test:
+  input:
+    type: ConstantInputter
+    options:
+      value: abc1234
+  process:
+    type: NullProcessor
+  output:
+    type: StdoutOutputter
+
+
+constant_inputter_with_metadata:
+  input:
+    type: ConstantInputter
+    options:
+      value: abc1234
+      metadata:
+        hoge: abcdefg
+  process:
+    type: NullProcessor
+  output:
+    type: StdoutOutputter
+
+
+aws_outputter:
+  input:
+    type: ConstantInputter
+    options:
+      value: '{"sampledata": "ABCDEFGHIJKLMN"}'
+
+  process:
+    type: NullProcessor
+
+  output:
+    type: SQSS3Outputter
+    options:
+      bucket_name: sample-bucket
+      queue_name: sample-queue
+      s3_config: {{s3_config}}
+      sqs_config: {{sqs_config}}
+
+
+aws_inputter:
+  input:
+    type: SQSS3Inputter
+    options:
+      bucket_name: sample-bucket
+      queue_name: sample-queue
+      s3_config: {{s3_config}}
+      sqs_config: {{sqs_config}}
+
+  process:
+    type: NullProcessor
+
+  output:
+    type: StdoutOutputter

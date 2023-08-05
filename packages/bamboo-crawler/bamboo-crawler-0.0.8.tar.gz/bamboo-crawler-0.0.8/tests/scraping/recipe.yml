@@ -1,0 +1,35 @@
+mixed_scrape:
+  input:
+    type: FileInputter
+    options:
+      filepath: ./tests/scraping/assets/index.html
+  process:
+    type: MixedHTMLScraper
+    options:
+      targets:
+        x:
+          xpath: '//address/text()'
+        y:
+          css: 'span.xyz'
+  serialize:
+    type: JSONSerializer
+  output:
+    type: StdoutOutputter
+
+python_processor:
+  input:
+    type: FileInputter
+    options:
+      filepath: ./tests/scraping/assets/sample.json
+  deserialize:
+    type: JSONDeserializer
+  process:
+    type: PythonProcessor
+    options:
+      mappers:
+        x: "''.join(_['x'])"
+        y: "''.join(_['y'])"
+  serialize:
+    type: JSONSerializer
+  output:
+    type: StdoutOutputter
