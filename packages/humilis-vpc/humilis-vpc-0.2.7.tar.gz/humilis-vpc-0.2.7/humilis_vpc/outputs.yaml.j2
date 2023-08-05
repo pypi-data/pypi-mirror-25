@@ -1,0 +1,40 @@
+---
+outputs:
+    VpcId:
+        Description:
+            The Physical Id of the VPC
+        Value:
+            Ref: Vpc
+    {% if domain %}
+    DnsHostedZoneId:
+        Description:
+            The ID of the private hosted zone for {{domain}}
+        Value:
+            Ref: DnsHostedZone
+    {% endif %}
+    {% for _ in public_subnets %}
+    PublicSubnet{{loop.index}}:
+        Description:
+            Physical Id of PublicSubnet{{loop.index}}
+        Value:
+            Ref: PublicSubnet{{loop.index}}
+    {% endfor %}
+    {% for _ in private_subnets %}
+    PrivateSubnet{{loop.index}}:
+        Description:
+            Physical Id of PrivateSubnet{{loop.counter}}
+        Value:
+            Ref: PrivateSubnet{{loop.index}}
+    {% endfor %}
+    {% if has_efs %}
+    FileSystem:
+        Description:
+            Physical ID of the EFS in this VPC
+        Value:
+            Ref: FileSystem
+    FileSystemSecurityGroup:
+        Description:
+            Physical ID of the security group for the EFS mount target
+        Value:
+            Ref: MountTargetSecurityGroup
+    {% endif %}
