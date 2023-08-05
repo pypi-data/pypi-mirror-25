@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+    <title>M-HWA HWA Doc</title>
+    {% include 'helpers/stylesheets.html' %}
+</head>
+<style>
+  dd {
+  margin-left: 0.5cm;
+  }
+</style>
+
+<body>
+  <div class="container">
+    {% include 'header.html' %}
+
+    <div>
+      <h3 class="text-muted">Policy Adminstration</h3>
+    </div>
+
+    <p>
+      For HWA, Magen policies are administered using <b>postman</b> with
+      pre-defined requests.
+    </p>
+
+    <ul>
+      <li>
+	In your cloned git workspace are various postman subdirectories,
+	including one under the policy server directory.
+      </li>
+      <li>
+	The policy server postman directory contains a collections for
+	<ul>
+	  <li>
+	    policy generic operations (e.g. get-all-contracts) and for
+	  </li>
+	  <li>
+	    policy demo requests (e.g. create-contract-for-hwa).
+	  </li>
+	</ul>
+      </li>
+      <li>
+	The policy demo collection request(s) that include "hwa" in the
+	description are intended to demonstrate how HWA repository
+	accesses for viewing are affected by policy.
+      </li>
+    </ul>
+
+    <p>
+      <b>Scope</b> of policies under HWA
+      <ul>
+	<li>
+	  viewing and download of decrypted assets is subject to policy
+	</li>
+	<li>
+	  viewing and download of encrypted assets is not subject to policy
+	</li>
+	<li>
+	  ingestion is not subject to policy
+	</li>
+      </ul>
+    </p>
+
+    <p>
+      The demonstration <b>script</b>, from a clean systems, is as follows.
+    </p>
+    <ol>
+      <li>
+	From postman, establish the postman environment for policy
+	administration:
+	<ol type="a">
+	  <li>
+	    Import the policy generic collection
+	  </li>
+	  <li>
+	    Import the poicy demo collection
+	  </li>
+	  <li>
+	    Set the "local" environment.
+	  </li>
+	  <li>
+	    From the policy generic collection, select and send the
+	    GET request to get all sessions.
+	  </li>
+	  <li>
+	    Examine the returned list, which should have be empty.
+	  </li>
+	</ol>
+      </li>
+      <li>
+	From HWA, log in (as the pre-defined user): neither ingestion
+	nor viewing may proceed without logging in.
+      <li>
+	From postman, verify that a "policy session" has been established.
+	<ol type="a">
+	  <li>
+	    From the policy generic collection, select and send the
+	    GET request to get all sessions.
+	  </li>
+	  <li>
+	    Examine the returned list, which should have be empty.
+	  </li>
+	</ol>
+      </li>
+      <li>
+	From HWA ingestion menu, ingest an item.
+	<ul>
+	  <li>
+	    This should succeed, as it is not subject to policy.
+	  </li>
+	</ul>
+      </li>
+      <li>
+	From HWA repository view, attempt to view the previously ingested item.
+	<ul>
+	  <li>
+	    This should fail, as no policy allowing the access has
+	    been established.
+	  </li>
+	</ul>
+      </li>
+      <li>
+	From postman, install the hwa policy contract that allows access
+	by the pre-defined user.
+	<ol type="a">
+	  <li>
+	    From the policy generic collection, select and send the GET request
+	    to get all contracts and examine the returned list, which
+	    should be empty.
+	  </li>
+	  <li>
+	    From the policy demo collection, select and send the POST request
+	    that installs the contract.
+	  </li>
+	  <li>
+	    From the policy generic collection, select and send the GET request
+	    to get all contracts.
+	  </li>
+	  <li>
+	    Examine the returned list, which should have a single
+	    element, the contract just installed.
+	  </li>
+	</ol>
+      </li>
+      <li>
+	From HWA repository view, attempt to view the previously ingested item.
+	<ul>
+	  <li>
+	    This should succeed, as a policy allowing the access has been
+	    established.
+	  </li>
+	</ul>
+      </li>
+    </ol>
+
+    {% include 'helpers/footer.html' %}
+  </div>
+</body>
+ 
+</html>

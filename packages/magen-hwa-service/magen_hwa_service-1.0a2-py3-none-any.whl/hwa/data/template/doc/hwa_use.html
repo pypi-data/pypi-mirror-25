@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+    <title>M-HWA HWA Doc</title>
+    {% include 'helpers/stylesheets.html' %}
+</head>
+<style>
+  dd {
+  margin-left: 0.8cm;
+  }
+</style>
+
+<body>
+  <div class="container">
+    {% include 'header.html' %}
+
+    <div>
+      <h3 class="text-muted">Use of the HWA Browser Interface</h3>
+    </div>
+
+    <pp>
+      The application, through a browser interface, maintains a toy
+      repository (on a filesystem on its local Linux instance).
+    </pp>
+
+    <pp>
+      The following screens are supported
+    </pp>
+
+      <dl>
+	<dt>Login</dt>
+	<dd>
+          Login to HWA app.
+	  <ul>
+	    <li>
+	      Required before any HWA filesystem operations.
+	    </li>
+	    <li>
+	      Underneath, HWA update the magen id service with a "client",
+	      which is available to other magen services, e.g. policy.
+	    </li>
+	    <li>
+	      In HWA, login is a dummy operation with a hard-coded user.
+	    </li>
+	    <li>
+	      The login is preserved in a Flask session for a period
+	      of time (PERMANENT_SESSION_LIFETIME, e.g. 10 minutes),
+	      after which point the login button must be clicked again.
+	      [As a point of information, Flask exports a browser
+	      session cookie, so the login is preserved across an
+	      HWA restart.]
+	</dd>
+	<dt>Repository</dt>
+	<dd>
+	  Show assets (files) currently ingested into Magen.
+	  For each asset, various operations may be performed.
+	  <dl>
+	    <dt>View</dt>
+	    <dd>
+	      Preview an asset, by decrypting the stored
+	      file (notes.txt.html) back to the original contents.
+	      <ul>
+		<li>
+		  The policy service (ps) checks if a policy allows this
+		  access. (No policy is currently applied to ingestion.)
+		  Policy "contracts" may be managed through policy's http
+		  APIs as driven by postman requests. Collections of useful
+		  policy http requests are found in policy's postman
+		  directory.
+		</li>
+		<li>
+		  The identity service provides information (username, device,
+		  etc) that is checked against policies.
+		</li>
+	      </ul>
+	    </dd>
+	    <dt>Download</dt>
+	    <dd>
+	      Similar to View but downloads the asset rather than
+	      previewing it.
+	    </dd>
+	    <dt>Raw-View</dt>
+	    <dd>
+	      For educational purposes, display the html container
+              (e.g. notes.txt.html) for the encrypted asset, i.e. show a
+              one-line message that the actual contents can only be
+              accessed through a magen viewer operation to the encrypted
+              file (notes.txt.html)
+	    </dd>
+	    <dt>Raw-Download</dt>
+	    <dd>
+	      Similar to Raw-View but downloads the asset rather than
+	      previewing it, to allow inspection of the container
+	      format
+	    </dd>
+	    <dt>Delete</dt>
+	    <dd>
+	      Clean up entries on the HWA toy repository
+	    </dd>
+	  </dl>
+	</dd>
+	<dt>Ingestion</dt>
+	<dd>
+	  Upload a file (notes.txt), e.g. from laptop running
+          browser, encrypt, and store in Magen container format
+          (notes.txt.html)
+	  <ul>
+	    <li>
+	      The ingestion service produces the containerized format
+	      and assigns a magen assetId to it.
+	    </li>
+            <li>
+	      The key service stores a key for the asset, indexed by
+              assetId
+	    </li>
+	  </ul>
+	</dd>
+      </dl>
+
+    {% include 'helpers/footer.html' %}
+  </div>
+</body>
+ 
+</html>
