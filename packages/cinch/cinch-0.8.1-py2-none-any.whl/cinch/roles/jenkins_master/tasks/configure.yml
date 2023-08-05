@@ -1,0 +1,37 @@
+- name: set Jenkins Java options
+  template:
+    src: sysconfig_jenkins
+    dest: /etc/sysconfig/jenkins
+    owner: root
+    group: root
+    mode: 0600
+  notify: restart Jenkins
+
+- name: update ulimits
+  template:
+    src: 99-jenkins.conf
+    dest: /etc/security/limits.d/99-jenkins.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart Jenkins
+
+- name: ensure Jenkins home is writable by jenkins
+  file:
+    dest: "{{ jenkins_home }}"
+    owner: jenkins
+    group: jenkins
+    state: directory
+
+- name: install nginx configuration file for jenkins
+  template:
+    src: etc/nginx/conf.d/jenkins_http{{ https_enabled | ternary('s', '') }}.conf
+    dest: /etc/nginx/conf.d/jenkins.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: ansible_connection != 'docker'
+  notify: restart nginx
+
+- name: flush handlers
+  meta: flush_handlers
