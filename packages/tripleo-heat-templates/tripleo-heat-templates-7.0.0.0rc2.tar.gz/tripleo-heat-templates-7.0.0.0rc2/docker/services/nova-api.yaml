@@ -1,0 +1,233 @@
+heat_template_version: pike
+
+description: >
+  OpenStack containerized Nova API service
+
+parameters:
+  DockerNovaApiImage:
+    description: image
+    type: string
+  DockerNovaConfigImage:
+    description: The container image to use for the nova config_volume
+    type: string
+  EndpointMap:
+    default: {}
+    description: Mapping of service endpoint -> protocol. Typically set
+                 via parameter_defaults in the resource registry.
+    type: json
+  ServiceData:
+    default: {}
+    description: Dictionary packing service data
+    type: json
+  ServiceNetMap:
+    default: {}
+    description: Mapping of service_name -> network name. Typically set
+                 via parameter_defaults in the resource registry.  This
+                 mapping overrides those in ServiceNetMapDefaults.
+    type: json
+  DefaultPasswords:
+    default: {}
+    type: json
+  RoleName:
+    default: ''
+    description: Role name on which the service is applied
+    type: string
+  RoleParameters:
+    default: {}
+    description: Parameters specific to the role
+    type: json
+  EnableInternalTLS:
+    type: boolean
+    default: false
+
+conditions:
+
+  internal_tls_enabled: {equals: [{get_param: EnableInternalTLS}, true]}
+
+resources:
+
+  ContainersCommon:
+    type: ./containers-common.yaml
+
+  MySQLClient:
+    type: ../../puppet/services/database/mysql-client.yaml
+
+  NovaApiBase:
+    type: ../../puppet/services/nova-api.yaml
+    properties:
+      EndpointMap: {get_param: EndpointMap}
+      ServiceData: {get_param: ServiceData}
+      ServiceNetMap: {get_param: ServiceNetMap}
+      DefaultPasswords: {get_param: DefaultPasswords}
+      RoleName: {get_param: RoleName}
+      RoleParameters: {get_param: RoleParameters}
+
+outputs:
+  role_data:
+    description: Role data for the Nova API role.
+    value:
+      service_name: {get_attr: [NovaApiBase, role_data, service_name]}
+      config_settings:
+        map_merge:
+          - get_attr: [NovaApiBase, role_data, config_settings]
+          - apache::default_vhost: false
+      step_config: &step_config
+        list_join:
+          - "\n"
+          - - "['Nova_cell_v2'].each |String $val| { noop_resource($val) }"
+            - {get_attr: [NovaApiBase, role_data, step_config]}
+            - {get_attr: [MySQLClient, role_data, step_config]}
+      service_config_settings: {get_attr: [NovaApiBase, role_data, service_config_settings]}
+      # BEGIN DOCKER SETTINGS
+      puppet_config:
+        config_volume: nova
+        puppet_tags: nova_config
+        step_config: *step_config
+        config_image: {get_param: DockerNovaConfigImage}
+      kolla_config:
+        /var/lib/kolla/config_files/nova_api.json:
+          command: /usr/sbin/httpd -DFOREGROUND
+          config_files:
+            - source: "/var/lib/kolla/config_files/src/*"
+              dest: "/"
+              merge: true
+              preserve_properties: true
+          permissions:
+            - path: /var/log/nova
+              owner: nova:nova
+              recurse: true
+        /var/lib/kolla/config_files/nova_api_cron.json:
+          command: /usr/sbin/crond -n
+          config_files:
+            - source: "/var/lib/kolla/config_files/src/*"
+              dest: "/"
+              merge: true
+              preserve_properties: true
+          permissions:
+            - path: /var/log/nova
+              owner: nova:nova
+              recurse: true
+      docker_config:
+        # db sync runs before permissions set by kolla_config
+        step_2:
+          nova_init_logs:
+            image: &nova_api_image {get_param: DockerNovaApiImage}
+            privileged: false
+            user: root
+            volumes:
+              - /var/log/containers/nova:/var/log/nova
+            command: ['/bin/bash', '-c', 'mkdir -p /var/log/httpd; chown -R nova:nova /var/log/nova']
+        step_3:
+          nova_api_db_sync:
+            start_order: 0
+            image: *nova_api_image
+            net: host
+            detach: false
+            user: root
+            volumes: &nova_api_bootstrap_volumes
+              list_concat:
+                - {get_attr: [ContainersCommon, volumes]}
+                -
+                  - /var/lib/config-data/nova/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
+                  - /var/lib/config-data/nova/etc/nova/:/etc/nova/:ro
+                  - /var/log/containers/nova:/var/log/nova
+            command: "/usr/bin/bootstrap_host_exec nova_api su nova -s /bin/bash -c '/usr/bin/nova-manage api_db sync'"
+          # FIXME: we probably want to wait on the 'cell_v2 update' in order for this
+          # to be capable of upgrading a baremetal setup. This is to ensure the name
+          # of the cell is 'default'
+          nova_api_map_cell0:
+            start_order: 1
+            image: *nova_api_image
+            net: host
+            detach: false
+            user: root
+            volumes: *nova_api_bootstrap_volumes
+            command: "/usr/bin/bootstrap_host_exec nova_api su nova -s /bin/bash -c '/usr/bin/nova-manage cell_v2 map_cell0'"
+          nova_api_create_default_cell:
+            start_order: 2
+            image: *nova_api_image
+            net: host
+            detach: false
+            volumes: *nova_api_bootstrap_volumes
+            # NOTE: allowing the exit code 2 is a dirty way of making
+            # this idempotent (if the resource already exists a conflict
+            # is raised)
+            exit_codes: [0,2]
+            user: root
+            command: "/usr/bin/bootstrap_host_exec nova_api su nova -s /bin/bash -c '/usr/bin/nova-manage cell_v2 create_cell --name=default'"
+          nova_db_sync:
+            start_order: 3
+            image: *nova_api_image
+            net: host
+            detach: false
+            volumes: *nova_api_bootstrap_volumes
+            user: root
+            command: "/usr/bin/bootstrap_host_exec nova_api su nova -s /bin/bash -c '/usr/bin/nova-manage db sync'"
+        step_4:
+          nova_api:
+            start_order: 2
+            image: *nova_api_image
+            net: host
+            user: root
+            privileged: true
+            restart: always
+            volumes:
+              list_concat:
+                - {get_attr: [ContainersCommon, volumes]}
+                -
+                  - /var/lib/kolla/config_files/nova_api.json:/var/lib/kolla/config_files/config.json:ro
+                  - /var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro
+                  - /var/log/containers/nova:/var/log/nova
+                  -
+                    if:
+                      - internal_tls_enabled
+                      - /etc/pki/tls/certs/httpd:/etc/pki/tls/certs/httpd:ro
+                      - ''
+                  -
+                    if:
+                      - internal_tls_enabled
+                      - /etc/pki/tls/private/httpd:/etc/pki/tls/private/httpd:ro
+                      - ''
+            environment:
+              - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
+          nova_api_cron:
+            image: *nova_api_image
+            net: host
+            user: root
+            privileged: false
+            restart: always
+            healthcheck:
+              test: /bin/true
+            volumes:
+              list_concat:
+                - {get_attr: [ContainersCommon, volumes]}
+                -
+                  - /var/lib/kolla/config_files/nova_api_cron.json:/var/lib/kolla/config_files/config.json:ro
+                  - /var/lib/config-data/puppet-generated/nova/:/var/lib/kolla/config_files/src:ro
+                  - /var/log/containers/nova:/var/log/nova
+            environment:
+              - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
+        step_5:
+          nova_api_discover_hosts:
+            start_order: 1
+            image: *nova_api_image
+            net: host
+            detach: false
+            volumes: *nova_api_bootstrap_volumes
+            user: root
+            command: "/usr/bin/bootstrap_host_exec nova_api su nova -s /bin/bash -c '/usr/bin/nova-manage cell_v2 discover_hosts'"
+      metadata_settings:
+        get_attr: [NovaApiBase, role_data, metadata_settings]
+      host_prep_tasks:
+        - name: create persistent logs directory
+          file:
+            path: /var/log/containers/nova
+            state: directory
+      upgrade_tasks:
+        - name: Stop and disable nova_api service
+          tags: step2
+          service: name=openstack-nova-api state=stopped enabled=no
+        - name: remove old nova cron jobs
+          file:
+            path: /var/spool/cron/nova
+            state: absent
