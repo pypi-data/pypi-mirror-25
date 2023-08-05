@@ -1,0 +1,206 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>RQ Job Queues &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Backup your Pootle system" href="backup.html" />
+    <link rel="prev" title="Management commands" href="commands.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../features/index.html">Features</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">RQ Job Queues</a><ul>
+<li><a class="reference internal" href="#running-job-workers">Running job workers</a></li>
+<li><a class="reference internal" href="#monitoring-the-queue">Monitoring the queue</a></li>
+<li><a class="reference internal" href="#working-with-failed-jobs">Working with failed jobs</a><ul>
+<li><a class="reference internal" href="#delete-all-failed-jobs">Delete all failed jobs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="commands.html"
+         title="previous chapter">&laquo; Management commands</a></li>
+  <li><a href="backup.html"
+         title="next chapter">Backup your Pootle system &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="rq-job-queues">
+<span id="rq"></span><h1>RQ Job Queues<a class="headerlink" href="#rq-job-queues" title="Permalink to this headline">¶</a></h1>
+<p>Pootle makes use of RQ to manage background jobs.</p>
+<p>Some tasks are performed using background jobs and we expect more components to
+use it in future.</p>
+<p>The RQ queue is managed by Redis and it is setup in the <a class="reference external" href="https://github.com/ui/django-rq#installation">RQ_QUEUES</a> and <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/settings/#std:setting-CACHES" title="(in Django v1.10)"><code class="xref std std-setting docutils literal"><span class="pre">CACHES</span></code></a>
+settings.</p>
+<div class="section" id="running-job-workers">
+<h2>Running job workers<a class="headerlink" href="#running-job-workers" title="Permalink to this headline">¶</a></h2>
+<p>The queue is processed by Workers.  Any number of workers may be started and
+will process jobs in the default queue.  The <code class="xref std std-djadmin docutils literal"><span class="pre">rqworker</span></code> command is
+used to start a Worker.</p>
+</div>
+<div class="section" id="monitoring-the-queue">
+<h2>Monitoring the queue<a class="headerlink" href="#monitoring-the-queue" title="Permalink to this headline">¶</a></h2>
+<p>At the simplest level the Admin dashboard will tell you if the queue is active
+and how many workers are available to service the queue.  It also lists the
+number of pending jobs and the number of failed jobs.  This gives you a quick
+way to see if anything is wrong.</p>
+</div>
+<div class="section" id="working-with-failed-jobs">
+<h2>Working with failed jobs<a class="headerlink" href="#working-with-failed-jobs" title="Permalink to this headline">¶</a></h2>
+<p>If a job fails it needs to be investigated. In most cases a traceback will
+indicate why the job failed.</p>
+<p>The simplest way to work with queues and jobs is to use <a class="reference external" href="https://github.com/ducu/rq-dashboard">rq-dashboard</a>, though you likely don’t want to
+deploy that on a production server.  With this you can see the jobs in the
+queue, you can check the tracebacks and you can retry failed jobs.</p>
+<p>In the case of a production server you can make use of the following commands
+to manage jobs:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> redis-cli -n <span class="m">2</span> lrange rq:queue:default <span class="m">0</span> -1
+<span class="go">03135097-00f8-46eb-b084-6f34a16d9940</span>
+<span class="go">a07309b3-f056-47e7-856c-c608bda2f171</span>
+<span class="go">3df6a559-2e3c-4c0c-b09c-1948b4bacda2</span>
+</pre></div>
+</div>
+<p>This will display all pending job IDs in the default queue. We’re using
+the Redis DB number <code class="docutils literal"><span class="pre">2</span></code>, the default RQ queue on a standard Pootle install.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> redis-cli -n <span class="m">2</span> lrange rq:queue:failed <span class="m">0</span> -1
+<span class="go">60ed13df-0ce5-4b98-96f0-f8e0294ba421</span>
+<span class="go">3240527f-58b9-40fe-b0c5-b8d3fcaa06b6</span>
+</pre></div>
+</div>
+<p>This will display the failed job IDs.</p>
+<p>To investigate a failed job simply add <code class="docutils literal"><span class="pre">rq:job:</span></code> prefix to a job ID and
+use a command such as this:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> redis-cli -n <span class="m">2</span> hgetall rq:job:60ed13df-0ce5-4b98-96f0-f8e0294ba421
+</pre></div>
+</div>
+<p>This will allow you to see any traceback and investigate and solve them.</p>
+<p>To push failed jobs back into the queue we simply run the
+<a class="reference internal" href="commands.html#django-admin-retry_failed_jobs"><code class="xref std std-djadmin docutils literal"><span class="pre">retry_failed_jobs</span></code></a> management command.</p>
+<div class="section" id="delete-all-failed-jobs">
+<h3>Delete all failed jobs<a class="headerlink" href="#delete-all-failed-jobs" title="Permalink to this headline">¶</a></h3>
+<p>Sometimes failed jobs no longer apply since they refer to removed items, so no
+matter how many times you run them they will keep failing. Note that sometimes
+those unrecoverable failed jobs are in company of other failed jobs that can be
+re-run by using the <a class="reference internal" href="commands.html#django-admin-retry_failed_jobs"><code class="xref std std-djadmin docutils literal"><span class="pre">retry_failed_jobs</span></code></a> management command:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle retry_failed_jobs
+</pre></div>
+</div>
+<p>In order to delete all the failed jobs you must first <strong>stop the workers</strong>.</p>
+<p>Once the workers are stopped make sure that there are no failed jobs that you
+don’t want to remove. In case there is any restart the workers to re-run them
+with <a class="reference internal" href="commands.html#django-admin-retry_failed_jobs"><code class="xref std std-djadmin docutils literal"><span class="pre">retry_failed_jobs</span></code></a>. Stop the workers again once those jobs are
+completed. Check again that all the failed jobs are the ones you want to
+remove.</p>
+<p>In order to perform a bulk delete of all failed jobs run the following
+commands:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> redis-cli -n <span class="m">2</span> LRANGE <span class="s2">&quot;rq:queue:failed&quot;</span> <span class="m">0</span> -1 <span class="p">|</span> perl -nE <span class="s1">&#39;chomp; `redis-cli DEL rq:job:$_`;&#39;</span>
+</pre></div>
+</div>
+<p>Now remove the list of failed jobs:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> redis-cli -n <span class="m">2</span> DEL <span class="s2">&quot;rq:queue:failed&quot;</span>
+</pre></div>
+</div>
+<p>Do not forget to <strong>restart the workers</strong>.</p>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

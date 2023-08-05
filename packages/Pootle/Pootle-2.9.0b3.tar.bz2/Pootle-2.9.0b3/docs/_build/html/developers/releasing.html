@@ -1,0 +1,732 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Making a Pootle Release &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Plugins" href="plugins.html" />
+    <link rel="prev" title="Deprecation" href="deprecation.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../features/index.html">Features</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../server/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/index.html">Administering a server</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Making a Pootle Release</a><ul>
+<li><a class="reference internal" href="#pre-release-tasks">Pre-release tasks</a><ul>
+<li><a class="reference internal" href="#upload-and-announce-new-translations">Upload and announce new translations</a></li>
+<li><a class="reference internal" href="#string-freeze">String freeze</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#create-the-package">Create the package</a><ul>
+<li><a class="reference internal" href="#get-a-clean-checkout">Get a clean checkout</a></li>
+<li><a class="reference internal" href="#create-a-working-branch">Create a working branch</a></li>
+<li><a class="reference internal" href="#update-requirements-versions">Update requirements versions</a></li>
+<li><a class="reference internal" href="#check-copyright-dates">Check copyright dates</a></li>
+<li><a class="reference internal" href="#set-build-settings">Set build settings</a></li>
+<li><a class="reference internal" href="#update-checks-descriptions">Update checks descriptions</a></li>
+<li><a class="reference internal" href="#update-translations">Update translations</a></li>
+<li><a class="reference internal" href="#create-release-notes">Create release notes</a></li>
+<li><a class="reference internal" href="#cane-caches">Cane caches</a></li>
+<li><a class="reference internal" href="#up-version-numbers">Up version numbers</a></li>
+<li><a class="reference internal" href="#install-nvm">Install nvm</a></li>
+<li><a class="reference internal" href="#build-the-package">Build the package</a></li>
+<li><a class="reference internal" href="#test-install-and-other-tests">Test install and other tests</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#publish-the-new-release">Publish the new release</a><ul>
+<li><a class="reference internal" href="#create-a-pull-request">Create a Pull Request</a></li>
+<li><a class="reference internal" href="#branch-the-release">Branch the release</a></li>
+<li><a class="reference internal" href="#tag-the-release">Tag the release</a></li>
+<li><a class="reference internal" href="#release-documentation">Release documentation</a></li>
+<li><a class="reference internal" href="#publish-on-pypi">Publish on PyPI</a></li>
+<li><a class="reference internal" href="#create-a-release-on-github">Create a release on Github</a></li>
+<li><a class="reference internal" href="#update-pootle-website">Update Pootle website</a></li>
+<li><a class="reference internal" href="#announce-to-the-world">Announce to the world</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#post-releasing-tasks">Post-Releasing Tasks</a><ul>
+<li><a class="reference internal" href="#bump-version-to-n-1-alpha1">Bump version to N+1-alpha1</a></li>
+<li><a class="reference internal" href="#add-release-notes-for-dev">Add release notes for dev</a></li>
+<li><a class="reference internal" href="#other-possible-steps">Other possible steps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="deprecation.html"
+         title="previous chapter">&laquo; Deprecation</a></li>
+  <li><a href="plugins.html"
+         title="next chapter">Plugins &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="making-a-pootle-release">
+<h1>Making a Pootle Release<a class="headerlink" href="#making-a-pootle-release" title="Permalink to this headline">¶</a></h1>
+<p>This page is divided in four sections. The first one lists the tasks that must
+be performed before creating a package. The second section includes a list of
+tasks to get a valid package. The third one to get the package published and
+the release announced. The last one lists and suggests some possible cleanup
+tasks to be done after releasing.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please note that this is not a complete list of tasks. Please feel
+free to improve it.</p>
+</div>
+<div class="section" id="pre-release-tasks">
+<h2>Pre-release tasks<a class="headerlink" href="#pre-release-tasks" title="Permalink to this headline">¶</a></h2>
+<p>Before starting the release process it is necessary to perform some previous
+tasks.</p>
+<div class="section" id="upload-and-announce-new-translations">
+<h3>Upload and announce new translations<a class="headerlink" href="#upload-and-announce-new-translations" title="Permalink to this headline">¶</a></h3>
+<p>We need to give localizers enough time to localize Pootle.  They need time to
+do the actual translation and to feedback on any errors that they might
+encounter.</p>
+<p>First upload the new translations:</p>
+<ol class="arabic">
+<li><p class="first">Create the new templates:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone git@github.com:translate/pootle.git pootle-translations
+<span class="gp">$</span> <span class="nb">cd</span> pootle-translations
+<span class="gp">$</span> make pot
+</pre></div>
+</div>
+</li>
+<li><p class="first">Upload the templates to Pootle for translation.</p>
+</li>
+<li><p class="first">Update current translations against templates either on Pootle or in code
+and commits these updated files to Git.</p>
+</li>
+</ol>
+<p>Announce the new translations on the following channels:</p>
+<ul class="simple">
+<li>The News tab on Pootle – for those not on any mailing list</li>
+<li>The <a class="reference external" href="mailto:translate-announce&#37;&#52;&#48;lists&#46;sourceforge&#46;net">translate-announce<span>&#64;</span>lists<span>&#46;</span>sourceforge<span>&#46;</span>net</a> and the
+<a class="reference external" href="mailto:translate-pootle&#37;&#52;&#48;lists&#46;sourceforge&#46;net">translate-pootle<span>&#64;</span>lists<span>&#46;</span>sourceforge<span>&#46;</span>net</a> mailing lists – for those who might
+miss the news.</li>
+</ul>
+</div>
+<div class="section" id="string-freeze">
+<h3>String freeze<a class="headerlink" href="#string-freeze" title="Permalink to this headline">¶</a></h3>
+<p>A string freeze would normally run between an RC and a final version. We want
+to give a string freeze at least 2-4 weeks before a release. They must be
+announced, explicitly stating the duration, on the
+<a class="reference external" href="mailto:translate-announce&#37;&#52;&#48;lists&#46;sourceforge&#46;net">translate-announce<span>&#64;</span>lists<span>&#46;</span>sourceforge<span>&#46;</span>net</a> and the
+<a class="reference external" href="mailto:translate-pootle&#37;&#52;&#48;lists&#46;sourceforge&#46;net">translate-pootle<span>&#64;</span>lists<span>&#46;</span>sourceforge<span>&#46;</span>net</a> mailing lists.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If we do have a string freeze break then announce it to people. The
+string freeze breaks usually are only allowed to fix mistakes on the
+translatable strings.</p>
+</div>
+</div>
+</div>
+<div class="section" id="create-the-package">
+<h2>Create the package<a class="headerlink" href="#create-the-package" title="Permalink to this headline">¶</a></h2>
+<p>The first steps are to create and validate a package for the next release.</p>
+<div class="section" id="get-a-clean-checkout">
+<h3>Get a clean checkout<a class="headerlink" href="#get-a-clean-checkout" title="Permalink to this headline">¶</a></h3>
+<p>We work from a clean checkout to ensure that everything you are adding to the
+build is what is in the repository and doesn’t contain any of your uncommitted
+changes. It also ensures that someone else could replicate your process.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone git@github.com:translate/pootle.git pootle-release
+<span class="gp">$</span> <span class="nb">cd</span> pootle-release
+<span class="gp">$</span> git submodule update --init
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-a-working-branch">
+<h3>Create a working branch<a class="headerlink" href="#create-a-working-branch" title="Permalink to this headline">¶</a></h3>
+<p>It is extremely advisable to create a Pull Request with the changes necessary
+for the release. This means that it is best to create a working branch to
+clearly separate those changes from <cite>master</cite> branch, which can be altered while
+doing the release, and ease rebasing if needed.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git remote add my-fork git@github.com:my-fork/pootle.git
+<span class="gp">$</span> git fetch my-fork
+<span class="gp">$</span> git checkout -b releasing
+</pre></div>
+</div>
+</div>
+<div class="section" id="update-requirements-versions">
+<h3>Update requirements versions<a class="headerlink" href="#update-requirements-versions" title="Permalink to this headline">¶</a></h3>
+<p>Update the minimum version number for the requirements in:</p>
+<ul class="simple">
+<li><code class="file docutils literal"><span class="pre">requirements/</span></code></li>
+<li><code class="file docutils literal"><span class="pre">pootle/checks.py</span></code></li>
+<li><code class="file docutils literal"><span class="pre">docs/server/requirements.rst</span></code></li>
+</ul>
+<p>Make sure version numbers displayed on documentation examples match the latest
+requirements on the above files.</p>
+</div>
+<div class="section" id="check-copyright-dates">
+<h3>Check copyright dates<a class="headerlink" href="#check-copyright-dates" title="Permalink to this headline">¶</a></h3>
+<p>Update any copyright dates in <code class="file docutils literal"><span class="pre">docs/conf.py:copyright</span></code> and anywhere else
+that needs fixing.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git grep <span class="m">2013</span>  <span class="c1"># Should pick up anything that should be examined</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="set-build-settings">
+<h3>Set build settings<a class="headerlink" href="#set-build-settings" title="Permalink to this headline">¶</a></h3>
+<p>Create <code class="file docutils literal"><span class="pre">~/.pootle/pootle_build.conf</span></code> with the following content:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;Configuration file to build Pootle.</span>
+
+<span class="sd">Must be placed in ~/.pootle/pootle_build.conf</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Django now requires to set some secret key to be set.</span>
+<span class="n">SECRET_KEY</span> <span class="o">=</span> <span class="s1">&#39;__BuildingPootle_1234567890__&#39;</span>
+
+<span class="c1"># Silence some checks so the build output is cleaner.</span>
+<span class="n">SILENCED_SYSTEM_CHECKS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;pootle.W004&#39;</span><span class="p">,</span>  <span class="c1"># Pootle requires a working mail server</span>
+    <span class="s1">&#39;pootle.W006&#39;</span><span class="p">,</span>  <span class="c1"># sqlite database backend is unsupported</span>
+    <span class="s1">&#39;pootle.W010&#39;</span><span class="p">,</span>  <span class="c1"># DEFAULT_FROM_EMAIL has default setting</span>
+    <span class="s1">&#39;pootle.W011&#39;</span><span class="p">,</span>  <span class="c1"># POOTLE_CONTACT_EMAIL has default setting</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="update-checks-descriptions">
+<h3>Update checks descriptions<a class="headerlink" href="#update-checks-descriptions" title="Permalink to this headline">¶</a></h3>
+<p>The quality checks descriptions are kept as a static HTML page that has to be
+regenerated in order to ensure the descriptions match the currently available
+quality checks.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> mkvirtualenv build-checks-templates
+<span class="gp">(build-checks-templates)$</span> pip install --upgrade setuptools pip
+<span class="gp">(build-checks-templates)$</span> pip install -r requirements/build.txt
+<span class="gp">(build-checks-templates)$</span> <span class="nb">export</span> <span class="nv">POOTLE_SETTINGS</span><span class="o">=</span>~/.pootle/pootle_build.conf
+<span class="gp">(build-checks-templates)$</span> <span class="nv">DJANGO_SETTINGS_MODULE</span><span class="o">=</span>pootle.settings ./setup.py build_checks_templates
+<span class="gp">(build-checks-templates)$</span> deactivate
+<span class="gp">$</span> <span class="nb">unset</span> POOTLE_SETTINGS
+<span class="gp">$</span> rmvirtualenv build-checks-templates
+</pre></div>
+</div>
+</div>
+<div class="section" id="update-translations">
+<h3>Update translations<a class="headerlink" href="#update-translations" title="Permalink to this headline">¶</a></h3>
+<p>Update the translations from the <a class="reference external" href="http://pootle.locamotion.org/projects/pootle">Pootle server</a></p>
+<ol class="arabic">
+<li><p class="first">Download all translations</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> make get-translations
+</pre></div>
+</div>
+</li>
+<li><p class="first">Update <code class="file docutils literal"><span class="pre">pootle/locale/LINGUAS</span></code> to list the languages we would like to
+ship. While we package all PO files, this is an indication of which ones we
+want packagers to use.  The requirement is roughly 80% translated with no
+obvious variable errors. Languages with a small userbase can be included.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> make linguas
+</pre></div>
+</div>
+<p>Check the output and make any adjustments such as adding back languages that
+don’t quite make the target but you wish to ship.</p>
+</li>
+<li><p class="first">Build translations to check for errors:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ./setup.py build_mo          <span class="c1"># Build all LINGUAS enabled languages</span>
+<span class="gp">$</span> ./setup.py build_mo --check  <span class="c1"># Not all of these are errors</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="create-release-notes">
+<h3>Create release notes<a class="headerlink" href="#create-release-notes" title="Permalink to this headline">¶</a></h3>
+<p>We create our release notes in reStructured Text, since we use that elsewhere
+and since it can be rendered well in some of our key sites.</p>
+<p>First we need to create a log of changes in Pootle, which is done generically
+like this:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git log <span class="nv">$previous_version</span>..HEAD &gt; docs/releases/<span class="nv">$version</span>.rst
+</pre></div>
+</div>
+<p>Or a more specific example:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git log <span class="m">2</span>.5.0..HEAD &gt; docs/releases/2.5.1.rst
+</pre></div>
+</div>
+<p>Edit this file.  You can use the commits as a guide to build up the release
+notes.  You should remove all log messages before the release.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Since the release notes will be used in places that allow linking we
+use links within the notes.  These should link back to products websites
+(<a class="reference external" href="http://virtaal.org">Virtaal</a>, <a class="reference external" href="http://pootle.translatehouse.org">Pootle</a>, etc), references to <a class="reference external" href="http://translatehouse.org">Translate</a> and possibly bug numbers, etc.</p>
+</div>
+<p>Read for grammar and spelling errors.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>When writing the notes please remember:</p>
+<ol class="last arabic simple">
+<li>The voice is active. ‘Translate has released a new version of Pootle’,
+not ‘A new version of Pootle was released by Translate’.</li>
+<li>The connection to the users is human not distant.</li>
+<li>We speak in familiar terms e.g. “I know you’ve been waiting for this
+release” instead of formal.</li>
+</ol>
+</div>
+<p>We create a list of contributors using this command:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git log <span class="m">2</span>.5.0..HEAD --format<span class="o">=</span><span class="s1">&#39;%aN, &#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{arr[$0]++} END{for (i in arr){print arr[i], i;}}&#39;</span> <span class="p">|</span> sort -rn <span class="p">|</span> cut -d<span class="se">\ </span> -f2-
+</pre></div>
+</div>
+</div>
+<div class="section" id="cane-caches">
+<span id="releasing-cane-caches"></span><h3>Cane caches<a class="headerlink" href="#cane-caches" title="Permalink to this headline">¶</a></h3>
+<p>Bump the version for each of the apps so the caches are caned after upgrade:</p>
+<ul class="simple">
+<li><code class="file docutils literal"><span class="pre">apps.py</span></code> for each of the apps that have a <cite>version</cite></li>
+</ul>
+</div>
+<div class="section" id="up-version-numbers">
+<span id="releasing-up-version-numbers"></span><h3>Up version numbers<a class="headerlink" href="#up-version-numbers" title="Permalink to this headline">¶</a></h3>
+<p>Update the version number in:</p>
+<ul class="simple">
+<li><code class="file docutils literal"><span class="pre">pootle/__init__.py:VERSION</span></code></li>
+<li>Documentation examples, especially <code class="file docutils literal"><span class="pre">docs/server/installation.rst</span></code> and
+<code class="file docutils literal"><span class="pre">docs/server/upgrading.rst</span></code></li>
+</ul>
+<p>The version tuple should follow the pattern:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">,</span> <span class="n">micro</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">extra</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>E.g.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;final&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span> <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When in development we use ‘alpha’ with <code class="docutils literal"><span class="pre">extra</span></code> of 0.  The first release of a
+<code class="docutils literal"><span class="pre">minor</span></code> version will always have a <code class="docutils literal"><span class="pre">micro</span></code> of <code class="docutils literal"><span class="pre">.0</span></code>. So <code class="docutils literal"><span class="pre">2.6.0</span></code> and
+never just <code class="docutils literal"><span class="pre">2.6</span></code>.</p>
+</div>
+<div class="section" id="install-nvm">
+<h3>Install nvm<a class="headerlink" href="#install-nvm" title="Permalink to this headline">¶</a></h3>
+<p>Most likely your system will provide a nodejs version older than the one that
+is required. nvm is a tool that allows to quickly install and switch nodejs
+versions.</p>
+<p>Follow the <a class="reference external" href="https://github.com/creationix/nvm#installation">nvm installation instructions</a>.</p>
+</div>
+<div class="section" id="build-the-package">
+<h3>Build the package<a class="headerlink" href="#build-the-package" title="Permalink to this headline">¶</a></h3>
+<p>Building is the first step to testing that things work. From your clean
+checkout run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> mkvirtualenv build-pootle-release
+<span class="gp">(build-pootle-release)$</span> nvm install stable
+<span class="gp">(build-pootle-release)$</span> pip install --upgrade setuptools pip
+<span class="gp">(build-pootle-release)$</span> pip install -r requirements/build.txt
+<span class="gp">(build-pootle-release)$</span> pip install -e .<span class="o">[</span>dev<span class="o">]</span>
+<span class="gp">(build-pootle-release)$</span> <span class="nb">export</span> <span class="nv">PYTHONPATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">PYTHONPATH</span><span class="si">}</span><span class="s2">:`pwd`&quot;</span>
+<span class="gp">(build-pootle-release)$</span> <span class="nb">export</span> <span class="nv">POOTLE_SETTINGS</span><span class="o">=</span>~/.pootle/pootle_build.conf
+<span class="gp">(build-pootle-release)$</span> ./setup.py build_mo        <span class="c1"># Build all LINGUAS enabled languages</span>
+<span class="gp">(build-pootle-release)$</span> ./setup.py build_mo --all  <span class="c1"># If we are shipping an RC</span>
+<span class="gp">(build-pootle-release)$</span> make build
+<span class="gp">(build-pootle-release)$</span> deactivate
+<span class="gp">$</span> <span class="nb">unset</span> POOTLE_SETTINGS
+</pre></div>
+</div>
+<p>This will create a tarball in <code class="file docutils literal"><span class="pre">dist/</span></code> which you can use for further
+testing.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We use a clean checkout just to make sure that no inadvertant changes
+make it into the release.</p>
+</div>
+</div>
+<div class="section" id="test-install-and-other-tests">
+<h3>Test install and other tests<a class="headerlink" href="#test-install-and-other-tests" title="Permalink to this headline">¶</a></h3>
+<p>The easiest way to test is in a virtualenv. You can test the installation of
+the new release using:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> mkvirtualenv test-pootle-release
+<span class="gp">(test-pootle-release)$</span> pip install --upgrade setuptools pip
+<span class="gp">(test-pootle-release)$</span> pip install dist/Pootle-<span class="nv">$version</span>.tar.bz2
+<span class="gp">(test-pootle-release)$</span> pip install mysqlclient
+<span class="gp">(test-pootle-release)$</span> pootle init
+</pre></div>
+</div>
+<p>You can then proceed with other tests such as checking:</p>
+<ol class="arabic">
+<li><p class="first">Documentation is available in the package</p>
+</li>
+<li><p class="first">Assets are available in the package</p>
+</li>
+<li><p class="first">Quick SQLite installation check:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(test-pootle-release)$</span> pootle migrate
+<span class="gp">(test-pootle-release)$</span> pootle initdb
+<span class="gp">(test-pootle-release)$</span> pootle runserver --insecure
+<span class="gp">(test-pootle-release)$</span>  <span class="c1"># Browse to localhost:8000</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">MySQL installation check:</p>
+<ol class="arabic">
+<li><p class="first">Create a blank database on MySQL:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">mysql -u $db_user -p$db_password -e &#39;CREATE DATABASE `test-mysql-pootle` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;&#39;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Change the database settings in the settings file created by
+<a class="reference internal" href="../server/commands.html#django-admin-init"><code class="xref std std-djadmin docutils literal"><span class="pre">pootle</span> <span class="pre">init</span></code></a> (by default <code class="file docutils literal"><span class="pre">~/.pootle/pootle.conf</span></code>)
+to use this new MySQL database</p>
+</li>
+<li><p class="first">Run the following:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(test-pootle-release)$</span> pootle migrate
+<span class="gp">(test-pootle-release)$</span> pootle initdb
+<span class="gp">(test-pootle-release)$</span> pootle runserver --insecure
+<span class="gp">(test-pootle-release)$</span>  <span class="c1"># Browse to localhost:8000</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Drop the MySQL database you have created:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">mysql -u $db_user -p$db_password -e &#39;DROP DATABASE `test-mysql-pootle`;&#39;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p class="first">MySQL upgrade check:</p>
+<ol class="arabic">
+<li><p class="first">Download a database dump from <a class="reference external" href="https://github.com/translate/pootle-test-data">Pootle Test Data</a> repository</p>
+</li>
+<li><p class="first">Create a blank database on MySQL:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">mysql -u $db_user -p$db_password -e &#39;CREATE DATABASE `test-mysql-pootle` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;&#39;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Import the database dump into the MySQL database:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">mysql -u $db_user -p$db_password test-mysql-pootle &lt; $db_dump_file</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Run the following:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(test-pootle-release)$</span> pootle migrate
+<span class="gp">(test-pootle-release)$</span> pootle runserver --insecure
+<span class="gp">(test-pootle-release)$</span>  <span class="c1"># Browse to localhost:8000</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Drop the MySQL database you have created:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">mysql -u $db_user -p$db_password -e &#39;DROP DATABASE `test-mysql-pootle`;&#39;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p class="first">Check that the instructions in the <a class="reference internal" href="../server/installation.html"><span class="doc">Installation guide</span></a> are correct</p>
+</li>
+<li><p class="first">Check that the instructions in the <a class="reference internal" href="../server/upgrading.html"><span class="doc">Upgrade guide</span></a>
+are correct</p>
+</li>
+<li><p class="first">Check that the instructions in the <a class="reference internal" href="hacking.html"><span class="doc">Hacking guide</span></a> are
+correct</p>
+</li>
+<li><p class="first">Meta information about the package is correct. This is stored in
+<code class="file docutils literal"><span class="pre">setup.py</span></code>, to see some options to display meta-data use:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ./setup.py --help
+</pre></div>
+</div>
+<p>Now you can try some options like:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> ./setup.py --name
+<span class="gp">$</span> ./setup.py --version
+<span class="gp">$</span> ./setup.py --author
+<span class="gp">$</span> ./setup.py --author-email
+<span class="gp">$</span> ./setup.py --url
+<span class="gp">$</span> ./setup.py --license
+<span class="gp">$</span> ./setup.py --description
+<span class="gp">$</span> ./setup.py --long-description
+<span class="gp">$</span> ./setup.py --classifiers
+</pre></div>
+</div>
+<p>The actual long description is taken from <code class="file docutils literal"><span class="pre">/README.rst</span></code> with some
+tweaking for releasing.</p>
+</li>
+</ol>
+<p>Finally clean your test environment:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(test-pootle-release)$</span> deactivate
+<span class="gp">$</span> rmvirtualenv test-pootle-release
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="publish-the-new-release">
+<h2>Publish the new release<a class="headerlink" href="#publish-the-new-release" title="Permalink to this headline">¶</a></h2>
+<p>Once we have a valid package it is necessary to publish it and announce the
+release.</p>
+<div class="section" id="create-a-pull-request">
+<h3>Create a Pull Request<a class="headerlink" href="#create-a-pull-request" title="Permalink to this headline">¶</a></h3>
+<p>Before merging the changes you must create a Pull Request to ensure that all
+tests and checks pass:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git push my-fork releasing
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Of course you must wait until all automatic checks pass.</p>
+</div>
+</div>
+<div class="section" id="branch-the-release">
+<h3>Branch the release<a class="headerlink" href="#branch-the-release" title="Permalink to this headline">¶</a></h3>
+<p>You should branch only when you are releasing the first stable version of a new
+version series, since betas and release candidates can be developed in the
+<cite>master</cite> branch. To branch do:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git checkout -b stable/2.8.x
+<span class="gp">$</span> git push origin stable/2.8.x
+</pre></div>
+</div>
+<p>If you branch you will want to update the <code class="file docutils literal"><span class="pre">README.rst</span></code> file so that it
+points correctly to branched versions of badges and documentation.  Review and
+test the actual links created, you don’t need to commit everything.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> workon build-pootle-release
+<span class="gp">(build-pootle-release)$</span> ./setup.py update_readme -w
+<span class="gp">(build-pootle-release)$</span> git diff README.rst
+<span class="gp">(build-pootle-release)$</span> git commit README.rst -m <span class="s2">&quot;Adjust README to branch&quot;</span>
+<span class="gp">(build-pootle-release)$</span> deactivate
+</pre></div>
+</div>
+<p>Also if you branch you will want to limit requires.io to requirements in the
+branch. To do so check how it was done in <a class="reference external" href="https://github.com/translate/pootle/commit/a94ea7af">this commit</a>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> nano .requires.yml
+<span class="gp">$</span> git add .requires.yml
+<span class="gp">$</span> git commit -m <span class="s2">&quot;Requirements: Limit requires.io to branch requirements&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tag-the-release">
+<h3>Tag the release<a class="headerlink" href="#tag-the-release" title="Permalink to this headline">¶</a></h3>
+<p>You should only tag once you are happy with your release as there are some
+things that are difficult to undo:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git tag -a <span class="m">2</span>.8.0 -m <span class="s2">&quot;Tag version 2.8.0&quot;</span>
+<span class="gp">$</span> git push --tags
+</pre></div>
+</div>
+</div>
+<div class="section" id="release-documentation">
+<h3>Release documentation<a class="headerlink" href="#release-documentation" title="Permalink to this headline">¶</a></h3>
+<p>We need a tagged release or branch before we can do this. The docs are
+published on Read The Docs.</p>
+<ul class="simple">
+<li><a class="reference external" href="https://readthedocs.org/dashboard/pootle/versions/">https://readthedocs.org/dashboard/pootle/versions/</a></li>
+</ul>
+<p>Use the admin pages to flag a version that should be published.  When we have
+branched the stable release we use the branch rather then the tag i.e.
+<code class="docutils literal"><span class="pre">stable/2.5.x</span></code> rather than <code class="docutils literal"><span class="pre">2.5.0</span></code> as that allows any fixes of
+documentation for the <code class="docutils literal"><span class="pre">2.5</span></code> releases to be immediately available.</p>
+<p>Change all references to docs in the Pootle code to point to the branched
+version as apposed to the latest version.</p>
+<p>Deactivate documentation that is no longer applicable.</p>
+</div>
+<div class="section" id="publish-on-pypi">
+<h3>Publish on PyPI<a class="headerlink" href="#publish-on-pypi" title="Permalink to this headline">¶</a></h3>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>You need a username and password on <a class="reference external" href="https://pypi.python.org/pypi">Python Package Index (PyPI)</a> and have rights to the project before you
+can proceed with this step.</p>
+<p class="last">These can be stored in <code class="file docutils literal"><span class="pre">$HOME/.pypirc</span></code> and will contain your username
+and password. Check <a class="reference external" href="https://packaging.python.org/tutorials/distributing-packages/#create-an-account">Create a PyPI account</a>
+for more details.</p>
+</div>
+<p>Run the following to publish the package on PyPI:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> workon build-pootle-release
+<span class="gp">(build-pootle-release)$</span> pip install --upgrade pyopenssl ndg-httpsclient pyasn1 twine
+<span class="gp">(build-pootle-release)$</span> twine upload dist/Pootle-*
+<span class="gp">(build-pootle-release)$</span> deactivate
+<span class="gp">$</span> rmvirtualenv build-pootle-release
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-a-release-on-github">
+<span id="releasing-create-github-release"></span><h3>Create a release on Github<a class="headerlink" href="#create-a-release-on-github" title="Permalink to this headline">¶</a></h3>
+<p>Do the following to create the release:</p>
+<ol class="arabic simple">
+<li>Go to <a class="reference external" href="https://github.com/translate/pootle/releases/new">https://github.com/translate/pootle/releases/new</a></li>
+<li>Draft a new release with the corresponding tag version</li>
+<li>Convert the major changes (no more than five) in the release notes to
+Markdown with <a class="reference external" href="http://pandoc.org/">Pandoc</a>. Bugfix releases can replace
+the major changes with <em>This is a bugfix release for the X.X.X branch.</em></li>
+<li>Add the converted major changes to the release description</li>
+<li>Include at the bottom of the release description a link to the full release
+notes at Read The Docs</li>
+<li>Attach the tarball to the release</li>
+<li>Mark it as pre-release if it’s a release candidate</li>
+</ol>
+</div>
+<div class="section" id="update-pootle-website">
+<h3>Update Pootle website<a class="headerlink" href="#update-pootle-website" title="Permalink to this headline">¶</a></h3>
+<p>We use github pages for the website. First we need to checkout the pages:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> git checkout gh-pages
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li>In <code class="file docutils literal"><span class="pre">_posts/</span></code> add a new release posting. Use the same text used for the
+<a class="reference internal" href="#releasing-create-github-release"><span class="std std-ref">Github release</span></a> description,
+including the link to the full release notes.</li>
+<li>Change <code class="docutils literal"><span class="pre">$version</span></code> as needed. See <code class="file docutils literal"><span class="pre">_config.yml</span></code> and
+<strong class="command">git grep $old_release</strong></li>
+<li><strong class="command">git commit</strong> and <strong class="command">git push</strong> – changes are quite quick so
+easy to review.</li>
+</ol>
+</div>
+<div class="section" id="announce-to-the-world">
+<h3>Announce to the world<a class="headerlink" href="#announce-to-the-world" title="Permalink to this headline">¶</a></h3>
+<p>Let people know that there is a new version:</p>
+<ol class="arabic">
+<li><p class="first">Announce on mailing lists <strong>using plain text</strong> emails using the same text
+(adjusting what needs to be adjusted) used for the <a class="reference internal" href="#releasing-create-github-release"><span class="std std-ref">Github release</span></a> description:</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This has to be explicitly reviewed and approved by Dwayne so
+<strong>we don’t repeat the same email over and over</strong>.</p>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="mailto:translate-announce&#37;&#52;&#48;lists&#46;sourceforge&#46;net">translate-announce<span>&#64;</span>lists<span>&#46;</span>sourceforge<span>&#46;</span>net</a></li>
+<li><a class="reference external" href="mailto:translate-pootle&#37;&#52;&#48;lists&#46;sourceforge&#46;net">translate-pootle<span>&#64;</span>lists<span>&#46;</span>sourceforge<span>&#46;</span>net</a></li>
+<li><a class="reference external" href="mailto:translate-devel&#37;&#52;&#48;lists&#46;sourceforge&#46;net">translate-devel<span>&#64;</span>lists<span>&#46;</span>sourceforge<span>&#46;</span>net</a></li>
+</ul>
+</li>
+<li><p class="first">Adjust the <a class="reference external" href="https://gitter.im/translate/pootle">Pootle channel</a> notice.
+Use <code class="docutils literal"><span class="pre">/topic</span> <span class="pre">[new</span> <span class="pre">topic]</span></code> to change the topic. It is easier if you copy the
+previous topic and adjust it.</p>
+</li>
+<li><p class="first">Email important users</p>
+</li>
+<li><p class="first">Tweet about it</p>
+</li>
+<li><p class="first">Update <a class="reference external" href="https://en.wikipedia.org/wiki/Pootle">Pootle’s Wikipedia page</a></p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section" id="post-releasing-tasks">
+<h2>Post-Releasing Tasks<a class="headerlink" href="#post-releasing-tasks" title="Permalink to this headline">¶</a></h2>
+<p>These are tasks not directly related to the releasing, but that are
+nevertheless completely necessary.</p>
+<div class="section" id="bump-version-to-n-1-alpha1">
+<h3>Bump version to N+1-alpha1<a class="headerlink" href="#bump-version-to-n-1-alpha1" title="Permalink to this headline">¶</a></h3>
+<p>If this new release is a stable one, bump the version in <code class="docutils literal"><span class="pre">master</span></code> to
+<code class="docutils literal"><span class="pre">{N+1}-alpha1</span></code>. The places to be changed are the same ones listed in
+<a class="reference internal" href="#releasing-up-version-numbers"><span class="std std-ref">Up version numbers</span></a>. This prevents anyone
+using <code class="docutils literal"><span class="pre">master</span></code> being confused with a stable release and we can easily check
+if they are using <code class="docutils literal"><span class="pre">master</span></code> or <code class="docutils literal"><span class="pre">stable</span></code>.</p>
+</div>
+<div class="section" id="add-release-notes-for-dev">
+<h3>Add release notes for dev<a class="headerlink" href="#add-release-notes-for-dev" title="Permalink to this headline">¶</a></h3>
+<p>After updating the release notes for the about to be released version, it is
+necessary to add new release notes for the next release, tagged as <code class="docutils literal"><span class="pre">dev</span></code>.</p>
+</div>
+<div class="section" id="other-possible-steps">
+<h3>Other possible steps<a class="headerlink" href="#other-possible-steps" title="Permalink to this headline">¶</a></h3>
+<p>Some possible cleanup tasks:</p>
+<ul class="simple">
+<li>Remove your <code class="docutils literal"><span class="pre">pootle-release</span></code> checkout.</li>
+<li>Update and fix these releasing notes:<ul>
+<li>Make sure these releasing notes are updated on <code class="docutils literal"><span class="pre">master</span></code>.</li>
+<li>Discuss any changes that should be made or new things that could be added.</li>
+<li>Add automation if you can.</li>
+</ul>
+</li>
+<li>Add new sections to this document. Possible ideas are:<ul>
+<li>Pre-release checks</li>
+<li>Change URLs to point to the correct docs: do we want to change URLs to point
+to the <code class="docutils literal"><span class="pre">$version</span></code> docs rather then <code class="docutils literal"><span class="pre">latest</span></code>?</li>
+<li>Building on Windows, building for other Linux distros.</li>
+<li>Communicating to upstream packagers.</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

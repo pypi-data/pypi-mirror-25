@@ -1,0 +1,202 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Installation with PostgreSQL &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Running under a Web Server" href="web.html" />
+    <link rel="prev" title="Installation with MySQL" href="mysql_installation.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../features/index.html">Features</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Installation with PostgreSQL</a><ul>
+<li><a class="reference internal" href="#setting-up-the-database">Setting up the database</a></li>
+<li><a class="reference internal" href="#system-software-requirements">System software requirements</a></li>
+<li><a class="reference internal" href="#installing-postgresql-python-bindings">Installing PostgreSQL Python bindings</a></li>
+<li><a class="reference internal" href="#initializing-the-configuration">Initializing the Configuration</a></li>
+<li><a class="reference internal" href="#database-backend">Database backend</a><ul>
+<li><a class="reference internal" href="#a-note-on-persistent-connections">A Note on Persistent Connections</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="mysql_installation.html"
+         title="previous chapter">&laquo; Installation with MySQL</a></li>
+  <li><a href="web.html"
+         title="next chapter">Running under a Web Server &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="installation-with-postgresql">
+<span id="postgresql-installation"></span><h1>Installation with PostgreSQL<a class="headerlink" href="#installation-with-postgresql" title="Permalink to this headline">¶</a></h1>
+<p>These instructions provide additional steps for setting up Pootle with
+PostgreSQL.</p>
+<p>You should read the <a class="reference internal" href="installation.html#installation"><span class="std std-ref">full installation instructions</span></a> in
+order to install Pootle.</p>
+<p>Pootle supports the <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/databases/#postgresql-notes" title="(in Django v1.10)"><span class="xref std std-ref">versions of PostgreSQL supported by Django</span></a>, make sure that your installed version is supported.</p>
+<div class="section" id="setting-up-the-database">
+<span id="postgresql-installation-setting-up-db"></span><h2>Setting up the database<a class="headerlink" href="#setting-up-the-database" title="Permalink to this headline">¶</a></h2>
+<p>As the <code class="docutils literal"><span class="pre">postgres</span></code> user you must create a database and database user:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> sudo su postgres  <span class="c1"># On Ubuntu, may be different on your system</span>
+<span class="go">postgres@ $ createuser -P pootle  # This will ask you to define the users password.</span>
+<span class="go">postgres@ $ createdb --encoding=&#39;utf8&#39; --locale=en_US.utf8 --template=template0 --owner=pootle pootledb</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="system-software-requirements">
+<span id="postgresql-installation-software-requirements"></span><h2>System software requirements<a class="headerlink" href="#system-software-requirements" title="Permalink to this headline">¶</a></h2>
+<p>In addition to the
+<a class="reference internal" href="requirements.html#requirements-packages"><span class="std std-ref">system packages</span></a> set out in the general
+installation requirements you will also require the PostgreSQL client
+development headers in order to build the Python bindings, e.g. on Debian
+Jessie:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> sudo apt-get install postgresql-server-dev-9.4
+</pre></div>
+</div>
+</div>
+<div class="section" id="installing-postgresql-python-bindings">
+<span id="postgresql-installation-install-bindings"></span><h2>Installing PostgreSQL Python bindings<a class="headerlink" href="#installing-postgresql-python-bindings" title="Permalink to this headline">¶</a></h2>
+<p>Once you have
+<a class="reference internal" href="installation.html#installation-setup-environment"><span class="std std-ref">set up and activated your virtual environment</span></a>,
+you will need to install the PostgreSQL bindings.</p>
+<p>You can do so as follows:</p>
+<pre class="literal-block">
+(env) $ pip install --pre --process-dependency-links Pootle[postgresql]
+</pre>
+</div>
+<div class="section" id="initializing-the-configuration">
+<span id="postgresql-installation-init-config"></span><h2>Initializing the Configuration<a class="headerlink" href="#initializing-the-configuration" title="Permalink to this headline">¶</a></h2>
+<p>When
+<a class="reference internal" href="installation.html#installation-initializing-the-configuration"><span class="std std-ref">initializing your configuration</span></a>
+you can specify params to set up your database, e.g.:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle init --db postgresql --db-name pootledb --db-user pootle
+</pre></div>
+</div>
+<p>This will create a configuration file to connect to a PostgreSQL database named
+<code class="docutils literal"><span class="pre">pootledb</span></code> hosted on localhost as the user <code class="docutils literal"><span class="pre">pootle</span></code>. Please see the
+<a class="reference internal" href="commands.html#django-admin-init"><code class="xref std std-djadmin docutils literal"><span class="pre">init</span></code></a> command for all of the available options.</p>
+<p>You will most likely want to edit your Pootle configuration (default location:
+<code class="file docutils literal"><span class="pre">~/.pootle/pootle.conf</span></code>) to set your password.</p>
+</div>
+<div class="section" id="database-backend">
+<span id="postgresql-installation-db-backend"></span><h2>Database backend<a class="headerlink" href="#database-backend" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="a-note-on-persistent-connections">
+<span id="postgresql-installation-persistent-connections"></span><h3>A Note on Persistent Connections<a class="headerlink" href="#a-note-on-persistent-connections" title="Permalink to this headline">¶</a></h3>
+<p>The default value for <code class="xref std std-setting docutils literal"><span class="pre">CONN_MAX_AGE</span></code> is
+<code class="docutils literal"><span class="pre">0</span></code>. It means that Django creates a connection before every request and closes
+it at the end. PostgreSQL supports persistent connections, and it will be fine
+to set <code class="xref std std-setting docutils literal"><span class="pre">CONN_MAX_AGE</span></code> to <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<p>To learn more please check Django’s docs on <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/databases/#persistent-database-connections" title="(in Django v1.10)"><span class="xref std std-ref">persistent connections and
+connection management</span></a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">DATABASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="o">...</span>
+        <span class="s1">&#39;CONN_MAX_AGE&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="o">...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,1798 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Management commands &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="RQ Job Queues" href="rq.html" />
+    <link rel="prev" title="User Authentication and Authorization" href="auth.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../features/index.html">Features</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Management commands</a><ul>
+<li><a class="reference internal" href="#managing-pootle-projects">Managing Pootle projects</a><ul>
+<li><a class="reference internal" href="#running-commands-with-no-rq-option">Running commands with –no-rq option</a></li>
+<li><a class="reference internal" href="#retry-failed-jobs">retry_failed_jobs</a></li>
+<li><a class="reference internal" href="#update-data">update_data</a></li>
+<li><a class="reference internal" href="#calculate-checks">calculate_checks</a></li>
+<li><a class="reference internal" href="#flush-cache">flush_cache</a></li>
+<li><a class="reference internal" href="#refresh-scores">refresh_scores</a></li>
+<li><a class="reference internal" href="#sync-stores">sync_stores</a></li>
+<li><a class="reference internal" href="#update-stores">update_stores</a></li>
+<li><a class="reference internal" href="#list-serializers">list_serializers</a></li>
+<li><a class="reference internal" href="#list-languages">list_languages</a></li>
+<li><a class="reference internal" href="#list-projects">list_projects</a></li>
+<li><a class="reference internal" href="#contributors">contributors</a></li>
+<li><a class="reference internal" href="#set-filetype">set_filetype</a></li>
+<li><a class="reference internal" href="#revision">revision</a></li>
+<li><a class="reference internal" href="#test-checks">test_checks</a></li>
+<li><a class="reference internal" href="#dump">dump</a></li>
+<li><a class="reference internal" href="#config">config</a></li>
+<li><a class="reference internal" href="#schema">schema</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#translation-memory">Translation Memory</a><ul>
+<li><a class="reference internal" href="#update-tmserver">update_tmserver</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#virtual-folders">Virtual Folders</a><ul>
+<li><a class="reference internal" href="#add-vfolders">add_vfolders</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#import-and-export">Import and Export</a><ul>
+<li><a class="reference internal" href="#export">export</a></li>
+<li><a class="reference internal" href="#import">import</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#manually-installing-pootle">Manually Installing Pootle</a><ul>
+<li><a class="reference internal" href="#init">init</a></li>
+<li><a class="reference internal" href="#initdb">initdb</a></li>
+<li><a class="reference internal" href="#collectstatic">collectstatic</a></li>
+<li><a class="reference internal" href="#assets">assets</a></li>
+<li><a class="reference internal" href="#webpack">webpack</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pootle-fs">Pootle FS</a><ul>
+<li><a class="reference internal" href="#fs">fs</a></li>
+<li><a class="reference internal" href="#common-options">Common options</a></li>
+<li><a class="reference internal" href="#pootle-fs-subcommands">Pootle FS subcommands</a><ul>
+<li><a class="reference internal" href="#fs-add">fs add</a></li>
+<li><a class="reference internal" href="#fs-fetch">fs fetch</a></li>
+<li><a class="reference internal" href="#fs-info">fs info</a></li>
+<li><a class="reference internal" href="#fs-resolve">fs resolve</a></li>
+<li><a class="reference internal" href="#fs-rm">fs rm</a></li>
+<li><a class="reference internal" href="#fs-state">fs state</a></li>
+<li><a class="reference internal" href="#fs-sync">fs sync</a></li>
+<li><a class="reference internal" href="#fs-unstage">fs unstage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#managing-users">Managing users</a><ul>
+<li><a class="reference internal" href="#find-duplicate-emails">find_duplicate_emails</a></li>
+<li><a class="reference internal" href="#merge-user">merge_user</a></li>
+<li><a class="reference internal" href="#purge-user">purge_user</a></li>
+<li><a class="reference internal" href="#update-user-email">update_user_email</a></li>
+<li><a class="reference internal" href="#verify-user">verify_user</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#running-wsgi-servers">Running WSGI servers</a></li>
+<li><a class="reference internal" href="#deprecated-commands">Deprecated commands</a><ul>
+<li><a class="reference internal" href="#refresh-stats">refresh_stats</a></li>
+<li><a class="reference internal" href="#clear-stats">clear_stats</a></li>
+<li><a class="reference internal" href="#last-change-id">last_change_id</a></li>
+<li><a class="reference internal" href="#commit-to-vcs">commit_to_vcs</a></li>
+<li><a class="reference internal" href="#update-from-vcs">update_from_vcs</a></li>
+<li><a class="reference internal" href="#run-cherrypy">run_cherrypy</a></li>
+<li><a class="reference internal" href="#start">start</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#running-commands-in-cron">Running Commands in cron</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="auth.html"
+         title="previous chapter">&laquo; User Authentication and Authorization</a></li>
+  <li><a href="rq.html"
+         title="next chapter">RQ Job Queues &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="management-commands">
+<span id="commands"></span><h1>Management commands<a class="headerlink" href="#management-commands" title="Permalink to this headline">¶</a></h1>
+<p>The management commands are administration commands provided by Django, Pootle
+or any external Django app being used with Pootle. You will usually run these
+commands by issuing <code class="docutils literal"><span class="pre">pootle</span> <span class="pre">&lt;command&gt;</span> <span class="pre">[options]</span></code>.</p>
+<p>For example, to get information about all available management commands, you
+will run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle <span class="nb">help</span>
+</pre></div>
+</div>
+<div class="section" id="managing-pootle-projects">
+<span id="commands-managing-pootle-projects"></span><h2>Managing Pootle projects<a class="headerlink" href="#managing-pootle-projects" title="Permalink to this headline">¶</a></h2>
+<p>These commands will go through all existing projects performing maintenance
+tasks. The tasks are all available through the web interface but on a project
+by project or file by file basis.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-project">
+<code class="descname">--project</code><code class="descclassname"></code><code class="descclassname">, </code><code class="descname">--language</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-project" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The commands target can be limited in a more flexible way using the
+<a class="reference internal" href="#cmdoption-project"><code class="xref std std-option docutils literal"><span class="pre">--project</span></code></a> <a class="reference internal" href="#cmdoption-project"><code class="xref std std-option docutils literal"><span class="pre">--language</span></code></a> command line options. They can be
+repeated to indicate multiple languages or projects. If you use both options
+together it will only match the files that match both languages and projects
+selected.</p>
+<p>For example, to <em>calculate_checks</em> for the tutorial project only, run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle calculate_checks --project<span class="o">=</span>tutorial
+</pre></div>
+</div>
+<p>To only calculate the Zulu and Basque language files within the tutorial
+project, run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle calculate_checks --project<span class="o">=</span>tutorial --language<span class="o">=</span>zu --language<span class="o">=</span>eu
+</pre></div>
+</div>
+<div class="section" id="running-commands-with-no-rq-option">
+<h3>Running commands with –no-rq option<a class="headerlink" href="#running-commands-with-no-rq-option" title="Permalink to this headline">¶</a></h3>
+<dl class="django-admin-option">
+<dt id="cmdoption-no-rq">
+<code class="descname">--no-rq</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-no-rq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>Some of the commands work asynchronously and will schedule jobs to RQ workers,
+rather than running them in the command process. You can change this behaviour
+using the <a class="reference internal" href="#cmdoption-no-rq"><code class="xref std std-option docutils literal"><span class="pre">--no-rq</span></code></a> command line option.</p>
+<p>This can be useful for running pootle commands in bash scripts or automating
+installation/upgrade/migration. It can also be useful for debugging otherwise
+asynchronous jobs.</p>
+<p>For example, to run <a class="reference internal" href="#django-admin-calculate_checks"><code class="xref std std-djadmin docutils literal"><span class="pre">calculate_checks</span></code></a> in the command process and wait
+for the process to terminate:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle calculate_checks --no-rq
+</pre></div>
+</div>
+<p>It is <em>not</em> generally safe to run commands in this mode if you have RQ workers
+active at the same time, as there is a risk that they conflict with other jobs
+dispatched to the workers.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-atomic">
+<code class="descname">--atomic</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-atomic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8: </span>Default: <code class="docutils literal"><span class="pre">tp</span></code>.
+Available choices: <code class="docutils literal"><span class="pre">tp</span></code>, <code class="docutils literal"><span class="pre">all</span></code>, <code class="docutils literal"><span class="pre">none</span></code>.</p>
+<p>This option allows you to run CLI commands with atomic transactions.</p>
+<p>The default is to commit changes on per-translation-project basis.</p>
+<p>For example to run update_stores against all translation projects in a single
+transaction.</p>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_stores --atomic<span class="o">=</span>all
+</pre></div>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-noinput">
+<code class="descname">--noinput</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-noinput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>If there are RQ workers running, the command will ask for confirmation before
+proceeding. This can be overridden using the <a class="reference internal" href="#cmdoption-noinput"><code class="xref std std-option docutils literal"><span class="pre">--noinput</span></code></a> flag, in
+which case the command will run even if there are.</p>
+<dl class="django-admin">
+<dt id="django-admin-retry_failed_jobs">
+<code class="descname">retry_failed_jobs</code><a class="headerlink" href="#django-admin-retry_failed_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="retry-failed-jobs">
+<h3>retry_failed_jobs<a class="headerlink" href="#retry-failed-jobs" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Requeue failed RQ jobs.</p>
+<p>Background RQ jobs can fail for various reasons.  To push them back into the
+queue you can run this command.</p>
+<p>Examine the RQ worker logs for tracebacks before trying to requeue your jobs.</p>
+<dl class="django-admin">
+<dt id="django-admin-update_data">
+<code class="descname">update_data</code><a class="headerlink" href="#django-admin-update_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="update-data">
+<h3>update_data<a class="headerlink" href="#update-data" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+<p>This command updates the stats data. The stats data update can be triggered for
+specific languages or projects.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-data-store">
+<code class="descname">--store</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-data-store" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use the <a class="reference internal" href="#cmdoption-update-data-store"><code class="xref std std-option docutils literal"><span class="pre">--store</span></code></a> option to narrow the stats data calculation to a
+specific store:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_data --store<span class="o">=</span>/fr/proj/mydir/mystore.po
+</pre></div>
+</div>
+<p>Note this will also trigger the update of the stats data for items above the
+store, like for example directories above it, its language and its project.</p>
+<dl class="django-admin">
+<dt id="django-admin-calculate_checks">
+<code class="descname">calculate_checks</code><a class="headerlink" href="#django-admin-calculate_checks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="calculate-checks">
+<h3>calculate_checks<a class="headerlink" href="#calculate-checks" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>This command will create a background job to go through all units and
+recalculate quality checks.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Disabled projects are processed.</p>
+</div>
+<p><a class="reference internal" href="#django-admin-calculate_checks"><code class="xref std std-djadmin docutils literal"><span class="pre">calculate_checks</span></code></a> will flush existing caches and update the quality
+checks cache.</p>
+<p>It’s necessary to run this command after upgrading Pootle if new quality
+checks are added.</p>
+<p>The time it takes to complete the whole process will vary depending on the
+number of units you have in the database. If a user hits a page that needs to
+display stats but they haven’t been calculated yet, then a message will be
+displayed indicating that the stats being calculated.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-calculate-checks-check">
+<code class="descname">--check</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-calculate-checks-check" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use the <a class="reference internal" href="#cmdoption-calculate-checks-check"><code class="xref std std-option docutils literal"><span class="pre">--check</span></code></a> option to force calculation of a specified check.  To
+recalculate only the <code class="docutils literal"><span class="pre">date_format</span></code> quality checks, run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle calculate_checks --check<span class="o">=</span>date_format
+</pre></div>
+</div>
+<p>Multiple checks can be specifed in one run as well:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle calculate_checks --check<span class="o">=</span>date_format --check<span class="o">=</span>accelerators
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-flush_cache">
+<code class="descname">flush_cache</code><a class="headerlink" href="#django-admin-flush_cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="flush-cache">
+<h3>flush_cache<a class="headerlink" href="#flush-cache" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Flush cache.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">You must first <strong>stop the workers</strong> if you flush <cite>redis</cite> cache.</p>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-flush-cache-django-cache">
+<code class="descname">--django-cache</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-flush-cache-django-cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use the <a class="reference internal" href="#cmdoption-flush-cache-django-cache"><code class="xref std std-option docutils literal"><span class="pre">--django-cache</span></code></a> to flush the <code class="docutils literal"><span class="pre">default</span></code> cache which keeps
+Django templates, project permissions etc.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-flush-cache-rqdata">
+<code class="descname">--rqdata</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-flush-cache-rqdata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use the <a class="reference internal" href="#cmdoption-flush-cache-rqdata"><code class="xref std std-option docutils literal"><span class="pre">--rqdata</span></code></a> to flush all data contained in <code class="docutils literal"><span class="pre">redis</span></code> cache:
+pending jobs, revision (which will be automatically restored), all data from
+queues.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-flush-cache-lru">
+<code class="descname">--lru</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-flush-cache-lru" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use the <a class="reference internal" href="#cmdoption-flush-cache-lru"><code class="xref std std-option docutils literal"><span class="pre">--lru</span></code></a> to flush all lru cache data contained
+in <code class="docutils literal"><span class="pre">lru</span></code> cache.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-flush-cache-all">
+<code class="descname">--all</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-flush-cache-all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use the <a class="reference internal" href="#cmdoption-flush-cache-all"><code class="xref std std-option docutils literal"><span class="pre">--all</span></code></a> to flush all caches (<code class="docutils literal"><span class="pre">default</span></code>, <code class="docutils literal"><span class="pre">redis</span></code>, <code class="docutils literal"><span class="pre">lru</span></code>) data.</p>
+<dl class="django-admin">
+<dt id="django-admin-refresh_scores">
+<code class="descname">refresh_scores</code><a class="headerlink" href="#django-admin-refresh_scores" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="refresh-scores">
+<h3>refresh_scores<a class="headerlink" href="#refresh-scores" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Recalculates the scores for all users. It is possible to narrow down the
+calculation to specific projects and/or languages.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">It is advisable to run this command while Pootle server is offline
+since the command can fail due to data being changed by users.</p>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-refresh-scores-reset">
+<code class="descname">--reset</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-refresh-scores-reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>When the <a class="reference internal" href="#cmdoption-refresh-scores-reset"><code class="xref std std-option docutils literal"><span class="pre">--reset</span></code></a> option is used , all score log data is removed and
+<cite>zero</cite> score is set for all users.</p>
+<dl class="django-admin">
+<dt id="django-admin-sync_stores">
+<code class="descname">sync_stores</code><a class="headerlink" href="#django-admin-sync_stores" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="sync-stores">
+<h3>sync_stores<a class="headerlink" href="#sync-stores" title="Permalink to this headline">¶</a></h3>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.9.</span></p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Since version 2.9 all projects are managed by Pootle FS and therefore
+this command is now able to work with those projects.</p>
+</div>
+<p>Save all translations currently in the database to the file system, thereby
+bringing the files under the <a class="reference internal" href="settings.html#std:setting-POOTLE_TRANSLATION_DIRECTORY"><code class="xref std std-setting docutils literal"><span class="pre">POOTLE_TRANSLATION_DIRECTORY</span></code></a> directory
+in sync with the Pootle database.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Disabled projects are skipped.</p>
+</div>
+<p>You must run this command before taking backups or running scripts that modify
+the translation files directly on the file system, otherwise you might miss out
+on translations that are in the database but not yet saved to disk. In
+other words, <strong>translations are saved to disk only when you explicitly do
+so</strong> using this command.</p>
+<p>For every file being synced, the in-DB <code class="docutils literal"><span class="pre">Store</span></code> will be updated to
+reflect the latest revision across the units in the file at the time of
+syncing. This allows Pootle to make optimizations when syncing and
+updating files, ignoring files that haven’t change.</p>
+<p>The default behavior of <a class="reference internal" href="#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a> can be altered by specifying
+these parameters:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-sync-stores-force">
+<code class="descname">--force</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-sync-stores-force" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronizes files even if nothing changed in the database.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-sync-stores-overwrite">
+<code class="descname">--overwrite</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-sync-stores-overwrite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies the current state of the DB stores (not only translations, but also
+metadata) regardless if they have been modified since the last sync or
+not. This operation will (over)write existing on-disk files.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-sync-stores-skip-missing">
+<code class="descname">--skip-missing</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-sync-stores-skip-missing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ignores files missing on disk, and no new files will be created.</p>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-update_stores">
+<code class="descname">update_stores</code><a class="headerlink" href="#django-admin-update_stores" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="update-stores">
+<h3>update_stores<a class="headerlink" href="#update-stores" title="Permalink to this headline">¶</a></h3>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.9.</span></p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Since version 2.9 all projects are managed by Pootle FS and therefore
+this command is now able to work with those projects.</p>
+</div>
+<p>Load translation files currently on the file system into the database, thereby
+bringing the Pootle database in sync with the files under the
+<a class="reference internal" href="settings.html#std:setting-POOTLE_TRANSLATION_DIRECTORY"><code class="xref std std-setting docutils literal"><span class="pre">POOTLE_TRANSLATION_DIRECTORY</span></code></a> directory.  Pootle will not detect
+changes in the file system on its own.  This is the opposite of
+<a class="reference internal" href="#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Disabled projects are skipped.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="#django-admin-update_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">update_stores</span></code></a> does not manage the updating of translations
+against templates, it simply loads translation files and translation
+templates into Pootle.  For a full understanding of the role of templates
+and updating translations against templates read the <a class="reference internal" href="../features/templates.html"><span class="doc">templates</span></a> section.</p>
+</div>
+<p>It also discovers new units, files and translation projects that were
+added on disk:</p>
+<ul class="simple">
+<li>Projects that exist in the DB but ceased to exist on disk will
+be <strong>disabled</strong> (not deleted). If a project is recovered on disk it can be
+enabled via the admin UI only.</li>
+<li>Translation projects will be scanned for new files and
+directories. In-DB files and directories that no longer exist on disk
+will be <strong>marked as obsolete</strong>. Also any in-DB directory will be
+<strong>marked as obsolete</strong> if this directory is empty or contains empty
+directories only.</li>
+<li>In-DB stores will be updated with the contents of the on-disk files.
+New units will be <strong>added</strong> to the store, units that ceased to exist
+will be <strong>marked as obsolete</strong>. Translations that were updated on-disk
+will be reflected in the DB.</li>
+</ul>
+<p>You must run this command after running scripts that modify translation files
+directly on the file system.</p>
+<p><a class="reference internal" href="#django-admin-update_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">update_stores</span></code></a> accepts several options:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-stores-force">
+<code class="descname">--force</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-stores-force" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates in-DB translations even if the on-disk file hasn’t been changed
+since the last sync operation.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-update-stores-overwrite">
+<code class="descname">--overwrite</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-stores-overwrite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mirrors the on-disk contents of the file. If there have been changes in
+the database <strong>since the last sync operation</strong>, these will be
+overwritten.</p>
+</dd></dl>
+
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If files on the file system are corrupt, translations might be
+deleted from the database. Handle with care!</p>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-list_serializers">
+<code class="descname">list_serializers</code><a class="headerlink" href="#django-admin-list_serializers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="list-serializers">
+<h3>list_serializers<a class="headerlink" href="#list-serializers" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>List the installed serializers and deserializers on your system.</p>
+<p>Available options:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-list-serializers-m">
+<code class="descname">-m</code><code class="descclassname"></code><code class="descclassname">, </code><code class="descname">--model</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-list-serializers-m" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>List serializers for specified model. The model should be expressed as a
+contenttype label - eg <code class="docutils literal"><span class="pre">app_name</span></code>.``model_name``</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-list-serializers-d">
+<code class="descname">-d</code><code class="descclassname"></code><code class="descclassname">, </code><code class="descname">--deserializers</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-list-serializers-d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>List available deserializers set up for our system.</p>
+<dl class="django-admin">
+<dt id="django-admin-list_languages">
+<code class="descname">list_languages</code><a class="headerlink" href="#django-admin-list_languages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="list-languages">
+<h3>list_languages<a class="headerlink" href="#list-languages" title="Permalink to this headline">¶</a></h3>
+<p>Lists all the language codes for languages hosted on the server. This can be
+useful for automation.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-list-languages-modified-since">
+<code class="descname">--modified-since</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-list-languages-modified-since" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Accepts the <a class="reference internal" href="#cmdoption-list-languages-modified-since"><code class="xref std std-option docutils literal"><span class="pre">--modified-since</span></code></a> parameter to list only those languages
+modified since the revision given by <a class="reference internal" href="#django-admin-revision"><code class="xref std std-djadmin docutils literal"><span class="pre">revision</span></code></a>.</p>
+<dl class="django-admin">
+<dt id="django-admin-list_projects">
+<code class="descname">list_projects</code><a class="headerlink" href="#django-admin-list_projects" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="list-projects">
+<h3>list_projects<a class="headerlink" href="#list-projects" title="Permalink to this headline">¶</a></h3>
+<p>Lists all the project codes on the server. This might can be useful for
+automation.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-list-projects-modified-since">
+<code class="descname">--modified-since</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-list-projects-modified-since" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Accepts the <a class="reference internal" href="#cmdoption-list-projects-modified-since"><code class="xref std std-option docutils literal"><span class="pre">--modified-since</span></code></a> parameter to list only those projects
+modified since the revision given by <a class="reference internal" href="#django-admin-revision"><code class="xref std std-djadmin docutils literal"><span class="pre">revision</span></code></a>.</p>
+<dl class="django-admin">
+<dt id="django-admin-contributors">
+<code class="descname">contributors</code><a class="headerlink" href="#django-admin-contributors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="contributors">
+<h3>contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>Lists the contributors to a language, project or overall and the amount
+of contributions they have.</p>
+<p>Available options:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-contributors-sort-by">
+<code class="descname">--sort-by</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-contributors-sort-by" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.8.0.</span></p>
+</div>
+<p>Specifies the sorting to be used. Valid options are <code class="docutils literal"><span class="pre">contributions</span></code> (sort
+by decreasing number of contributions) and <code class="docutils literal"><span class="pre">username</span></code> (sort by user name,
+alphabetically).</p>
+<p>Default: <code class="docutils literal"><span class="pre">username</span></code>.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-contributors-mailmerge">
+<code class="descname">--mailmerge</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-contributors-mailmerge" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Specifies to only output user names and emails. Users with no email are
+skipped.</p>
+<p><a class="reference internal" href="#cmdoption-contributors-mailmerge"><code class="xref std std-option docutils literal"><span class="pre">--mailmerge</span></code></a> and
+<a class="reference internal" href="#cmdoption-contributors-include-anonymous"><code class="xref std std-option docutils literal"><span class="pre">--include-anonymous</span></code></a> are mutually
+exclusive.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-contributors-include-anonymous">
+<code class="descname">--include-anonymous</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-contributors-include-anonymous" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Specifies to include anonymous contributions.</p>
+<p><a class="reference internal" href="#cmdoption-contributors-include-anonymous"><code class="xref std std-option docutils literal"><span class="pre">--include-anonymous</span></code></a> and
+<a class="reference internal" href="#cmdoption-contributors-mailmerge"><code class="xref std std-option docutils literal"><span class="pre">--mailmerge</span></code></a> are mutually exclusive.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-contributors-since">
+<code class="descname">--since</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-contributors-since" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Only consider contributions since the specified date or datetime.</p>
+<p>Date or datetime can be in any format accepted by <code class="docutils literal"><span class="pre">python-dateutil</span></code>
+library, for example ISO 8601 format (<code class="docutils literal"><span class="pre">2016-01-24T23:15:22+0000</span></code> or
+<code class="docutils literal"><span class="pre">2016-01-24</span></code>) or a string formatted like <code class="docutils literal"><span class="pre">&quot;2016-01-24</span> <span class="pre">23:15:22</span> <span class="pre">+0000&quot;</span></code>
+(quotes included).</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-contributors-until">
+<code class="descname">--until</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-contributors-until" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Only consider contributions until the specified date or datetime.</p>
+<p>Date or datetime can be in any format accepted by <code class="docutils literal"><span class="pre">python-dateutil</span></code>
+library, for example ISO 8601 format (<code class="docutils literal"><span class="pre">2016-01-24T23:15:22+0000</span></code> or
+<code class="docutils literal"><span class="pre">2016-01-24</span></code>) or a string formatted like <code class="docutils literal"><span class="pre">&quot;2016-01-24</span> <span class="pre">23:15:22</span> <span class="pre">+0000&quot;</span></code>
+(quotes included).</p>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-set_filetype">
+<code class="descname">set_filetype</code><a class="headerlink" href="#django-admin-set_filetype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="set-filetype">
+<h3>set_filetype<a class="headerlink" href="#set-filetype" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+<p>This command sets file formats for projects, and also allows to convert files
+to another format.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-set-filetype-from-filetype">
+<code class="descname">--from-filetype</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-set-filetype-from-filetype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Convert stores of this file type.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-set-filetype-matching">
+<code class="descname">--matching</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-set-filetype-matching" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Convert stores matching this path glob within the project.</p>
+<p>For example, to add the <cite>properties</cite> format to a project, run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle set_filetype --project<span class="o">=</span>myproj properties
+</pre></div>
+</div>
+<p>To convert stores of <cite>po</cite> format to <cite>properties</cite>, run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle set_filetype --project<span class="o">=</span>myproj --from-filetype<span class="o">=</span>po properties
+</pre></div>
+</div>
+<p>To convert stores matching a given path glob to <cite>properties</cite> format, run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle set_filetype --project<span class="o">=</span>myproj --matching<span class="o">=</span>mydir/myfile-* properties
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-revision">
+<code class="descname">revision</code><a class="headerlink" href="#django-admin-revision" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="revision">
+<h3>revision<a class="headerlink" href="#revision" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Print the latest revision number.</p>
+<p>The revision is a common system-wide counter for units. It is incremented with
+every translation action made from the browser. Zero length units that have
+been auto-translated also increment the unit revision.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-revision-restore">
+<code class="descname">--restore</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-revision-restore" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The revision counter is stored in the database but also in cache for faster
+retrieval. If for some reason the revision counter was removed or got
+corrupted, passing the <a class="reference internal" href="#cmdoption-revision-restore"><code class="xref std std-option docutils literal"><span class="pre">--restore</span></code></a> flag to the command will restore the
+counter’s value based on the revision data available on the relational DB
+backend. You shouldn’t need to ever run this, but if for instance you deleted
+your cache you will need to restore the counter to ensure correct operation.</p>
+<dl class="django-admin">
+<dt id="django-admin-test_checks">
+<code class="descname">test_checks</code><a class="headerlink" href="#django-admin-test_checks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="test-checks">
+<h3>test_checks<a class="headerlink" href="#test-checks" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Tests any given string pair or unit against all or certain checks from the
+command line. This is useful for debugging and developing new checks.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-test-checks-source">
+<code class="descname">--source</code><code class="descclassname"></code><code class="descclassname">, </code><code class="descname">--target</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-test-checks-source" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>String pairs can be specified by setting the values to be checked in the
+<code class="docutils literal"><span class="pre">--source=&lt;&quot;source_text&quot;&gt;</span></code> and <code class="docutils literal"><span class="pre">--target=&quot;&lt;target_text&gt;&quot;</span></code>
+command-line arguments.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-test-checks-unit">
+<code class="descname">--unit</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-test-checks-unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Alternatively, <code class="docutils literal"><span class="pre">--unit=&lt;unit_id&gt;</span></code> can be used to reference an existing
+unit from the database.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-test-checks-check">
+<code class="descname">--check</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-test-checks-check" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>By default, <a class="reference internal" href="#django-admin-test_checks"><code class="xref std std-djadmin docutils literal"><span class="pre">test_checks</span></code></a> tests all existing checks. When
+<code class="docutils literal"><span class="pre">--check=&lt;checkname&gt;</span></code> is set, only specific checks will be tested against.</p>
+<dl class="django-admin">
+<dt id="django-admin-dump">
+<code class="descname">dump</code><a class="headerlink" href="#django-admin-dump" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="dump">
+<h3>dump<a class="headerlink" href="#dump" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Prints data or stats data (depending on <a class="reference internal" href="#cmdoption-dump-data"><code class="xref std std-option docutils literal"><span class="pre">--data</span></code></a> or <a class="reference internal" href="#cmdoption-dump-stats"><code class="xref std std-option docutils literal"><span class="pre">--stats</span></code></a> option)
+in specific format.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-dump-data">
+<code class="descname">--data</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-dump-data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">object_id</span><span class="p">:</span><span class="n">class_name</span>
+<span class="mi">8276</span><span class="p">:</span><span class="n">Directory</span>        <span class="n">name</span><span class="o">=</span><span class="n">android</span>    <span class="n">parent</span><span class="o">=/</span><span class="n">uk</span><span class="o">/</span>     <span class="n">pootle_path</span><span class="o">=/</span><span class="n">uk</span><span class="o">/</span><span class="n">android</span><span class="o">/</span>
+<span class="mi">24394</span><span class="p">:</span><span class="n">Store</span>   <span class="n">file</span><span class="o">=</span><span class="n">android</span><span class="o">/</span><span class="n">uk</span><span class="o">/</span><span class="n">strings</span><span class="o">.</span><span class="n">xml</span><span class="o">.</span><span class="n">po</span>  <span class="n">translation_project</span><span class="o">=/</span><span class="n">uk</span><span class="o">/</span><span class="n">android</span><span class="o">/</span>        <span class="n">pootle_path</span><span class="o">=/</span><span class="n">uk</span><span class="o">/</span><span class="n">android</span><span class="o">/</span><span class="n">strings</span><span class="o">.</span><span class="n">xml</span><span class="o">.</span><span class="n">po</span>  <span class="n">name</span><span class="o">=</span><span class="n">strings</span><span class="o">.</span><span class="n">xml</span><span class="o">.</span><span class="n">pstate</span><span class="o">=</span><span class="mi">2</span>
+<span class="mi">806705</span><span class="p">:</span><span class="n">Unit</span>   <span class="n">source</span><span class="o">=</span><span class="n">Create</span> <span class="n">Account</span>   <span class="n">target</span><span class="o">=</span><span class="n">Створити</span> <span class="n">аккаунт</span> <span class="n">source_wordcount</span><span class="o">=</span><span class="mi">2</span>      <span class="n">target_wordcount</span><span class="o">=</span><span class="mi">2</span>      <span class="n">developer_comment</span><span class="o">=</span><span class="n">create_account</span>        <span class="n">translator_commentlocations</span><span class="o">=</span><span class="n">File</span><span class="p">:</span>\<span class="n">nstrings</span><span class="o">.</span><span class="n">xml</span>\<span class="n">nID</span><span class="p">:</span>\<span class="n">ne82a8ea14a0b9f92b1b67ebfde2c16e9</span>   <span class="n">isobsolete</span><span class="o">=</span><span class="kc">False</span>        <span class="n">isfuzzy</span><span class="o">=</span><span class="kc">False</span>   <span class="n">istranslated</span><span class="o">=</span><span class="kc">True</span>
+<span class="mi">115654</span><span class="p">:</span><span class="n">Suggestion</span>     <span class="n">target_f</span><span class="o">=</span><span class="n">Необхідна</span> <span class="n">електронна</span> <span class="n">адреса</span>    <span class="n">user_id</span><span class="o">=</span><span class="mi">104481</span>
+</pre></div>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-dump-stats">
+<code class="descname">--stats</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-dump-stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pootle_path</span> <span class="n">total</span><span class="p">,</span><span class="n">translated</span><span class="p">,</span><span class="n">fuzzy</span><span class="p">,</span><span class="n">suggestions</span><span class="p">,</span><span class="n">criticals</span><span class="p">,</span><span class="n">is_dirty</span><span class="p">,</span><span class="n">last_action_unit_id</span><span class="p">,</span><span class="n">last_updated_unit_id</span>
+<span class="o">/</span><span class="n">uk</span><span class="o">/</span><span class="n">android</span><span class="o">/</span><span class="n">strings</span><span class="o">.</span><span class="n">xml</span><span class="o">.</span><span class="n">po</span>  <span class="mi">11126</span><span class="p">,</span><span class="mi">10597</span><span class="p">,</span><span class="mi">383</span><span class="p">,</span><span class="mi">231</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="mi">4710214</span><span class="p">,</span><span class="mi">4735242</span>
+<span class="o">/</span><span class="n">uk</span><span class="o">/</span><span class="n">android</span><span class="o">/</span><span class="n">widget</span><span class="o">/</span><span class="n">strings</span><span class="o">.</span><span class="n">xml</span><span class="o">.</span><span class="n">po</span>  <span class="mi">339</span><span class="p">,</span><span class="mi">339</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">26</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="mi">2277376</span><span class="p">,</span><span class="mi">3738609</span>
+<span class="o">/</span><span class="n">uk</span><span class="o">/</span><span class="n">android</span><span class="o">/</span><span class="n">widget</span><span class="o">/</span>  <span class="mi">339</span><span class="p">,</span><span class="mi">339</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">26</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="mi">2277376</span><span class="p">,</span><span class="mi">3738609</span>
+<span class="o">/</span><span class="n">uk</span><span class="o">/</span><span class="n">android</span><span class="o">/</span>  <span class="mi">11465</span><span class="p">,</span><span class="mi">10936</span><span class="p">,</span><span class="mi">383</span><span class="p">,</span><span class="mi">257</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="mi">4710214</span><span class="p">,</span><span class="mi">4735242</span>
+</pre></div>
+</div>
+<p>This command can be used by developers to check if all data kept after
+migrations or stats calculating algorithm was changed.</p>
+<dl class="django-admin">
+<dt id="django-admin-config">
+<code class="descname">config</code><a class="headerlink" href="#django-admin-config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="config">
+<h3>config<a class="headerlink" href="#config" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+<p>Gets, sets, lists, appends and clears pootle configuration settings.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-config-arg-content-type">
+<code class="descname">content_type</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-config-arg-content-type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional positional argument to specify a model to manage configuration for.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-arg-object">
+<code class="descname">object</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-config-arg-object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional positional argument to specify the primary key of an object to
+manage configuration for. You can use a field other than the primary key by
+specifying <a class="reference internal" href="#cmdoption-config-o"><code class="xref std std-option docutils literal"><span class="pre">-o</span></code></a>, but the field must be unique for the
+request object when doing so.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-o">
+<code class="descname">-o</code><code class="descclassname"> &lt;field&gt;</code><code class="descclassname">, </code><code class="descname">--object-field</code><code class="descclassname"> &lt;field&gt;</code><a class="headerlink" href="#cmdoption-config-o" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify a field other than the primary key when specifying an object. It must
+be unique to the object specified.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-g">
+<code class="descname">-g</code><code class="descclassname"> &lt;key&gt;</code><code class="descclassname">, </code><code class="descname">--get</code><code class="descclassname"> &lt;key&gt;</code><a class="headerlink" href="#cmdoption-config-g" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get value for specified key.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-l">
+<code class="descname">-l</code><code class="descclassname"> &lt;key&gt;</code><code class="descclassname">, </code><code class="descname">--list</code><code class="descclassname"> &lt;key&gt;</code><a class="headerlink" href="#cmdoption-config-l" title="Permalink to this definition">¶</a></dt>
+<dd><p>List values for specified key(s). This option can be specified multiple times.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-s">
+<code class="descname">-s</code><code class="descclassname"> &lt;key&gt; &lt;value&gt;</code><code class="descclassname">, </code><code class="descname">--set</code><code class="descclassname"> &lt;key&gt; &lt;value&gt;</code><a class="headerlink" href="#cmdoption-config-s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set value for specified key. The key must be unique or not exist already.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-a">
+<code class="descname">-a</code><code class="descclassname"> &lt;key&gt; &lt;value&gt;</code><code class="descclassname">, </code><code class="descname">--append</code><code class="descclassname"> &lt;key&gt; &lt;value&gt;</code><a class="headerlink" href="#cmdoption-config-a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append value for specified key.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-c">
+<code class="descname">-c</code><code class="descclassname"> &lt;key&gt;</code><code class="descclassname">, </code><code class="descname">--clear</code><code class="descclassname"> &lt;key&gt;</code><a class="headerlink" href="#cmdoption-config-c" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear value(s) for specified key.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-config-j">
+<code class="descname">-j</code><code class="descclassname"></code><code class="descclassname">, </code><code class="descname">--json</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-config-j" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treat data as JSON when getting, setting, or appending values.</p>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-schema">
+<code class="descname">schema</code><a class="headerlink" href="#django-admin-schema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="schema">
+<h3>schema<a class="headerlink" href="#schema" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+<p>Dumps a JSON representation for the Pootle database schema, currently only
+MySQL, for debugging and comparison to a reference database schema.</p>
+</div>
+</div>
+<div class="section" id="translation-memory">
+<span id="commands-translation-memory"></span><h2>Translation Memory<a class="headerlink" href="#translation-memory" title="Permalink to this headline">¶</a></h2>
+<p>These commands allow you to setup and manage <a class="reference internal" href="../features/translation_memory.html"><span class="doc">Translation Memory</span></a>.</p>
+<dl class="django-admin">
+<dt id="django-admin-update_tmserver">
+<code class="descname">update_tmserver</code><a class="headerlink" href="#django-admin-update_tmserver" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="update-tmserver">
+<h3>update_tmserver<a class="headerlink" href="#update-tmserver" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.7.3: </span>Renamed <code class="docutils literal"><span class="pre">--overwrite</span></code> to <a class="reference internal" href="#cmdoption-update-tmserver-refresh"><code class="xref std std-option docutils literal"><span class="pre">--refresh</span></code></a>.
+Disabled projects’ translations are no longer added by default. It is also
+possible to import translations from files.</p>
+</div>
+<p>Updates the <code class="docutils literal"><span class="pre">local</span></code> server in <a class="reference internal" href="settings.html#std:setting-POOTLE_TM_SERVER"><code class="xref std std-setting docutils literal"><span class="pre">POOTLE_TM_SERVER</span></code></a>.  The command
+reads translations from the current Pootle install and builds the TM resources
+in the TM server.</p>
+<p>If no options are provided, the command will only add new translations to the
+server.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-tmserver-refresh">
+<code class="descname">--refresh</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-tmserver-refresh" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use <a class="reference internal" href="#cmdoption-update-tmserver-refresh"><code class="xref std std-option docutils literal"><span class="pre">--refresh</span></code></a> to also update existing translations that have
+been changed, besides adding any new translation.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-tmserver-rebuild">
+<code class="descname">--rebuild</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-tmserver-rebuild" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>To completely remove the TM and rebuild it adding all existing translations use
+<a class="reference internal" href="#cmdoption-update-tmserver-rebuild"><code class="xref std std-option docutils literal"><span class="pre">--rebuild</span></code></a>.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-tmserver-tm">
+<code class="descname">--tm</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-tmserver-tm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>If no specific TM server is specified using <a class="reference internal" href="#cmdoption-update-tmserver-tm"><code class="xref std std-option docutils literal"><span class="pre">--tm</span></code></a>, then the default
+<code class="docutils literal"><span class="pre">local</span></code> TM will be used. If the specified TM server doesn’t exist it will
+be automatically created for you.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-tmserver-include-disabled-projects">
+<code class="descname">--include-disabled-projects</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-tmserver-include-disabled-projects" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>By default translations from disabled projects are not added to the TM, but
+this can be changed by specifying <a class="reference internal" href="#cmdoption-update-tmserver-include-disabled-projects"><code class="xref std std-option docutils literal"><span class="pre">--include-disabled-projects</span></code></a>.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-tmserver-dry-run">
+<code class="descname">--dry-run</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-tmserver-dry-run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>To see how many units will be loaded into the server use <a class="reference internal" href="#cmdoption-update-tmserver-dry-run"><code class="xref std std-option docutils literal"><span class="pre">--dry-run</span></code></a>,
+no actual data will be loaded or deleted (the TM will be left unchanged):</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_tmserver --dry-run
+<span class="gp">(env) $</span> pootle update_tmserver --refresh --dry-run
+<span class="gp">(env) $</span> pootle update_tmserver --rebuild --dry-run
+</pre></div>
+</div>
+<p>This command also allows to read translations from files and build the TM
+resources in the external TM server. In order to do so it is mandatory to
+provide the <a class="reference internal" href="#cmdoption-update-tmserver-tm"><code class="xref std std-option docutils literal"><span class="pre">--tm</span></code></a> and <a class="reference internal" href="#cmdoption-update-tmserver-display-name"><code class="xref std std-option docutils literal"><span class="pre">--display-name</span></code></a> options, along with
+some files to import.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-tmserver-display-name">
+<code class="descname">--display-name</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-tmserver-display-name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The display name is a label used to group translations within a TM. A given TM
+can host translations for several display names. The display name can be used
+to specify the name of the project from which the translations originate. The
+display name will be shown on TM matches in the translation editor. To specify
+a name use <a class="reference internal" href="#cmdoption-update-tmserver-display-name"><code class="xref std std-option docutils literal"><span class="pre">--display-name</span></code></a>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_tmserver --tm<span class="o">=</span>libreoffice --display-name<span class="o">=</span><span class="s2">&quot;LibreOffice 4.3 UI&quot;</span> TM_LibreOffice_4.3.gl.tmx
+</pre></div>
+</div>
+<p>By default the command will only add new translations to the server. To rebuild
+the server from scratch use <a class="reference internal" href="#cmdoption-update-tmserver-rebuild"><code class="xref std std-option docutils literal"><span class="pre">--rebuild</span></code></a> to completely remove the TM and
+rebuild it before importing the translations:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_tmserver --rebuild --tm<span class="o">=</span>mozilla --display-name<span class="o">=</span><span class="s2">&quot;Foo 1.7&quot;</span> foo.po
+</pre></div>
+</div>
+<p>Option <a class="reference internal" href="#cmdoption-update-tmserver-refresh"><code class="xref std std-option docutils literal"><span class="pre">--refresh</span></code></a> doesn’t apply when adding translations from files
+on disk.</p>
+<p>To see how many units will be loaded into the server use <a class="reference internal" href="#cmdoption-update-tmserver-dry-run"><code class="xref std std-option docutils literal"><span class="pre">--dry-run</span></code></a>,
+no actual data will be loaded:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_tmserver --dry-run --tm<span class="o">=</span>mozilla --display-name<span class="o">=</span><span class="s2">&quot;Foo 1.7&quot;</span> foo.po
+<span class="go">175045 translations to index</span>
+</pre></div>
+</div>
+<p>This command is capable of importing translations in multiple formats from
+several files and directories at once:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_tmserver --tm<span class="o">=</span>mozilla --display-name<span class="o">=</span><span class="s2">&quot;Foo 1.7&quot;</span> bar.tmx foo.xliff fr/
+</pre></div>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-update-tmserver-target-language">
+<code class="descname">--target-language</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-update-tmserver-target-language" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use <a class="reference internal" href="#cmdoption-update-tmserver-target-language"><code class="xref std std-option docutils literal"><span class="pre">--target-language</span></code></a> to specify the target language ISO code for the
+imported translations in case it is not possible to guess it from the
+translation files or if the code is incorrect:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_tmserver --target-language<span class="o">=</span>af --tm<span class="o">=</span>mozilla --display-name<span class="o">=</span><span class="s2">&quot;Foo 1.7&quot;</span> foo.po bar.tmx
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="virtual-folders">
+<span id="commands-vfolders"></span><h2>Virtual Folders<a class="headerlink" href="#virtual-folders" title="Permalink to this headline">¶</a></h2>
+<p>These commands allow you to perform tasks with virtual folders from the command
+line.</p>
+<dl class="django-admin">
+<dt id="django-admin-add_vfolders">
+<code class="descname">add_vfolders</code><a class="headerlink" href="#django-admin-add_vfolders" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="add-vfolders">
+<h3>add_vfolders<a class="headerlink" href="#add-vfolders" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Creates <a class="reference internal" href="../features/virtual_folders.html#virtual-folders"><span class="std std-ref">virtual folders</span></a> from a JSON file. If the
+specified virtual folders already exist then they are updated.</p>
+<p>The <a class="reference internal" href="../features/virtual_folders.html#virtual-folders-json-format"><span class="std std-ref">vfolder format</span></a> defines how to specify
+a virtual folder that fits your needs.</p>
+<p>This command requires a mandatory filename argument.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle add_vfolders virtual_folders.json
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-and-export">
+<span id="commands-import-export"></span><h2>Import and Export<a class="headerlink" href="#import-and-export" title="Permalink to this headline">¶</a></h2>
+<p>Export and Import translation files in Pootle.  The operation can be thought of
+best as offline operations to assist with offline translation, unlike
+<a class="reference internal" href="#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a> and <a class="reference internal" href="#django-admin-update_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">update_stores</span></code></a> the operations here are
+designed to cater for translators working outside of Pootle.</p>
+<p>The <a class="reference internal" href="#django-admin-import"><code class="xref std std-djadmin docutils literal"><span class="pre">import</span></code></a> and <a class="reference internal" href="#django-admin-export"><code class="xref std std-djadmin docutils literal"><span class="pre">export</span></code></a> commands are designed to mimic the
+operations of Download and Upload from the Pootle UI.</p>
+<dl class="django-admin">
+<dt id="django-admin-export">
+<code class="descname">export</code><a class="headerlink" href="#django-admin-export" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="export">
+<h3>export<a class="headerlink" href="#export" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Download a file for offline translation.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This mimics the editor’s download functionality and its primary
+purpose is to test the operation of downloads from the command line.</p>
+</div>
+<p>A file or a .zip of files is provided as output.  The file headers include a
+revision counter to assist Pootle to detetmine how to handle subsequent uploads
+of the file.</p>
+<p>Available options:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-export-tmx">
+<code class="descname">--tmx</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-export-tmx" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Export every translation project as one zipped TMX file
+into <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/settings/#std:setting-MEDIA_ROOT" title="(in Django v1.10)"><code class="xref std std-setting docutils literal"><span class="pre">MEDIA_ROOT</span></code></a> directory.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-export-rotate">
+<code class="descname">--rotate</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-export-rotate" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Remove old exported zipped TMX files (except previous one)
+from <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/settings/#std:setting-MEDIA_ROOT" title="(in Django v1.10)"><code class="xref std std-setting docutils literal"><span class="pre">MEDIA_ROOT</span></code></a> directory after current exported file is saved.</p>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-import">
+<code class="descname">import</code><a class="headerlink" href="#django-admin-import" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="import">
+<h3>import<a class="headerlink" href="#import" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Upload a file that was altered offline.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This mimics the editor’s upload functionality and its primary purpose
+is to test the operation of uploads from the command line.</p>
+</div>
+<p>A file or a .zip is submitted to Pootle and based on the revision counter of
+the <code class="docutils literal"><span class="pre">Store</span></code> on Pootle it will be uploaded or rejected.  If the revision
+counter is older than on Pootle, that is someone has translated while the file
+was offline, then it will be rejected.  Otherwise the translations in the file
+are accepted.</p>
+<p>Available options:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-import-user">
+<code class="descname">--user</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-import-user" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.3.</span></p>
+</div>
+<p>Import file(s) as given user. The user with the provided username must exist.</p>
+<p>Default: <code class="docutils literal"><span class="pre">system</span></code>.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="manually-installing-pootle">
+<span id="commands-manually-installing-pootle"></span><h2>Manually Installing Pootle<a class="headerlink" href="#manually-installing-pootle" title="Permalink to this headline">¶</a></h2>
+<p>These commands expose the database installation and upgrade process from the
+command line.</p>
+<dl class="django-admin">
+<dt id="django-admin-init">
+<code class="descname">init</code><a class="headerlink" href="#django-admin-init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="init">
+<h3>init<a class="headerlink" href="#init" title="Permalink to this headline">¶</a></h3>
+<p>Create the initial configuration for Pootle.</p>
+<p>Available options:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-init-config">
+<code class="descname">--config</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-init-config" title="Permalink to this definition">¶</a></dt>
+<dt id="cmdoption-init-arg-the">
+<code class="descname">The</code><code class="descclassname"> configuration file to write to.</code><a class="headerlink" href="#cmdoption-init-arg-the" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default: <code class="docutils literal"><span class="pre">~/.pootle/pootle.conf</span></code>.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-init-db">
+<code class="descname">--db</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-init-db" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>The database backend that you are using</p>
+<p>Default: <code class="docutils literal"><span class="pre">sqlite</span></code>.
+Available options: <code class="docutils literal"><span class="pre">sqlite</span></code>, <code class="docutils literal"><span class="pre">mysql</span></code>, <code class="docutils literal"><span class="pre">postgresql</span></code>.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-init-db-name">
+<code class="descname">--db-name</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-init-db-name" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>The database name or path to database file if you are using sqlite.</p>
+<p>Default for sqlite: <code class="docutils literal"><span class="pre">dbs/pootle.db</span></code>.
+Default for mysql/postgresql: <code class="docutils literal"><span class="pre">pootledb</span></code>.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-init-db-user">
+<code class="descname">--db-user</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-init-db-user" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>Name of the database user. Not used with sqlite.</p>
+<p>Default: <code class="docutils literal"><span class="pre">pootle</span></code>.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-init-db-host">
+<code class="descname">--db-host</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-init-db-host" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>Database host to connect to. Not used with sqlite.</p>
+<p>Default: <code class="docutils literal"><span class="pre">localhost</span></code>.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-init-db-port">
+<code class="descname">--db-port</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-init-db-port" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>Port to connect to database on. Defaults to database backend’s default port.
+Not used with sqlite.</p>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-init-dev">
+<code class="descname">--dev</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-init-dev" title="Permalink to this definition">¶</a></dt>
+<dd><div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+<p>Creates a development configuration instead.</p>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-initdb">
+<code class="descname">initdb</code><a class="headerlink" href="#django-admin-initdb" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="initdb">
+<h3>initdb<a class="headerlink" href="#initdb" title="Permalink to this headline">¶</a></h3>
+<p>Initializes a new Pootle install.</p>
+<p>This is an optional part of Pootle’s install process, it creates the default
+<em>admin</em> user, populates the language table with several languages, initializes
+the terminology project, and creates the tutorial project among other tasks.</p>
+<p><a class="reference internal" href="#django-admin-initdb"><code class="xref std std-djadmin docutils literal"><span class="pre">initdb</span></code></a> can only be run after <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/django-admin/#django-admin-migrate" title="(in Django v1.10)"><code class="docutils literal"><span class="pre">migrate</span></code></a>.</p>
+<p><a class="reference internal" href="#django-admin-initdb"><code class="xref std std-djadmin docutils literal"><span class="pre">initdb</span></code></a> accepts the following option:</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.3.</span></p>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-initdb-no-projects">
+<code class="descname">--no-projects</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-initdb-no-projects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Don’t create the default <code class="docutils literal"><span class="pre">terminology</span></code> and <code class="docutils literal"><span class="pre">tutorial</span></code> projects.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="#django-admin-initdb"><code class="xref std std-djadmin docutils literal"><span class="pre">initdb</span></code></a> will import translations into the database, so
+can be slow to run. You should have an <code class="docutils literal"><span class="pre">rqworker</span></code> running or run with
+the <cite>–no-rq</cite>.</p>
+</div>
+</div>
+<div class="section" id="collectstatic">
+<span id="commands-collectstatic"></span><h3>collectstatic<a class="headerlink" href="#collectstatic" title="Permalink to this headline">¶</a></h3>
+<p>Running the Django admin <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/contrib/staticfiles/#django-admin-collectstatic" title="(in Django v1.10)"><code class="docutils literal"><span class="pre">collectstatic</span></code></a> command finds and
+extracts static content such as images, CSS and JavaScript files used by the
+Pootle server, so that they can be served separately from a static webserver.
+Typically, this is run with the <code class="docutils literal"><span class="pre">--clear</span></code> <code class="docutils literal"><span class="pre">--noinput</span></code> options, to flush any
+existing static data and use default answers for the content finders.</p>
+</div>
+<div class="section" id="assets">
+<span id="commands-assets"></span><h3>assets<a class="headerlink" href="#assets" title="Permalink to this headline">¶</a></h3>
+<p>Pootle uses the Django app <a class="reference external" href="https://django-assets.readthedocs.io/en/latest/">django-assets</a> interface of <cite>webassets</cite> to minify
+and bundle CSS and JavaScript; this app has a management command that is used
+to make these preparations using the command <code class="docutils literal"><span class="pre">assets</span> <span class="pre">build</span></code>. This command is
+usually executed after the <a class="reference internal" href="#commands-collectstatic"><span class="std std-ref">collectstatic</span></a> one.</p>
+<dl class="django-admin">
+<dt id="django-admin-webpack">
+<code class="descname">webpack</code><a class="headerlink" href="#django-admin-webpack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="webpack">
+<h3>webpack<a class="headerlink" href="#webpack" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>The <a class="reference external" href="http://webpack.github.io/">webpack</a> tool is used under the hood to
+bundle JavaScript scripts, and this management command is a convenient
+wrapper that sets everything up ready for production and makes sure to
+include any 3rd party customizations.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-webpack-dev">
+<code class="descname">--dev</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-webpack-dev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>When the <a class="reference internal" href="#cmdoption-webpack-dev"><code class="xref std std-option docutils literal"><span class="pre">--dev</span></code></a> flag is enabled, development builds will be created
+and the process will start a watchdog to track any client-side scripts for
+changes. Use this only when developing Pootle.</p>
+</div>
+</div>
+<div class="section" id="pootle-fs">
+<span id="commands-pootle-fs"></span><h2>Pootle FS<a class="headerlink" href="#pootle-fs" title="Permalink to this headline">¶</a></h2>
+<dl class="django-admin">
+<dt id="django-admin-fs">
+<code class="descname">fs</code><a class="headerlink" href="#django-admin-fs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="fs">
+<h3>fs<a class="headerlink" href="#fs" title="Permalink to this headline">¶</a></h3>
+<p>To interact with Pootle FS we use multiple subcommands:</p>
+<ul class="simple">
+<li>Admin:<ul>
+<li><a class="reference internal" href="#django-admin-info"><code class="xref std std-djadmin docutils literal"><span class="pre">info</span></code></a> - Display filesystem info</li>
+<li><a class="reference internal" href="#django-admin-state"><code class="xref std std-djadmin docutils literal"><span class="pre">state</span></code></a> - Show current state</li>
+</ul>
+</li>
+<li>Action:<ul>
+<li><a class="reference internal" href="#django-admin-fetch"><code class="xref std std-djadmin docutils literal"><span class="pre">fetch</span></code></a> - Add a file from the filesystem to Pootle</li>
+<li><a class="reference internal" href="#django-admin-add"><code class="xref std std-djadmin docutils literal"><span class="pre">add</span></code></a> - Add a store from Pootle to the filesystem</li>
+<li><code class="xref std std-djadmin docutils literal"><span class="pre">merge</span></code> - Handle conflicts in stores and files</li>
+<li><a class="reference internal" href="#django-admin-rm"><code class="xref std std-djadmin docutils literal"><span class="pre">rm</span></code></a> - Remove a store and file from both Pootle and the filesystem</li>
+<li><a class="reference internal" href="#django-admin-unstage"><code class="xref std std-djadmin docutils literal"><span class="pre">unstage</span></code></a> - Revert a staged action</li>
+</ul>
+</li>
+<li>Execute:<ul>
+<li><a class="reference internal" href="#django-admin-sync"><code class="xref std std-djadmin docutils literal"><span class="pre">sync</span></code></a> - Execute staged actions</li>
+</ul>
+</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <strong>action</strong> staging commands require that you run
+:djadmin:sync in order to actually perform the staged actions.</p>
+</div>
+</div>
+<div class="section" id="common-options">
+<span id="commands-pootle-fs-common-options"></span><h3>Common options<a class="headerlink" href="#common-options" title="Permalink to this headline">¶</a></h3>
+<p>Pootle FS <strong>action</strong> and <strong>execution</strong> subcommands take the <a class="reference internal" href="#cmdoption-fs-p"><code class="xref std std-option docutils literal"><span class="pre">-p</span></code></a> and
+<a class="reference internal" href="#id2"><code class="xref std std-option docutils literal"><span class="pre">-P</span></code></a> options which allow you to specify a glob to limit which files or
+stores are affected by the command.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-fs-p">
+<code class="descname">-p</code><code class="descclassname"> --fs_path</code><a class="headerlink" href="#cmdoption-fs-p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only affect files whose filesystem path matches a given glob.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs add --fs_path MYPROJECT/af/directory/file.po MYPROJECT
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The path should be relative to the Pootle FS URL setting for the
+project.</p>
+</div>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="id2">
+<code class="descname">-P</code><code class="descclassname"> --pootle_path</code><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only affect files whose Pootle path matches a given glob.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs add --pootle_path /af/MYPROJECT/directory/file.po MYPROJECT
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Keep in mind that Pootle paths always start with <cite>/</cite>.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="pootle-fs-subcommands">
+<span id="commands-pootle-fs-subcommands"></span><h3>Pootle FS subcommands<a class="headerlink" href="#pootle-fs-subcommands" title="Permalink to this headline">¶</a></h3>
+<dl class="django-admin">
+<dt id="django-admin-add">
+<code class="descname">add</code><a class="headerlink" href="#django-admin-add" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="fs-add">
+<h4>fs add<a class="headerlink" href="#fs-add" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Stage for adding any new or changed stores from Pootle to the filesystem:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs add MYPROJECT
+</pre></div>
+</div>
+<p>This command is the functional opposite of the <a class="reference internal" href="#django-admin-fetch"><code class="xref std std-djadmin docutils literal"><span class="pre">fetch</span></code></a> command.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-add-force">
+<code class="descname">--force</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-add-force" title="Permalink to this definition">¶</a></dt>
+<dd><p>Conflicting files on the filesystem will be staged to be overwritten by the
+Pootle store.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs add --force MYPROJECT
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-fetch">
+<code class="descname">fetch</code><a class="headerlink" href="#django-admin-fetch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fs-fetch">
+<h4>fs fetch<a class="headerlink" href="#fs-fetch" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Stage for fetching any new or changed files from the filesystem to Pootle:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs fetch MYPROJECT
+</pre></div>
+</div>
+<p>This command is the functional opposite of the <a class="reference internal" href="#django-admin-add"><code class="xref std std-djadmin docutils literal"><span class="pre">add</span></code></a> command.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-fetch-force">
+<code class="descname">--force</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-fetch-force" title="Permalink to this definition">¶</a></dt>
+<dd><p>Conflicting stores in Pootle to be overwritten with the filesystem file.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs fetch --force MYPROJECT
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-info">
+<code class="descname">info</code><a class="headerlink" href="#django-admin-info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fs-info">
+<h4>fs info<a class="headerlink" href="#fs-info" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Retrieve the filesystem info for a project.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs info MYPROJECT
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-resolve">
+<code class="descname">resolve</code><a class="headerlink" href="#django-admin-resolve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fs-resolve">
+<h4>fs resolve<a class="headerlink" href="#fs-resolve" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Stage for merging any stores/files that have either been updated both in Pootle
+and filesystem.</p>
+<p>When merging, if there are conflicts in any specific translation unit the
+default behavior is to keep the filesystem version and convert the Pootle
+version into a suggestion.  Suggestions can then we reviewed by translators to
+ensure any corrections are correctly incorporated.</p>
+<p>When there are no conflicts in unit <a class="reference internal" href="#django-admin-resolve"><code class="xref std std-djadmin docutils literal"><span class="pre">resolve</span></code></a> will handle the merge
+without user input:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs merge MYPROJECT
+</pre></div>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-resolve-pootle-wins">
+<code class="descname">--pootle-wins</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-resolve-pootle-wins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alter the default conflict resolution of filesystem winning to instead use
+the Pootle version as the correct translation and converting the filesystem
+version into a suggestion.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs resolve --pootle-wins MYPROJECT
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="django-admin-option">
+<dt id="cmdoption-resolve-overwrite">
+<code class="descname">--overwrite</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-resolve-overwrite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discard all translations.  Use only those translations from the filesytem,
+by default, or from Pootle if used together with <a class="reference internal" href="#cmdoption-resolve-pootle-wins"><code class="xref std std-option docutils literal"><span class="pre">--pootle-wins</span></code></a></p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs resolve --overwrite MYPROJECT
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-rm">
+<code class="descname">rm</code><a class="headerlink" href="#django-admin-rm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fs-rm">
+<h4>fs rm<a class="headerlink" href="#fs-rm" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Remove any matched:</p>
+<ul class="simple">
+<li>Store that do not have a corresponding file in filesystem.</li>
+<li>File that do not have a corresponding store in Pootle.</li>
+</ul>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs rm MYPROJECT
+</pre></div>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-rm-force">
+<code class="descname">--force</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-rm-force" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stage for removal conflicting/untracked files and/or stores.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs rm --force MYPROJECT
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-state">
+<code class="descname">state</code><a class="headerlink" href="#django-admin-state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fs-state">
+<h4>fs state<a class="headerlink" href="#fs-state" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>List the status of stores in Pootle and files on the filesystem.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs state MYPROJECT
+</pre></div>
+</div>
+<dl class="django-admin-option">
+<dt id="cmdoption-state-t">
+<code class="descname">-t</code><code class="descclassname"> --type</code><a class="headerlink" href="#cmdoption-state-t" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restrict to specified <a class="reference internal" href="../features/pootle_fs_statuses.html#pootle-fs-statuses"><span class="std std-ref">Pootle FS status</span></a>.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs state -t pootle_staged MYPROJECT
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="django-admin">
+<dt id="django-admin-sync">
+<code class="descname">sync</code><a class="headerlink" href="#django-admin-sync" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fs-sync">
+<h4>fs sync<a class="headerlink" href="#fs-sync" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Commit any staged changes, effectively synchronizing the filesystem and Pootle.
+This command is run after other Pootle FS commands have been used to stage
+changes.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-unstage">
+<code class="descname">unstage</code><a class="headerlink" href="#django-admin-unstage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fs-unstage">
+<h4>fs unstage<a class="headerlink" href="#fs-unstage" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.0.</span></p>
+</div>
+<p>Unstage any staged Pootle FS actions. This allows you to remove any staged
+actions which you might have added erroneously.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs unstage MYPROJECT
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="managing-users">
+<span id="commands-user-management"></span><h2>Managing users<a class="headerlink" href="#managing-users" title="Permalink to this headline">¶</a></h2>
+<dl class="django-admin">
+<dt id="django-admin-find_duplicate_emails">
+<code class="descname">find_duplicate_emails</code><a class="headerlink" href="#django-admin-find_duplicate_emails" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="find-duplicate-emails">
+<h3>find_duplicate_emails<a class="headerlink" href="#find-duplicate-emails" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>As of Pootle version 2.8, it will no longer be possible to have users with
+duplicate emails. This command will find any user accounts that have duplicate
+emails. It also shows the last login time for each affected user and indicates
+if they are superusers of the site.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle find_duplicate_emails
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-merge_user">
+<code class="descname">merge_user</code><a class="headerlink" href="#django-admin-merge_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="merge-user">
+<h3>merge_user<a class="headerlink" href="#merge-user" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>This can be used if you have a user with two accounts and need to merge one
+account into another. This will re-assign all submissions, units and
+suggestions, but not any of the user’s profile data.</p>
+<p>This command requires 2 mandatory arguments, <code class="docutils literal"><span class="pre">src_username</span></code> and
+<code class="docutils literal"><span class="pre">target_username</span></code>, both should be valid usernames for users of your site.
+Submissions from the first are re-assigned to the second. The users’ profile
+data is not merged.</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-merge-user-no-delete">
+<code class="descname">--no-delete</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-merge-user-no-delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>By default <code class="docutils literal"><span class="pre">src_username</span></code> will be deleted after the contributions have been
+merged. You can prevent this by using the <a class="reference internal" href="#cmdoption-merge-user-no-delete"><code class="xref std std-option docutils literal"><span class="pre">--no-delete</span></code></a> option.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle merge_user src_username target_username
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-purge_user">
+<code class="descname">purge_user</code><a class="headerlink" href="#django-admin-purge_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="purge-user">
+<h3>purge_user<a class="headerlink" href="#purge-user" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>This command can be used if you wish to permanently remove a user and revert
+the edits, comments and reviews that the user has made. This is useful for
+removing a spam account or other malicious user.</p>
+<p>This command requires a mandatory <code class="docutils literal"><span class="pre">username</span></code> argument, which should be a valid
+username for a user of your site.</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.7.3: </span><a class="reference internal" href="#django-admin-purge_user"><code class="xref std std-djadmin docutils literal"><span class="pre">purge_user</span></code></a> can accept multiple user
+accounts to purge.</p>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle purge_user username <span class="o">[</span>username ...<span class="o">]</span>
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-update_user_email">
+<code class="descname">update_user_email</code><a class="headerlink" href="#django-admin-update_user_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="update-user-email">
+<h3>update_user_email<a class="headerlink" href="#update-user-email" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_user_email username email
+</pre></div>
+</div>
+<p>This command can be used if you wish to update a user’s email address. This
+might be useful if you have users with duplicate email addresses.</p>
+<p>This command requires a mandatory <code class="docutils literal"><span class="pre">username</span></code>, which should be a valid
+username for a user of your site, and a mandatory valid <code class="docutils literal"><span class="pre">email</span></code> address.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle update_user_email username email
+</pre></div>
+</div>
+<dl class="django-admin">
+<dt id="django-admin-verify_user">
+<code class="descname">verify_user</code><a class="headerlink" href="#django-admin-verify_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="verify-user">
+<h3>verify_user<a class="headerlink" href="#verify-user" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.1.</span></p>
+</div>
+<p>Verify a user without the user having to go through email verification process.</p>
+<p>This is useful if you are migrating users that have already been verified, or
+if you want to create a superuser that can log in immediately.</p>
+<p>This command requires either mandatory <code class="docutils literal"><span class="pre">username</span></code> arguments, which should be
+valid username(s) for user(s) on your site, or the <a class="reference internal" href="#cmdoption-verify-user-all"><code class="xref std std-option docutils literal"><span class="pre">--all</span></code></a> flag if you
+wish to verify all users of your site.</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.7.3: </span><a class="reference internal" href="#django-admin-verify_user"><code class="xref std std-djadmin docutils literal"><span class="pre">verify_user</span></code></a> can accept multiple user
+accounts to verify.</p>
+</div>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle verify_user username <span class="o">[</span>username ...<span class="o">]</span>
+</pre></div>
+</div>
+<p>Available options:</p>
+<dl class="django-admin-option">
+<dt id="cmdoption-verify-user-all">
+<code class="descname">--all</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-verify-user-all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify all users of the site</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="running-wsgi-servers">
+<span id="commands-running"></span><h2>Running WSGI servers<a class="headerlink" href="#running-wsgi-servers" title="Permalink to this headline">¶</a></h2>
+<p>There are multiple ways to run Pootle, and some of them rely on running WSGI
+servers that can be reverse proxied to a proper HTTP web server such as nginx
+or lighttpd.</p>
+<p>There are many more options such as <a class="reference external" href="https://uwsgi-docs.readthedocs.io/en/latest/WSGIquickstart.html">uWSGI</a>, <a class="reference external" href="http://gunicorn.org/">Gunicorn</a>, etc.</p>
+</div>
+<div class="section" id="deprecated-commands">
+<span id="commands-deprecated"></span><h2>Deprecated commands<a class="headerlink" href="#deprecated-commands" title="Permalink to this headline">¶</a></h2>
+<p>The following are commands that have been removed or deprecated:</p>
+<dl class="django-admin">
+<dt id="django-admin-refresh_stats">
+<code class="descname">refresh_stats</code><a class="headerlink" href="#django-admin-refresh_stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="section" id="refresh-stats">
+<h3>refresh_stats<a class="headerlink" href="#refresh-stats" title="Permalink to this headline">¶</a></h3>
+<div class="removed">
+<p><span class="versionmodified">Removed in version 2.8.</span></p>
+</div>
+<p>With the new stats infrastructure this is not needed anymore.</p>
+<dl class="django-admin">
+<dt id="django-admin-clear_stats">
+<code class="descname">clear_stats</code><a class="headerlink" href="#django-admin-clear_stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="clear-stats">
+<h3>clear_stats<a class="headerlink" href="#clear-stats" title="Permalink to this headline">¶</a></h3>
+<div class="removed">
+<p><span class="versionmodified">Removed in version 2.8.</span></p>
+</div>
+<p>With the new stats infrastructure this is not needed anymore.</p>
+<dl class="django-admin">
+<dt id="django-admin-last_change_id">
+<code class="descname">last_change_id</code><a class="headerlink" href="#django-admin-last_change_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="last-change-id">
+<h3>last_change_id<a class="headerlink" href="#last-change-id" title="Permalink to this headline">¶</a></h3>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 2.7.</span></p>
+</div>
+<p>With the change to revisions the command you will want to use is
+<a class="reference internal" href="#django-admin-revision"><code class="xref std std-djadmin docutils literal"><span class="pre">revision</span></code></a>, though you are unlikely to know a specific revision
+number as you needed to in older versions of <a class="reference internal" href="#django-admin-update_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">update_stores</span></code></a>.</p>
+<dl class="django-admin">
+<dt id="django-admin-commit_to_vcs">
+<code class="descname">commit_to_vcs</code><a class="headerlink" href="#django-admin-commit_to_vcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="commit-to-vcs">
+<h3>commit_to_vcs<a class="headerlink" href="#commit-to-vcs" title="Permalink to this headline">¶</a></h3>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 2.7.</span></p>
+</div>
+<p>Version Control support has been removed from Pootle and will reappear in a
+later release.</p>
+<dl class="django-admin">
+<dt id="django-admin-update_from_vcs">
+<code class="descname">update_from_vcs</code><a class="headerlink" href="#django-admin-update_from_vcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="update-from-vcs">
+<h3>update_from_vcs<a class="headerlink" href="#update-from-vcs" title="Permalink to this headline">¶</a></h3>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 2.7.</span></p>
+</div>
+<p>Version Control support has been removed from Pootle and will reappear in a
+later release.</p>
+<dl class="django-admin">
+<dt id="django-admin-run_cherrypy">
+<code class="descname">run_cherrypy</code><a class="headerlink" href="#django-admin-run_cherrypy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="run-cherrypy">
+<h3>run_cherrypy<a class="headerlink" href="#run-cherrypy" title="Permalink to this headline">¶</a></h3>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 2.7.3.</span></p>
+</div>
+<p>Run the CherryPy server bundled with the Translate Toolkit.</p>
+<dl class="django-admin">
+<dt id="django-admin-start">
+<code class="descname">start</code><a class="headerlink" href="#django-admin-start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="start">
+<h3>start<a class="headerlink" href="#start" title="Permalink to this headline">¶</a></h3>
+<div class="removed">
+<p><span class="versionmodified">Removed in version 2.7.3.</span></p>
+</div>
+<p>Use <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/django-admin/#django-admin-runserver" title="(in Django v1.10)"><code class="xref std std-djadmin docutils literal"><span class="pre">runserver</span></code></a> instead.</p>
+<p>Run Pootle using the default Django server.</p>
+</div>
+</div>
+<div class="section" id="running-commands-in-cron">
+<span id="commands-running-in-cron"></span><h2>Running Commands in cron<a class="headerlink" href="#running-commands-in-cron" title="Permalink to this headline">¶</a></h2>
+<p>If you want to schedule certain actions on your Pootle server, using management
+commands with cron might be a solution.</p>
+<p>The management commands can perform certain batch commands which you might want
+to have executed periodically without user intervention.</p>
+<p>For the full details on how to configure cron, read your platform documentation
+(for example <code class="docutils literal"><span class="pre">man</span> <span class="pre">crontab</span></code>). Here is an example that runs the
+<a class="reference internal" href="#django-admin-calculate_checks"><code class="xref std std-djadmin docutils literal"><span class="pre">calculate_checks</span></code></a> command daily at 02:00 AM:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">00</span> <span class="mi">02</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">www</span><span class="o">-</span><span class="n">data</span> <span class="n">source</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">www</span><span class="o">/</span><span class="n">sites</span><span class="o">/</span><span class="n">pootle</span><span class="o">/</span><span class="n">env</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span><span class="p">;</span> <span class="n">pootle</span> <span class="n">calculate_checks</span>
+</pre></div>
+</div>
+<p>Test your command with the parameters you want from the command line. Insert it
+in the cron table, and ensure that it is executed as the correct user (the same
+as your web server) like <em>www-data</em>, for example. The user executing the
+command is specified in the sixth column. Cron might report errors through
+local mail, but it might also be useful to look at the logs in
+<em>/var/log/cron/</em>, for example.</p>
+<p>If you are running Pootle from a virtualenv, or if you set any custom
+<span class="target" id="index-0"></span><a class="reference external" href="https://docs.python.org/2.7/using/cmdline.html#envvar-PYTHONPATH" title="(in Python v2.7)"><code class="xref std std-envvar docutils literal"><span class="pre">PYTHONPATH</span></code></a> or similar, you might need to run your management command
+from a bash script that creates the correct environment for your command to run
+from.  Call this script then from cron. It shouldn’t be necessary to specify
+the settings file for Pootle — it should automatically be detected.</p>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

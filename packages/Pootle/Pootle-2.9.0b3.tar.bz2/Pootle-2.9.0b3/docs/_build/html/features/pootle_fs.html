@@ -1,0 +1,212 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Pootle FS &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Install Pootle FS plugins for VCS" href="pootle_fs_install_plugins.html" />
+    <link rel="prev" title="Features" href="index.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Features</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../server/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Pootle FS</a><ul>
+<li><a class="reference internal" href="#aims">Aims</a></li>
+<li><a class="reference internal" href="#core-concepts">Core concepts</a></li>
+<li><a class="reference internal" href="#understanding-operations">Understanding operations</a></li>
+<li><a class="reference internal" href="#what-is-a-filesystem">What is a filesystem</a></li>
+<li><a class="reference internal" href="#how-does-pootle-fs-relate-to-update-stores-sync-stores">How does Pootle FS relate to update_stores/sync_stores</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="index.html"
+         title="previous chapter">&laquo; Features</a></li>
+  <li><a href="pootle_fs_install_plugins.html"
+         title="next chapter">Install Pootle FS plugins for VCS &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="pootle-fs">
+<span id="id1"></span><h1>Pootle FS<a class="headerlink" href="#pootle-fs" title="Permalink to this headline">¶</a></h1>
+<p>Pootle FS is Pootle’s integration with version control plugin systems. It
+allows Pootle to synchronize with an external repository containing your
+translations, keep them synchronised and manage and resolve any conflicts
+either automatically or via user input.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Pootle FS is considered beta in Pootle 2.8.0.  We’d love you to
+try it out but please be aware that if you are basing production installs on
+Pootle FS that you can expect changes that might require manual
+intervention.</p>
+</div>
+<div class="section" id="aims">
+<h2>Aims<a class="headerlink" href="#aims" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Allow Pootle data to be stored on version control systems</li>
+<li>Abstract version control systems into a standard method across all systems</li>
+<li>Ensure that we don’t lose any data</li>
+<li>Ensure that changes made on Pootle and the filesystem can seamlessly move
+from one to the other</li>
+</ul>
+</div>
+<div class="section" id="core-concepts">
+<h2>Core concepts<a class="headerlink" href="#core-concepts" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>Stores and files</dt>
+<dd>Pootle contains stores of translation units. The filesystem contains files.</dd>
+<dt>Tracked and untracked</dt>
+<dd>When a store is associated with a file, it is tracked, if it is not
+yet associated then it is untracked. And vice versa.</dd>
+<dt>States</dt>
+<dd>Tracked and untracked files and stores will be in various states depending on
+a number of things. Have they just appeared, have they changed, have they
+been removed, etc.</dd>
+<dt>Actions</dt>
+<dd>Based on the states we can determine what actions might be applicable to
+the stores and files.</dd>
+<dt>Staging</dt>
+<dd>We use Pootle FS commands to stage an action. Staging is not execution of
+those actions but merely preparing these actions for execution.</dd>
+<dt>Synchronisation</dt>
+<dd>This is the act of executing the staged actions.</dd>
+</dl>
+</div>
+<div class="section" id="understanding-operations">
+<h2>Understanding operations<a class="headerlink" href="#understanding-operations" title="Permalink to this headline">¶</a></h2>
+<p>At any time we are able to query the state of Pootle FS using <a class="reference internal" href="../server/commands.html#django-admin-state"><code class="xref std std-djadmin docutils literal"><span class="pre">fs</span>
+<span class="pre">state</span></code></a> command. The results of this operation will indicate if there
+are any actions you need to specify to resolve any conflicts or if there are
+untracked files.</p>
+<p>You specify <em>Actions</em> that need to be taken to resolve conflicts or to ensure
+that files are tracked. This could be adding a file, removing a file or merging
+conflicting translations. This is the process of staging actions.</p>
+<p>The final step is to synchronise Pootle and your filesystem. This operation
+takes your staged actions and executes them.</p>
+</div>
+<div class="section" id="what-is-a-filesystem">
+<h2>What is a filesystem<a class="headerlink" href="#what-is-a-filesystem" title="Permalink to this headline">¶</a></h2>
+<p>A filesystem is actually itself a Pootle FS plugin. Currently two exist:</p>
+<ol class="arabic simple">
+<li><strong>localfs</strong> - allowing synchronization with the filesystem on which Pootle
+is running</li>
+<li><strong>git</strong> - synchronization with a Git repository</li>
+</ol>
+<p>You can write a plugin for any version control system, Pootle FS will ensure
+that the same commands and operations are used to ensure Pootle and your
+filesystem stay synchronized.</p>
+</div>
+<div class="section" id="how-does-pootle-fs-relate-to-update-stores-sync-stores">
+<h2>How does Pootle FS relate to update_stores/sync_stores<a class="headerlink" href="#how-does-pootle-fs-relate-to-update-stores-sync-stores" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Read this if you have used previous versions of Pootle.</p>
+</div>
+<p>Previous versions of Pootle made use of two commands, <a class="reference internal" href="../server/commands.html#django-admin-update_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">update_stores</span></code></a>
+and <a class="reference internal" href="../server/commands.html#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a>, to allow translations to be pushed into Pootle or
+pulled from Pootle.</p>
+<p>These two commands still exist but we will be phasing these out in the long
+term to make everything use Pootle FS.</p>
+<p>You can find an outline of how to use Pootle FS on your existing Pootle
+projects in the <a class="reference internal" href="pootle_fs_add_project.html#pootle-fs-add-project"><span class="std std-ref">adding a Pootle FS managed project</span></a> instructions.</p>
+<p>Once you are familiar with Pootle FS you can start <a class="reference internal" href="migrate_to_pootle_fs.html#migrate-to-pootle-fs"><span class="std std-ref">migrating your
+projects to Pootle FS</span></a>.</p>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,264 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Using Pootle FS &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Pootle FS statuses" href="pootle_fs_statuses.html" />
+    <link rel="prev" title="Migrating to Pootle FS" href="migrate_to_pootle_fs.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Features</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../server/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Using Pootle FS</a><ul>
+<li><a class="reference internal" href="#pootle-fs-background">Pootle FS background</a></li>
+<li><a class="reference internal" href="#syncing-tracked-stores-or-files">Syncing tracked stores or files</a></li>
+<li><a class="reference internal" href="#adding-new-files-and-stores">Adding new files and stores</a></li>
+<li><a class="reference internal" href="#removing-files-or-stores">Removing files or stores</a></li>
+<li><a class="reference internal" href="#resolving-conflicts">Resolving conflicts</a><ul>
+<li><a class="reference internal" href="#overwrite-pootle-with-filesystem-version">Overwrite Pootle with filesystem version</a></li>
+<li><a class="reference internal" href="#overwrite-filesystem-with-pootle-version">Overwrite filesystem with Pootle version</a></li>
+<li><a class="reference internal" href="#use-filesystem-version-and-convert-pootle-version-into-suggestion">Use filesystem version and convert Pootle version into suggestion</a></li>
+<li><a class="reference internal" href="#use-pootle-version-and-convert-filesystem-version-into-suggestion">Use Pootle version and convert filesystem version into suggestion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="migrate_to_pootle_fs.html"
+         title="previous chapter">&laquo; Migrating to Pootle FS</a></li>
+  <li><a href="pootle_fs_statuses.html"
+         title="next chapter">Pootle FS statuses &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="using-pootle-fs">
+<span id="id1"></span><h1>Using Pootle FS<a class="headerlink" href="#using-pootle-fs" title="Permalink to this headline">¶</a></h1>
+<p>The task of Pootle FS is to keep the filesystem and Pootle in sync. There are
+scenarios where items are not in sync and Pootle FS requires your intervention,
+these are the commands you need to bring things back into sync and to resolve
+conflicts.</p>
+<div class="section" id="pootle-fs-background">
+<span id="using-pootle-fs-background"></span><h2>Pootle FS background<a class="headerlink" href="#pootle-fs-background" title="Permalink to this headline">¶</a></h2>
+<p>To clarify the terminology that we use in Pootle FS:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">file</span></code> - a translation file on disk</li>
+<li><code class="docutils literal"><span class="pre">store</span></code> - a translation file in the Pootle database</li>
+</ul>
+<p>Files and stores are usually associated and thus we are able to keep them
+synchronised. But there might be files with no store (the store for a new file
+has not yet been created in the Pootle database), and stores with no file (the
+file has been removed from the filesystem).</p>
+<p>Pootle FS works in these stages:</p>
+<ol class="arabic simple">
+<li>Actions are staged. An action is chosen to resolve each issue.</li>
+<li>The system is synchronized. The staged action are actually performed.</li>
+</ol>
+<p>Files that have never been synced are untracked, and thus they need to be
+explicitly staged. Files previously synced are tracked, and thus automatically
+staged if there are any changes. In the case of conflicts (changes both on disk
+and in Pootle) it is also necessary to manually stage these to resolve which
+version should prevail.</p>
+<p>When staging it is possible to specify specific stores or files, or groups of
+them using the <code class="docutils literal"><span class="pre">-P</span></code> and <code class="docutils literal"><span class="pre">-p</span></code> options. It is also possible to limit which
+staged actions are executed by using these same options on the <a class="reference internal" href="../server/commands.html#django-admin-sync"><code class="xref std std-djadmin docutils literal"><span class="pre">sync</span></code></a>
+command.</p>
+</div>
+<div class="section" id="syncing-tracked-stores-or-files">
+<span id="using-pootle-fs-sync-tracked"></span><h2>Syncing tracked stores or files<a class="headerlink" href="#syncing-tracked-stores-or-files" title="Permalink to this headline">¶</a></h2>
+<p>When a store and its corresponding file are tracked and previously synced, then
+they are automatically staged for syncing if either changes.</p>
+<p>If both have changed then we will need to specify how to <a class="reference internal" href="#using-pootle-fs-resolve-conflicts"><span class="std std-ref">resolve the
+conflict</span></a>.</p>
+<p>To re-sync stores and files run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+</div>
+<div class="section" id="adding-new-files-and-stores">
+<span id="using-pootle-fs-add-files-stores"></span><h2>Adding new files and stores<a class="headerlink" href="#adding-new-files-and-stores" title="Permalink to this headline">¶</a></h2>
+<p>When new files appear on the filesystem that we want to bring into Pootle we
+use <a class="reference internal" href="../server/commands.html#django-admin-add"><code class="xref std std-djadmin docutils literal"><span class="pre">add</span></code></a>. And when new stores have appeared on Pootle that we want to
+push to the filesystem we also use <a class="reference internal" href="../server/commands.html#django-admin-add"><code class="xref std std-djadmin docutils literal"><span class="pre">add</span></code></a>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs add MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+<p>Where <a class="reference internal" href="../server/commands.html#django-admin-add"><code class="xref std std-djadmin docutils literal"><span class="pre">add</span></code></a> will stage the previously untracked files or stores.
+While <a class="reference internal" href="../server/commands.html#django-admin-sync"><code class="xref std std-djadmin docutils literal"><span class="pre">sync</span></code></a> will synchronize, pulling the translations in the file
+into the Pootle database or pushing translations from the stores in the
+database to files on the filesystem.</p>
+<p>Following this the file and store are now tracked.</p>
+</div>
+<div class="section" id="removing-files-or-stores">
+<span id="using-pootle-fs-remove-files-stores"></span><h2>Removing files or stores<a class="headerlink" href="#removing-files-or-stores" title="Permalink to this headline">¶</a></h2>
+<p>A store or file can be missing from Pootle or the filesystem because it has
+been removed, we use <a class="reference internal" href="../server/commands.html#django-admin-rm"><code class="xref std std-djadmin docutils literal"><span class="pre">rm</span></code></a> to remove such files and stores:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs rm MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+<p>This will remove the store or file, depending on whether it is the file or
+store that remains.</p>
+<p>Following this there is no such file or store on the filesystem or on Pootle.</p>
+</div>
+<div class="section" id="resolving-conflicts">
+<span id="using-pootle-fs-resolve-conflicts"></span><h2>Resolving conflicts<a class="headerlink" href="#resolving-conflicts" title="Permalink to this headline">¶</a></h2>
+<p>Conflicts can occur if a tracked Pootle store and its corresponding file have
+both changed. They can also arise if a new Pootle store is added and a matching
+file has been added in the filesystem simultaneously.</p>
+<p>There are four possible ways to resolve such conflicts:</p>
+<ol class="arabic simple">
+<li>Use the filesystem version and discard all Pootle translations</li>
+<li>Use the Pootle version and ignore all filesystem translations</li>
+<li>Merge translations and for unit conflicts choose Pootle’s version and turn
+the filesystem version into a suggestion</li>
+<li>Merge translations and for unit conflicts choose the filesystem version and
+turn the Pootle translation into a suggestion</li>
+</ol>
+<p>The merge options are most useful where you need translators to resolve the
+conflict.</p>
+<div class="section" id="overwrite-pootle-with-filesystem-version">
+<span id="using-pootle-fs-resolve-conflict-overwrite-pootle"></span><h3>Overwrite Pootle with filesystem version<a class="headerlink" href="#overwrite-pootle-with-filesystem-version" title="Permalink to this headline">¶</a></h3>
+<p>You want to keep the version that is currently on the filesystem, discarding
+all changes in Pootle:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs resolve --overwrite --pootle-wins MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+</div>
+<div class="section" id="overwrite-filesystem-with-pootle-version">
+<span id="using-pootle-fs-resolve-conflict-overwrite-filesystem"></span><h3>Overwrite filesystem with Pootle version<a class="headerlink" href="#overwrite-filesystem-with-pootle-version" title="Permalink to this headline">¶</a></h3>
+<p>You wish to keep the version that is currently in Pootle, discarding all
+changes in the filesystem:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs resolve --overwrite MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+</div>
+<div class="section" id="use-filesystem-version-and-convert-pootle-version-into-suggestion">
+<span id="using-pootle-fs-resolve-conflict-pootle-suggestion"></span><h3>Use filesystem version and convert Pootle version into suggestion<a class="headerlink" href="#use-filesystem-version-and-convert-pootle-version-into-suggestion" title="Permalink to this headline">¶</a></h3>
+<p>To retain all translation and allow translators to resolve conflicts use
+<a class="reference internal" href="../server/commands.html#django-admin-resolve"><code class="xref std std-djadmin docutils literal"><span class="pre">resolve</span></code></a>. This will merge any non-conflicting units and convert
+conflicts into suggestions, by default we use filesystem translations:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs resolve MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+<p>The result is that all non-conflicting units have been synchronised. For any
+unit where both the store unit and file unit changed the translation is set to
+the file unit translation with the store unit translation converted into a
+suggestion. You can now review these suggestions to resolve the conflicts.</p>
+</div>
+<div class="section" id="use-pootle-version-and-convert-filesystem-version-into-suggestion">
+<span id="using-pootle-fs-resolve-conflict-filesystem-suggestion"></span><h3>Use Pootle version and convert filesystem version into suggestion<a class="headerlink" href="#use-pootle-version-and-convert-filesystem-version-into-suggestion" title="Permalink to this headline">¶</a></h3>
+<p>To retain all translation and allow translators to resolve conflicts use
+<a class="reference internal" href="../server/commands.html#django-admin-resolve"><code class="xref std std-djadmin docutils literal"><span class="pre">resolve</span></code></a>. This will merge any non-conflicting units and convert
+conflicts into suggestions, the <a class="reference internal" href="../server/commands.html#cmdoption-resolve-pootle-wins"><code class="xref std std-option docutils literal"><span class="pre">--pootle-wins</span></code></a>
+option ensures that we use Pootle translations and convert filesystem
+translations into suggestions:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs resolve --pootle-wins MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

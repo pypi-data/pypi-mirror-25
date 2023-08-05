@@ -1,0 +1,307 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Virtual Folders &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Offline Translation" href="offline.html" />
+    <link rel="prev" title="Terminology" href="terminology.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Features</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../server/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Virtual Folders</a><ul>
+<li><a class="reference internal" href="#virtual-folders-attributes">Virtual folders’ attributes</a></li>
+<li><a class="reference internal" href="#adding-and-updating-virtual-folders">Adding and updating virtual folders</a></li>
+<li><a class="reference internal" href="#virtual-folders-stats">Virtual folders stats</a></li>
+<li><a class="reference internal" href="#translating-virtual-folders">Translating virtual folders</a></li>
+<li><a class="reference internal" href="#format-for-the-json-file">Format for the JSON file</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="terminology.html"
+         title="previous chapter">&laquo; Terminology</a></li>
+  <li><a href="offline.html"
+         title="next chapter">Offline Translation &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="virtual-folders">
+<span id="id1"></span><h1>Virtual Folders<a class="headerlink" href="#virtual-folders" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.7.</span></p>
+</div>
+<p>Virtual folders provide a way to group translations based on any criteria,
+including a file across all the languages in a project, or files on specific
+locations. Virtual folders have priority, so they can be used to allow
+translators to focus on the most important work.</p>
+<div class="section" id="virtual-folders-attributes">
+<span id="id2"></span><h2>Virtual folders’ attributes<a class="headerlink" href="#virtual-folders-attributes" title="Permalink to this headline">¶</a></h2>
+<p>Virtual folders have several attributes:</p>
+<ul class="simple">
+<li>A mandatory lowercase name,</li>
+<li>A mandatory location,</li>
+<li>An optional priority,</li>
+<li>An optional publicness flag,</li>
+<li>An optional description,</li>
+<li>A field accepting several optional filtering rules.</li>
+</ul>
+<p>The location indicates the root place where the virtual folder applies. It can
+use placeholders for language (<code class="docutils literal"><span class="pre">{LANG}</span></code>) and project (<code class="docutils literal"><span class="pre">{PROJ}</span></code>).</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <code class="docutils literal"><span class="pre">/</span></code> location is not valid and must be replaced by
+<code class="docutils literal"><span class="pre">/{LANG}/{PROJ}/</span></code>. The locations starting with <code class="docutils literal"><span class="pre">/projects/</span></code> are also
+not valid and must be changed so they instead start with <code class="docutils literal"><span class="pre">/{LANG}/</span></code>.</p>
+</div>
+<p>Each virtual folder must have a unique combination of name and location. This
+means that there can exist two different virtual folders with the same name if
+they have different locations.</p>
+<p>The priority defaults to <code class="docutils literal"><span class="pre">1</span></code> and accepts any value greater than <code class="docutils literal"><span class="pre">0</span></code>,
+including numbers with decimals, like <code class="docutils literal"><span class="pre">0.75</span></code>. Higher numbers means higher
+priority.</p>
+<p>By default virtual folders are public. If they are not public then they won’t
+be displayed, but they are still used for sorting.</p>
+<p>Also the virtual folders can have a description which might be useful to
+explain the contents of the folder or provide additional instructions. This
+might be handy when using the virtual folders as goals.</p>
+<p>The filtering rules specify which translation units are included within a
+virtual folder. Currently the only supported filtering rule consists of a list
+of file or directory paths relative to the virtual folder location. Note
+that it is required to set some filtering rule.</p>
+</div>
+<div class="section" id="adding-and-updating-virtual-folders">
+<span id="virtual-folders-apply"></span><h2>Adding and updating virtual folders<a class="headerlink" href="#adding-and-updating-virtual-folders" title="Permalink to this headline">¶</a></h2>
+<p>To add or modify the properties of virtual folders use the
+<a class="reference internal" href="../server/commands.html#django-admin-add_vfolders"><code class="xref std std-djadmin docutils literal"><span class="pre">add_vfolders</span></code></a> management command.</p>
+<p>This command imports a JSON file holding a list of virtual folders, and the
+files included on each virtual folder along with all their attributes. Check
+the specs for the <a class="reference internal" href="#virtual-folders-json-format"><span class="std std-ref">JSON format</span></a> in order to
+know how to craft a JSON file that fits your needs.</p>
+</div>
+<div class="section" id="virtual-folders-stats">
+<span id="id3"></span><h2>Virtual folders stats<a class="headerlink" href="#virtual-folders-stats" title="Permalink to this headline">¶</a></h2>
+<p>Translation stats of virtual folders are automatically calculated.</p>
+</div>
+<div class="section" id="translating-virtual-folders">
+<span id="virtual-folders-translate"></span><h2>Translating virtual folders<a class="headerlink" href="#translating-virtual-folders" title="Permalink to this headline">¶</a></h2>
+<p>If a virtual folder applies in the current location, then clicking on the links
+on the overview page will provide the units in priority order when translating
+in the editor. The priority sorting on the translation editor is calculated
+taking into account all the applicable virtual folders in the current location,
+including the not public ones.</p>
+</div>
+<div class="section" id="format-for-the-json-file">
+<span id="virtual-folders-json-format"></span><h2>Format for the JSON file<a class="headerlink" href="#format-for-the-json-file" title="Permalink to this headline">¶</a></h2>
+<p>The JSON file used to import virtual folders consists of a list of virtual
+folder definitions with the <a class="reference internal" href="#virtual-folders-attributes"><span class="std std-ref">same fields</span></a> as
+the virtual folders, except for two differences:</p>
+<ul class="simple">
+<li>If the <strong>description</strong> includes newlines those must be escaped.</li>
+</ul>
+<p>The following example depicts a basic JSON file:</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;user1&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/{LANG}/firefox/browser/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;priority&quot;</span><span class="p">:</span> <span class="mf">999.99</span><span class="p">,</span>
+        <span class="nt">&quot;is_public&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Most visible strings for the user.&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;branding/official/brand.dtd.po&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;chrome/browser/aboutDialog.dtd.po&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;user2&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/gl/firefox/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;priority&quot;</span><span class="p">:</span> <span class="mf">7.5</span><span class="p">,</span>
+        <span class="nt">&quot;is_public&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;browser/chrome/browser/aboutSessionRestore.dtd.po&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;browser/chrome/browser/downloads/downloads.dtd.po&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;user3&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/ru/{PROJ}/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;priority&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;browser/chrome/browser/engineManager.dtd.po&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;directories-for-lang&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/{LANG}/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;firefox/browser/profile/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;firefox/browser/chrome/browser/&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;directories-and-files-for-tp&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/{LANG}/firefox/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;browser/updater/&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;browser/chrome/browser/devtools/appcacheutils.properties.po&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;browser/chrome/browser/migration/&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/{LANG}/{PROJ}&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;All files in all projects for all languages.&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;/&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;other&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/af/firefox/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;is_public&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;browser/chrome/browser/aboutCertError.dtd.po&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;developer&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/af/firefox/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;priority&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
+        <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;As you can see this\\n description spans\\n several lines.&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;browser/chrome/browser/devtools/appcacheutils.properties.po&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;browser/chrome/browser/devtools/debugger.dtd.po&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;install&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="s2">&quot;/ru/{PROJ}/&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;priority&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="nt">&quot;is_public&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Installation related strings.&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;filters&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;browser/chrome/browser/migration/migration.dtd.po&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;browser/chrome/browser/migration/migration.properties.po&quot;</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

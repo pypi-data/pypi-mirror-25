@@ -1,0 +1,258 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Plugins &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Frequently Asked Questions (FAQ)" href="../faq.html" />
+    <link rel="prev" title="Making a Pootle Release" href="releasing.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../features/index.html">Features</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../server/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/index.html">Administering a server</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Plugins</a><ul>
+<li><a class="reference internal" href="#signals-providers-and-getters">Signals, providers and getters</a></li>
+<li><a class="reference internal" href="#application-file-structure">Application file structure</a></li>
+<li><a class="reference internal" href="#creating-a-plugin-application">Creating a plugin application</a></li>
+<li><a class="reference internal" href="#setting-up-a-provider">Setting up a provider</a></li>
+<li><a class="reference internal" href="#setting-up-a-getter">Setting up a getter</a></li>
+<li><a class="reference internal" href="#setting-up-a-receiver">Setting up a receiver</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="releasing.html"
+         title="previous chapter">&laquo; Making a Pootle Release</a></li>
+  <li><a href="../faq.html"
+         title="next chapter">Frequently Asked Questions (FAQ) &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="plugins">
+<span id="id1"></span><h1>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Pootle’s plugin system is currently in an early stage of development, and
+may be subject to change in the future. If you have any questions or are
+intending to use it in your own applications you can chat with us on the
+<a class="reference external" href="https://gitter.im/translate/dev">Translate development channel</a>.</p>
+</div>
+<p>You can customize or extend Pootle using plugins.</p>
+<p>A Pootle plugin is a Django application that hooks into
+the core functionality in Pootle.</p>
+<div class="section" id="signals-providers-and-getters">
+<span id="plugins-signals-providers-getters"></span><h2>Signals, providers and getters<a class="headerlink" href="#signals-providers-and-getters" title="Permalink to this headline">¶</a></h2>
+<p>Pootle emits <code class="docutils literal"><span class="pre">Signals</span></code> when key events happen. You can listen to these
+signals using a <code class="docutils literal"><span class="pre">receiver</span></code> to trigger custom behaviour. Pootle uses
+Django’s Signals framework for handling these types of events.</p>
+<p>Pootle allows plugins to override the default behaviour using a <code class="docutils literal"><span class="pre">Getter</span></code>
+function, which are decorated with the <code class="docutils literal"><span class="pre">pootle.core.plugin.getter</span></code> decorator.
+Once Pootle has received a response from a plugin for a <code class="docutils literal"><span class="pre">Getter</span></code> function
+it stops processing any further configured functions.</p>
+<p>Pootle allows developers to change or extend the data used by the system,
+by adding <code class="docutils literal"><span class="pre">Provider</span></code> functions, which are decorated with the
+<code class="docutils literal"><span class="pre">pootle.core.plugin.provider</span></code> decorator. With <code class="docutils literal"><span class="pre">Provider</span></code> functions Pootle
+will gather data from all plugins configured to provide for a given
+<code class="docutils literal"><span class="pre">Provider</span></code> function.</p>
+</div>
+<div class="section" id="application-file-structure">
+<span id="plugins-basic-file-structure"></span><h2>Application file structure<a class="headerlink" href="#application-file-structure" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="file docutils literal"><span class="pre">__init__.py</span></code></li>
+<li><code class="file docutils literal"><span class="pre">apps.py</span></code> - Django application configuration</li>
+<li><code class="file docutils literal"><span class="pre">receivers.py</span></code> - receivers for signals</li>
+<li><code class="file docutils literal"><span class="pre">getters.py</span></code> - getter functions</li>
+<li><code class="file docutils literal"><span class="pre">providers.py</span></code> - provider functions</li>
+</ul>
+</div>
+<div class="section" id="creating-a-plugin-application">
+<span id="plugins-creating-a-plugin"></span><h2>Creating a plugin application<a class="headerlink" href="#creating-a-plugin-application" title="Permalink to this headline">¶</a></h2>
+<p>Your application requires a <a class="reference external" href="https://docs.djangoproject.com/en/1.10/ref/applications/#configuring-applications-ref" title="(in Django v1.10)"><span class="xref std std-ref">Django application configuration</span></a></p>
+<p>For an application named <code class="docutils literal"><span class="pre">pootle_custom</span></code> you need to add lines similar to the
+following in the <code class="file docutils literal"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">default_app_config</span> <span class="o">=</span> <span class="s1">&#39;pootle_custom.apps.PootleCustomConfig&#39;</span>
+</pre></div>
+</div>
+<p>With the above configuration you should add an <code class="file docutils literal"><span class="pre">apps.py</span></code>.</p>
+<p>At a minimum this should define the <code class="docutils literal"><span class="pre">PootleCustomConfig</span></code> class with its
+<code class="docutils literal"><span class="pre">name</span></code> and <code class="docutils literal"><span class="pre">verbose_name</span></code>.</p>
+<p>It can also be used to activate receivers, providers and getters. The following
+application configuration activates all of them for the “custom” application.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">importlib</span>
+
+<span class="kn">from</span> <span class="nn">django.apps</span> <span class="kn">import</span> <span class="n">AppConfig</span>
+
+
+<span class="k">class</span> <span class="nc">PootleCustomConfig</span><span class="p">(</span><span class="n">AppConfig</span><span class="p">):</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;pootle_custom&quot;</span>
+    <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;Pootle Custom&quot;</span>
+
+    <span class="k">def</span> <span class="nf">ready</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;pootle_custom.receivers&quot;</span><span class="p">)</span>
+        <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;pootle_custom.providers&quot;</span><span class="p">)</span>
+        <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;pootle_custom.getters&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setting-up-a-provider">
+<span id="plugins-providers"></span><h2>Setting up a provider<a class="headerlink" href="#setting-up-a-provider" title="Permalink to this headline">¶</a></h2>
+<p>The following is an example of providing custom <code class="docutils literal"><span class="pre">context_data</span></code> to the Pootle
+<code class="docutils literal"><span class="pre">LanguageView</span></code>.</p>
+<p>Add a file called <code class="file docutils literal"><span class="pre">providers.py</span></code> with the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pootle.core.delegate</span> <span class="kn">import</span> <span class="n">context_data</span>
+<span class="kn">from</span> <span class="nn">pootle.core.plugin</span> <span class="kn">import</span> <span class="n">provider</span>
+
+<span class="kn">from</span> <span class="nn">pootle_language.views</span> <span class="kn">import</span> <span class="n">LanguageView</span>
+
+
+<span class="nd">@provider</span><span class="p">(</span><span class="n">context_data</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">LanguageView</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">provide_context_data</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">custom_var1</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span>
+        <span class="n">custom_var2</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setting-up-a-getter">
+<span id="plugins-getters"></span><h2>Setting up a getter<a class="headerlink" href="#setting-up-a-getter" title="Permalink to this headline">¶</a></h2>
+<p>The following is an example of customizing the <code class="docutils literal"><span class="pre">Unit</span></code> <code class="docutils literal"><span class="pre">search_backend</span></code> for an
+application.</p>
+<p>Add a file called <code class="file docutils literal"><span class="pre">getters.py</span></code> with the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pootle.core.delegate</span> <span class="kn">import</span> <span class="n">search_backend</span>
+<span class="kn">from</span> <span class="nn">pootle.core.plugin</span> <span class="kn">import</span> <span class="n">getter</span>
+
+<span class="kn">from</span> <span class="nn">pootle_store.models</span> <span class="kn">import</span> <span class="n">Unit</span>
+<span class="kn">from</span> <span class="nn">pootle_store.unit.search</span> <span class="kn">import</span> <span class="n">DBSearchBackend</span>
+
+
+<span class="k">class</span> <span class="nc">CustomSearchBackend</span><span class="p">(</span><span class="n">DBSearchBackend</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="nd">@getter</span><span class="p">(</span><span class="n">search_backend</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Unit</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_search_backend</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">CustomSearchBackend</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setting-up-a-receiver">
+<span id="plugins-receivers"></span><h2>Setting up a receiver<a class="headerlink" href="#setting-up-a-receiver" title="Permalink to this headline">¶</a></h2>
+<p>Pootle uses the <a class="reference external" href="https://docs.djangoproject.com/en/1.10/topics/signals/#connecting-receiver-functions" title="(in Django v1.10)"><span class="xref std std-ref">django.core.signals</span></a> module to handle events.</p>
+<p>The following is an example of a <code class="docutils literal"><span class="pre">receiver</span></code> that emits a log warning whenever
+a <code class="docutils literal"><span class="pre">Store</span></code> cache is expired.</p>
+<p>Add a file called <code class="file docutils literal"><span class="pre">receivers.py</span></code> with the following code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">django.core.signals</span> <span class="kn">import</span> <span class="n">receiver</span>
+
+<span class="kn">from</span> <span class="nn">pootle.core.signals</span> <span class="kn">import</span> <span class="n">cache_cleared</span>
+<span class="kn">from</span> <span class="nn">pootle_store.models</span> <span class="kn">import</span> <span class="n">Store</span>
+
+
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">cache_cleared</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Store</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">handle_cache_cleared</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+        <span class="s2">&quot;Store cache cleared: </span><span class="si">%s</span><span class="s2">&quot;</span>
+        <span class="o">%</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;instance&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pootle_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

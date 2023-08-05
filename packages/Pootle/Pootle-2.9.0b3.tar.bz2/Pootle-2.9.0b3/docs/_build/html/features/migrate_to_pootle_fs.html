@@ -1,0 +1,214 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Migrating to Pootle FS &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Using Pootle FS" href="using_pootle_fs.html" />
+    <link rel="prev" title="Add a Pootle FS managed project" href="pootle_fs_add_project.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Features</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../server/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../server/index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Migrating to Pootle FS</a><ul>
+<li><a class="reference internal" href="#preparation">Preparation</a></li>
+<li><a class="reference internal" href="#setup-pootle-fs">Setup Pootle FS</a></li>
+<li><a class="reference internal" href="#first-synchronization">First synchronization</a></li>
+<li><a class="reference internal" href="#variations-on-the-theme">Variations on the theme</a><ul>
+<li><a class="reference internal" href="#filesystem-wins">Filesystem wins</a></li>
+<li><a class="reference internal" href="#migrating-to-version-control">Migrating to version control</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="pootle_fs_add_project.html"
+         title="previous chapter">&laquo; Add a Pootle FS managed project</a></li>
+  <li><a href="using_pootle_fs.html"
+         title="next chapter">Using Pootle FS &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="migrating-to-pootle-fs">
+<span id="migrate-to-pootle-fs"></span><h1>Migrating to Pootle FS<a class="headerlink" href="#migrating-to-pootle-fs" title="Permalink to this headline">¶</a></h1>
+<p>While Pootle will continue to support <a class="reference internal" href="../server/commands.html#django-admin-update_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">update_stores</span></code></a> and
+<a class="reference internal" href="../server/commands.html#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a> this will eventually be deprecated. Thus it makes sense
+to migrate your projects to Pootle FS.</p>
+<p>These steps will convert a project currently hosted in
+<a class="reference internal" href="../server/settings.html#std:setting-POOTLE_TRANSLATION_DIRECTORY"><code class="xref std std-setting docutils literal"><span class="pre">POOTLE_TRANSLATION_DIRECTORY</span></code></a> into a Pootle FS <code class="docutils literal"><span class="pre">localfs</span></code> project.</p>
+<div class="section" id="preparation">
+<h2>Preparation<a class="headerlink" href="#preparation" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">(optional) Disable the project to prevent translators working on the stores.
+You can also, quite safely, perform the migration live.</p>
+</li>
+<li><p class="first">Run <a class="reference internal" href="../server/commands.html#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a> to ensure that all translations in Pootle are on
+the filesystem. The filesystem and Pootle should now have exactly the same
+data.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle sync_stores --project<span class="o">=</span>MYPROJECT
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="setup-pootle-fs">
+<h2>Setup Pootle FS<a class="headerlink" href="#setup-pootle-fs" title="Permalink to this headline">¶</a></h2>
+<p>Click on the <code class="docutils literal"><span class="pre">Filesystems</span></code> link below the project edit form and set the
+following:</p>
+<img alt="../_images/pootle_fs_link.png" src="../_images/pootle_fs_link.png" />
+<ul class="simple">
+<li><strong>Filesystem backend</strong> to <code class="docutils literal"><span class="pre">localfs</span></code></li>
+<li><strong>Backend URL or path</strong> to the value of
+<a class="reference internal" href="../server/settings.html#std:setting-POOTLE_TRANSLATION_DIRECTORY"><code class="xref std std-setting docutils literal"><span class="pre">POOTLE_TRANSLATION_DIRECTORY</span></code></a> + MYPROJECT, e.g.
+<code class="file docutils literal"><span class="pre">/path/to/pootle/translations/MYPROJECT</span></code></li>
+<li><strong>Translation path mapping</strong> to the one your project uses, or pick one of the
+existing <strong>Translation mapping presets</strong>.</li>
+</ul>
+</div>
+<div class="section" id="first-synchronization">
+<h2>First synchronization<a class="headerlink" href="#first-synchronization" title="Permalink to this headline">¶</a></h2>
+<p>Now that our project is setup we can initiate the first synchronization to
+ensure all files are tracked:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs add --force MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+<p>This will use translations from Pootle and ignore those on the filesystem.</p>
+</div>
+<div class="section" id="variations-on-the-theme">
+<h2>Variations on the theme<a class="headerlink" href="#variations-on-the-theme" title="Permalink to this headline">¶</a></h2>
+<p>The process above outlines how you can move an <code class="docutils literal"><span class="pre">update_stores</span></code> project to
+Pootle FS on the local filesystem with Pootle winning. You might want to do
+some other things such as:</p>
+<div class="section" id="filesystem-wins">
+<h3>Filesystem wins<a class="headerlink" href="#filesystem-wins" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="../server/commands.html#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a> in our recipe above ensures that everything is in
+sync. However if you have scripts that commit and update files you might prefer
+to let the filesystem win in which case rather use:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs fetch --force MYPROJECT
+</pre></div>
+</div>
+</div>
+<div class="section" id="migrating-to-version-control">
+<h3>Migrating to version control<a class="headerlink" href="#migrating-to-version-control" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Make sure you have installed the needed Pootle FS plugin for the version
+control backend you are using.</p>
+</li>
+<li><p class="first">(optional but recommended) Disable the project.</p>
+</li>
+<li><p class="first">Ensure you have synchronized all your files and committed them to your
+version control system.</p>
+</li>
+<li><p class="first">Instead of <code class="docutils literal"><span class="pre">localfs</span></code>, set the backend appropriately.</p>
+</li>
+<li><p class="first">Set the URL to your version control repository.</p>
+</li>
+<li><p class="first">Synchronize as follows:</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">(env) $</span> pootle fs fetch --force MYPROJECT
+<span class="gp">(env) $</span> pootle fs sync MYPROJECT
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>

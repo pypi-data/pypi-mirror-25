@@ -1,0 +1,349 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Logging &#8212; Pootle 2.9.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.9.0b3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Optimization" href="optimization.html" />
+    <link rel="prev" title="Settings" href="settings.html" /> 
+  </head>
+  <body>
+  <div id="navbar" class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <a class="brand" href="../index.html">Pootle</a>
+        <span class="navbar-text pull-left"><b>2.9</b></span>
+          <ul class="nav">
+            <li class="divider-vertical"></li>
+            
+              <li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../features/index.html">Features</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Administering a server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developers</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions (FAQ)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../releases/index.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+</ul>
+</li>
+              
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"><ul>
+<li><a class="reference internal" href="#">Logging</a><ul>
+<li><a class="reference internal" href="#log-directory">Log directory</a></li>
+<li><a class="reference internal" href="#action-logger">Action logger</a><ul>
+<li><a class="reference internal" href="#action-types">Action types</a></li>
+<li><a class="reference internal" href="#score-translation-actions">Score Translation Actions</a></li>
+<li><a class="reference internal" href="#action-messages">Action messages</a></li>
+<li><a class="reference internal" href="#sync-and-update-messages">Sync and Update messages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+            
+            
+              
+  <li><a href="settings.html"
+         title="previous chapter">&laquo; Settings</a></li>
+  <li><a href="optimization.html"
+         title="next chapter">Optimization &raquo;</a></li>
+            
+          </ul>
+          <ul class="nav pull-right">
+            
+              
+            
+          
+            
+<form class="navbar-search pull-right" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="container content">
+   
+  <div class="section" id="logging">
+<h1>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h1>
+<p>Pootle’s default logging has configurations for all important aspects of the
+server that we want to log.  Pootle also logs to the ‘action’ logger that will
+log every user, system and command action executed on the server.</p>
+<div class="section" id="log-directory">
+<h2>Log directory<a class="headerlink" href="#log-directory" title="Permalink to this headline">¶</a></h2>
+<p>You can override the default logging directory by specifying the
+<a class="reference internal" href="settings.html#std:setting-POOTLE_LOG_DIRECTORY"><code class="xref std std-setting docutils literal"><span class="pre">POOTLE_LOG_DIRECTORY</span></code></a> setting.</p>
+</div>
+<div class="section" id="action-logger">
+<h2>Action logger<a class="headerlink" href="#action-logger" title="Permalink to this headline">¶</a></h2>
+<p>The action logger logs each activity related to translation, units changes,
+store changes, command execution and other activities.</p>
+<p>The generic log message is as follows (though some actions do produce slightly
+different log entries):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">04</span><span class="n">T15</span><span class="p">:</span><span class="mi">06</span><span class="p">:</span><span class="mi">39</span><span class="p">]</span>   <span class="n">system</span>  <span class="n">X</span>   <span class="n">pootle</span> <span class="n">update_tmserver</span>
+</pre></div>
+</div>
+<p>That is:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">date</span><span class="p">]</span> <span class="n">user</span> <span class="nb">type</span> <span class="n">message</span>
+</pre></div>
+</div>
+<div class="section" id="action-types">
+<h3>Action types<a class="headerlink" href="#action-types" title="Permalink to this headline">¶</a></h3>
+<p>Current action types are as follows:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="14%" />
+<col width="19%" />
+<col width="67%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Action</th>
+<th class="head">Group</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>A</td>
+<td>Translation</td>
+<td>Translation submission added a translation</td>
+</tr>
+<tr class="row-odd"><td>C</td>
+<td>Translation</td>
+<td>An existing translation was changed</td>
+</tr>
+<tr class="row-even"><td>D</td>
+<td>Translation</td>
+<td>An existing translation was deleted</td>
+</tr>
+<tr class="row-odd"><td>UA</td>
+<td>Unit</td>
+<td>A new unit was added</td>
+</tr>
+<tr class="row-even"><td>UO</td>
+<td>Unit</td>
+<td>An existing unit was made obsolete</td>
+</tr>
+<tr class="row-odd"><td>UR</td>
+<td>Unit</td>
+<td>An obsolete unit was resurected i.e. reinstated</td>
+</tr>
+<tr class="row-even"><td>UD</td>
+<td>Unit</td>
+<td>An existing unit was deleted</td>
+</tr>
+<tr class="row-odd"><td>SA</td>
+<td>Store</td>
+<td>A new store was added</td>
+</tr>
+<tr class="row-even"><td>SO</td>
+<td>Store</td>
+<td>An existing store was made obsolete</td>
+</tr>
+<tr class="row-odd"><td>SR</td>
+<td>Store</td>
+<td>An obsolete store was reinstated</td>
+</tr>
+<tr class="row-even"><td>SD</td>
+<td>Store</td>
+<td>An existing store was deleted</td>
+</tr>
+<tr class="row-odd"><td>X</td>
+<td>Command</td>
+<td>A <code class="docutils literal"><span class="pre">pootle</span></code> command was executed</td>
+</tr>
+<tr class="row-even"><td>QM</td>
+<td>Quality
+check</td>
+<td>A quality check was muted (marked as a false
+positive)</td>
+</tr>
+<tr class="row-odd"><td>QU</td>
+<td>Quality
+check</td>
+<td>A quality check was unmuted (reenabled after
+having been muted)</td>
+</tr>
+<tr class="row-even"><td>SC</td>
+<td>Score</td>
+<td>A users score has changed because of an action</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="score-translation-actions">
+<h3>Score Translation Actions<a class="headerlink" href="#score-translation-actions" title="Permalink to this headline">¶</a></h3>
+<p>In addition the SC action type also has its own actions which track the actual
+type of activity that leads to changes in translation.  These are used to track
+scores for the translators.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="87%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Action</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>TA</td>
+<td>unit translated</td>
+</tr>
+<tr class="row-odd"><td>TE</td>
+<td>unit edited after someone else</td>
+</tr>
+<tr class="row-even"><td>TX</td>
+<td>unit edited after themselves</td>
+</tr>
+<tr class="row-odd"><td>TD</td>
+<td>translation deleted by admin</td>
+</tr>
+<tr class="row-even"><td>R</td>
+<td>translation reviewed</td>
+</tr>
+<tr class="row-odd"><td>TF</td>
+<td>translation’s fuzzy flag is set by admin</td>
+</tr>
+<tr class="row-even"><td>XE</td>
+<td>translation penalty [when translation deleted]</td>
+</tr>
+<tr class="row-odd"><td>XR</td>
+<td>translation penalty [when review canceled]</td>
+</tr>
+<tr class="row-even"><td>S</td>
+<td>suggestion added</td>
+</tr>
+<tr class="row-odd"><td>SA</td>
+<td>suggestion accepted (counted towards the suggestion author)</td>
+</tr>
+<tr class="row-even"><td>SR</td>
+<td>suggestion rejected (counted towards the suggestion author)</td>
+</tr>
+<tr class="row-odd"><td>RA</td>
+<td>suggestion accepted (counted towards the reviewer)</td>
+</tr>
+<tr class="row-even"><td>RR</td>
+<td>suggestion rejected (counted towards the reviewer)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="action-messages">
+<h3>Action messages<a class="headerlink" href="#action-messages" title="Permalink to this headline">¶</a></h3>
+<p>Various of the action groups have different message structures as outlined here:</p>
+<p><em>Translation</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">date</span>  <span class="n">user</span>  <span class="n">action</span>  <span class="n">lang</span>    <span class="n">unit</span>    <span class="n">path</span>    <span class="n">translation</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">19</span><span class="n">T14</span><span class="p">:</span><span class="mi">11</span><span class="p">:</span><span class="mi">18</span><span class="p">]</span>   <span class="n">admin</span>   <span class="n">C</span>       <span class="n">af</span>      <span class="mi">2</span>       <span class="o">/</span><span class="n">af</span><span class="o">/</span><span class="n">tutorial</span><span class="o">/</span><span class="n">stats</span><span class="o">-</span><span class="n">test</span><span class="o">.</span><span class="n">po</span>      <span class="n">Twee</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">19</span><span class="n">T14</span><span class="p">:</span><span class="mi">12</span><span class="p">:</span><span class="mi">17</span><span class="p">]</span>   <span class="n">admin</span>   <span class="n">A</span>       <span class="n">af</span>      <span class="mi">3</span>       <span class="o">/</span><span class="n">af</span><span class="o">/</span><span class="n">tutorial</span><span class="o">/</span><span class="n">stats</span><span class="o">-</span><span class="n">test</span><span class="o">.</span><span class="n">po</span>      <span class="n">Drie</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">19</span><span class="n">T14</span><span class="p">:</span><span class="mi">13</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span>   <span class="n">admin</span>   <span class="n">D</span>       <span class="n">af</span>      <span class="mi">1</span>       <span class="o">/</span><span class="n">af</span><span class="o">/</span><span class="n">tutorial</span><span class="o">/</span><span class="n">stats</span><span class="o">-</span><span class="n">test</span><span class="o">.</span><span class="n">po</span>
+</pre></div>
+</div>
+<p><em>Unit</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">date</span>  <span class="n">user</span>    <span class="n">action</span>  <span class="n">language</span>    <span class="n">unit</span>    <span class="n">file</span>    <span class="n">translation</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">06</span><span class="n">T16</span><span class="p">:</span><span class="mi">25</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="n">system</span>  <span class="n">UA</span>      <span class="n">am</span>      <span class="mi">4109</span>    <span class="o">/</span><span class="n">am</span><span class="o">/</span><span class="n">terminology</span><span class="o">/</span><span class="n">gnome</span><span class="o">/</span><span class="n">am</span><span class="o">.</span><span class="n">po</span>     <span class="n">MSDOS</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">06</span><span class="n">T16</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span> <span class="n">system</span>  <span class="n">UA</span>      <span class="n">cs</span>      <span class="mi">12043</span>   <span class="o">/</span><span class="n">cs</span><span class="o">/</span><span class="n">terminology</span><span class="o">/</span><span class="n">gnome</span><span class="o">/</span><span class="n">cs</span><span class="o">.</span><span class="n">po</span>     <span class="n">přepínač</span>
+</pre></div>
+</div>
+<p><em>Store</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">date</span>  <span class="n">user</span>    <span class="n">action</span>  <span class="n">path</span>    <span class="n">store</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">05</span><span class="n">T20</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">37</span><span class="p">]</span> <span class="n">system</span>  <span class="n">SA</span>      <span class="o">/</span><span class="n">templates</span><span class="o">/</span><span class="n">tutorial</span><span class="o">/</span><span class="n">tutorial</span><span class="o">.</span><span class="n">pot</span>        <span class="mi">1</span>
+</pre></div>
+</div>
+<p><em>Command</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">date</span>  <span class="n">user</span>  <span class="n">action</span> <span class="n">command</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">06</span><span class="n">T11</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">28</span><span class="p">]</span> <span class="n">system</span>  <span class="n">X</span>       <span class="n">pootle</span> <span class="n">update_stores</span> <span class="o">--</span><span class="n">project</span><span class="o">=</span><span class="n">vfolders</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">05</span><span class="n">T20</span><span class="p">:</span><span class="mi">22</span><span class="p">:</span><span class="mi">46</span><span class="p">]</span> <span class="n">system</span>  <span class="n">X</span>       <span class="n">pootle</span> <span class="n">migrate</span>
+</pre></div>
+</div>
+<p><em>Quality check</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">date</span>  <span class="n">user</span>    <span class="n">action</span>  <span class="n">lang</span>    <span class="n">unit</span>    <span class="n">path</span>    <span class="n">translation</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">19</span><span class="n">T14</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">36</span><span class="p">]</span>   <span class="n">admin</span>   <span class="n">QM</span>      <span class="n">af</span>      <span class="mi">855</span>     <span class="o">/</span><span class="n">af</span><span class="o">/</span><span class="n">terminology</span><span class="o">/</span><span class="n">gnome</span><span class="o">-</span><span class="n">terminologie</span><span class="o">.</span><span class="n">po</span>   <span class="n">lug</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">19</span><span class="n">T14</span><span class="p">:</span><span class="mi">17</span><span class="p">:</span><span class="mi">44</span><span class="p">]</span>   <span class="n">admin</span>   <span class="n">QU</span>      <span class="n">af</span>      <span class="mi">855</span>     <span class="o">/</span><span class="n">af</span><span class="o">/</span><span class="n">terminology</span><span class="o">/</span><span class="n">gnome</span><span class="o">-</span><span class="n">terminologie</span><span class="o">.</span><span class="n">po</span>   <span class="n">lug</span>
+</pre></div>
+</div>
+<p><em>Score</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">date</span>  <span class="n">user</span>    <span class="n">SC</span>  <span class="n">score_delta</span>  <span class="n">score_action</span>    <span class="c1">#unit  NS=wordcount    S=similarity   total</span>
+<span class="p">[</span><span class="mi">2015</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">19</span><span class="n">T14</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">11</span><span class="p">]</span>   <span class="n">admin</span>   <span class="n">SC</span>      <span class="mf">1.0</span>     <span class="n">TA</span>      <span class="c1">#1      NS=1    S=0.0   (total: 2.28571428571)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sync-and-update-messages">
+<h3>Sync and Update messages<a class="headerlink" href="#sync-and-update-messages" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="commands.html#django-admin-sync_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">sync_stores</span></code></a> and <a class="reference internal" href="commands.html#django-admin-update_stores"><code class="xref std std-djadmin docutils literal"><span class="pre">update_stores</span></code></a> commands will produce a
+number of logs to report any activity that results from those commands.</p>
+<p><em>update_stores</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>[$date] [update] updated $number units in $store_path [revision: $revision]
+[2015-05-19T21:06:24]   [update] updated 1 units in /an/libo_ui/dictionaries/pt_PT.po [revision: 58]
+</pre></div>
+</div>
+<p><em>sync_stores</em>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>[$date]   [sync] File saved; updated $number units in $store_path [revision: $revision]
+[2015-05-19T23:11:50]   [sync] File saved; updated 1 units in /an/libo_ui/avmedia/source/viewer.po [revision: 0]
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+</div>
+<hr>
+
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right"><a href="#">Back to top ↑</a></p>
+    <ul class="unstyled muted">
+      <li><small>
+        &copy; 2004-2017.<br/>
+      </small></li>
+      <li><small>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3.
+      </small></li>
+    </ul>
+  </div>
+</footer>
+  </body>
+</html>
