@@ -1,0 +1,229 @@
+Kinto ElasticSearch
+###################
+
+.. image:: https://img.shields.io/travis/Kinto/kinto-elasticsearch.svg
+        :target: https://travis-ci.org/Kinto/kinto-elasticsearch
+
+.. image:: https://img.shields.io/pypi/v/kinto-elasticsearch.svg
+        :target: https://pypi.python.org/pypi/kinto-elasticsearch
+
+.. image:: https://coveralls.io/repos/Kinto/kinto-elasticsearch/badge.svg?branch=master
+        :target: https://coveralls.io/r/Kinto/kinto-elasticsearch
+
+**kinto-elasticsearch** forwards the records to ElasticSearch and provides a ``/search``
+endpoint to query the indexed data.
+
+
+Install
+=======
+
+::
+
+    pip install kinto-elasticsearch
+
+
+Setup
+=====
+
+In the `Kinto <http://kinto.readthedocs.io/>`_ settings:
+
+.. code-block :: ini
+
+    kinto.includes = kinto_elasticsearch
+    kinto.elasticsearch.hosts = localhost:9200
+
+By default, ElasticSearch is smart and indices are not refreshed on every change.
+You can force this (with a certain drawback in performance):
+
+.. code-block :: ini
+
+    kinto.elasticsearch.force_refresh = true
+
+By default, indices names are prefixed with ``kinto-``. You change this with:
+
+.. code-block :: ini
+
+    kinto.elasticsearch.index_prefix = myprefix
+
+
+Run ElasticSearch
+=================
+
+Running a local install of *ElasticSearch* on ``localhost:9200`` with Docker is pretty straightforward:
+
+::
+
+    sudo docker run -p 9200:9200 elasticsearch
+
+It is also be installed manually on Ubuntu with:
+
+::
+
+    sudo apt-get install elasticsearch
+
+And more information is available in the `official docs <https://www.elastic.co/downloads/elasticsearch>`_.
+
+
+Usage
+=====
+
+Create a new record:
+
+::
+
+    $ echo '{"data": {"note": "kinto"}}' | http POST http://localhost:8888/v1/buckets/example/collections/notes/records --auth token:alice-token
+
+
+It should now be possible to search for it using the `ElasticSearch API <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>`_.
+
+For example, using a quick querystring search:
+
+::
+
+    $ http "http://localhost:8888/v1/buckets/example/collections/notes/search?q=note:kinto"--auth token:alice-token
+
+
+Or an advanced search using request body:
+
+::
+
+    $ echo '{"query": {"match_all": {}}}' | http POST http://localhost:8888/v1/buckets/example/collections/notes/search --auth token:alice-token
+
+.. code-block:: http
+
+    HTTP/1.1 200 OK
+    Access-Control-Expose-Headers: Retry-After, Content-Length, Alert, Backoff
+    Content-Length: 333
+    Content-Type: application/json; charset=UTF-8
+    Date: Wed, 20 Jan 2016 12:02:05 GMT
+    Server: waitress
+
+    {
+        "_shards": {
+            "failed": 0,
+            "successful": 5,
+            "total": 5
+        },
+        "hits": {
+            "hits": [
+                {
+                    "_id": "453ff779-e967-4b08-99b9-5c16af865a67",
+                    "_index": "example-assets",
+                    "_score": 1.0,
+                    "_source": {
+                        "id": "453ff779-e967-4b08-99b9-5c16af865a67",
+                        "last_modified": 1453291301729,
+                        "note": "kinto"
+                    },
+                    "_type": "example-assets"
+                }
+            ],
+            "max_score": 1.0,
+            "total": 1
+        },
+        "timed_out": false,
+        "took": 20
+    }
+
+
+Custom index mapping
+--------------------
+
+By default, ElasticSearch infers the data types from the indexed records.
+
+But it's possible to define the index mappings (ie. schema) from the collection metadata,
+in the ``index:schema`` property:
+
+.. code-block:: bash
+
+    $ echo '{
+      "data": {
+        "index:schema": {
+          "properties": {
+            "id": {"type": "keyword"},
+            "last_modified": {"type": "long"},
+            "build": {
+              "properties": {
+                  "date": {"type": "date", "format": "strict_date"},
+                  "id": {"type": "keyword"}
+              }
+            }
+          }
+        }
+      }
+    }' | http PATCH "http://localhost:8888/v1/buckets/blog/collections/builds" --auth token:admin-token --verbose
+
+Refer to ElasticSearch official documentation for more information about mappings.
+
+See also, `domapping <https://github.com/inveniosoftware/domapping/>`_ a CLI tool to convert JSON schemas to ElasticSearch mappings.
+
+
+Running the tests
+=================
+
+::
+
+  $ make tests
+
+
+Changelog
+=========
+
+
+0.3.0 (2017-09-12)
+------------------
+
+**New features**
+
+- Add StatsD timer to measure E/S indexation (fixes #54)
+- Add a ``kinto-reindex`` command to reindex existing collections of records (fixes #56)
+
+
+0.2.1 (2017-06-14)
+------------------
+
+**Bug fixes**
+
+- Fix the number of results when specified in query (ref #45)
+
+
+0.2.0 (2017-06-13)
+------------------
+
+**Bug fixes**
+
+- Limit the number of results returned by default (fixes #45)
+- Fix crash on search parse exceptions (fixes #44)
+
+
+0.1.0 (2017-05-26)
+------------------
+
+**New features**
+
+- Flush indices when server is flushed (fixes #4)
+- Perform insertions and deletion in bulk for better efficiency (fixes #5)
+- Add setting to force index refresh on change (fixes #6)
+- Add heartbeat (fixes #3)
+- Delete indices when buckets and collections are deleted (fixes #21)
+- Support quick search from querystring (fixes #34)
+- Return details about invalid queries in request body (fixes #23)
+- Support defining mapping from the ``index:schema`` property in the collection metadata (ref #8)
+
+**Bug fixes**
+
+- Only index records if the storage transaction is committed (fixes #15)
+- Do not allow to search if no read permission on collection or bucket (fixes #7)
+- Fix empty results response when plugin was enabled after collection creation (ref #20)
+
+**Internal changes**
+
+- Create index when collection is created (fixes #27)
+
+
+0.0.1 (2017-05-22)
+------------------
+
+- Import code from `Kinto official tutorial <http://kinto.readthedocs.io/en/stable/tutorials/write-plugin.html>`_
+
+
