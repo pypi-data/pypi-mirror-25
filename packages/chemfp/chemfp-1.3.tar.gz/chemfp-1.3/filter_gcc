@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+# chemfp by default assumes the --with-ssse3 flag, which enables
+# compiler-specific option to enable the SSSE3 intrinsics.
+# 
+# You can disable this using --without-ssse3.
+#
+# The code which requires the SSSE3 specific intrinsics will only be
+# run when chemfp, at run-time, determines that the CPU supports the
+# SSSE3 instruction set. This is as it should be. Unfortunately, the
+# -mssse3 compiler flag also tells gcc that it's okay to use
+# SSSE3-specific instructions in the rest of the code. This causes a
+# bus error if chemfp is then used on a CPU which doesn't support the
+# correct instruction set. Unfortunately, I don't have the ability to
+# use a non-ssse3 code path for this case.
+#
+# This is only a problem if:
+#   - you use the same binary on multiple platforms, where
+#   - some machines do not have the SSSE3 instruction set AND
+#   - some machines have the SSSE3 instruction set AND
+#   - the machines with the SSSE3 instruction set do not support POPCNT.
+#
+# (If all of your SSSE3 machines also support POPCNT then it's okay to
+# use --without-ssse3, because the POPCNT instruction is always faster
+# than the SSSE3-based popcount implementation.)
+#
+# This script, filter_gcc, is a workaround for the problem. Only one
+# file needs the -mssse3 option. The best solution is to tell Python's
+# setup.py to compile src/popcount_SSSE3.c with -mssse3 enabled and to
+# leave out that flag for the other files. Unfortunately, setup.py
+# doesn't make that easy.
+#
+# filter_gcc acts as a filter layer between setup.py and gcc. It's
+# used like this:
+#
+#   env CC=$PWD/filter_gcc python setup.py build
+#
+# This tells setup.py to use $PWD/filter_gcc (ie, this script) as an
+# alternate C compiler. This script run and checks if setup.py is
+# attempting to compile popcount_SSSE3.c. If so, it leaves the -mssse3
+# flag in place (if it exists). Otherwise, it removes the flag (if it
+# exists).
+
+import sys
+import subprocess
+
+CC = "gcc"  # The real C compiler
+
+args = sys.argv[1:]
+#print "Called with", args
+
+# Check to see if I should remove the "-mssse3" flag from the args.
+remove_mssse3 = True
+for arg in args:
+    if "popcount_SSSE3.c" in arg:
+        remove_mssse3 = False
+        break
+
+if remove_mssse3:
+    # Go ahead and remove the "-mssse3"
+    try:
+        args.remove("-mssse3")
+    except ValueError:
+        # This can happen if someone does:
+        #    env CC=$PWD/filter_gcc python setup.py build --without-ssse3
+        pass
+
+assert args, "Missing exec args"
+
+# Use the correct C compiler
+args = [CC] + args
+#print "  -->", " ".join(args)
+
+# Run the new command, and report any errors.
+try:
+    retcode = subprocess.call(args)
+except OSError as err:
+    cmd = " ".join(args)
+    raise SystemExit("Failed to execute %r: %s" % (cmd, err))
+
+if retcode:
+    raise SystemExit(retcode)

@@ -1,0 +1,138 @@
+                       chemfp 1.3
+                       
+A Python library and set of tools for working with cheminformatics
+fingerprint data. For more information, see http://chemfp.com/ .
+
+There are two development lines. This is the chemfp-1.x line, which is
+available for no cost under the MIT license. See COPYING for
+details. There is also the commercial chemfp-3.x line, which costs
+money to access and is also distributed under the MIT license. The 3.x
+line includes the FPB binary fingerprint format, Tversky search, API
+improvements for web service development, and Python 3 support. If you
+have the money, consider buying a copy.
+
+See THANKS for the people who have contributed in some fashion.  (If
+I've left your name out or didn't credit you correctly, let me know.)
+
+Chemfp is developed by Andrew Dalke <dalke@dalkescientific.com>.
+
+INSTALLATION
+============
+
+Install in the normal Python way, either over the network::
+
+  pip install chemfp
+
+or using a local copy of the distribution::
+  
+  pip install chemfp-1.3.tar.gz
+
+or the more manual way::
+
+  tar xf chemfp-1.3.tar.gz
+  cd chemfp-1.3
+  python setup.py build
+  python setup.py install
+
+The install step may need a 'sudo' or need you to be be root,
+depending on your system.
+
+COMPILE-TIME OPTIONS
+--------------------
+
+There are three compile-time options, which can be specified from the
+setup.py command-line or through an environment variable.
+
+ *  --with-openmp or setenv CHEMFP_OPENMP=1 (this is the default)
+ *  --without-openmp or setenv CHEMFP_OPENMP=0
+
+The default is to compile chemfp with OpenMP support. You may want to
+disable this if your compiler doesn't support OpenMP or if you are
+using chemfp in a multi-threaded web server where you only want one
+OpenMP thread per request.
+
+If you get a message like:
+
+   unrecognized command line option "-fopenmp"
+      -or-
+   ld: library not found for -lgomp
+   
+then your compiler does not understand OpenMP. To compile without
+OpenMP append "--without-openmp" to the setup.py line or set
+CHEMFP_OPENMP=0.
+
+  
+For example, if you are on a Mac where the built-in clang compiler
+does not have OpenMP, and you do not want OpenMP, then you can install
+from the distribution using the following:
+
+  env CHEMFP_OPENMP=0 pip install chemfp-1.3.tar.gz
+
+or you can unpack the tar file and configure it on the command-line
+with:
+
+  python setup.py install --without-openmp
+  
+
+If you want OpenMP support on a Mac then you should install
+"clang-omp" or a new version of gcc and specify the alternate compiler
+using the "CC" environment variable, as in the following:
+
+  env CC=clang-omp python setup.py install
+     -or-
+  env CC=gcc-7 python setup.py install
+
+
+  *  --with-ssse3 or setenv CHEMFP_SSSE3=1 (this is the default)
+  *  --without-ssse3 or setenv CHEMFP_SSSE3=0
+
+The default is to compile with support for the SSSE3 instruction
+set. This was introduced in 2006 and should be on all modern AMD/Intel
+hardware. If you get a message like:
+
+    cc1: error: invalid option ssse3
+   -or-
+    cc1: error: unrecognized command line option "-mssse3"
+
+then your compiler does not understand the SSSE3 intrinsics and you
+should use the "--without-ssse3" option.
+
+IMPORTANT! Because of limitations in how Python's setup.py works, the
+--with-ssse3 compiles all code with SSSE3 support, even though only
+one file needs it, and the file isn't used if chemfp detects at
+run-time that SSSE3 support isn't available.
+
+This may cause a bus error when using the binary on a CPU which
+doesn't implement the SSSE3 instructions. If you want to use a gcc
+binary with support for both SSSE3 and non-SSSE3 CPUs then compile
+with:
+
+  sudo env CC=$PWD/filter_gcc python setup.py install
+
+Read filter_gcc for details.
+
+
+DOCUMENTATION
+=============
+
+Documentation? Certainly! Go to:
+
+   https://chemfp.readthedocs.org/en/latest/
+
+or use '--help' on any of the command-line programs:
+
+  rdkit2fps --help
+  ob2fps --help
+  oe2fps --help
+  sdf2fps --help
+  simsearch --help
+
+or (for parts of the public API), look at the doc strings
+
+  import chemfp
+  help(chemfp)
+
+There are many tests. To run them:
+
+  cd tests
+  python unit2 discover

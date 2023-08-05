@@ -1,0 +1,361 @@
+What's new in 1.3 (30 Aug 2017)
+=================================
+
+Added a help description for FP2, FP3, FP4, and MACCS in ob2fps.
+
+Updated the #software line to include "chemfp/1.3" in addition to the
+toolkit information. 
+
+Backported search.contains_fp() and search.contains_arena() from
+chemfp 2.1.
+
+Dropped support for the old OE Binary format.
+
+Added --version to the command-line tools. (Suggested by Noel
+O'Boyle.)
+
+Removed chemfp.Watcher. It was added because the C compiler for one of
+my customers was a couple of years old and didn't handle OpenMP. I
+wrote a clustering version for them which used threads instead, and
+used the Watcher code to handle handle ^C. Now everyone has OpenMP so
+this isn't needed.
+
+
+
+What's new in 1.3a1 (30 Aug 2017)
+=================================
+
+This version of chemfp only supports Python 2.7. It may work on Python
+2.6 though that is not supported. Chemfp will not work on Python 2.5.
+For Python 3.5+ support, contact me to buy a copy of chemfp-3.1.
+
+WARNING: Changed the default nBitsPerHash for RDKitFingerprint from 4
+to 2 to match the RDKit default. 
+
+RDKit changed its hash and MACCS fingerprint implementation a few
+years ago. Updated chemfp to identify newer implementations as
+"RDKit-Fingerprint/2" and "RDKit-MACCS166/2".
+
+Added support for RDKit-Pattern and RDKit-Avalon fingerprints. The new
+rdkit2fps command-line options are "--pattern" and "--avalon".
+
+RDKit-Pattern/1 is from very old versions of RDKit. RDKit-Pattern/2 is
+up to 2016, RDKit-Pattern/3 is from 2017.3 and RDKit-Pattern/4 will be
+in 2017.9.
+
+Added a definition for key 44 to the 'RDMACCS'. It was missing in
+version 1. Chemfp supports both definitions. The rdkit2fps option
+"--rdmaccs" uses the most recent version. To be specific, specify
+either "--rdmaccs/1" or "--rdmaccs/2".
+
+Removed support for OEGraphSim v1.0, which OpenEye replaced in 2010.
+
+New OpenEye-MACCS166/3 fingerprint type, to match OEGraphSim v2.2.0.
+
+Improved the FPS reader performance. Simsearch in '--scan' mode is
+about 40% faster and '--memory' load time is about 10%
+faster. chemfp.load_fingerprints() is about 15% faster. (Measured as
+(old_time-new_time)/old_time.)
+
+Improved the similarity search performance of the 166-bit MACCS keys
+by about 40%.
+
+The k-nearest arena search (used in NxM searches) is now parallelized.
+
+Added chemfp.search.contains_fp() and chemfp.search.contains_arena()
+for fingerprint screening. The first finds the target fingerprints
+which contain all of the on-bits of the query fingerprint, and the
+second does the same for a query arena.
+
+SearchResults now implements to ".to_csr()" method, which returns a
+SciPy sparse row matrix that can be passed to scikit-learn for
+clustering. This method requires both SciPy and NumPy. It has also
+gained a '.shape' attribute, a 2-element tuple where shape[0] is the
+number of rows (i.e. the number of queries) and shape[1] is the number
+of targets.
+
+Backported the FPS reader and writer code from chemfp-3.0 as well
+as support for io.Location.
+
+Renamed chemfp.read_structure_fingerprints() to
+chemfp.read_molecule_fingerprints(). The old API is still valid, but
+the first call to it will generate a warning message.
+
+Fix: Some of the Tanimoto calculations stored intermediate values as a
+double. Some of the values, like 0.6, cannot be represented exactly as
+a double. As a result, some Tanimoto scores were off by 1 ulp (the
+last bit in the double). They are now exactly correct.
+
+Fix: if the query fingerprint had 1 bit set and the threshold was 0.0
+then the sublinear bounds for the Tanimoto searches (used when there
+is a popcount index) failed to check targets with 0 bits set.
+
+Fix: If a query had 0 bits then the k-nearest code for a symmetric
+arena returned 0 matches, even when the threshold was 0.0. It now
+returns the first k targets.
+
+Fix: There was a bug in the sublinear range checks. It should only
+occur in the symmetric searches the batch_size is larger than the
+number of records with a popcount just outside of the expected range.
+
+Changed rdkit2fps, ob2fps, and oe2fps so the default --errors is
+'ignore' instead of 'strict'. This is based on a lot of feedback
+asking how to make those tools ignore errors. I decided that silent
+errors (at the chemfp level, but toolkits still send warnings and
+errors to stderr) were simply not the right thing for those tools.
+
+Missing identifers in oe2fps, rdkit2fps or ob2fps will always be
+logged to stderr, even if --errors is ignore. If --errors is strict
+then missing identifiers will cause processing to exit.
+
+The configuration of the --with-* or --without-* options (for OpenMP
+and SSSE3) support, can now be specified via environment variables. In
+the following, the value "0" means disable (same as "--without-*") and
+"1" means enable (same as "--with-*"):
+  CHEMFP_OPENMP -  compile for OpenMP (default: "1")
+  CHEMFP_SSSE3  -  compile SSSE3 popcount support (default: "1")
+  CHEMFP_AVX2   -  compile AVX2 popcount support (default: "0")
+
+This makes it easier to do a "pip install" directly on the tar.gz file
+or use chemfp under an automated testing system like tox, even when
+the default options are not appropriate. For example, the default C
+compiler on Mac OS X doesn't support OpenMP. If you want OpenMP
+support then install gcc and specify it with the "CC". If you don't
+want OpenMP support then you can do:
+
+  CHEMFP_OPENMP=0 pip install chemfp-1.3a1.tar.gz
+
+Backported bitops functions from chemfp-3.0. The new functions are:
+  hex_contains, hex_contains_bit, hex_intersect, hex_union, hex_difference,
+  byte_hex_tanimoto, byte_contains_bit,
+  byte_to_bitlist, byte_from_bitlist,
+  hex_to_bitlist, hex_from_bitlist,
+  hex_encode, hex_encode_as_bytes, hex_decode
+
+The new hex encode/decode functions are important if you want to write
+code which is forward compatible for Python 3, where s.encode("hex")
+is no longer supported.
+
+What's new in 1.1p1 (12 Feb 2013)
+=================================
+
+Fixed memory leaks caused by using Py_BuildValue with an "O" instead
+of an "N". This caused the reference count on the return arena strings
+to be too high, so they were never garbage collected. This should only
+affect people who made and destroyed many arenas.
+
+Removed unneeded lock in threshold arena searches. This should give
+better parallelism when there are many hits (eg, with a low threshold)
+when there are multiple threads.
+
+What's new in 1.1 (5 Feb 2013)
+==============================
+
+New methods to look up a record, record index, or fingerprint given
+the record identifier. These are:
+
+  arena.get_by_id(id)
+  arena.get_index_by_id(id)
+  arena.get_fingerprint_by_id(id)
+
+Added or updated all of the docstrings for the public API.
+
+Documented that the search methods on the FingerprintArena instance
+are deprecated - use chemfp.search instead. These will generate
+warning message in the next release and after that will be removed.
+
+Renamed arena.copy_subset() to arena.copy().
+
+Changed the arena.copy() method so that by default it reorders the
+fingerprints if indices are specified, and by default the (sub)arena
+ordering is preserved.
+
+Added a cache for getattr(subarena, "ids"). Otherwise subarena.ids[i]
+took O(len(subarena.ids)) time instead of O(1) time.
+
+Renamed chemfp.readers to chemfp.fps_io and decoders.py to
+encodings.py. These were not part of the public API but may be in
+upcoming versions, so it's best to change them now.
+
+Detect and raise an exception if the metadata size doesn't match the
+fingerprint size passed to the arena builder. Thanks to Greg Landrum
+for spotting this bug!
+
+What's new in 1.1b7 (patch release)
+===================================
+
+Fixed a problem when the code is compiled on an old compiler which
+doesn't understand the POPCNT inline assembly then run on a machine
+which implements POPCNT.
+
+What's new in 1.1b6 (5 Dec 2012)
+================================
+
+Added methods to count the number of hits in the search results which
+are within a given score range, and to compute the cumulative score
+(also called the "raw score") of those hits. These are:
+
+   SearchResults.count_all(min_score=None, max_score=None, interval="[]")
+   SearchResults.cumulative_score_all(min_score=None, max_score=None, interval="[]")
+   SearchResult.count(min_score=None, max_score=None, interval="[]")
+   SearchResult.cumulative_score(min_score=None, max_score=None, interval="[]")
+
+Arenas now have a "copy_subset(indices, reorder=True)" method. This
+selects a subset of the entries in the arena and makes a new arena.
+Here's how to select a random subset of 100 entries from an arena:
+
+  import random
+  subset_indices = random.sample(xrange(len(arena)), 100)
+  new_arena = arena.copy_subset(subset_indices)
+
+(NOTE: 'copy_subset' was renamed 'copy' for the final 1.1 release.)
+
+Fixed a bug in the Open Babel patterns FPS output: the 'software' line
+needed a space between the Open Babel and chemfp versions.
+
+
+What's new in 1.1b5 (23 April 2012)
+===================================
+
+The command-line search tools support an --NxN option for when the
+queries and targets are the same. (The search results do not include
+the diagonal term.)  The implemention takes advantage of the symmetry
+to get almost a two-fold performance increase. This option assumes
+that everything will fit into memory.
+
+Added public APIs for the symmetric searches.
+
+New popcount algorithms:
+  - Lauradoux and POPCNT versions contributed by Kim Walisch
+      These are 2x and 3x faster than the original method.
+  - SSSE3 version by Imran Haque, Stanford University
+      This is about 2.5x faster than the original method.
+      Use --without-ssse3 to disable support for that method.
+  - Gilles method, which can be better than the original method.
+
+The timings depend very much on the compiler, CPU features, and choice
+of 32- vs 64- bit architecture. For example, Lauradoux is slower than
+the lookup tables for 32 bit systems. chemfp selects the best method
+at import run-time. Use chemfp.bitops.set_alignment_method to force a
+specific method.
+
+The new popcount algorithms require a specific fingerprint alignment
+and padding. Use the new "alignment" option in load_fingerprints() to
+specify an alignment. The default uses an alignment based on the
+available methods and the fingerprint size. (It will be 8 or less
+unless you have SSSE3 hardware but not SSE4.2, and your fingerprint is
+larger than 224 bits, in which case it's 64 bytes.)
+
+Optional OpenMP support. This is used when the query is an arena. If
+your compiler does not support OpenMP then use "--without-openmp" to
+disable it.
+
+Support for RDKit's Morgan fingerprints.
+
+Support for Daylight's Circular and Tree fingerprints (if you have
+OEGraphSim 2.0.0 installed.)
+
+New decoder for Daylight's "binary2ascii" encoding.
+
+Fixed a memory overflow bug which caused crashes on some Windows and
+Linux machines.
+
+Changed the API so that "arena.ids" or "subarena.ids" refers to the
+identifiers for that arena/subarena, and "arena.arena_ids" and
+"subarena.arena_ids" refers to the complete list of identifiers for
+the underlying arena. This is what my code expected, only I got the
+implementation backwards. Two of the test cases should have failed
+with swapped attributes but it looks like I assumed the computer was
+right and made the tests agree with the wrong values. Also added more
+tests to highlight other places where I could make a mistake between
+'ids' and 'arena_ids.' This fix resolves a serious error identified by
+Brian McClain of Vertex.
+
+Moved most memory management code from Python to C. The speedup is
+most noticable when there is a hit density (eg, when the threshold is
+below 0.5).
+
+Created a new 'Results' return object, which lets you sort the hits in
+different ways, and request only the score, or only the ids, or both
+from the hitlist.  The arena search results specifically are stored in
+a C data structure. This new API greatly simplfies implementing some
+types of clustering algorithms, reduces memory overhead, and improves
+performance.
+
+Added Alex Grönholm's 'futures' package as a submodule. It greatly
+simplifies making a thread- or process pool. It is a backport of the
+code in Python 3.2.
+
+Added Nilton Volpato's 'progressbar' package as a submodule. Use it to
+show a text-based progress bar in chemfp-based search tools.
+
+Added an experimental "Watcher" module by Allen Downey. Use it to
+handle ^C events, which otherwise get sent to an arbitary thread. It
+works by spawning a child process. The main process listens for a ^C
+and forwards that as a os.kill() to the child process. This will
+likely only work on Unix systems.
+
+What's new in 1.0 (20 Sept 2011)
+================================
+
+The chemfp format is now a tab-delimited format. I talked with two
+people who have spaces in their ids: one in their corporate ids and
+the other wants to use IUPAC names. In discussion with others, having
+a pure tab-delimited format would not be a problem with the primary
+audience.
+
+The simsearch output format is also tab delimited.
+
+Completely redeveloped the in-memory search interface. The core data
+structure is a "FingerprintArena", which can optionally hold
+population count information.
+
+The similarity searches use a compressed row representation,
+which is a more efficient use of memory and reduces the number
+Python-to-C calls I need to make.
+
+The FPS knearest search is push oriented, and keeps track of the
+identifiers at the C level.
+
+Major restructuring of the API so that public functions are at the top
+of the "chemfp" package. Made high-level functions for the expected
+common tasks of searching an FPSReader and a FingerprintArena.
+
+The oe2fps, ob2fps, and rdkit2fps readers now support multiple
+structure filenames. Each filename is listed on its own "source" line.
+
+New --id-tag to use one of the SD tag fields rather than the title
+line. This is needed for ChEBI where you should use --id-tag "ChEBI ID"
+to get ids like "CHEBI:776".
+
+New --aromaticity option for oe2fps, and a corresponding "aromaticity"
+field in the FPS header.
+
+Improved docstring comments.
+
+Improved error reporting.
+
+Added error handling options "strict", "report", and "ignore."
+
+More comprehensive test suite (which, yes, caught several errors).
+
+
+What's new in 0.95
+==================
+
+Cross-platform pattern-based fingerprint generation, and specific
+implementations of a CACTVS/PubChem-like substructure fingerprint and
+of RDKit's MACCS patterns.
+
+
+What's new in 0.9.1
+===================
+
+Support for Python 2.5.
+
+What's new in 0.9
+=================
+
+Major update from 0.5. Changes to the API, code
+cleanup, new search API, and more. Since there are
+no earlier users, I won't go into the details. :)
