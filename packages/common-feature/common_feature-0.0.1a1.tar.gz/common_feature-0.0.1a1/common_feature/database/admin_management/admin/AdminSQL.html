@@ -1,0 +1,89 @@
+{% extends "admin/reports/base.html" %}
+{% load i18n %}
+{% load utils %}
+{% block title %}{% trans "Admin SQL" %}{% endblock %}
+{% block header-title %}{% trans "Admin SQL" %}{% endblock %}
+{% block contents %}
+    <div style="clear:both;"></div>
+{% if message %}
+<div class="alert alert-success" role="alert">
+{{ message }}
+</div>
+{% endif %}
+{% if errors %}
+<div class="alert alert-danger" role="alert">
+  <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span> Errors
+  <span class="sr-only">Error:</span>
+  <ul>
+      {% for error in errors %}
+          <li>{{ error }}</li>
+      {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+    <div>
+        <form name="mainForm" id="mainForm" class="form-horizontal" method="get">
+            <div class="form-group">
+                <label for="User_ID" class="col-sm-2 control-label">{% trans "Admin SQL" %}</label>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <!--input class="form-control" name="word" id="word" type="text"
+                            style="width:150px;margin-right:10px;float:left;height:30px;font-size:13px;"-->
+
+                    <select name="dropdown" id="dropdown">
+                        <option value="">---</option>
+                        {% if ranking %}
+                            {% for rankings in ranking %}
+                                <option value={{ rankings.name}}>{{ rankings.name}}</option>
+                            {% endfor %}
+                        {% endif %}
+                     </select>
+                    <input type="submit" class="btn btn-primary no-print" name="display" id="display" value="display"
+                           style="float:none;border: none; height:30px;font-size:13px;"/>
+                    <textarea class="form-control" name="word" id="word" rows = "5" cols = "20" placeholder="Enter SQL Here..."
+                              style="margin-right:10px;float:left;font-size:13px;">{{ SQL }}</textarea>
+
+                    <input type="submit" class="btn btn-primary no-print" name="check" id="check" value="Search"
+                            style="float:left;border: none; height:30px;font-size:13px;"/>
+
+                    <input type="submit" class="btn btn-primary no-print" name="save" id="save" value="Save"
+                            style="float:left;border: none; height:30px;font-size:13px;"/>
+                    <input type="submit" class="btn btn-primary no-print" name="excel" id="excel" value="Excel"
+                            style="float:left;border: none; height:30px;font-size:13px;"/>
+
+                </div>
+            </div>
+        </form>
+        {% if keys %}
+        <table class="table table-bordered masterFontsize tableHeader">
+            <thead>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div style="text-align:center;">No</div>
+                    </td>
+                    {% for key in keys %}
+                    <td style="background:#fff;color:#000;">
+                        <div style="text-align:center;">{{ key }}</div>
+                    </td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for value in values %}
+                        <tr>
+                            <td nowrap="" valign="top" align="center">{{ forloop.counter }}</td>
+                            {% for value1 in value %}
+                                <td nowrap="" valign="top" align="center">{{ value1 }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block scripts %}
+{% endblock %}
