@@ -1,0 +1,91 @@
+items:
+  - name: hobby
+    table: demo_hobby
+    count: 0
+    store_in:
+      hobbies_ids: $this.id
+    fields:
+      name:
+        generator: Text
+        min_length: 1
+        max_length: 40
+        unique: true
+
+  - name: world
+    table: demo_world
+    count: 0
+    fields:
+      name:
+        generator: Text
+        nullable: false
+        min_length: 1
+        max_length: 30
+      description:
+        generator: Text
+        nullable: false
+        chars: '<a-Z><spaces><newline>'
+        min_length: 0
+        max_length: null
+
+  - name: city
+    table: demo_city
+    count: 0
+    fields:
+      world_id: $this.world.id
+      name:
+        generator: Text
+        nullable: false
+        min_length: 1
+        max_length: 40
+        unique: world_id
+
+  - name: abode
+    table: demo_abode
+    count:
+      by: city
+    fields:
+      city_id: $this.city.id
+      owner_id: null
+      type:
+        generator: Choices
+        nullable: false
+        choices: ['SH', 'H', 'SB', 'B']
+
+  - name: citizen
+    table: demo_citizen
+    count: 0
+    fields:
+      abode_id: $this.abode.id
+      first_name:
+        generator: Text
+        nullable: false
+        min_length: 1
+        max_length: 20
+        unique: [middle_name, last_name, birth]
+      middle_name:
+        generator: Text
+        nullable: false
+        min_length: 0
+        max_length: 20
+      last_name:
+        generator: Text
+        nullable: false
+        min_length: 1
+        max_length: 20
+      birth:
+        generator: Date
+        nullable: false
+      gender:
+        generator: Choices
+        nullable: false
+        choices: ['M', 'F']
+
+  - name: hobby_citizens_through_table
+    table: demo_hobby_citizens
+    count: 0
+    fields:
+      hobby_id:
+        generator: Choices
+        choices: $hobbies_ids
+        unique: citizen_id
+      citizen_id: $this.citizen.id
