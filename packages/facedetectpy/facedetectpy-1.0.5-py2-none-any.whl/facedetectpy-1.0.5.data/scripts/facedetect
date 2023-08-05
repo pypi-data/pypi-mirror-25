@@ -1,0 +1,91 @@
+#!python
+# facedetect: a simple face detector for batch processing
+# Copyright(c) 2013-2017 by wave++ "Yuri D'Elia" <wavexx@thregr.org>
+# Distributed under GPLv2+ (see COPYING) WITHOUT ANY WARRANTY.
+from __future__ import print_function, division, generators, unicode_literals
+
+import argparse
+import numpy as np
+import cv2
+import math
+import sys
+import os
+
+from facedetect.lib import FaceDetector
+
+def __main__():
+    FD = FaceDetector()
+    default_config = FD.get_config()
+
+    aparser = argparse.ArgumentParser(description='A simple face detector for batch processing')
+    aparser.add_argument('--biggest', action="store_true",
+                         help='Extract only the biggest face')
+    aparser.add_argument('--best', action="store_true",
+                         help='Extract only the best matching face')
+    aparser.add_argument('-c', '--center', action="store_true",
+                         help='Print only the center coordinates')
+    aparser.add_argument('--data-dir', metavar='DIRECTORY', default=default_config['DATA_DIR'],
+                         help='OpenCV data files directory')
+    aparser.add_argument('-q', '--query', action="store_true",
+                         help='Query only (exit 0: face detected, 2: no detection)')
+    aparser.add_argument('-s', '--search', metavar='FILE',
+                         help='Search for faces similar to the one supplied in FILE')
+    aparser.add_argument('--search-threshold', metavar='PERCENT', type=int, default=30,
+                         help='Face similarity threshold (default: 30%%)')
+    aparser.add_argument('-o', '--output', help='Image output file')
+    aparser.add_argument('-d', '--debug', action="store_true",
+                         help='Add debugging metrics in the image output file')
+    aparser.add_argument('file', help='Input image file')
+    args = aparser.parse_args()
+
+    if not os.path.isdir(args.data_dir):
+        FD.fatal("Invalid data directory")
+
+    default_config['DATA_DIR'] = args.data_dir
+    FD.configure()
+
+    # match against the requested face
+    sim_scores = None
+    scores = None
+    best = None
+    if args.search:
+        img, features, sim_scores = FD.detect_similar_faces(args.file,
+                                                            args.search,
+                                                            args.search_threshold)
+    else:
+        # detect faces in input image
+        img, features = FD.detect_from_file(args.file, args.query or args.biggest)
+
+    # exit early if possible
+    if args.query:
+        return 0 if len(features) else 2
+
+    img_features = (img, features)
+
+    if args.debug or args.best or args.biggest or sim_scores:
+        scores, best = FD.debug_info(img_features, sim_scores=sim_scores)
+
+    if args.output:
+        _img = cv2.imread(args.file) # If Grayscale is fine, no need to read again.
+        FD.output_to_file(img_features=(_img, features),
+                          outfile=args.output,
+                          best=best,
+                          debug_scores=scores)
+
+    # output
+    if (args.best or args.biggest) and best is not None:
+        features = [features[best]]
+
+    if args.center:
+        for rect in features:
+            ctx, cty = FD.get_center(rect)
+            print("{} {}".format(ctx, cty))
+    else:
+        for rect in features:
+            print("{} {} {} {}".format(*rect))
+
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(__main__())
