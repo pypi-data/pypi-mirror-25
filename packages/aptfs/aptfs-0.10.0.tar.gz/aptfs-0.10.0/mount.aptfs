@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# aptfs — FUSE filesystem for APT source repositories
+# Copyright © 2008—2017 Chris Lamb <lamby@debian.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import fuse
+
+from AptFs.aptfs import AptFs
+
+def main():
+    if len(sys.argv) == 1:
+        sys.argv.append('--help')
+
+    desc = "FUSE filesystem for APT repositories"
+    usage = "\n%s: %s\n\nusage: %s" % (sys.argv[0], desc, fuse.Fuse.fusage)
+    server = AptFs(version='%%prog %s' % fuse.__version__, usage=usage)
+
+    server.parser.add_option(
+        mountopt='max_unpacked_packages',
+        metavar='NUM',
+        default='3',
+        help="keep NUM packages unpacked at any one time [default: %default]",
+    )
+    server.parser.add_option(
+        mountopt='show_binary_symlinks', metavar='SYMLINK',
+        default=True,
+        help="symlink binary packages to their respective source package [default: %default]",
+    )
+    server.parser.add_option(
+        mountopt='secure', metavar='SECURE',
+        default=False,
+        help="GPG verify source packages (not recommended) [default: %default]",
+    )
+    server.parser.add_option(
+        mountopt='temp_dir',
+        metavar='DIR',
+        default=None,
+        help="download sources in dir DIR",
+    )
+
+    server.parse(values=server, errex=1)
+
+    for x in ('show_binary_symlinks', 'secure'):
+        raw = str(getattr(server, x)).strip().lower()
+        val = raw in ('true', 'yes', 'y', '1', 'on')
+        setattr(server, x, raw)
+
+    try:
+        server.main()
+    except fuse.FuseError:
+        return 1
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
