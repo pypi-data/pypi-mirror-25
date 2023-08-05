@@ -1,0 +1,200 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Django stored procedures &#8212; django stored procedures 0.1.beta documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="django-stored-procedures">
+<h1>Django stored procedures<a class="headerlink" href="#django-stored-procedures" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Extend REGEXP and executor to validate arguments</p>
+</div>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<p class="last">Add support for multiple databases</p>
+</div>
+<div class="admonition-todo admonition" id="index-2">
+<p class="first admonition-title">Todo</p>
+<p class="last">Add support for serverside cursors</p>
+</div>
+<div class="section" id="settings">
+<h2>Settings<a class="headerlink" href="#settings" title="Permalink to this headline">¶</a></h2>
+<p>There just one setting — <code class="docutils literal"><span class="pre">SP_DIR</span></code>. It is the name of the directories inside apps, that contains files with
+stored procesures, custom indexes and other stuff. By default it is <code class="docutils literal"><span class="pre">/sp/</span></code>.</p>
+</div>
+<div class="section" id="procedures-files">
+<h2>Procedures files<a class="headerlink" href="#procedures-files" title="Permalink to this headline">¶</a></h2>
+<p>Files with database stuff can have any extention and contain any number of procedures and statements.</p>
+<p>So stored procedure can be called via helper, its defenition must starts with <code class="docutils literal"><span class="pre">CREATE</span> <span class="pre">OR</span> <span class="pre">REPLACE</span> <span class="pre">FUNCTION</span> <span class="pre">&lt;name&gt;</span></code>
+where <code class="docutils literal"><span class="pre">&lt;name&gt;</span></code> is procedure’s name. Case is important.</p>
+</div>
+<div class="section" id="upload-procedures">
+<h2>Upload procedures<a class="headerlink" href="#upload-procedures" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>$ ./manage.py upload_sp
+</pre></div>
+</div>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">django_sp</span> <span class="k">import</span> <span class="n">sp_loader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sp_loader</span><span class="o">.</span><span class="n">some_procedure</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">ret</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+<span class="go">[{&#39;column1&#39;: &#39;value1&#39;, &#39;column2&#39;: &#39;value2}, ... ]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sp_loader</span><span class="o">.</span><span class="n">other_procedure</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">ret</span><span class="o">=</span><span class="s1">&#39;one&#39;</span><span class="p">)</span>
+<span class="go">{&#39;column1&#39;: &#39;value1&#39;, &#39;column2&#39;: &#39;value2&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sp_loader</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+<span class="go">[&#39;some_procedure&#39;, &#39;other_procedure&#39;, &#39;else_one_procedure&#39;]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="module-django_sp.loader">
+<span id="loader-class"></span><h1>Loader class<a class="headerlink" href="#module-django_sp.loader" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="django_sp.loader.Loader">
+<em class="property">class </em><code class="descclassname">django_sp.loader.</code><code class="descname">Loader</code><span class="sig-paren">(</span><em>db_name=’default’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_sp/loader.html#Loader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_sp.loader.Loader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="django_sp.loader.Loader.EXECUTORS">
+<code class="descname">EXECUTORS</code><em class="property"> = {‘function’: ‘_execute_sp’, ‘view’: ‘_execute_view’}</em><a class="headerlink" href="#django_sp.loader.Loader.EXECUTORS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="django_sp.loader.Loader.REGEXP">
+<code class="descname">REGEXP</code><em class="property"> = re.compile(‘CREATE (?:OR REPLACE)? (?P&lt;type&gt;(?:VIEW)|(?:FUNCTION)) (?P&lt;name&gt;[^_]\w+)’, re.MULTILINE)</em><a class="headerlink" href="#django_sp.loader.Loader.REGEXP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="django_sp.loader.Loader.columns_from_cursor">
+<em class="property">static </em><code class="descname">columns_from_cursor</code><span class="sig-paren">(</span><em>cursor: Cursor</em><span class="sig-paren">)</span> &#x2192; typing.List<a class="reference internal" href="_modules/django_sp/loader.html#Loader.columns_from_cursor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_sp.loader.Loader.columns_from_cursor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="django_sp.loader.Loader.commit">
+<code class="descname">commit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_sp/loader.html#Loader.commit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_sp.loader.Loader.commit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="django_sp.loader.Loader.list">
+<code class="descname">list</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; typing.Tuple<a class="reference internal" href="_modules/django_sp/loader.html#Loader.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_sp.loader.Loader.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="django_sp.loader.Loader.load_sp_into_db">
+<code class="descname">load_sp_into_db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_sp/loader.html#Loader.load_sp_into_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_sp.loader.Loader.load_sp_into_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="django_sp.loader.Loader.populate_helper">
+<code class="descname">populate_helper</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_sp/loader.html#Loader.populate_helper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_sp.loader.Loader.populate_helper" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="django_sp.loader.Loader.row_to_dict">
+<em class="property">static </em><code class="descname">row_to_dict</code><span class="sig-paren">(</span><em>row: typing.Tuple</em>, <em>columns: typing.List</em><span class="sig-paren">)</span> &#x2192; typing.Dict<a class="reference internal" href="_modules/django_sp/loader.html#Loader.row_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_sp.loader.Loader.row_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Django stored procedures</a><ul>
+<li><a class="reference internal" href="#settings">Settings</a></li>
+<li><a class="reference internal" href="#procedures-files">Procedures files</a></li>
+<li><a class="reference internal" href="#upload-procedures">Upload procedures</a></li>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-django_sp.loader">Loader class</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, derfenix.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
