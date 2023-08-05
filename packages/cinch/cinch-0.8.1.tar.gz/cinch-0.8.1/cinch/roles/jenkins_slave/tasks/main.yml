@@ -1,0 +1,121 @@
+- name: disable SELinux in Fedora
+  selinux:
+    state: disabled
+  when: ansible_distribution == 'Fedora' and ansible_connection != 'docker'
+
+- name: install rpm packages
+  package:
+    name: "{{ ( jslave_rpm_deps + jslave_extra_rpms ) | join(',') }}"
+    state: present
+
+- name: add host to hosts file
+  lineinfile:
+    line: "{{ ansible_ssh_host }} {{ inventory_hostname }}.localdomain"
+    dest: /etc/hosts
+  when: ansible_connection != 'docker'
+
+- name: give jenkins user sudo access
+  lineinfile:
+    dest: /etc/sudoers
+    line: "{{ jenkins_user }}  ALL=(ALL)   NOPASSWD: ALL"
+
+- name: ensure jswarm destination folder exists
+  file:
+    path: "{{ jswarm_local_directory }}"
+    owner: "{{ jenkins_user }}"
+    mode: 0755
+    state: directory
+
+- name: fetch swarm download
+  get_url:
+    dest: "{{ jswarm_local_directory }}/{{ jswarm_filename }}"
+    url: "{{ jswarm_download }}"
+    owner: "{{ jenkins_user }}"
+
+
+# Inside of a Docker container, we want to be able to pull values from the container's running
+# environment. In order to do that, we need to drop values into the configurable fields that
+# match the syntax dockerize uses. Unfortunately, that syntax is very similar to Jinja2 syntax,
+# and Ansible does not stop evaluation after only one iteration. Putting Jinja2 raw blocks into
+# the string values here allow only the inner string (e.g. '{{ .Env.JENKINS_MASTER_URL }}') to
+# pass through to the output and prevents Ansible from trying to do template substitution on the
+# string value itself.
+- name: set variable for docker container
+  set_fact:
+    jenkins_master_url: "{{ '{% raw %}{{ .Env.JENKINS_MASTER_URL }}{% endraw %}' }}"
+    jslave_name: "{{ '{% raw %}{{ .Env.JSLAVE_NAME }}{% endraw %}' }}"
+    jslave_label: "{{ '{% raw %}{{ .Env.JSLAVE_LABEL }}{% endraw %}' }}"
+    jswarm_extra_args: "{{ '{% raw %}{{ default .Env.JSWARM_EXTRA_ARGS \"\" }}{% endraw %}' }}"
+  when: ansible_connection == 'docker'
+
+# The default swarm client timeout is 10 seconds.  This value should never be
+# set to less than 10 seconds, and increasing it should not be necessary.
+# It is not recommended to change this value, but it is set here in order to
+# define this value in a single location for the systemd and upstart service
+# templates.
+- name: set variable for swarm service retry timer
+  set_fact:
+    swarm_retry_timer: 10
+
+- name: upload swarm config file
+  template:
+    src: sysconfig_jenkins_swarm
+    dest: /etc/sysconfig/jenkins_swarm
+    owner: root
+    mode: 0644
+  notify: restart swarm
+
+- name: upload swarm systemd file
+  template:
+    src: swarm.service
+    dest: /etc/systemd/system/swarm.service
+    owner: root
+    mode: 0644
+  notify: restart swarm
+  when: ansible_service_mgr == 'systemd'
+  register: systemd_file
+
+- name: reload systemd files when necessary
+  systemd:
+    daemon_reload: true
+    name: swarm
+  when: systemd_file|changed
+  tags:
+    - skip_ansible_lint
+
+- name: upload swarm upstart file
+  template:
+    src: swarm.upstart.conf
+    dest: /etc/init/swarm.conf
+    owner: root
+    mode: 0644
+  notify: restart swarm
+  when: ansible_service_mgr == 'upstart'
+
+- name: flush handlers to avoid start/restart on initial launch
+  meta: flush_handlers
+
+- name: start swarm
+  service:
+    name: swarm
+    state: started
+    enabled: true
+  when: ansible_connection != 'docker'
+
+# There is an unavoidable race condition when running the swarm client within
+# an init system. The value of swarm_retry_timer * 1.5 is used to help ensure
+# that errors are not caught during a subsequent, and unrelated service
+# restart.  Essentially, we are checking the status directly in-between service
+# restarts.
+- name: wait for the swarm connection timeout
+  pause:
+    seconds: "{{ (swarm_retry_timer * 1.5)|int }}"
+  when: ansible_connection != 'docker'
+
+- name: check swarm service status when using systemd
+  include: check_swarm_systemd.yml
+  when: ansible_connection != 'docker' and ansible_service_mgr == 'systemd'
+
+- name: check swarm service status when using upstart
+  include: check_swarm_upstart.yml
+  when: ansible_connection != 'docker' and ansible_service_mgr == 'upstart'
