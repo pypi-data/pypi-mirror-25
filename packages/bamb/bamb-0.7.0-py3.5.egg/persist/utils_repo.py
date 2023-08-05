@@ -1,0 +1,2 @@
+class IdGeneratorRepo:
+    pass
