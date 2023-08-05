@@ -1,0 +1,332 @@
+2017-09-05  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Version 4.0.0 release. List of major changes:
+	* Added:
+	Option max_cross_validations to limit the total number of cross
+	validations performed.
+	* Changed:
+	Improved numerical stability for nonlinear models in Gutmann's
+	algorithm.
+	Cross validation now uses Gaussian RBFs and different values of
+	the shape parameter.
+
+2017-08-31  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_cl_interface.py, rbfopt_test_interface.py, __init__.py:
+	Set environment variable OMP_NUM_THREADS=1 to avoid problems with
+	OpenBLAS parallel optimizer.
+	* README: Updated documentation to reflect above change.
+
+2017-08-24  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Version 4.0.0 alpha. List of major changes:
+	* Added:
+	Support for Gaussian radial basis function
+	(rbfopt_degreem1_models).
+	Automatic selection of the shape parameter
+	(rbfopt_utils.get_best_rbf_model)
+	* Changed:
+	(RbfoptBlackBox) interface now requires returning var_type instead
+	of a list of integer vars.
+	(RbfoptBlackBox.evaluate_fast) is now called evaluate_noisy, and
+	requires returning an estimate of the error.
+
+2017-08-22  Giacomo Nannicini  <nannicini@us.ibm.com>
+	List of major changes:
+	* Added:
+	Installation script setup.py.
+	Class to construct RbfoptBlackBox from user data
+	(rbfopt_user_black_box).
+	The shape of the multiquadric RBF can now be set at runtime using
+	the rbf_shape_parameter option in RbfoptSettings.
+	The path to the solvers bonmin and ipopt can now be set at runtime
+	using minlp_solver_path and nlp_solver_path in RbfoptSettings.
+	* Changed:
+	Directory structure reorganized to allow installation as a module
+	in Python's site-packages.
+	(rbfopt_black_box) BlackBox renamed to RbfoptBlackBox.
+	(rbfopt_cl_interface.py) is now a script and accepts reading
+	black-box definitions from a path.
+	(rbfopt_test_interface.py) is now a script.
+	Documentation and examples are now distributed within the rbfopt
+	module.
+	README updated with new installation instructions and minimal
+	examples.
+	* Removed:
+	Module rbfopt_config is no longer necessary.
+
+2017-08-18  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Version 3.0.2 released. List of major changes:
+	* Added:
+	Model improvement search for refinement phase.
+	* Changed:
+	Refinement phase now happens regardless of finding an improved
+	solution.
+	Pyomo models changed for numerical stability with default Ipopt
+	and Bonmin as downloaded from AMPL's website.
+	
+2017-06-26  Giacomo Nannicini  <nannicini@us.ibm.com>	
+	Version 3.0.1 released. List of major changes:
+	* Changed:
+	Faster and improved refinement phase.
+	Several default settings have been changed to exploit the
+	refinement phase further.
+	Fixed bug in parallel optimizer.
+	
+2017-06-14  Giacomo Nannicini  <nannicini@us.ibm.com>	
+	* rbfopt_refinement (init_trust_region): Now uses only n+1 points
+	rather 2n+1 for the initial trust region model.
+	* rbfopt_settings.py (RbfoptSettings): Changed default settings
+	for eps_impr, refinement_frequency, max_stalled_cycles to favor
+	local search.
+	* rbfopt_algorithm.py (optimize_parallel): Fixed bug that could
+	occur in parallel optimizer when many consecutive refinement
+	steps failed on integer problems.
+	
+2017-06-09  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Version 3.0.0 released. List of major changes:
+	* Added: 
+	Refinement phase for improved local search: see option
+	refinement_frequency and new options that start with tr_.
+	Support for Python 3.
+	* Changed:
+	OptAlgorithm is now called RbfoptAlgoritm.
+	RbfSettings is now called RbfoptSettings.
+	Automatic model selection is now active by default, using fast
+	linear algebra routines.
+	Rbf functions in module rbfopt_utils now use Numpy, triggering
+	several code optimization changes and major improvement in
+	iteration speed.
+	Several default settings have been changed.
+	* Removed:
+	Module rbfopt_model_selection is no longer necessary.
+	Option model_selection_solver is no longer necessary.
+	Option max_stalled_obj_fun_impr is subsumed by eps_impr.
+	Cython modules and setup.py have been removed.
+
+2017-06-08  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_utils.py (get_model_quality_estimate)
+	(get_best_rbf_model): Functions moved to this module from the
+	former model_selection module.	
+	* rbfopt_model_selection.py: Module removed.
+	* rbfopt_settings.py (RbfoptSettings): Many default settings have
+	been updated, most notably rbf is now set to auto, and some
+	settings have been deleted.
+	
+2017-06-03  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_utils.py: Major optimizations in the computation of
+	radial basis functions.
+	* setup.py: File removed, since there is no longer a speed
+	advantage using Cython and compilation is therefore not necessary.
+	
+2017-05-31  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_refinement.py: The module provides functions to
+	periodically run a trust-region based refinement phase. This is
+	only supported for the serial search engine, at the moment.
+	* rbfopt_settings.py (max_consecutive_local_searches): This
+	parameter has been removed.
+	* rbfopt_settings.py (RbfoptSettings): The class RbfSettings was
+	renamed RbfoptSettings.
+	* rbfopt_algorithm.py (RbfoptAlgorithm): The class OptAlgorithm
+	was renamed RbfoptAlgorithm.
+
+2017-05-22  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Upgraded code to support Python 3.
+
+2017-03-15  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Version 2.1 released.
+	* requirements.txt: Updated requirements. 
+	* setup.py: Improved build system on Windows.
+
+2017-02-16  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_algorithm.py (optimize_serial, optimize_parallel): The
+	algorithm now checks if points generated after restart have been
+	explored before restart. If so, it uses the previously evaluated
+	value.
+	* rbfopt_settings.py (max_consecutive_discarded): This setting is
+	now intended to be per cpu, i.e. the actual value is obtained
+	multiplying by the number of CPUs.
+
+2017-02-09  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Major changes with the introduction of Numpy and Cython.
+	* rbfopt_aux_problems.py (get_min_bump_node, get_bump_new_node):
+	These functions are moved to aux_problems from utils, to allow
+	faster performance using Cython.
+	* rbfopt_utils.pyx, rbfopt_aux_problems.pyx: Hybrid Python/C
+	version of these modules. At the moment only the RBF functions are
+	written in real C.
+	* setup.py: Created, for automatic compilation in Cython.
+	
+2016-10-02  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_cl_interface.py (register_options): Options are now
+	grouped into Algorithmic settings and Execution settings.
+	* rbfopt_cl_interface.py (rbfopt_cl_interface): Added option to
+	read initialization points from file.
+	* rbfopt_algorithm.py (restart): Now adds user-provided points to
+	the initial sample. It is no longer possible to provide a full
+	initial sample to the algorithm, and employ user-provided points
+	instead of the generated sample.
+	
+2016-07-25  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Version 2.0 released.
+	* rbfopt_aux_problems.py (global_search, pure_global_search):
+	Restructured to allow for 'genetic', 'sampling' and 'solver'
+	solution methods..
+	* rbfopt_aux_problem.py (MetricSRSMObj): The option
+	modified_msrsm_score now determines the weight for the objective
+	function component of the score: the classical MSRSM is obtained
+	setting it to False, the default is True.
+
+2016-07-20  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Removed the possibility of setting integer_vars to None. It now
+	has to be empty if there are no integer variables.
+	The argument integer_vars now always appears immediately after
+	var_upper.
+	* rbfopt_algorithm.py (__init__): Resolved a bug in handling fixed
+	variables with integer variables.
+	* rbfopt_aux_algorithm.py (GutmannHkObj): Improved numerical
+	stability of formulas.
+
+2016-07-19  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_settings.py: Added global_search_method option to allow
+	for solution of auxiliary subproblems not based on solvers.
+	* rbfopt_aux_problems.py (ga_optimize, ga_mate, ga_mutate): New
+	functions for genetic algorithm, which can be used instead of the
+	solvers.
+	* rbfopt_aux_problems.py (MetricSRSMObj): Reworked for faster
+	computation.
+	* rbfopt_aux_problem.py (MaximinDistanceObj, GutmannHkObj)
+	(GutmannMukObj): New classes to allow solution of auxiliary
+	problems via genetic algorithms.
+
+2016-07-14  Giacomo Nannicini  <nannicini@us.ibm.com>
+	Updated dependency to Pyomo 4.3.11388.
+	* rbfopt_config.py: Added MINLP_SOLVER_PATH and NLP_SOLVER_PATH
+	options.
+	* rbfopt_aux_problems.py: Now use PATH option.
+	* rbfopt_algorithm.py: Using binary mode to load/save state files
+	to fix issues on Windows.
+
+2016-05-05  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_settings.py: Added save_state_interval and
+	save_state_file settings.
+	* rbfopt_algorithm.py (optimize_serial, optimize_parallel):
+	Supports periodic state save according to the two options above.
+
+2016-04-20  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_algorithm.py (__init__, optimize): Fixed variables no
+	longer cause numerical issues and are correctly handled.
+
+2016-03-17  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_algorithm.py (update_log): Log file format change to fit
+	within 80 characters, and print elapsed time.
+	
+2016-03-16  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_algorithm.py (OptAlgorithm.optimize_parallel): Added
+	parallel version of the optimization engine.
+	* rbfopt_algorithm.py (OptAlgorithm.optimize_serial): Code for the
+	serial (standard) optimizer was moved here.
+	* rbfopt_algorithm.py (optimize): Now simply redirects to either
+	the serial or parallel version.
+	* rbfopt_black_box.py (BlackBox): Added abstract class to define a
+	black box optimization problem.
+	* rbfopt_black_box_example.py (BlackBox): Added an example of an
+	implementation of the BlackBox abstract class.
+	* rbfopt_utils.py: Added several utility functions for parallel
+	optimization.
+	* README: Documentation updated to discuss the parallel optimizer.
+	
+2016-03-07  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* rbfopt_algorithm.py (OptAlgorithm): Added class for optimization
+	algorithm. Allows saving/loading algorithm state.
+	* rbfopt.py (rbf_optimize): Now simply redirects to OptAlgorithm.
+	
+2016-02-28  Giacomo Nannicini  <nannicini@us.ibm.com>
+	* test_rbfopt.py: Moved to tests/rbfopt_test_interface.py.
+	* tests/: Added unit tests for all modules to documentation.
+	* rbfopt.py (rbf_optimize): Several buxfixes.
+	* rbfopt_utils.py (several functions): Several bugfixes.
+	Version 1.2.0 released.
+	
+2015-11-21  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt.py (rbf_optimize): Implementation of Metric SRSM method.
+	* rbfopt_utils.py: Performance improvements. Bulk version of some
+	utility functions (bulk_evaluate_rbf, bulk_get_min_distance).
+	* rbfopt_aux_problems.py (maximize_one_over_mu): Renamed to
+	pure_global_search.
+	* rbfopt_aux_problems.py (maximize_h_k): Renamed to global_search.
+	* rbfopt_aux_problems.py (MetricSRSMObj): New class to support the
+	Metric SRSM method.
+
+2015-10-26  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* README: Updated installation instructions for Windows systems.
+
+2015-09-23  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt.py (rbf_optimize): Minor bug fixing and performance
+	improvements in handling the noisy oracle.
+
+2015-07-29  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt_model_selection.py: Introduced stand-alone module for
+	model selection. Increased efficiency of cross-validation via LPs
+	solved with Cplex or Clp.
+	* rbfopt_settings.py (RbfSettings): Introduced unpacking of
+	parameters from dictionary.
+	* rbfopt_settings.py (RbfSettings): skip_targetval_clipping
+	flipped and renamed to targetval_clipping.
+	* rbfopt_cl_interface.py (rbfopt_cl_interface): Switched to
+	dictionary to pass algorithmic parameters.
+	* test_rbfopt: Switched to dictionary to pass algorithmic
+	parameters.
+	Version 1.1.0 released.
+
+2015-07-17  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	Switch to Pyomo 4. The relevant files have been updated to use the
+	pyomo module rather than coopr.
+
+2015-06-23  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt_settings.py (RbfSettings): Added log_scaling_threshold
+	option. Moved RbfSettings here from the rbfopt module.
+	* rbfopt.py (rbf_optimize): Improved automatic function
+	scaling. Improved efficiencyhen skipping infstep.
+	* rbfopt_cl_interface.py (register_options): Parameters are now
+	read automatically from the rbfopt_settings module.
+
+2015-06-11  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* black_box.py: Introduced class BlackBox as a wrapper around the
+	black-box methods.
+	Improved docstrings following NumPy's format.
+	Added documentation in the doc/ directory.
+	Version 1.0.2 released.
+
+2015-06-03  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt.py (rbf_optimize): Better printout of initialization
+	points.
+
+2015-05-17  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt_cl_interface.py: Added module for command line interface.
+	* rbfopt_utils.py (initialize_nodes): Added test for linear
+	independence of the generated points.
+	* test_rbfopt.py (test_rbfopt): Function removed.
+	* test_rbfopt.py: Module restructured to integrate with
+	rbfopt_cl_interface.py.
+	Version 1.0.1 released.
+
+2015-05-03  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt.py (RbfSettings): Added print_solver_output option.
+	* rbfopt_aux_problems: Added support for print_solver_output.
+	* rbfopt_aux_problems (maximize_h_k): Added initialization of
+	auxiliary variables for the problem.
+	* test_functions: Added several MINLP functions.
+
+2014-12-05  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	Version 1.0 released.
+
+2014-11-19  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt.py (rbf_optimize): Added support for redirection of
+	output stream in rbfopt.py.
+	* rbfopt_utils.py (transform_function_values): Fixed division by
+	zero bug when fmin is zero.
+
+2014-11-05  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	* rbfopt_utils.py (transform_function_values): Fixed misspelled
+	keyword 'a ffine'.
+
+2014-09-24  Giacomo Nannicini  <nannicini@sutd.edu.sg>
+	Version 0.9 released.
