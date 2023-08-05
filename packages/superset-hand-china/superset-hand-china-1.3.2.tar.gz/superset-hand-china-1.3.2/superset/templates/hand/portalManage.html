@@ -1,0 +1,545 @@
+{% extends "superset/basic.html" %} {% block body %}
+
+<body>
+
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/static/assets/resrouces/portalManage/css/jqtree.css">
+    <!--<link rel="stylesheet" href="/static/assets/resrouces/portalManage/css/layui.css">-->
+  </head>
+  <style>
+    .model-select-box {
+      width: 265px;
+      height: 30px;
+      line-height: 18px;
+      border: 1px solid #aaa;
+      float: left;
+      text-indent: 5px;
+      position: relative;
+    }
+
+    .model-select-option {
+      display: none;
+      z-index: 999;
+      position: absolute;
+      background: #fff;
+      width: 100%;
+      left: -1px;
+      border: 1px solid #aaa;
+    }
+
+    .model-select-option>li {
+      text-indent: 5px;
+      padding: 0px 2px 1px;
+    }
+
+    .model-select-text {
+      height: 18px;
+      width: 265px;
+      margin-bottom: 6px;
+      margin-left: -1px;
+      padding-right: 29px;
+      cursor: pointer;
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .input-sm {
+      margin-left: 25px;
+    }
+
+    ul.jqtree-tree li.jqtree-selected>.jqtree-element,
+    ul.jqtree-tree li.jqtree-selected>.jqtree-element:hover {
+      background-color: transparent;
+      background: transparent;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+  </style>
+  <div id="app" data-bootstrap="{{ bootstrap_data }}"></div>
+  <div class="col-lg-3" id="tree1"></div>
+  <div class="col-lg-9">
+    <div style="width: 500px;">
+      <!--菜单名-->
+      <div id="updateUserInfoMsg"></div>
+      <div class="col-lg-12" style="width: 400px;">
+        <div class="col-lg-3 text-right" style="margin-top: 11px; padding-left: 14px;">
+          <span>{{ _("Menu_Name") }}</span>
+        </div>
+        <div class="col-lg-9" style="margin-left: -5px">
+          <input id="menuName" type="text" style="padding-left: 14px;margin-left:28px" value='' class="form-control input-sm" placeholder={{ _("Menu_Name") }}
+          />
+        </div>
+      </div>
+      <div class="col-lg-12" style="width: 400px; margin-top: 15px;">
+        <div class=" col-lg-3 text-right" style="margin-top: 3px;">
+          <span>{{ _("Parent_Menu") }}</span>
+        </div>
+        <div class="col-lg-9">
+          <select id="parentSelector" class="form-control input-sm">
+                  </select>
+        </div>
+      </div>
+      <div class="col-lg-12" style="width: 400px; margin-top: 15px;">
+        <div class="col-lg-3 text-right" style="margin-top: 3px;">
+          <span>{{ _("Icon") }}</span>
+        </div>
+        <div class="col-lg-9">
+          <div class="model-select-box  form-control input-sm" style="border:1px solid #ccc">
+            <div id="icon" class="model-select-text" data-value="null">
+              <span>无</span>
+              <!--<i class="fa fa-sort-desc" style="float:right;width:0.5px" ></i>-->
+              <img style="float:right;width: 7px; margin-right: -12px;margin-top: 4px;" src="/static/assets/resrouces/portalManage/img/index.png"
+              />
+            </div>
+            <ul id="icon_ul" class="model-select-option" style="list-style-type: none;padding-left: 0px">
+              <li data-option="null" value="null" style="padding-left:12px;list-style-type: none ;cursor: default" class="icon_li" style="margin-right: 9px;">无</li>
+              <li data-option="fa fa-database" value="fa fa-database" style="list-style-type: none ;cursor: default"><i class="fa fa-database icon_li" style="margin-right: 9px;"></i>database</li>
+              <li data-option="fa fa-globe" value="fa fa-globe" style="list-style-type: none ;cursor: default"><i class="fa fa-globe icon_li" style="margin-right: 9px;"></i>globe</li>
+              <li data-option="fa fa-industry" value="fa fa-industry" style="list-style-type: none ;cursor: default"><i class="fa fa-industry icon_li" style="margin-right: 9px;"></i>industry</li>
+              <li data-option="fa fa-cube" value="fa fa-cube" style="list-style-type: none ;cursor: default"><i class="fa fa-cube icon_li" aria-hidden="true" style="margin-right: 9px;"></i>cube</li>
+              <li data-option="fa fa-home" value="fa fa-home" style="list-style-type: none ;cursor: default"><i class="fa fa-home icon_li" aria-hidden="true" style="margin-right: 9px;"></i>home</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-12" style="width: 400px; margin-top: 15px;">
+        <div class="col-lg-3 text-right" style="margin-top: 3px;">
+          <span>{{ _("DashboardName") }}</span>
+        </div>
+        <div class="col-lg-9">
+          <select id="dashboardSelector" class="form-control input-sm">
+                </select>
+        </div>
+      </div>
+      <div class="col-lg-12" style="width: 400px; margin-top: 15px;">
+        <div class="col-lg-3 text-right" style="margin-top: 3px;">
+          <span>{{ _("Set_HomePage") }}</span>
+        </div>
+        <div class="col-lg-1">
+          <input id="is_index" type="checkbox" style="margin-left: 25px;" />
+        </div>
+      </div>
+      <div class="col-lg-12" style="margin-top: 15px; margin-left: 20px;">
+        <button class="btn btn-primary" id="add" style="margin-left: 10px;">
+                {{ _("Add") }}
+              </button>
+        <button class="btn btn-success" id="modify" style="margin-left: 10px;">
+                {{ _("Change") }}
+              </button>
+        <button class="btn btn-danger" id="delete" style="margin-left: 10px;">
+                {{ _("Delete") }}
+              </button>
+        <a id="portal" class="btn btn-primary" target="_blank" style="margin-left: 10px;">
+                {{ _("Preview_Portal") }}
+              </a>
+
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-9" style="float:right;margin-top:15px;padding-left:50px">
+    <div>
+      <div class="col-lg-12" style="width: 400px;">
+        <div align="left">
+          <div className="col-lg-4">
+            <input id="file" type="file" onchange="upload(this)" />
+          </div>
+          <div>
+            <span style="width: 500; margin-top: 10px; float: 'left' ">
+                        {{ _("Please select jpg,png,jpeg image format,and the ratio is 70 * 45") }}
+                    </span>
+          </div>
+        </div>
+        <div align="left">
+          <img id="img" style="width:240px; 
+                    height:120px; 
+                    margin-top: 20px" alt="img" />
+        </div>
+        <div>
+          <button id="deleteLogo" style="margin-top: 10; ">{{ _("Delete_Logo") }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--</div>-->
+</body>
+{% endblock %} {% block tail_js %} {{ super() }} {% with filename="welcome" %} {% include "superset/partials/_script_tag.html"
+%} {% endwith %}
+<script src="/static/assets/resrouces/portalManage/js/jquery-latest.js"></script>
+<script src="/static/assets/resrouces/portalManage/js/tree.jquery.js"></script>
+<script>
+  // 获取参数
+  var tree = JSON.parse($("#app").attr("data-bootstrap"));
+  //初始化数据
+  if (tree.menus != ("" || null)) {
+    for (var i = 0; i < tree.menus.length; i++) {
+      if (tree.menus[i][2] === ("" || null)) {
+        tree.menus[i][2] = 0;
+      }
+    }
+  }
+  var menus = tree.menus;
+  var dashboard = tree.dashboards
+  let currentNode = { "id": 0 };
+  // console.info(tree);
+
+  $(function () {
+    $("#portal").attr('href', '/hand/portal/' + tree.portal[0] + '/show');
+    // 加载图片
+    $('#img').attr('src', '/static/assets/resrouces/portalManage/logo/logo_' + tree.portal[0] + '_'
+      + tree.portal[4] + '.png')
+
+    $("#icon_ul li").hover(function () {
+      $(this).css("background-color", "#1E90FF");
+    }, function () {
+      $(this).css("background-color", "transparent");
+    });
+    // 是否为主页判断
+    $("#is_index").click(function () {
+      if ($('#is_index').is(':checked')) {
+        $('#is_index').val("true")
+      }
+      else
+        $('#is_index').val("false")
+    });
+
+
+    //添加事件
+    $("#add").click(function () {
+      $.ajax({
+        //要用post方式   
+        type: "post",
+        //方法所在页面和方法名
+        url: "/hand/menu/add",
+        dataType: "json",
+        data: {
+          data: JSON.stringify({
+
+            "menuName": $('#menuName').val(),
+            "parentSelector": $('#parentSelector').val(),
+            "picSelector": $('#icon').attr("data-value"),
+            "portal_id": tree.portal[0],
+            "is_index": $('#is_index').val(),
+            "dashboard_href": $('#dashboardSelector').val(),
+            "id": currentNode.id
+          })
+        },
+        success: function () {
+          //返回的数据用data.d获取内容
+          setTimeout(function () {
+            window.location.reload();
+          }, 700)
+          $('#updateUserInfoMsg').html('<div class="alert alert-success"> 添加成功. </div>');
+        },
+        error: function (err) {
+          $('#updateUserInfoMsg').html('<div class="alert alert-danger"> 添加失败. </div>');
+        }
+      })
+      // .done(function() {
+      //                $('#updateUserInfoMsg').html('<div class="alert alert-danger"> 添加成功. </div>');
+      //    })
+      //禁用按钮的提交      
+      return false;
+    });
+
+    //修改事件
+    $("#modify").click(function () {
+      $.ajax({
+        //要用post方式   
+        type: "post",
+        //方法所在页面和方法名
+        url: "/hand/menu/modify",
+        dataType: "json",
+        data: {
+          data: JSON.stringify({
+            "menuName": $('#menuName').val(),
+            "parentSelector": $('#parentSelector').val(),
+            "picSelector": $('#icon').attr("data-value"),
+            "portal_id": tree.portal[0],
+            "is_index": $('#is_index').val(),
+            "dashboard_href": $('#dashboardSelector').val(),
+            "id": currentNode.id
+          })
+        },
+        success: function () {
+          //返回的数据用data.d获取内容 
+          setTimeout(function () {
+            window.location.reload();
+          }, 700)
+          $('#updateUserInfoMsg').html('<div class="alert alert-success"> 修改成功. </div>');
+
+        },
+        error: function (err) {
+          $('#updateUserInfoMsg').html('<div class="alert alert-danger"> 修改失败. </div>');
+        }
+      });
+      //禁用按钮的提交      
+      return false;
+    });
+
+    //删除logo
+    $("#deleteLogo").click(function () {
+      if (confirm('是否删除该logo')) {
+        $.get('/hand/logo/del/' + tree.portal[0]).success(function (data) {
+          if (data === 'true') {
+            $('#img').attr('src', '');
+          } else {
+            $('#updateUserInfoMsg').html('<div class="alert alert-danger"> 删除Logo失败. </div>');
+          }
+        });
+      }
+    });
+
+    //删除事件
+    $("#delete").click(function () {
+      $.ajax({
+        //要用post方式   
+        type: "post",
+        //方法所在页面和方法名
+        url: "/hand/menu/delete",
+        dataType: "json",
+        data: {
+          data: JSON.stringify({
+            "id": currentNode.id,
+            "is_index": is_index,
+            "portal_id": tree.portal[0],
+          })
+        },
+        success: function () {
+          //返回的数据用data.d获取内容 
+          setTimeout(function () {
+            window.location.reload();
+          }, 700)
+          $('#updateUserInfoMsg').html('<div class="alert alert-success"> 删除成功. </div>');
+
+        },
+        error: function (err) {
+          $('#updateUserInfoMsg').html('<div class="alert alert-danger"> 删除Logo失败. </div>');
+          alert("删除失败")
+        }
+      });
+
+      //禁用按钮的提交      
+      return false;
+    });
+
+    //菜单栏初始化
+    $('#tree1').tree({
+      //打开界面展开节点
+      autoOpen: true,
+      //父节点下拉图标设置
+      closedIcon: $('<i class="fa fa-chevron-right" aria-hidden="true"></i>'),
+      openedIcon: $('<i class="fa fa-chevron-down" aria-hidden="true"></i>'),
+      //数据源配置
+      data: getJsonMenu(0, tree.menus),
+      //创建新的Html属性(添加图标和主页)
+      onCreateLi: function (node, $li, is_selected) {
+        // Add 'icon' span before title
+        if (node.icon === "null") {
+          $li.find('.jqtree-title').before('<li style="width:12px;height:14px;margin-left:1.5em;float:left "></li>');
+          if (node.is_index === 'true') {
+            $li.find('.jqtree-title').after('<i class="fa fa-home" style="margin-left:0.9em"></i>');
+          }
+        }
+        else {
+          $li.find('.jqtree-title').before('<i class="' + node.icon + '"style="margin-left:1.2em"></i>');
+          if (node.is_index === 'true') {
+            $li.find('.jqtree-title').after('<i class="fa fa-home" style="margin-left:0.9em"></i>');
+          }
+
+        }
+
+      }
+
+    });
+
+    //添加父节点下拉选项
+    for (var i = 0; i < menus.length; i++) {
+      $("#parentSelector").append('<option value=' + menus[i][0] + '>' + menus[i][1] + '</option>');
+    }
+    $("#parentSelector").append('<option value="0">无</option>');
+
+
+    //添加仪表盘下拉属性
+    for (var i = 0; i < dashboard.length; i++) {
+      $("#dashboardSelector").append('<option value=' + dashboard[i][0] + '>' + dashboard[i][1] + '</option>');
+    }
+
+    //菜单栏的点击事件
+    $('#tree1').bind('tree.click', function (event) {
+      // The clicked node is 'event.node'
+      var node = event.node;
+      currentNode = node;
+      // console.info(node);
+      $('#menuName').val(node.name);
+      $('#parentSelector').val(node.parent_id);
+      $('#icon').attr("data-value", node.icon);
+      $('#dashboardSelector').val(node.dashboard_href);
+      //将菜单栏的图标赋值给图标下拉框
+      var liOptions = $('#icon_ul').children();
+      liOptions.each((index, li) => {
+        var value = $(li).attr('value');
+        if (node.icon === value) {
+          $('#icon').attr('data-value', value);
+          $('#icon span').html($(li).html());
+        }
+
+      });
+      //将菜单栏的主页赋值给判断框
+      $('#is_index').val(node.is_index)
+      // console.info(node);
+      if (node.is_index === "true") {
+        $("#is_index").attr('checked', true);
+        is_index = "true"
+      }
+      else {
+        $("#is_index").attr('checked', false);
+        is_index = "false"
+      }
+    });
+
+
+
+
+    /*
+    * 模拟网页中所有的下拉列表select
+    */
+    function selectModel() {
+      var $box = $('div.model-select-box');
+      var $option = $('ul.model-select-option', $box);
+      var $txt = $('div.model-select-text', $box);
+      var speed = 10;
+      /*
+        * 单击某个下拉列表时，显示当前下拉列表的下拉列表框
+        * 并隐藏页面中其他下拉列表
+        */
+      $txt.click(function (e) {
+        $option.not($(this).siblings('ul.model-select-option')).slideUp(speed, function () {
+          int($(this));
+        });
+        $(this).siblings('ul.model-select-option').slideToggle(speed, function () {
+          int($(this));
+        });
+        return false;
+      });
+      //点击选择，关闭其他下拉
+      /*
+        * 为每个下拉列表框中的选项设置默认选中标识 data-selected
+        * 点击下拉列表框中的选项时，将选项的 data-option 属性的属性值赋给下拉列表的 data-value 属性，并改变默认选中标识 data-selected
+        * 为选项添加 mouseover 事件
+        */
+      $option.find('li').each(function (index, element) {
+        if ($(this).hasClass('seleced')) {
+          $(this).addClass('data-selected');
+        }
+      })
+        .mousedown(function () {
+          $(this).parent().siblings('div.model-select-text').html($(this).html() + '<img style="float:right;width: 7px; margin-right: -12px;margin-top: 4px;"src="/static/assets/resrouces/portalManage/img/index.png"/>')
+            .attr('data-value', $(this).attr('data-option'));
+          // $('#icon span').html($this.html()).attr('data-value', $(this).attr('data-option'));
+
+          $option.slideUp(speed, function () {
+            int($(this));
+          });
+          $(this).addClass('seleced data-selected').siblings('li').removeClass('seleced data-selected');
+          return false;
+        })
+        .mouseover(function () {
+          $(this).addClass('seleced').siblings('li').removeClass('seleced');
+        });
+      //点击文档，隐藏所有下拉
+      $(document).click(function (e) {
+        $option.slideUp(speed, function () {
+          int($(this));
+        });
+      });
+      //初始化默认选择
+      function int(obj) {
+        obj.find('li.data-selected').addClass('seleced').siblings('li').removeClass('seleced');
+      }
+    }
+
+    selectModel();
+  });
+
+  //修改数据格式
+  function getJsonMenu(id, menus) {
+    //如果
+    if (id !== 0) {
+      var children = [];
+      for (var i = 0; i < menus.length; i++) {
+        var menu = menus[i];
+        if (menu[2] === id) {
+          var node = {
+            id: menu[0],
+            name: menu[1],
+            parent_id: menu[2],
+            dashboard_href: menu[3],
+            open_way: menu[4],
+            is_index: menu[5],
+            icon: menu[6],
+          };
+          node.children = getJsonMenu(menu[0], menus);
+          children.push(node);
+        }
+      }
+      return children;
+    }
+    // id == 0
+    var nodes = [];
+    for (var i = 0; i < menus.length; i++) {
+      var menu = menus[i];
+      if (menu[2] === 0) {
+        var node = {
+          id: menu[0],
+          name: menu[1],
+          parent_id: menu[2],
+          dashboard_href: menu[3],
+          open_way: menu[4],
+          is_index: menu[5],
+          icon: menu[6],
+        };
+        node.children = getJsonMenu(menu[0], menus);
+        nodes.push(node);
+      }
+    }
+    return nodes;
+  };
+
+
+  function upload() {
+    // console.log($('#file')[0].files);
+    const array = $('#file')[0].files[0].name.split('.');
+    const fileType = array[array.length - 1];
+    if (fileType !== 'jpg' && fileType !== 'png' && fileType !== 'jpeg') {
+      alert('picture_upload_error');
+      return;
+    }
+    const timeStamp = new Date().getTime();
+    const portalId = tree.portal[0];
+    const data = new FormData();
+    data.append('file', $('#file')[0].files[0]);
+    data.append('time', timeStamp);
+    data.append('portal_id', portalId);
+    $.ajax({
+      url: '/hand/upload/logo',
+      type: 'POST',
+      data: data,
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function (result) {
+        if (result === 'true') {
+          $('#img').attr('src', '/static/assets/resrouces/portalManage/logo/logo_' + portalId + '_' + timeStamp + '.png');
+        } else {
+          alert('upload_failed');
+        }
+      },
+    });
+  };
+
+</script>
+
+{% endblock %}
