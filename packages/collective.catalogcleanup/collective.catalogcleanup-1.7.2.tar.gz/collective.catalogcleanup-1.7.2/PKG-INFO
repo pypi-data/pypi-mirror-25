@@ -1,0 +1,208 @@
+Metadata-Version: 1.1
+Name: collective.catalogcleanup
+Version: 1.7.2
+Summary: Remove outdated items from the catalog
+Home-page: https://github.com/collective/collective.catalogcleanup
+Author: Maurits van Rees
+Author-email: m.van.rees@zestsoftware.nl
+License: GPL
+Description: .. contents::
+        
+        
+        Documentation
+        =============
+        
+        .. image:: http://img.shields.io/pypi/v/collective.catalogcleanup.svg
+           :target: https://pypi.python.org/pypi/collective.catalogcleanup
+        
+        .. image:: https://img.shields.io/travis/collective/collective.catalogcleanup/master.svg
+            :target: http://travis-ci.org/collective/collective.catalogcleanup
+        
+        .. image:: https://img.shields.io/coveralls/collective/collective.catalogcleanup/master.svg
+            :target: https://coveralls.io/r/collective/collective.catalogcleanup
+        
+        Usage and goal
+        --------------
+        
+        Add collective.catalogcleanup to the eggs in your buildout (and to zcml on
+        Plone 3.2 or earlier).  This makes a browser view available on the
+        Plone Site root: ``@@collective-catalogcleanup``.
+        
+        This goes through the portal_catalog and removes all catalog brains
+        for which a ``getObject`` call does not work.  In other words, it
+        removes brains that no longer belong to an actual object in the site.
+        
+        Similar cleanups are done for the uid_catalog and the
+        reference_catalog.
+        
+        The goal is to get rid of outdated brains that could otherwise cause
+        problems, for example during an upgrade to Plone 4.
+        
+        ``@@collective-catalogcleanup`` by default does a dry run, so it
+        only reports problems.  Call it with
+        ``@@collective-catalogcleanup?dry_run=false`` to perform the actual cleanup.
+        
+        
+        Details
+        -------
+        
+        So what does the catalog cleanup do?
+        
+        - It removes stuff!  You *must* make a backup first!
+        
+        - It handles these catalogs: ``portal_catalog``, ``uid_catalog``,
+          ``reference_catalog``.
+        
+        - For each catalog it reports the number of catalog brains it
+          contains.
+        
+        - It removes brains that have a UID of ``None``.
+        
+        - It removes brains of which the object is broken.  This can happen
+          when the object belongs to a package that is no longer available in
+          the Plone Site.
+        
+        - It removes brains of which the object cannot be found.
+        
+        - It looks for non unique uids.  There can be some legitimate reasons
+          why some brains may have the same UID, for example when they belong
+          to comments: the UID is inherited from the parent object.  Those
+          items are kept.  For other items we accept one object and we give
+          the other objects a new UID.
+        
+        - References between objects that no longer exist or are broken, will
+          be removed.
+        
+        - A simple report will be printed in the browser.  For one catalog it
+          may look like this::
+        
+            Handling catalog portal_catalog.
+            Brains in portal_catalog: 20148
+            portal_catalog: removed 25 brains without UID.
+            portal_catalog: removed 100 brains with status broken.
+            portal_catalog: removed 5 brains with status notfound.
+            portal_catalog: 249 non unique uids found.
+            portal_catalog: 249 items given new unique uids.
+        
+        - The instance log may contain more info, about individual items.
+        
+        
+        Alternatives
+        ------------
+        
+        - A clear and rebuild of the portal_catalog should have partially the
+          same effect, but it will likely take a lot longer and it will not
+          solve some of the problems mentioned above.  But this is definitely
+          the most logical thing to try before giving
+          ``collective.catalogcleanup`` a go.
+        
+        
+        Compatibility
+        -------------
+        
+        I have tried this on Plone 3.3, Plone 4 and Plone 5.
+        
+        It is automatically tested by Travis on Plone 4.1, 4.2, 4.3, 5.0, and 5.1.
+        
+        
+        Authors
+        -------
+        
+        Maurits van Rees
+        
+        Changelog
+        =========
+        
+        
+        1.7.2 (2017-09-18)
+        ------------------
+        
+        - Added traceback info to help in case of problems.  [maurits]
+        
+        
+        1.7.1 (2017-03-07)
+        ------------------
+        
+        - Tested for compatibility on Plone 4.0 through 5.1.  [hvelarde]
+        
+        - Ignore non existing catalogs.  Plone 5 does not always have
+          a ``uid_catalog`` or ``reference_catalog``.
+          Fixes `issue #5 <https://github.com/collective/collective.catalogcleanup/issues/5>`_.
+          [maurits]
+        
+        
+        1.7 (2017-03-03)
+        ----------------
+        
+        - Don't look for non unique ids in the ``reference_catalog``.
+          It looks like it is normal there.  At least, on one Plone 4.3 site
+          the code keeps creating several new uids every time I run it.
+          [maurits]
+        
+        - Don't complain about brains in ``reference_catalog`` where ``getObject`` returns None.
+          This happens for content without apparent problems.  [maurits]
+        
+        
+        1.6 (2016-08-23)
+        ----------------
+        
+        - Do not complain about brains in uid_catalog that are references.
+          When their path points to ``...at_references/<uid of brain>`` then
+          this is normal.  I started wondering about a site that had more than
+          20 thousand problems reported this way.  [maurits]
+        
+        
+        1.5 (2015-07-31)
+        ----------------
+        
+        - Remove all items that have the ``portal_factory`` folder in their
+          path.
+          [maurits]
+        
+        
+        1.4 (2014-05-12)
+        ----------------
+        
+        - Catch KeyErrors when getting the path of a brain.
+          [maurits]
+        
+        
+        1.3 (2013-09-02)
+        ----------------
+        
+        - Give less confusing message for comments that inherit the UID of
+          their parent.  It sounded too much like an error.
+          [maurits]
+        
+        
+        1.2 (2012-06-04)
+        ----------------
+        
+        - Improved the cleanup of non unique uids.
+          [maurits]
+        
+        
+        1.1 (2012-05-14)
+        ----------------
+        
+        - When doing an reindexObject, only reindex the UID.
+          [maurits]
+        
+        
+        1.0 (2012-04-27)
+        ----------------
+        
+        - Initial release
+          [maurits]
+        
+Keywords: plone catalog cleanup
+Platform: UNKNOWN
+Classifier: Framework :: Plone
+Classifier: Framework :: Plone :: 4.1
+Classifier: Framework :: Plone :: 4.2
+Classifier: Framework :: Plone :: 4.3
+Classifier: Framework :: Plone :: 5.0
+Classifier: Framework :: Plone :: 5.1
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
