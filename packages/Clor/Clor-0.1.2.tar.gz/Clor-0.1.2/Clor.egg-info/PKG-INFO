@@ -1,0 +1,99 @@
+Metadata-Version: 1.1
+Name: Clor
+Version: 0.1.2
+Summary: Application configuration via Python logging.config
+Home-page: https://bitbucket.org/saaj/clor
+Author: saaj
+Author-email: mail@saaj.me
+License: LGPL-2.1+
+Description: .. image:: https://badge.fury.io/py/Clor.png
+          :target: https://pypi.python.org/pypi/Clor
+        
+        ====
+        Clor
+        ====
+        Clor is a tiny wrapper around ``logging`` configuration system [1]_, which allows
+        its reuse for general application configuration. The name was coined this way:
+        "configurator" → "c10r" → "clor".
+        
+        Usage
+        =====
+        Normally there's a configuration module (e.g. ``envconf.py``), or a YAML file. Here
+        is a CherryPy example::
+        
+            base = {
+              'global' : {
+                'server.socket_host' : '127.0.0.1',
+                'server.socket_port' : 8080,
+                'server.thread_pool' : 8
+              },
+              'app' : {
+                'api' : {
+                  '/' : {
+                    'request.dispatch' : {
+                      '()' : 'cherrypy._cpdispatch.MethodDispatcher'
+                    }
+                  }
+                }
+              }
+            }
+        
+            production = (base, {
+              'global' : {
+                'server.socket_host' : '0.0.0.0',
+                'server.thread_pool' : 16,
+              },
+              '/' : {
+                'tools.auth_basic.on'            : True,
+                'tools.auth_basic.realm'         : 'App',
+                'tools.auth_basic.checkpassword' : 'ext://someapp.password.checker'
+              }
+            })
+        
+            development = (base, {
+              'global' : {
+                'server.thread_pool' : None,
+              },
+              'app' : {
+                'api' : {
+                  '/' : {
+                    'tools.response_headers.on'      : True,
+                    'tools.response_headers.headers' : [('Access-Control-Allow-Origin', '*')]
+                  }
+                }
+              }
+            })
+        
+        A few observations:
+        
+        * Nest dictionaries are merged recursively
+        * ``logging``'s ``ext`` pseudo-protocols
+        * ``logging``'s instantiation with ``()`` key
+        * Keys having ``None`` value are removed
+        
+        Then in your bootstrapping code you can do::
+        
+          import clor
+        
+          from . import envconf
+        
+        
+          config = clor.configure(*getattr(envconf, 'production'))
+        
+          cherrypy.config.update(config)
+          cherrypy.tree.mount(ApiApplication(), '/api', config['app']['api'])
+        
+        
+        .. [1] https://docs.python.org/3/library/logging.config.html
+        
+Keywords: python configuration-management
+Platform: Any
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Intended Audience :: Developers
