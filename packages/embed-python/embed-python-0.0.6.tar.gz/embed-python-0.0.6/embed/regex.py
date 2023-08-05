@@ -1,0 +1,8 @@
+meta = """<meta(?=(?:[^\>]+)?(?:^|\s)\\b(?:name|property)\\b(?:\s*)=(?:\s*)(?:\"|\')?(?:\s*)(og:title|twitter:title|og:description|twitter:description|description|twitter:player|twitter:player:width|twitter:player:height|author|twitter:author|article:author|og:image|twitter:image|twitter:image:src|og:type|robots)(?:\"|\')?(?:[ \/\>]))(?:(?:[^\>]+)?(?:^|\s)(?:content|value|ng-attr-content)\\b(?:\s*)=(?:\s*)(?:(?=\")"([^\"]+)"|(?:(?=\')'([^\']+)'|(?!\'\")([^\s\>]+))))(?:[^\>]+)?>"""
+title = "<title[^>]*>([^>]+)<\/title>"
+body = "<body([\S\D]+)(<\/body ?>)?"
+body_image_with_extension = """<(?:amp-)?img(?=[^\>]+(?:jpe?g|gif|png|tiff|bmp))(?=(?:.+?)src(?:set)?(?=.+)\s*\=(?:(?=\')'([^\'\>]+)'|(?:(?=\")"([^\"\>]+)"|(?!\'\")([^\s\>]+))))(?:[^\>]+)?>"""
+body_image_without_extension = """<(?:amp-)?img(?![^\>]+(?:jpe?g|gif|png|tiff|bmp))(?=(?:.+?)src(?=.+)\s*\=(?:(?=\')'([^\'\>]+)'|(?:(?=\")"([^\"\>]+)"|(?!\'\")([^\s\>]+))))(?:[^\>]+)?>"""
+url = "(((?:http|ftp)s?):\/\/(?:www)?\.?(([^\.]+)\.([^\/\.]+)\.?([^\/\.]+)?\.?([^\/\.]+)?\.?([^\/\.]+)?))(?:.+)?"
+meta_redirect_url = """<meta\s+http(?:s)?-equiv[^\>](?:\s*.*)(?:.+?)url\s*=\s*(?:([^\"\>]+)")(?:[^\>]+)?>"""
+js_redirect_url = """(?:(?:location\.(?:href|assign|replace)|window\.location(?:\.href)?)\s*(?:=|\()+\s*(?:\"|\')([^(\"|\')]+)(?:\"|\'))"""
