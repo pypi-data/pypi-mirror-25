@@ -1,0 +1,177 @@
+<link
+	rel="import"
+	href="/static/bower_components/polymer/polymer.html" />
+
+<link
+	rel="import" 
+	href="/static/otree-redwood/webcomponents/otree-constants/otree-constants.html">
+
+<dom-module id="otree-events">
+
+	<template>
+    	<otree-constants id="constants" debug="{{ debug }}"></otree-constants>
+    	<template is="dom-if" if="[[ master ]]">
+    		<template is="dom-if" if="[[ debug ]]">
+		    	<div class="well">
+		    		<p>Connected: [[ connectionStatus ]]</p>
+		    		<p>Ping: [[ avgPingTime ]]</p>
+		    		<button
+		    			type="button"
+		    			on-click="togglePing"
+		    			hidden$="[[ ping ]]">Start</button>
+		    		<button
+		    			type="button"
+		    			on-click="togglePing"
+		    			hidden$="[[ !ping ]]">Stop</button>
+		    	</div>
+	    	</template>
+    	</template>
+	</template>
+
+	<script>
+		var socket = null;
+		var listeners = [];
+
+		Polymer({
+			is: 'otree-events',
+			properties: {
+				master: {
+					type: Boolean,
+					value: false
+				},
+				send_time: {
+					type: Object,
+					value: 0
+				},
+				roundTripTimes: {
+					type: Array,
+					value: () => { return [] }
+				},
+				avgPingTime: {
+					type: Number,
+					computed: '_computeAvgPingTime(roundTripTimes.*)'
+				},
+				connectionStatus: {
+					type: String,
+					computed: '_computeConnectionStatus(socket.*, roundTripTimes.*)'
+				},
+				ping: {
+					type: Boolean,
+					value: false
+				},
+				/* Bound by the otree-constants component */
+				debug: {
+					type: Boolean
+				}
+			},
+			ready() {
+				if (socket === null) {
+					this.master = true;
+					let protocol = 'ws://';
+					if (window.location.protocol === 'https:') {
+						protocol = 'wss://';
+					}
+					const addr = (
+						protocol +
+						window.location.host +
+						'/redwood' +
+						'/app-name/' + this.$.constants.appName +
+						'/group/' + this.$.constants.group +
+						'/participant/' + this.$.constants.participantCode +
+						'/');
+					socket = new ReconnectingWebSocket(addr, null, {
+						timeoutInterval: 10000
+					});
+					socket.onerror = this.onError.bind(this);
+					socket.onopen = this.onOpen.bind(this);
+					socket.onmessage = this.onMessage.bind(this);
+					socket.onclose = this.onClose.bind(this);
+				}
+				this.socket = socket;
+				this.pending = [];
+				listeners.push(this);
+			},
+			detached() {
+				listeners.splice(listeners.indexOf(this), 1);
+			},
+			onOpen() {
+				this.socket = socket;
+				listeners.forEach(l => {
+					l.pending.forEach(msg => {
+						socket.send(msg);
+					});
+				});
+				if (this.debug) {
+					this.sendPing();
+				}
+			},
+			onClose() {
+				this.socket = socket;
+			},
+			onError(err) {
+				this.socket = socket;
+				console.error(err);
+			},
+			onMessage(message) {
+				this.socket = socket;
+				const event = JSON.parse(message.data);
+				if (event.channel == 'ping') {
+					const rtt = Date.now() - event.timestamp;
+					this.push('roundTripTimes', rtt);
+					if (this.roundTripTimes.length > 10) {
+						this.splice('roundTripTimes', 0, 1);
+					}
+					return;
+				}
+				listeners.forEach(l => {
+					l.fire('event', event, {bubbles: false});
+				});
+			},
+			togglePing() {
+				this.ping = !this.ping;
+				if (this.ping) {
+					this.sendPing();
+				}
+			},
+			sendPing() {
+				this.socket = socket;
+				if (socket.readyState == 1) {
+					socket.send(JSON.stringify({
+						'channel': 'ping',
+						'timestamp': Date.now(),
+						'avg_ping_time': this.avgPingTime,
+					}));
+				}
+				if (this.ping) {
+					window.setTimeout(this.sendPing.bind(this), 1000);
+				}
+			},
+			_computeAvgPingTime() {
+				if (this.roundTripTimes.length == 0) {
+					return NaN;
+				}
+				const sum = this.roundTripTimes.reduce(
+					(acc, val) => { return acc + val; }, 0);
+				return Math.floor(sum / this.roundTripTimes.length);
+			},
+			_computeConnectionStatus() {
+				if (this.socket.readyState == 1) {
+					return 'connected';
+				}
+				return 'not connected';
+			},
+			send(channel, value) {
+				const msg = JSON.stringify({
+					'channel': channel,
+					'payload': value
+				});
+				if (socket.readyState != 1) {
+					this.pending.push(msg);
+					return;
+				}
+				socket.send(msg);
+			}
+		});
+	</script>
+
+</dom-module>
