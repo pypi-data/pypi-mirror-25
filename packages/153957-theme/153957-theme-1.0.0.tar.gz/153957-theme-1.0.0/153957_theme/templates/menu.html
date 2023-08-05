@@ -1,0 +1,25 @@
+{% if albums %}
+  <ul
+    {% if album.breadcrumb|length == 0 %}
+        class="current_siblings"
+    {% else %}
+      {% for name, album_dict in albums.items() %}
+        {% if album_dict.self == album %}
+          class="current_siblings"
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  >
+    {% for name, album_dict in albums.items() %}
+      {% with current_ancestor=(album.breadcrumb|length and depth < album.breadcrumb|length and name == album.breadcrumb[depth][1]) %}
+        <li class="album_title{% if album_dict.self == album %} current{% endif %}{% if current_ancestor %} current_ancestor{% endif %}">
+          <a href="{{album.path_to_root}}{{ album_dict.self.path_from_root }}">{{ album_dict.self.title }}</a>
+          {% if current_ancestor %}
+            {% with albums=album_dict.subalbums, depth=depth+1 %}
+              {% include './menu.html' %}
+            {% endwith %}
+          {% endif %}
+      {% endwith %}
+    {% endfor %}
+  </ul>
+{% endif %}

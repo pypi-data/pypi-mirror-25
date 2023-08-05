@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+    <title>{{ album.title|striptags }}</title>
+    <meta name="description" content="">
+    <meta name="author" content="{{ album.author }}">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="{{ theme.url }}/css/vendor/normalize.css">
+    <link rel="stylesheet" href="{{ theme.url }}/classic/galleria.classic.css">
+    <link rel="stylesheet" href="{{ theme.url }}/css/style.css">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="main" role="main">
+
+        {% if album.gallery.full_tree %}
+        <div class="menu">
+          {% if album.gallery.title %}
+            <p class="title">
+                <a href="{{ album.path_to_root }}">{{ album.gallery.title }}</a>
+            </p>
+          {% endif %}
+          {% with albums=album.gallery.full_tree, depth=0 %}
+            {% include './menu.html' %}
+          {% endwith %}
+        </div>
+        {% endif %}
+
+        {% if album.medias %}
+        <div class="icons">
+          <a id="fullscreen"></a>
+        </div>
+        <div id="gallery">
+          {% for media in album.medias %}
+            {% if media.type == "image" -%}
+              <a
+                  href="{{ media.filename }}"><img src="{{ media.thumbnail }}" alt="{{ media.title or media.filename }}  {{ media.exif.dateobj }}" /></a
+              >
+            {%- elif media.type == "video" %}
+              <a href="{{ theme.url }}/img/empty.png">
+                <img src="{{ media.thumbnail }}" alt="{{ media.filename }}"
+                    data-title="{{ media.title or media.filename }}"
+                    data-layer="<video controls>
+                                  <source src='{{ media.filename }}' type='{{ media.mime }}' />
+                                </video>" />
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if album.zip %}
+        <div id="additionnal-infos" class="row">
+          <p>
+            <a href="{{ album.zip }}"
+               title="Download a zip archive with all images">Download ZIP</a>
+          </p>
+        </div>
+        {% endif %}
+
+        {% if album.description %}
+        <div id="description">
+          {{ album.description }}
+        </div>
+        {% endif %}
+
+      </div>
+
+    </div>
+
+    {% if album.medias %}
+    <script src="{{ theme.url }}/js/jquery-3.2.1.min.js"></script>
+    <script src="{{ theme.url }}/js/galleria.min.js"></script>
+    <script src="{{ theme.url }}/js/galleria.classic.min.js"></script>
+    <script src="{{ theme.url }}/js/galleria.history.min.js"></script>
+    <script>
+      Galleria.configure({
+        imageCrop: false,
+        transition: null,
+        clicknext: true,
+        showCounter: false,
+        showInfo: false,
+        transitionSpeed: 0,
+        carouselSpeed: 0,
+        height: 0.9,
+       });
+
+      Galleria.run("#gallery");
+
+      Galleria.ready(function() {
+        this.attachKeyboard({
+          right: this.next,
+          left: this.prev,
+          up: function() {this.show(0);},
+          /* Toggle fullscreen display on press of 'f' key */
+          0x46: this.toggleFullscreen,
+        });
+
+        var gallery = this;
+        $('#fullscreen').click(function() {
+          gallery.toggleFullscreen();
+        });
+
+        $('.icons').appendTo(this.$('container'));
+      });
+    </script>
+    {% endif %}
+  </body>
+</html>
