@@ -1,0 +1,9 @@
+INSTALL_PREFIX='/pkgcore-0.9.6.data/data'
+DATA_PATH='/pkgcore-0.9.6.data/data/share/pkgcore'
+CONFIG_PATH='/pkgcore-0.9.6.data/data/share/pkgcore/config'
+LIBDIR_PATH='/pkgcore-0.9.6.data/data/lib/pkgcore'
+EBD_PATH='/pkgcore-0.9.6.data/data/lib/pkgcore/ebd'
+INJECTED_BIN_PATH=()
+BASH_BINARY='/bin/bash'
+CP_BINARY='/bin/cp'
+SANDBOX_BINARY=''
