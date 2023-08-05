@@ -1,0 +1,47 @@
+language: python
+
+# for container-y goodness:
+sudo: false
+
+python:
+  - "2.7"
+  - "3.6"
+
+install:
+  - "pip install --upgrade pip setuptools"
+  - "pip install -Ue .[test]"
+
+script: coverage run --source coveralls_check,tests -m py.test tests.py
+
+after_success:
+  - coveralls
+
+jobs:
+  include:
+
+    - stage: coverage
+      python: 3.6
+      after_success: skip
+
+      # woof woof!
+      install: "pip install -Ue ."
+      script: "coveralls-check $TRAVIS_COMMIT"
+
+    - stage: release
+      python: 3.6
+      script: skip
+      # work around https://github.com/travis-ci/travis-ci/issues/8337:
+      after_success: true
+
+      install: "pip install -Ue .[build]"
+      deploy:
+        provider: pypi
+        user: chrisw
+        password:
+          secure: AGZi6g+W0meTWg0nc+J1bzpYbSmfTaBl4t713M56U4auwAfaKuh8kBwfQksz1yfBsvUETBcg9WQPRvqIdj0nrfAIPVpZ28I6TtJhg9zh/B/jZUerhqSB8+4W6qRIMWxspg0NftLIpoJYVC+rpqDwweJ7+LJbcYUyAIG66HLUd344el8t6UDD/CqzdFERfRH13EaG8rJAMPlpiFWp6V/TVPGVkkgEc2+geiDm5Quk/ziEaoLgElHWufHBCf8It3F+ZyZLLKPJ1KzCo7P10JypV1TNVa8JtsicVhbJwbx72vkirPhtRtTyzZGvZ20CDTijfA62E1FTAQ1/Myd4h9W6zaikQ+/VsZYcMZTZzsPsMRLxYNdDbwWzG3JOeZouFIIT8/4nBmlZGv3ioTMDKhO/mb5wS80wTaoozVguRUpf0PON6vTUhRzYLTjpw6R4ZljQzZ2Unh+yZRyF6RMmviWJlYfk3byMHurIe9qRq5Ykfc7uwNPLW7fPXPgpEyUMZUSj0bIXZj8vNt/lE6Qzsoa5sYK1d1fC6XUps8rTrV62BmruIs4C4w1mcEPwIM9ucJswkx8do8mPRMBTjpq1+aPvKgyy2Ovpg3zazNZohAYqrBNyaYxESaYcw9dYUpsi9+813UecbLNtcFDU8AdaEV9rk61SljQWQp9t2NXctRReL1Q=
+        on:
+          tags: true
+          repo: cjw296/coveralls-check
+          python: "3.6"
+        skip_cleanup: true
+        distributions: "sdist bdist_wheel"
