@@ -1,0 +1,27 @@
+
+from yams.constraints import UniqueConstraint
+from cubicweb.schema import PURE_VIRTUAL_RTYPES
+
+source = repo.system_source
+
+for rschema in schema.relations():
+    if rschema.rule or rschema in PURE_VIRTUAL_RTYPES:
+        continue
+    if rschema.final or rschema.inlined:
+        for rdef in rschema.rdefs.values():
+            table = 'cw_{0}'.format(rdef.subject)
+            column = 'cw_{0}'.format(rdef.rtype)
+            if any(isinstance(cstr, UniqueConstraint) for cstr in rdef.constraints):
+                try:
+                    source.create_index(cnx, table, column, unique=True)
+                    commit()
+                    print 'recreated unique index on %s' % rschema
+                except:
+                    print 'unique index on %s already exists' % rschema
+            if rschema.inlined or rdef.indexed:
+                try:
+                    source.create_index(cnx, table, column)
+                    commit()
+                    print 'recreated index on %s' % rschema
+                except:
+                    print 'index on %s already exists' % rschema
