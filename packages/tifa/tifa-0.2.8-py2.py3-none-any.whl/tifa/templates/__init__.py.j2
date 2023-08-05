@@ -1,0 +1,38 @@
+import os
+
+from flask import Flask
+{% if routes %}
+from . import routes
+{% endif %}
+{% if models %}
+from . import model
+{% endif %}
+
+
+def create_app():
+    app = Flask(__name__)
+{% if routes %}
+    routes.init_app(app)
+{% endif %}
+{% if models %}
+    model.init_app(app)
+{% endif %}
+
+    base_settings = os.path.join(app.root_path, '../conf/base_settings.py')
+    app.config.from_pyfile(base_settings)
+{% if has_assets %}
+
+    import json
+
+    assets_file = app.config['ASSETS_FILE']
+    with open(assets_file, 'rb') as f:
+        assets = json.load(f)
+
+    @app.context_processor
+    def register_context_processor():
+        return dict(
+            assets=assets,
+        )
+
+{% endif %}
+    return app
