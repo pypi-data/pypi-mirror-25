@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+import logging as log
+import os
+import sys
+
+from pepper.config import Router
+from pepper.frontend.core import PepperConfig
+from pepper.remote_data import FreifunkAPI
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        log.error('Please specify the node.')
+        sys.exit(1)
+    pepper_config = PepperConfig.load_config()
+    if not pepper_config.get('homeCommunity', None):
+        sys.exit(1)
+    ffapi = FreifunkAPI(use_cache=True, cache_path=PepperConfig.CONFIG_DIR + os.sep)
+    community = ffapi.get_community(pepper_config['homeCommunity'])
+    possible_nodes = [n for n in community.nodes if sys.argv[1] in n.get('hostname')]
+    if len(possible_nodes) == 1:
+        ip = Router.mac_to_ip6(possible_nodes[0]['node_id'], community.primary_prefix)
+        os.system('ssh root@{}'.format(ip))
