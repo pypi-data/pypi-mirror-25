@@ -1,0 +1,78 @@
+Metadata-Version: 1.0
+Name: saltnanny
+Version: 0.2.0
+Summary: Python Module that parses salt returns stored in an external job cache and logs output
+Home-page: https://github.com/dandb/salt-nanny
+Author: Dun and Bradstreet Inc.
+Author-email: devops@dandb.com
+License: GPLv3
+Description-Content-Type: UNKNOWN
+Description: salt-nanny |Build Status| |Coverage Status|
+        ===========================================
+        
+        Python Module that parses salt returns stored in redis and logs output
+        
+        Example Usage:
+        ==============
+        
+        *Command Line Usage:*
+        
+        ::
+        
+            salt-nanny localhost minion1 minion2
+        
+        Look for salt returns in localhost for minions - minion1 & minion2
+        
+        ::
+        
+            salt-nanny localhost minion1 minion2 -p 6380 -x 20 -I 5 60 2
+        
+        This command tells salt-nanny to wait 5, 10, 20, 40 and 60 seconds
+        between each retry initially and then 60s for subsequent retries.
+        Attempt 20 times and then give up. Use port 6380 for redis.
+        
+        *Example Python code:*
+        
+        ::
+        
+            #!/usr/bin/env python
+            import salt.client
+            from saltnanny import SaltNanny
+        
+            # Initialize SaltNanny with the cache & salt function
+            config = {'type': 'redis', 'host':'localhost', 'port':6379, 'db':'0'}
+            nanny = SaltNanny(config, 'test', 'state.highstate')
+        
+            # Use SaltNanny to track returns to the external job cache
+            salt_nanny.initialize(['minion1', 'minion2'])
+            salt_nanny.track_returns()
+            return_code = salt_nanny.process_returns()
+        
+        -  For the example above, the log file in logs/test-state.highstate.log
+           will contain results of the salt highstate
+        -  The return code is 0 if all the salt functions for all minions
+           succeded with a return dict containing retcode:0.
+        -  SaltNanny also checks state results in case of a highstate. If any
+           one state fails, the retcode is non zero.
+        
+        .. |Build Status| image:: https://travis-ci.org/dandb/salt-nanny.svg?branch=master
+           :target: https://travis-ci.org/dandb/salt-nanny
+        .. |Coverage Status| image:: https://coveralls.io/repos/github/dandb/salt-nanny/badge.svg?branch=master
+           :target: https://coveralls.io/github/dandb/salt-nanny?branch=master
+        
+        
+        Release Notes
+        =============
+        v0.1.1 First working version\n
+        v0.1.2 Make changes in redis key structure for salt 2016 compatibility\n
+        v0.1.3 Fix bug when reading the redis return\n
+        v0.1.4 Add facility to read the last redis return without tracking a currently running highstate.\n
+        v0.1.5 Fix formatting of log message.\n
+        v0.1.6 Add salt-nanny command line utility to track returns from running highstate.\n
+        v0.1.7 Update Documentation & improve command line utility\n
+        v0.1.9 Fixed bug to return exit code 2 if no returns are found.
+        v0.2.0 Added new command line parameter(earliest_jid) to only return saltmaster results more recent than the passed jid
+        
+        
+Keywords: Salt SaltStack Redis redis_return parse cache external
+Platform: UNKNOWN
