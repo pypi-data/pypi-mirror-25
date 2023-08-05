@@ -1,0 +1,97 @@
+{% extends 'core/page.html' %}
+{% load i18n %}
+{% load static %}
+{% load core_tags %}
+
+{% block page %}
+
+    <h1>
+        {% if table.title %}
+        {{ table.title }} ({{ table }})
+        {% else %}
+        {{ table }}
+        {% endif %}
+    </h1>
+
+    {% if table.long_description %}
+
+    <h2>Description</h2>
+    <p>{{ table.long_description | markdown }}</p>
+
+    {% elif table.description %}
+
+    <h2>Description</h2>
+    <p>{{ table.description | markdown }}</p>
+
+    {% endif %}
+
+    {% if table.attribution %}
+    <h2>Attribution</h2>
+
+    {{ table.attribution | markdown }}
+    {% endif %}
+
+    <h2>{% trans 'Columns' %}</h2>
+
+    <table class="table">
+        <thead>
+            <th style="width: 15%;">{% trans 'Name' %}</th>
+            <th style="width: 15%;">{% trans 'Type' %}</th>
+            <th style="width: 15%;">{% trans 'UCD' %}</th>
+            <th style="width: 15%;">{% trans 'Unit' %}</th>
+            <th style="width: 40%;">{% trans 'Description' %}</th>
+        </thead>
+        <tbody>
+            {% for column in table.columns.all %}
+            <tr>
+                <td>
+                    {{ column.name }}
+                </td>
+                <td>
+                    {{ column.datatype }}
+                </td>
+                <td>
+                    {{ column.ucd|default_if_none:''|semicolonbr }}
+                </td>
+                <td>
+                    {{ column.unit|default_if_none:'' }}
+                </td>
+                <td>
+                    {{ column.description|default_if_none:'' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+{% block sidebar %}
+
+    {% if table.pid %}
+    <div class="panel panel-default">
+        <div class="panel-heading">Persistant identifier</div>
+        <div class="panel-body">
+            <p>Please use the following identifier to cite this table:</p>
+            <p>
+                <a class="break" href="{{ table.pid }}">{{ table.pid }}</a>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if table.license %}
+    <div class="panel panel-default">
+        <div class="panel-heading">License</div>
+        <div class="panel-body">
+            <p class="text-center">
+                <img src="{% static 'metadata/img' %}/{{ table.license | lower }}.png" />
+            </p>
+            <p>
+                This table is published under the <a href="{{ table.license_url }}">{{ table.license_label }}</a>.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+{% endblock %}
