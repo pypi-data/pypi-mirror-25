@@ -1,0 +1,22 @@
+{% load static %}
+{% load thumbnail %}
+
+{% spaceless %}
+<ul class="page-preview{% if instance.style %} {{ instance.style }}{% endif %}">
+{% for page in pages %}
+    <li class="child preview-item {{ page.imageextension.extra_classes }}">
+        <a href="{{ page.attr.redirect_url|default:page.get_absolute_url }}">
+            {% if page.imageextension.get_preview_image %}
+                <img src="{{ page.imageextension.get_preview_image|thumbnail_url:'preview' }}" alt="{{ page.get_menu_title }}" />
+            {% else %}
+                <img src="{% static 'djangocms_page_image/img/default_preview.png' %}" alt="{{ page.get_menu_title }}" />
+            {% endif %}
+            <p class="title">{{ page.get_menu_title }}</p>
+            {% if page.imageextension.teaser %}
+            <p class="teaser">{{ page.imageextension.teaser }}</p>
+            {% endif %}
+        </a>
+    </li>
+{% endfor %}
+</ul>
+{% endspaceless %}
