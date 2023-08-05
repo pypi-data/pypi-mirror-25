@@ -1,0 +1,315 @@
+// math
+#ifndef M_PI
+#define M_PI 3.1415926535897932384626433832795
+#endif
+
+// float16
+class float16
+{
+private:
+  unsigned short data_;
+public:
+  __device__ float16() {}
+  __device__ float16(float v) {
+    data_ = __float2half_rn(v);
+  }
+  explicit __device__ float16(bool v) {
+    data_ = __float2half_rn(static_cast<float>(v));
+  }
+  explicit __device__ float16(double v) {
+    data_ = __float2half_rn(static_cast<float>(v));
+  }
+  explicit __device__ float16(int v) {
+    data_ = __float2half_rn(static_cast<float>(v));
+  }
+  explicit __device__ float16(unsigned int v) {
+    data_ = __float2half_rn(static_cast<float>(v));
+  }
+  explicit __device__ float16(long long v) {
+    data_ = __float2half_rn(static_cast<float>(v));
+  }
+  explicit __device__ float16(unsigned long long v) {
+    data_ = __float2half_rn(static_cast<float>(v));
+  }
+
+  __device__ operator float() const {return __half2float(data_);}
+
+  static const unsigned short nan = 0x7e00u;
+
+  __device__ int iszero() const {
+    return (data_ & 0x7fff) == 0;
+  }
+
+  __device__ int isnan() const {
+    return (data_ & 0x7c00u) == 0x7c00u && (data_ & 0x03ffu) != 0x0000u;
+  }
+
+  __device__ int isinf() const {
+    return (data_ & 0x7fffu) == 0x7c00u;
+  }
+
+  __device__ int isfinite() const {
+    return (data_ & 0x7c00u) != 0x7c00u;
+  }
+
+  __device__ int signbit() const
+  {
+    return (data_ & 0x8000u) != 0;
+  }
+
+  template<typename T>
+  inline __device__ float16& operator+=(const T& rhs)
+  {
+    *this = *this + rhs;
+    return *this;
+  }
+
+  template<typename T>
+  inline __device__ float16& operator-=(const T& rhs)
+  {
+    *this = *this - rhs;
+    return *this;
+  }
+
+  template<typename T>
+  inline __device__ float16& operator*=(const T& rhs)
+  {
+    *this = *this * rhs;
+    return *this;
+  }
+
+  template<typename T>
+  inline __device__ float16& operator/=(const T& rhs)
+  {
+    *this = *this / rhs;
+    return *this;
+  }
+
+  friend __device__ float16 copysign(float16 x, float16 y) {
+    float16 ret;
+    ret.data_ = (x.data_ & 0x7fffu) | (y.data_ & 0x8000u);
+    return ret;
+  }
+
+  friend __device__ float16 nextafter(float16 x, float16 y) {
+    float16 ret;
+    if (!x.isfinite() || y.isnan()) {
+      ret.data_ = nan;
+    } else if (eq_nonan(x, y)) {
+      ret = x;
+    } else if (x.iszero()) {
+      ret.data_ = (y.data_ & 0x8000u) + 1;
+    } else if (!(x.data_ & 0x8000u)) {
+      if (static_cast<short>(x.data_) > static_cast<short>(y.data_)) {
+        ret.data_ = x.data_ - 1;
+      } else {
+        ret.data_ = x.data_ + 1;
+      }
+    } else if(!(y.data_ & 0x8000u) || (x.data_ & 0x7fffu) > (y.data_ & 0x7fffu)) {
+      ret.data_ = x.data_ - 1;
+    } else {
+      ret.data_ = x.data_ + 1;
+    }
+    return ret;
+  }
+
+private:
+  static __device__ int eq_nonan(const float16 x, const float16 y) {
+    return (x.data_ == y.data_ || ((x.data_ | y.data_) & 0x7fff) == 0);
+  }
+};
+
+__device__ float16 min(float16 x, float16 y) {
+  return float16(min(static_cast<float>(x), static_cast<float>(y)));
+}
+__device__ float16 max(float16 x, float16 y) {
+  return float16(max(static_cast<float>(x), static_cast<float>(y)));
+}
+__device__ int iszero(float16 x) {return x.iszero();}
+__device__ int isnan(float16 x) {return x.isnan();}
+__device__ int isinf(float16 x) {return x.isinf();}
+__device__ int isfinite(float16 x) {return x.isfinite();}
+__device__ int signbit(float16 x) {return x.signbit();}
+
+// CArray
+#define CUPY_FOR(i, n) \
+    for (ptrdiff_t i = blockIdx.x * blockDim.x + threadIdx.x; \
+         i < (n); \
+         i += blockDim.x * gridDim.x)
+
+template <typename T, int ndim>
+class CArray {
+private:
+  T* data_;
+  ptrdiff_t size_;
+  ptrdiff_t shape_[ndim];
+  ptrdiff_t strides_[ndim];
+
+public:
+  __device__ int size() const {
+    return size_;
+  }
+
+  __device__ const ptrdiff_t* shape() const {
+    return shape_;
+  }
+
+  __device__ const ptrdiff_t* strides() const {
+    return strides_;
+  }
+
+  template <typename Int>
+  __device__ T& operator[](const Int (&idx)[ndim]) {
+    return const_cast<T&>(const_cast<const CArray&>(*this)[idx]);
+  }
+
+  template <typename Int>
+  __device__ const T& operator[](const Int (&idx)[ndim]) const {
+    const char* ptr = reinterpret_cast<const char*>(data_);
+    for (int dim = 0; dim < ndim; ++dim) {
+      ptr += static_cast<ptrdiff_t>(strides_[dim]) * idx[dim];
+    }
+    return reinterpret_cast<const T&>(*ptr);
+  }
+
+  __device__ T& operator[](ptrdiff_t i) {
+    return const_cast<T&>(const_cast<const CArray&>(*this)[i]);
+  }
+
+  __device__ const T& operator[](ptrdiff_t i) const {
+    const char* ptr = reinterpret_cast<const char*>(data_);
+    for (int dim = ndim; --dim > 0; ) {
+      ptr += static_cast<ptrdiff_t>(strides_[dim]) * (i % shape_[dim]);
+      i /= shape_[dim];
+    }
+    if (ndim > 0) {
+      ptr += static_cast<ptrdiff_t>(strides_[0]) * i;
+    }
+
+    return reinterpret_cast<const T&>(*ptr);
+  }
+};
+
+template <typename T>
+class CArray<T, 0> {
+private:
+  T* data_;
+  ptrdiff_t size_;
+
+public:
+  __device__ int size() const {
+    return size_;
+  }
+
+  __device__ const ptrdiff_t* shape() const {
+    return NULL;
+  }
+
+  __device__ const ptrdiff_t* strides() const {
+    return NULL;
+  }
+
+  template <typename U>
+  __device__ T& operator[](const U&) {
+    return *data_;
+  }
+
+  template <typename U>
+  __device__ T operator[](const U&) const {
+    return *data_;
+  }
+};
+
+template <int ndim>
+class CIndexer {
+private:
+  ptrdiff_t size_;
+  ptrdiff_t shape_[ndim];
+  ptrdiff_t index_[ndim];
+
+  typedef ptrdiff_t index_t[ndim];
+
+public:
+  __device__ ptrdiff_t size() const {
+    return size_;
+  }
+
+  __device__ void set(ptrdiff_t i) {
+    // ndim == 0 case uses partial template specialization
+    if (ndim == 1) {
+      index_[0] = i;
+      return;
+    }
+    if (size_ > 1LL << 31) {
+      // 64-bit division is very slow on GPU
+      size_t a = static_cast<size_t>(i);
+      for (int dim = ndim; --dim > 0; ) {
+        size_t s = static_cast<size_t>(shape_[dim]);
+        index_[dim] = a % s;
+        a /= s;
+      }
+      index_[0] = a;
+    } else {
+      unsigned int a = static_cast<unsigned int>(i);
+      for (int dim = ndim; --dim > 0; ) {
+        unsigned int s = static_cast<unsigned int>(shape_[dim]);
+        index_[dim] = a % s;
+        a /= s;
+      }
+      index_[0] = a;
+    }
+  }
+
+  __device__ const index_t& get() const {
+    return index_;
+  }
+};
+
+template <>
+class CIndexer<0> {
+private:
+  ptrdiff_t size_;
+
+public:
+  __device__ int size() const {
+    return size_;
+  }
+
+  __device__ void set(ptrdiff_t i) {
+  }
+
+  __device__ const ptrdiff_t* get() const {
+    return NULL;
+  }
+};
+
+__device__ int _floor_divide(int x, int y) {
+  if (y == 0) return 0;
+  int q = x / y;
+  return q - (((x < 0) != (y < 0)) && q * y != x);
+}
+
+__device__ long long _floor_divide(long long x, long long y) {
+  if (y == 0) return 0;
+  long long q = x / y;
+  return q - (((x < 0) != (y < 0)) && q * y != x);
+}
+
+__device__ unsigned _floor_divide(unsigned x, unsigned y) {
+  if (y == 0) return 0;
+  return x / y;
+}
+
+__device__ unsigned long long _floor_divide(
+    unsigned long long x, unsigned long long y) {
+  if (y == 0) return 0;
+  return x / y;
+}
+
+__device__ float _floor_divide(float x, float y) {
+  return floor(x / y);
+}
+
+__device__ double _floor_divide(double x, double y) {
+  return floor(x / y);
+}
