@@ -1,0 +1,106 @@
+==============
+django-ws4ever
+==============
+
+提供基于gevent的websocket的handler
+
+Quick start
+-----------
+1. Install::
+
+    pip install django_ws4ever
+
+
+2. Add "ws4ever" to your INSTALLED_APPS setting like this::
+
+    INSTALLED_APPS = [
+        ...
+        'ws4ever',
+    ]
+
+3. complete your own websocket handler class::
+
+    from ws4ever.views import BaseWebSocketApplication
+    class WebSocketClientApplication(BaseWebSocketApplication):
+        def __init__(self, ws):
+            pass
+
+        def handle_message(self, kind, payload=None):
+            pass
+
+4. set the websocket config path::
+
+    # ws4ever conf
+    WS4EVER = {
+      'ROUTES': { #websocket path and handler class
+          "/ws": "django_ws4ever.views.WebSocketClientApplication"
+      },
+      'MAX_IDLE': 30,  # seconds, interval to check zombie websocket connections
+      'NOTIFY_BACKEND': 'redis://:password@redis-host:redis_port/db_id' # or 'memory'
+    }
+
+5. patch gevent in manage.py::
+    #prepend these code before any python code, possibly in line 2
+    from gevent import monkey;monkey.patch_all(thread=False)
+
+6. runserver
+    python manage.py runserver
+
+7. test websocket in js::
+
+    var ws = new WebSocket("ws://localhost:8000/ws");
+    ws.onopen = function()
+    {
+       console.log("on open");
+       ws.send(JSON.stringify({kind:'kind', payload:'payload'}));
+    };
+    ws.onmessage = function (evt)
+    {
+       var received_msg = evt.data;
+       console.log("receive message", received_msg);
+    };
+    ws.onclose = function()
+    {
+       console.log("Connection is closed...");
+    };
+
+8. [Optional] if you want to use wsgi to run websocket(ig.use gunicorn), config wsgi like that
+  8.1 config project wsgi.py::
+
+    #append to tail, must after  os.environ.setdefault("DJANGO_SETTINGS_MODULE", "xx.settings")
+    # gunicorn 用的 websocket wsgi
+    from geventwebsocket import Resource
+    from ws4ever.helpers import get_websocket_sources
+    ws_application = Resource(get_websocket_sources())
+
+  8.2 run gunicorn like::
+
+    #replace wsgi path to your own, replace your port
+    `gunicorn -k "geventwebsocket.gunicorn.workers.GeventWebSocketWorker"   django_ws4ever.wsgi:ws_application --bind 127.0.0.1:8001`
+
+9. [Optional/Advanced] broadcast and receive message
+  9.1 config broadcast backend::
+    you can send notify via redis or memory.
+    Via redis, you can send notification to multi processes; via memory, you can only send notification in current process.
+    You are supposed to use memory in development and redis in production environment.
+    in settings.py::
+
+    WS4EVER = {
+      ...
+      'NOTIFY_BACKEND': 'redis://:password@redis-host:redis_port/db_id' # or 'memory'
+    }
+
+  9.2 can send broadcast by::
+
+    from ws4ever.redis import notify_clients
+    notify_clients('kind', 'payload', extra_field='extra_value', extra_field2='extra_value2')
+
+  9.3 then can handle the messages in WebSocketClientApplication you created in step 3 above::
+
+    class WebSocketClientApplication(BaseWebSocketApplication):
+        ...
+
+        @classmethod
+        def on_notify(cls, kind, payload, **extra):
+            #add your handle code here
+
