@@ -1,0 +1,30 @@
+{% load i18n l10n pcart_catalog pcart_core %}
+<form action="{% add_to_cart_url %}" method="post" enctype="multipart/form-data"
+      class='form-horizontal' id="product-actions">
+    <input type="hidden" name="item-id" value="{{product.id}}">
+    <input type="hidden" name="next" value="{{product.get_absolute_url}}">
+    <input type="hidden" name="item-type" value="{{product.type}}">
+    <input type="hidden" name="price" value="{{product.price|unlocalize}}">
+    <input type="hidden" name="weight" value="{{product.weight|unlocalize}}">
+
+    <div class="options clearfix">
+        {% include "catalog/includes/product/price.html" %}
+        <div id="purchase">
+            <label for="quantity">{% trans "Qty" %}: </label>
+            <input min="1" type="number" id="quantity" name="quantity" value="1" class="form-control input-small" />
+            {% if product.available %}
+            <button class="btn btn-cart" type="submit" id="add-to-cart">{% trans "Add to cart" %}</button>
+            {% else %}
+            <button class="btn btn-cart" id="add-to-cart" disabled>{{product.status}}</button>
+            {% endif %}
+        </div>
+    </div><!-- /.options -->
+</form>
+<div class="product_extra_buttons">
+    <button class="btn btn-xs btn-alt"
+       onclick="PCART.ajax_send({'item-id':'{{product.id}}','item-type':'{{product.type}}','add-item':''}, {'action':'{% optional_url "pcart_comparison:comparison-add-product" %}','post-signal':'update-comparison','success-notification':'{% trans "Product has been added to the comparison list." %}'});"
+       ><i class="fa fa-balance-scale"></i> {% trans "Compare" %}</button>
+    <button class="btn btn-xs btn-alt"
+       onclick="PCART.ajax_send({'item-id':'{{product.id}}','item-type':'{{product.type}}','add-item':''}, {'action':'{% optional_url "pcart_wishlist:wishlist-add-product" %}','post-signal':'update-wishlist','success-notification':'{% trans "Product has been added to the wish list." %}'});"
+       ><i class="fa fa-heart"></i> {% trans "Add to wishlist" %}</button>
+</div>
