@@ -1,0 +1,115 @@
+Metadata-Version: 2.0
+Name: ecs-deplojo
+Version: 0.4.0
+Summary: Deployment tool for Amazon ECS
+Home-page: https://www.github.com/labd/ecs-deplojo/
+Author: Lab Digital B.V.
+Author-email: opensource@labdigital.nl
+License: MIT
+Description-Content-Type: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Requires-Dist: boto3 (==1.4.4)
+Requires-Dist: click (==6.7)
+Requires-Dist: pyaml (==16.12.2)
+Provides-Extra: test
+Requires-Dist: flake8 (==3.3.0); extra == 'test'
+Requires-Dist: isort (==4.2.5); extra == 'test'
+Requires-Dist: moto (==0.4.31); extra == 'test'
+Requires-Dist: pytest (==3.0.7); extra == 'test'
+Requires-Dist: pytest-cov (==2.4.0); extra == 'test'
+Requires-Dist: pytest-capturelog (==0.7); extra == 'test'
+
+ecs-deplojo
+===========
+
+Deployment tool for Amazon ECS.
+
+Installation
+------------
+
+`pip install ecs-deplojo`
+
+
+
+
+Usage
+-----
+
+.. code-block:: console
+
+    Usage: ecs-deplojo [OPTIONS]
+
+    Options:
+      --config FILENAME   [required]
+      --var VAR
+      --dry-run
+      --output-path PATH
+      --role-arn <optional arn>
+      --help              Show this message and exit.
+
+
+Example configuration
+---------------------
+
+.. code-block:: yaml
+
+    ---
+    cluster_name: example
+
+    environment:
+        DATABASE_URL: postgresql://
+
+    task_definitions:
+      web: 
+        template: task_definitions/web.json
+        overrides:
+          uwsgi:
+            memory: 512
+            portMappings:
+              - hostPort: 0
+                containerPort: 8080
+                protocol: tcp
+      manage:
+        template: task_definitions/manage.json
+
+    services:
+      web: 
+        task_definition: web
+
+    before_deploy:
+      - task_definition: manage
+        container: uwsgi
+        command: manage.py migrate --noinput
+
+    after_deploy:
+      - task_definition: manage
+        container: uwsgi
+        command: manage.py clearsessions
+
+
+Example log output
+------------------
+
+.. code-block:: console
+
+    Starting deploy on cluster example (1 services)
+    Registered new task definition web:10
+    Starting one-off task 'manage.py migrate --noinput' via manage:10 (uwsgi)
+    Updating service web with task defintion web:10
+    Waiting for deployments
+    Waiting for services: web (0/2)
+    Waiting for services: web (1/2)
+    Waiting for services: web (2/2)
+    Deployment finished: web (2/2)
+    Starting one-off task 'manage.py clearsessions' via manage:10 (uwsgi)
+
+
