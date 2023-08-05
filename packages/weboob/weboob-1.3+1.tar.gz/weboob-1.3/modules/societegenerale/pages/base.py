@@ -1,0 +1,41 @@
+# -*- coding: utf-8 -*-
+
+# Copyright(C) 2010-2011 Jocelyn Jaubert
+#
+# This file is part of weboob.
+#
+# weboob is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# weboob is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with weboob. If not, see <http://www.gnu.org/licenses/>.
+
+
+from decimal import Decimal
+
+from weboob.capabilities.base import NotAvailable
+from weboob.browser.pages import HTMLPage
+from weboob.tools.capabilities.bank.transactions import FrenchTransaction
+from weboob.browser.filters.standard import CleanText
+
+
+class BasePage(HTMLPage):
+    def get_error(self):
+        try:
+            return self.doc.xpath('//span[@class="error_msg"]')[0].text.strip()
+        except IndexError:
+            return None
+
+    def parse_decimal(self, td):
+        value = CleanText('.')(td)
+        if value:
+            return Decimal(FrenchTransaction.clean_amount(value))
+        else:
+            return NotAvailable

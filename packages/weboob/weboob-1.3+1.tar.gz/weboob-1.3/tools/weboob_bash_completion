@@ -1,0 +1,42 @@
+# Weboob completion for Bash
+#
+# vim: filetype=sh expandtab softtabstop=4 shiftwidth=4
+#
+# Copyright(C) 2010-2011  Christophe Benz
+#
+# This file is part of weboob.
+#
+# weboob is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# weboob is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with weboob. If not, see <http://www.gnu.org/licenses/>.
+#
+# This script can be distributed under the same license as the
+# weboob or bash packages.
+
+_weboob()
+{
+    local cur args
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    args="$(${COMP_WORDS[0]} --shell-completion)"
+
+    COMPREPLY=( $(compgen -o default -W "${args}" -- "$cur" ) )
+}
+
+hash weboob-config 2>/dev/null &&
+weboob_applications=$(weboob-config applications 2>/dev/null)
+hash -d weboob-config
+for application in $weboob_applications
+do
+    complete -F _weboob $application
+done
