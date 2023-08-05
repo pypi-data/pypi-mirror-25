@@ -1,0 +1,95 @@
+#!python
+import argparse
+import yaml
+import json
+import sys
+import re
+
+GPU_DEVICE_PATTERN = re.compile(r'/dev/nvidia\d+')
+
+# support Python 2 or 3
+if sys.version_info[0] == 3:
+    import urllib.request as request
+    file_error = FileNotFoundError
+else:
+    import urllib2 as request
+    file_error = IOError
+
+
+def filehandle_if_exists_else_none(fname):
+    try:
+        return open(fname, 'r')
+    except file_error:
+        return None
+
+
+def open_compose_file(fname):
+    if not fname:
+        return filehandle_if_exists_else_none('docker-compose.yaml') \
+            or filehandle_if_exists_else_none('docker-compose.yml')
+    else:
+        return filehandle_if_exists_else_none(fname)
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-f', '--file', metavar='INPUT_FILE', type=open_compose_file,
+                    default='',
+                    help='Specify an alternate input compose file')
+parser.add_argument('-t', '--template', type=argparse.FileType('r'),
+                    help='Specify Jinja2 template file from which compose file will be generated. '
+                         '--template argument discards --file argument.')
+parser.add_argument('-n', '--nvidia-docker-host', metavar='HOST[:PORT]', type=str, default='localhost:3476',
+                    help='nvidia-docker-plugin daemon address to connect to (default: localhost:3476)')
+parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', type=argparse.FileType('w'),
+                    default='nvidia-docker-compose.yml',
+                    help='Specify an alternate output compose file (default: nvidia-docker-compose.yml)')
+parser.add_argument('-G', '--generate', action='store_true',
+                    help='Generate output compose file and exit, do not run docker-compose')
+
+(args, extras) = parser.parse_known_args()
+
+if args.file is None:
+    print('Missing docker-compose file.')
+    sys.exit(1)
+
+resp = request.urlopen('http://{0}/docker/cli/json'.format(args.nvidia_docker_host)).read().decode()
+cuda_config = json.loads(resp)
+
+gpu_devices = []
+support_devices = []
+
+for dev in cuda_config['Devices']:
+    if GPU_DEVICE_PATTERN.match(dev):
+        gpu_devices.append(dev)
+    else:
+        support_devices.append(dev)
+
+gpu_devices.sort()
+n_gpu = len(gpu_devices)
+volume = cuda_config['Volumes'][0].split(':')[0]
+
+if args.template is not None:
+    from jinja2 import Template
+    content = Template(args.template.read()).render(N_GPU=n_gpu, GPU_DEVICES=gpu_devices)
+    config = yaml.load(content)
+else:
+    config = yaml.load(args.file)
+if config is None:
+    raise RuntimeError('Compose file is empty')
+
+volumes = config.setdefault('volumes', {})
+volumes[volume] = {'external': True}
+
+for service, sconf in config['services'].items():
+    sconf.setdefault('volumes', []).extend(cuda_config['Volumes'])
+    devices = sconf.setdefault('devices', [])
+    if not any(gdev in devices for gdev in gpu_devices):
+        devices.extend(gpu_devices)
+    devices.extend(support_devices)
+
+yaml.safe_dump(config, args.output, default_flow_style=False)
+
+if not args.generate:
+    from compose.cli.main import main as compose_main
+    sys.argv[:] = ['docker-compose', '-f', args.output.name] + extras
+    compose_main()
