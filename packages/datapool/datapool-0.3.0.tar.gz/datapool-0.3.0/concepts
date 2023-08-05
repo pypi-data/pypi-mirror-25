@@ -1,0 +1,159 @@
+"****" means "unique within table"
+
+
+
+quality info:
+
+
+    signal_id comment_id dq_id  author_id  time_stamp
+
+
+comment:
+
+    comment_id  comment_txt
+
+
+author:
+
+    id   short_name   full_name   affiliation   description
+    **   **********
+
+
+dq:
+
+    id tag description
+
+
+
+facts:
+
+    id  value  date_time_id  parameter_id  source_id  x y z  site_id
+    **
+
+
+parameters:
+
+   id  name  unit  description
+   **  ****
+
+
+date_time:
+
+   id date_time
+   **
+
+
+site:
+
+   id  name  street  city  description  x  y  z
+   **  ****
+
+
+picture:
+
+   id  site_id  date  blob  file_name  description
+   **                       *********
+
+
+source:
+
+   id  name  source_type_id  serial  description  integration_x  integration_y  integration_z  integration_angle  integration_time
+   **  ****                  ******
+
+
+source_type:
+
+   id  name  description
+   **  ****
+
+
+value_definition:
+
+   id  value   source_type_id   description
+   **  *****
+
+
+
+------------------------------------------
+
+
+development workflow:
+
+step 0:
+- setup scaffold for development landing zone
+
+step 1:
+- import meta data
+- check validity
+- check scripts (execute)
+- check result
+- insert into development db
+- show result (flattened)
+
+
+step 2:
+- step 1 +
+- check consistency with production db
+
+step 3:
+- transfer test landing zone to production db
+
+
+---------------------------------------------
+
+productive:
+
+- observer: read files, send location + file content to worker
+
+- worker:
+  - check validity
+  - check consistency
+  - write to db if ok
+  - write error to log if present
+
+----------------------------------------------
+
+optional:
+ - command line client for simple queries
+ - command line client to insert comments
+
+ daemonization main loop ?
+ detect if other process is running
+ user restriction for main loop
+
+----------------------------------------------
+
+todo:
+
+   - client / worker / logger server                     (2d)
+   - (queue: priotorize by time stamp ! (needed ?))
+   - config management                                   (1d)
+   - yaml parsers + data base objects                    (3d)
+   - standardized format parser + db insert              (2d)
+   - R script starter, same for python and julia         (1d)
+   - testing
+   - docs, incl installation instrcutions, workflow      (2d)
+
+   - cmdline interfaces                                  (2d)
+   - email notification (optional)                       (1d)
+
+summary: 13 d
+
+open: prioritization of jobs by time stamp needed ?
+
+
+config:
+   - landing zone
+   - log settings
+   - database settings
+   - error tolerance setttings
+   - notificaion email settings
+   - mapping: extension to execution script !
+
+---- config
+
+datapool init --landing-zone /tmp  --db-ip 0.0.0.0 --db-port 20 --db-name xyz  --db-connector abc
+
+   -> setup db
+   -> setup landing zone
+   -> setup config
