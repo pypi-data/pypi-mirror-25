@@ -1,0 +1,34 @@
+- name: install necessary packages
+  include: install.yml
+
+- name: configure firewalld
+  include: firewalld.yml
+  when: ansible_connection != 'docker'
+
+- name: configure Jenkins
+  include: configure.yml
+
+- name: startup Jenkins
+  systemd:
+    name: jenkins
+    state: started
+    enabled: true
+
+- name: pin plugins to avoid upgrades
+  include: pin_plugin.yml
+  when: jenkins_plugin_install_configure
+
+- name: plugins
+  include: plugins.yml
+  when: jenkins_plugin_install_configure
+
+- name: make sure handlers are flushed
+  meta: flush_handlers
+
+- name: wait for the master to be ready to go
+  include: ensure_up.yml
+
+- name: application-level post configuration tasks
+  become: false
+  include: post_configure.yml
+  when: jenkins_plugin_install_configure
