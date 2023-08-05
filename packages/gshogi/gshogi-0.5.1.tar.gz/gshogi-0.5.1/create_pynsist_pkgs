@@ -1,0 +1,115 @@
+#!/bin/sh
+
+# create pynsist_pkgs folder used in building windows installer
+# This is based on the 2-extract.sh script from the pynsist pygi
+# example (https://github.com/takluyver/pynsist)
+
+#
+# Instructions for building windows installer
+#
+# Note this script is intended to run on Linux.
+# It can build 32 bit and 64 bit installers for windows.
+#
+# 1. get files required by this script
+#  
+#       pygi latest all in one file
+#
+#           download from https://sourceforge.net/projects/pygobjectwin32/files/
+#           eg. pygi-aio-3.24.1_rev1   
+#           rename it to pygi.exe
+#           place it in the gshogi folder with this script
+#
+#       Get compiled engine module
+#
+#           To get this compile gshogi on windows.
+#           I used Windows 7 with SDK 7.1.
+#           Place the file (engine.pyd) in the gshogi folder with this script.
+#           Rename it as engine64.pyd or engine32.pyd depending on whether you
+#           are building 64 or 32 bit.
+#
+# 2. run this script to extract packages
+#
+#    ./create_pynsist_pkgs 64
+#    (or ./create_pynsist_pkgs 32 for 32 bit build)
+#
+#
+# 3. build the installer exe
+#
+#      Install nsis and pynsist packages
+#
+#        There may be an nsis package on your system
+#        On CentOS 7 it is called mingw32-nsis (in EPEL repo)
+#        pynsist can be installed with pip3
+#
+#      Create the installer
+#   
+#        Edit the installer64.cfg file and set the version number
+# 
+#        Run the command   
+#          python3 -m nsist installer64.cfg
+#          (or python3 -m nsist installer32.cfg for 32 bit build)
+#
+#      The installer will be created in the build/nsis64 folder
+#      (or build/nsis32 for 32 bit)
+#
+usage="Usage: create_pynsist_pkgs [32|64]"
+if [ $# -ne 1 ]; then
+    echo "$usage"
+    exit
+elif [ ! "$1" = "32" ] && [ ! "$1" = "64" ]; then
+    echo "$usage"
+    exit
+fi
+
+arch=$1
+    
+if [ ! -e pygi.exe ]
+then
+    echo "pygi.exe not found"
+    exit
+fi
+
+if [ ! -e engine"$arch".pyd ]
+then
+    echo "engine module not found"
+    exit
+fi
+
+if ! [ -x "$(command -v 7za)" ]; then
+  echo '7za command not available. Install p7zip.'
+  exit
+fi
+
+rm -fr pynsist_pkgs
+mkdir pynsist_pkgs
+
+cp engine"$arch".pyd pynsist_pkgs/engine.pyd
+
+# Unzip the bindings
+7za x pygi.exe -opygi
+
+# Copy the PyGI packages into the pynsist_pkgs folder
+7za x pygi/binding/py3.4-"$arch"/py3.4-"$arch".7z -obindings
+cp -r bindings/* pynsist_pkgs
+rm -r bindings
+
+# Copy the noarch and specified architecture dependencies into the gnome folder
+array=( ATK Base GDK GDKPixbuf GTK HarfBuzz JPEG Pango WebP TIFF )
+
+for i in "${array[@]}"
+do
+    echo -e "\nProcessing $i dependency"
+    7za x pygi/noarch/$i/$i.data.7z -o$i-noarch
+    cp -r $i-noarch/gnome/* pynsist_pkgs/gnome
+    rm -r $i-noarch
+
+    7za x pygi/rtvc10-"$arch"/$i/$i.bin.7z -o$i-arch
+    cp -r $i-arch/gnome/* pynsist_pkgs/gnome
+    rm -r $i-arch
+done
+
+#Remove pygi Folder
+rm -r pygi
+
+#Compile glib schemas
+glib-compile-schemas pynsist_pkgs/gnome/share/glib-2.0/schemas/
