@@ -1,0 +1,67 @@
+<section i18n:domain="redturtle.portlet.content"
+      	 tal:define="item python:view.item;
+      				       portlet_class view/getPortletClass"
+      	 tal:condition="python:item"
+      	 tal:attributes="id python:view.getPortletId();
+      		               class string:$portlet_class portlet portletContentPortlet">
+  <header class="portletHeader"
+          tal:define="title view/data/portletTitle"
+          tal:condition="title">
+    <h4>${title}</h4>
+  </header>
+
+  <section class="portletContent">
+    <tal:showtitle condition="view/data/showTitle">
+      <div class="item-title">
+        <h3><a href="" tal:attributes="href item/absolute_url">${item/Title}</a></h3>
+      </div>
+    </tal:showtitle>
+
+    <div class="item-image"
+         tal:condition="python:view.data.showImage and scale"
+         tal:define="scale view/getImageScale">
+      <img tal:replace="structure scale"/>
+    </div>
+    <div class="item-description"
+         tal:condition="python:view.data.showDescr and getattr(item,'Description',None)">
+      <p class="documentDescription" tal:content="structure view/getItemDescription"/>
+    </div>
+    <div class="item-text"
+         tal:condition="python:view.data.showText and getattr(item,'text',None)">
+      <span tal:replace="structure item/text/output"/>
+    </div>
+    <div class="social-links"
+         tal:define="social_providers view/socialProviders"
+         tal:condition="social_providers">
+      <ul class="sectionBookmarks"
+          tal:define="portal_url context/@@plone_portal_state/portal_url">
+          <li tal:repeat="provider social_providers">
+              <a href="{provider/url}" class="bookmarkItem">
+                  <img src=""
+                       tal:attributes="src string:${portal_url}/++resource++sb_images/${provider/logo}; alt string:${provider/id}" />
+                  &nbsp;
+                  <span class="bookmarkId" tal:content="provider/id">reddit</span>
+              </a>
+          </li>
+      </ul>
+      <div class="visualClear"></div>
+    </div>
+  </section>
+
+  <footer class="portletFooter" tal:condition="python: view.data.showMore or view.data.showComments">
+    <tal:comments-show condition="view/data/showComments">
+    	<tal:comments define="comments python:view.getCommentsLen()"
+	  	  		        tal:condition="comments">
+		    <a tal:attributes="href string:${item/absolute_url}#comments">
+		  	  <span tal:content="python:view.getCommentsString(comments)"/>
+		    </a>
+		    <span tal:condition="view/data/showMore">|</span>
+	    </tal:comments>
+		</tal:comments-show>
+		<tal:more condition="view/data/showMore">
+			<a href="${item/absolute_url}">
+				<span i18n:translate="more_link">more...</span>
+			</a>
+		</tal:more>
+  </footer>
+</section>
