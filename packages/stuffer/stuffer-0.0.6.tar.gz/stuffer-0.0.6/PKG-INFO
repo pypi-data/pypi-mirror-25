@@ -1,0 +1,291 @@
+Metadata-Version: 1.0
+Name: stuffer
+Version: 0.0.6
+Summary: Simplified, container-friendly provisioning
+Home-page: http://bitbucket.org/mapflat/stuffer
+Author: Lars Albertsson
+Author-email: lalle@mapflat.com
+License: UNKNOWN
+Description-Content-Type: UNKNOWN
+Description: .. note:: For the latest source, please visit the
+           `Bitbucket repository <https://bitbucket.org/mapflat/stuffer>`_
+           
+        
+        Stuffer - simplified, container-friendly provisioning
+        =====================================================
+        
+        Stuffer is a provisioning tool designed to be simple, and to be used in simple scenarios, primarily
+        for provisioning container images.
+        
+        Documentation is hosted on `<http://stuffer.readthedocs.io>`_.
+        
+        
+        Project status
+        --------------
+        
+        Alpha. Raw but usable. The documentation is sparse. 
+        
+        
+        Use cases
+        ---------
+        
+        Stuffer is primarily intended to be used for provisioing container images, Docker in particular. As
+        a secondary use case, it can be used to provision non-production machines, e.g. developer machines.
+        
+        More complex provisioning tools, such as Puppet, Chef, and Ansible, are intended for bringing a
+        machine in an arbitrary state to a desired state. This turns out not to be possible in practice, and
+        production machines manages with such tools tend to suffer from deviations from intended state,
+        e.g. outdated dependency packages.
+        
+        Stuffer is primarily intended for building a machine from scratch to the desired state. Since the
+        initial state is known, much of the complexity of existing provisioning tools is unnecessary. For
+        example, during an image build, running services need not be considered nor restarted.
+        
+        Overview
+        --------
+        
+        Stuffer uses a Python embedded DSL for specifying provisioning directives. It is typically invoked
+        with one or more command arguments on the command line, e.g.:
+        ::
+        
+            stuffer 'apt.Install("mercurial")'
+        
+        Multiple arguments are concatenated into a multiple line Python recipe:
+        ::
+        
+            stuffer \
+              'for pkg in "mercurial", "gradle", "python-nose":' \
+              '  print("Installing", pkg)' \
+              '  apt.Install(pkg)'
+        
+        When provisioning Docker containers, stuffer should typically be invoked multiple times, since it
+        allows Docker to use the local cache efficiently:
+        ::
+        
+        RUN stuffer 'apt.Install("mercurial")'
+        RUN stuffer 'apt.Install("gradle")'
+        RUN stuffer 'apt.Install("python-nose")'
+        
+        
+        Reused recipes can be factored out into Python modules for easier reuse:
+        ::
+        
+            stuffer 'development.Tools()'
+        
+        In development.py:
+        ::
+        
+            from stuffer.core import Group
+        
+            class Tools(Group):
+              def children(self):
+                return [apt.Install(p) for p in "mercurial", "gradle", "python-nose"]
+        
+        
+        It is also possible to create composite actions by explicitly executing other actions. Example from stuffer.contrib.java:
+        ::
+            class Jdk(Action):
+                def __init__(self, version):
+                    ...
+        
+                def run(self):
+                    apt.AddRepository('ppa:webupd8team/java').execute()
+                    debconf.SetSelections('debconf', 'shared/accepted-oracle-license-v1-1', 'select', 'true').execute()
+                    debconf.SetSelections('debconf', 'shared/accepted-oracle-license-v1-1', 'seen', 'true').execute()
+                    apt.Install('oracle-java{}-installer'.format(self.version)).execute()
+        
+        
+        Stuffer comes with builtin knowledge of Docker practices, and helps you steer away from common
+        mistakes, and towards best practices. There is not consensus on a single set of Docker best
+        practices, but stuffer provides a means to express your organisation's decided practices in code, instead
+        of educating all developers on the right incantations and rituals.
+        
+        ::
+        
+            Dockerfile:
+              FROM phusion/baseimage:0.9.18
+        
+              RUN stuffer 'docker.Prologue()'  # Verifies e.g. that base image is sound.
+        
+              RUN stuffer 'apt.Install("some-package")' 
+        
+              RUN stuffer 'apt.SourceList("deb http://some.external.repository.com stable non-free")'
+              RUN stuffer 'apt.Install("other-package")'  # Automatically runs 'apt-get update' before 'apt-get install'
+        
+              RUN stuffer 'docker.Epilogue()'  # Cleans temporary files.
+        
+        
+        
+        Design goals
+        ------------
+        
+        Stuffer design gives priority to:
+        
+        -  Simplicity of use. No knowledge about the tool should be required in order to use it for simple scenarios by copying
+           examples. Some simplicity in the implementation is sacrificed in order to make the usage interface simple. Actions
+           are named similarly to the corresponding shell commands.
+        
+        -  Transparency. Whenever reasonable, actions are translated to shell commands. All actions are logged.
+        
+        -  Ease of reuse. It should be simple to extract commands from snippets and convert them to reusable modules without a
+           rewrite. Therefore, both the DSL and modules are written in Python.
+        
+        -  Docker cache friendliness. Images built with similar commands should be able to share a prefix of commands in order
+           to benefit from Docker image caching.
+        
+        -  No dislike factors. Provisioning tools tend to be loved and/or hated by users, for various
+           reasons. There might be no reason to be passionately enamoured with stuffer, but there should be
+           no reason to have a strong dislike for it, given that you approve of Python and Docker.
+        
+        -  Ease of debugging. Debugging stuffer recipes should be as easy as debugging standard Python programs.
+        
+        -  Avoid reinventing wheels. Use existing Python modules or external tools for tasks that have
+           already been solved. Give priority to reusing existing code over minimising dependencies. In
+           particular, use Python 3 and `click <http://click.pocoo.org/>`_ to save boilerplate.
+        
+        
+        Moreover, the project model is design to facilitate sharing and reuse of code between users, see below.
+        
+        
+        DSL
+        ---
+        
+        The DSL is designed to be comprehensible by readers that are not familiar with stuffer. For example,
+        the command apt.Install("mypack") runs "apt-get install mypack". There is a balance between
+        convenience and comprehensibility. Stuffer in most cases shuns magic that would create
+        convenience in preference for more understandable code.
+        
+        The DSL is also designed to make it easy to do things that are correct and work well with
+        containers, and difficult to do things that do not harmonise with containers.
+        
+        The DSL is designed to be tool friendly (with IntelliJ/PyCharm and pylint in particular), both for
+        writing stuff files and for working on stuffer itself. For example, all imports are explicitly
+        declared in order to make package structure comprehensible for tools.
+        
+        Python conventions are used for naming, i.e. CamelCase classes and snake_case functions.
+        
+        
+        Actions
+        ```````
+        
+        Each desired mutation of a container is represented by an Action. There are Actions for installing
+        packages, changing file contents, setting configuration variables, etc. The different types of
+        actions are represented by different subclasses of Action. Implementations of Action should be
+        idempotent; stuffer will not perform any checks whether the Action is redundant, and each Action
+        specified will be run. Many system administration commands are naturally idempotent, e.g. ``apt-get
+        install``. For Actions that are not, the Action implementation needs to include appropriate checks.
+        
+        Implementations of Action specify what commands to execute by overrinding either ``Action.command``
+        or ``Action.run``.
+        
+        
+        Prerequisites
+        `````````````
+        
+        Actions may specify that another Action needs to have been executed before ``Action.run`` by
+        overriding ``Action.prerequisites``. For example, ``pip.Install`` specifies that the ``pip`` command
+        must be installed before using it to install other packages. Although the same effect can be
+        achieved by explicitly running the required preparatory steps inside ``Action.run``, it is more
+        natural to separate the prerequisites from the command specified by the user. It also allows a
+        potential future version of stuffer to keep track of executed prerequisites and avoid redundant
+        executions.
+        
+        
+        Passing state
+        `````````````
+        
+        A container provisioning recipe typically consists of multiple stuffer invocations. The invocations
+        do not share state, except for the container file system. Hence, if you need to pass state between
+        invocations, you will need to save state in the file system.
+        
+        Stuffer provides a simple key/value store mechanism to pass state between invocations via files in
+        the container file system. Use `store.set_value <api/store.html#stuffer.store.set_value>`_ to store values, and
+        `store.get <api/store.html#stuffer.store.get>`_ to retrieve them. The naming convention for keys is
+        lower snake case, separated by dots for hierarchical organisation,
+        e.g. ``my_corp.databases.mysql.preferred_driver``. The prefix `stuffer.`` is reserved for stuffer
+        components, which should use key names corresponding to the stuffer package name,
+        e.g. ``stuffer.apt.update_needed``.
+        
+        The values in the store are plain strings.
+        
+        
+        Developing stuffer
+        ------------------
+        
+        Collaboration model
+        ```````````````````
+        
+        Users are allowed to put recipes under sites/ for others to get inspired. This model may not scale,
+        but as long as the number of users is small, there is value in sharing and showing each other code
+        snippets, in order to extract pieces of common value.
+        
+        Snippets worth reuse can be put under stuffer/contrib/. Files under stuffer/contrib are expected to
+        be maintained by the contributor.
+        
+        Routines for installing third-party software should also go under stuffer/contrib.
+        
+        
+        Contributing
+        ````````````
+        
+        New code should be covered with integration tests. Avoid unit tests - since the purpose of stuffer is integration,
+        there is little value testing scenarios that are not authentic. Strive to figure out a way to test functionality with
+        Docker containers.
+        
+        In order to run the test suite, run ``tox`` in the project root directory. The continuous
+        integration build also bulds the documentation and performs a distribution build. See `shippable.yml
+        <https://bitbucket.org/mapflat/stuffer/src/master/shippable.yml>`_
+        for the exact commands.
+        
+        When tests pass, fork `<https://bitbucket.org/mapflat/stuffer>`_, push your code to the fork, and
+        create a pull request.
+        
+        
+        Build and release
+        `````````````````
+        
+        Continuous integration builds are run with `Shippable
+        <https://app.shippable.com/bitbucket/mapflat/stuffer>`_. Shippable builds a release package for
+        every merge or push to master branch. If the version number is higher than the current version on
+        `<https://pypi.python.org>`_, the CI build uploads a new release. Hence, in order to make a new
+        release, update the version number in main.py and setup.py before merging to master.
+        
+        
+        Deployment
+        ``````````
+        
+        Install the latest version with ``pip3 install stuffer``, depending on the default python version in
+        your environment.
+        
+        In order to create an installable distribution package from the source directory, run ``./setup.py
+        sdist`` from the project root directory.  Install with ``pip3 install dist/stuffer-*.tar.gz``.
+        
+        
+        Q & A
+        -----
+        
+        Q: Stuffer sounds similar to `Packer <https://www.packer.io/>`_. What is the relation?
+        
+        A: Packer is a tool for creating a container, given that you provide stuff to put in the
+        container. Stuffer is a way to express what stuff to put in a container, given that you provide a
+        way to pack the container. They can be used together, if desired. Packer is made by `Hashicorp
+        <https://www.hashicorp.com/>`_, who have no relation to Stuffer.
+        
+        Q: I think that Docker containers should be built according to the following principle: <your
+        preference here>. Why doesn't stuffer do that?
+        
+        A: There is no single best way to build Docker images. There are tradeoffs involved. Stuffer gives
+        you a way to express your preferences, and package it as code, reusable by your colleagues. Feel
+        free to submit a PR that implements your preferences as an optional strategy.
+        
+        
+        Known issues
+        ------------
+        
+        There is a name clash between the `click command line parser library <http://click.pocoo.org/>`_ and
+        a Ubuntu python package for handling the click packaging format. Hence, you might run into trouble
+        if you have the former installed on your machine, or in the Docker images that you wish to build. At
+        this point, you can either solve it by removing the conflicting package, or by installing stuffer in
+        a virtual environment (virtualenv).
+        
+Platform: UNKNOWN
