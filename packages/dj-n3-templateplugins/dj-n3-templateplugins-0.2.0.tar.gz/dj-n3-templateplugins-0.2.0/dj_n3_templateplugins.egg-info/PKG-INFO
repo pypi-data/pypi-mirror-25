@@ -1,0 +1,154 @@
+Metadata-Version: 1.1
+Name: dj-n3-templateplugins
+Version: 0.2.0
+Summary: Extensible Template Plugins for Django
+Home-page: https://github.com/Jaredn/dj-n3-templateplugins
+Author: Jared Newell
+Author-email: jared.newell@gmail.com
+License: MIT
+Download-URL: https://github.com/Jaredn/dj-n3-templateplugins/archive/0.2.0.tar.giz
+Description: =============================
+        django-n3-templateplugins
+        =============================
+        
+        .. image:: https://badge.fury.io/py/dj-n3-templateplugins.svg
+            :target: https://badge.fury.io/py/dj-n3-templateplugins
+        
+        .. image:: https://travis-ci.org/Jaredn/dj-n3-templateplugins.svg?branch=master
+            :target: https://travis-ci.org/Jaredn/dj-n3-templateplugins
+        
+        .. image:: https://codecov.io/gh/Jaredn/dj-n3-templateplugins/branch/master/graph/badge.svg
+            :target: https://codecov.io/gh/Jaredn/dj-n3-templateplugins
+        
+        Extensible Template Plugins for Django
+        
+        Documentation
+        -------------
+        
+        The full documentation is at https://dj-n3-templateplugins.readthedocs.io.
+        
+        Quickstart
+        ----------
+        
+        Install django-n3-templateplugins::
+        
+            pip install dj-n3-templateplugins
+        
+        Add it to your `INSTALLED_APPS`:
+        
+        .. code-block:: python
+        
+            INSTALLED_APPS = (
+                ...
+                'dj_n3_templateplugins.apps.DjN3TemplatepluginsConfig',
+                ...
+            )
+        
+        Features
+        --------
+        
+        If you want to build an extensible platform, you may find the need to allow the developers that use your app to alter
+        or add on to the functionality that you provide.  This django package attempts to add 'plugin' functionality to
+        your django app.  
+        
+        To give an example of why I'm creating this... My company built an in-house django asset management system that we want to open-source, but there is a bunch of business-logic throughout the Templates and Views that wouldn't make sense in an open-sourced app.  So in order to open source our asset management system we needed to make our custom business-logic pluggable.  Plus, anyone that used our asset management system would probably want a similar feature for their own business logic.  
+        
+        How it works:
+        
+        End-Users of your app create a 'plugin', which is just a Python Class which requires two methods to be created:
+        
+        .. code-block:: python
+            
+            # plugin.py
+            class Plugin(TemplatePlugin):
+                def get_context_data():  
+                    # How the plugin adds extra data to your Views/Templates
+                    return {'foo': 'some context'}
+                
+                def render_html(): 
+                    # How the plugin uses the context (and any provided by your view) to return HTML code (Full Django Template
+                    # syntax is allowed here!)
+                    return '<p><b>I am HTML</b> and I can use my context like this: {{ plugins.plugin_name.context.foo }}</p>'
+            
+        
+        These plugins get placed in the configurable directory:
+        
+        .. code-block:: python
+        
+            # settings.py
+            N3PLUGINS_PLUGIN_DIR = '/some/path/with/plugins'
+        
+        
+        You then use the provided decorator @load_plugins to decorate your views like this:
+        
+        .. code-block:: python
+        
+            # views.py
+            @load_plugins
+            class SomeView(DetailView):
+        
+        This decorator will set a class property called self.plugins which is a dictionary.  You then use this at any point
+        in your view's code and make sure it gets added to the Context object that is passed in for Template rendering.
+        
+        
+        In your template you then use django-n3-templateplugins provided templatetag to render the plugin's html, which looks
+        something like this:
+        
+        .. code-block:: python
+        
+            # some_template.html
+            {% load render_plugin %}
+            {% for k, v in plugins.items %}
+                {% render_plugin v.plugin_pbject %}
+            {% endfor %}
+        
+        And that's it!  
+        
+        * TODO
+        
+        Running Tests
+        -------------
+        
+        Does the code actually work?
+        
+        ::
+        
+            source <YOURVIRTUALENV>/bin/activate
+            (myenv) $ pip install tox
+            (myenv) $ tox
+        
+        Credits
+        -------
+        
+        Tools used in rendering this package:
+        
+        *  Cookiecutter_
+        *  `cookiecutter-djangopackage`_
+        
+        .. _Cookiecutter: https://github.com/audreyr/cookiecutter
+        .. _`cookiecutter-djangopackage`: https://github.com/pydanny/cookiecutter-djangopackage
+        
+        
+        
+        
+        History
+        -------
+        
+        0.1.0 (2017-09-16)
+        ++++++++++++++++++
+        
+        * First release on PyPI.
+        
+Keywords: dj-n3-templateplugins django plugins template templateplugin
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Framework :: Django
+Classifier: Framework :: Django :: 1.10
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
