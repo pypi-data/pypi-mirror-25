@@ -1,0 +1,1 @@
+# init file only for building Excel function documentation
