@@ -1,0 +1,66 @@
+# polypoint
+A Python 3 package for classifying geolocation data.
+
+## Installation
+```
+pip3 install polypoint
+```
+
+## Example Use
+Unless you provide a correctly formatted XML sheet (see states.xml for an example), polypoint defaults to using the 50 states of America as its polygons. 
+```
+from polypoint import polypoint
+classifier = polypoint.PolygonClassifier()
+classifier.initialize()
+# point_list containing tuples of latitude and longitude of the form:
+# [(39.962245, -83.000647), (42.659829, -73.781339), ... ]
+point_list = [(39.962245, -83.000647), (42.659829, -73.781339)]
+
+# returns a list of polygon indices of the form:
+# [34, 31, ... ]
+results = classifier.match_points_to_polygon(point_list)
+print(results) 
+
+# returns a list of polygon names of the form:
+# ['Ohio', 'New York', ... ]
+results_string = classifier.get_polygon_names(results)
+print(results_string)
+```
+
+## Public Interface
+
+`classifier.match_points_to_polygon(point_list)` accepts a list of coordinates to classify and returns a Numpy array of integers which are indices in `classifier.conf.name_list`. These integers are easily converted to polygon names with the `classifier.get_polygon_names(result_list)` method. 
+
+`classifier.get_polygon_names(result_list)` accepts a list of integers and returns a list with the corresponding strings from the list `classifier.conf.name_list`
+
+## Initialization and Configuration
+
+Each PolygonClassifier instance has a Configuration class (see config.py) as an instance variable, accessible as `classifier.conf`
+
+There are two configuration initialization options for a classifier
+```
+classifier.initialize()
+```
+and
+```
+classifier.initialize_min()
+```
+`classifier.initialize()` will perform a full initialization of the classifier configuration. See the Configuration class in the config.py file. Some of more important options are `parallel_enabled`, `num_cpu`, `parallel_limit`, and `trimmed_polygons`. 
+
+`classifier.initialize_min()` will perform a minimal initialization of the classifier configuration, with no optimization and using no parallel processing. Useful if only working with small lists at once.
+
+`classifier.conf.parallel_enabled` is a boolean that will enable or disable parallel computation on the input.
+
+`classifier.conf.num_cpu` is an integer value for the number of cores your processor has. This controls how many processes are started to perform computation on the input. If left unconfigured, this defaults to the number of detected cores in your processor. (Note that this may read the number of virtual cores)
+
+`classifier.conf.parallel_limit` is an integer lower limit on the size of the input that triggers parallel computation. For example, if set to 1000 then the input list must be of size greater than 1000 to start parallel computation. For lists of size 1000 or less, the result will be computed sequentially. Defaults to 0 (meaning that if `parallel_enabled` is set to `True`, all input will use multiple processes). If you are repeatedly inputting small lists, it may be worth disabling parallel computation or finding at what list size multiprocessing is faster/slower and setting that value here. 
+
+`classifier.conf.trimmed_polygons` is a list of polygons corresponding to the classifying polygons. For example, if the 50 states of America are being used, this list will have 50 corresponding polygons. All of the trimmed polygons will be contained by the original polygons and are used to speed up the search. See below for examples. Blue is the original polygon and red is the trimmed polygon. 
+
+![Georgia with trimmed interior polygon](https://raw.githubusercontent.com/josephacall/polypoint/dev/images/georgia_with_trimmed.png "Georgia with trimmed interior polygon")
+
+![Georgia with trimmed interior polygon](https://raw.githubusercontent.com/josephacall/polypoint/dev/images/new_york_with_trimmed.png "New York with trimmed interior polygon")
+
+![Texas with trimmed interior polygon](https://raw.githubusercontent.com/josephacall/polypoint/dev/images/texas_with_trimmed.png "Texas with trimmed interior polygon")
+
+### MIT License 
