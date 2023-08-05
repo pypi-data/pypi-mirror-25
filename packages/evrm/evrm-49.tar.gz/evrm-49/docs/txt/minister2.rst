@@ -1,0 +1,14 @@
+.. minister:
+
+MINISTER
+########
+
+Het beleid van de minister is er op gericht om het aantal dwangbehandelingen te verminderen en ziet dat door afbouw van bedden ook gebeuren.
+Wat ze echt doet is de dwang naar de thuis situatie brengen i.p.v in het ziekenhuis.
+Dwang zelf neemt echter toe en wel toegepast in de thuis situatie.
+Dat daar het extra bonus trauma ervaring voor de GGZ patient in gelegen is.
+De WvGGZ maakt dwang thuis mogelijk, het word niet eens meer dwang genoemt maar "zorg" en wel op basis van risico evaluaties.
+Men pleegt met deze "gedwongen zorg thuis" wetsovertredingen door de medicijnen die men er toedient, deze blijken gif te zijn.
+Doordat men met de WvGGZ strafbare feiten pleegt moet deze hele manier van doen ook onmogelijk gemaakt kunnen worden. 
+
+https://www.rijksoverheid.nl/documenten/kamerstukken/2017/09/04/beantwoording-kamervragen-over-toename-dwangopnames-en-crisisopnamen
