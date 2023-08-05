@@ -1,0 +1,29 @@
+language: python
+python:
+  - "2.7"
+ 
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker-compose --version
+  - docker version
+
+
+# Install Telemeta
+install:
+  - docker-compose pull
+  - docker-compose build
+
+script:
+  - docker-compose run app conda list
+  - docker-compose run app pytest /srv/src/telemeta/telemeta
+  - docker-compose up -d
+  - sleep 60
+  - curl --fail --retry 10 --retry-delay 5  -v $(docker-compose port nginx 80)
+  - docker-compose stop
+
+after_failure:
+  - docker-compose logs
