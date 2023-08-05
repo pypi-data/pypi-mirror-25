@@ -1,0 +1,394 @@
+Metadata-Version: 2.0
+Name: python-rapidjson
+Version: 0.2.4
+Summary: Python wrapper around rapidjson
+Home-page: https://github.com/python-rapidjson/python-rapidjson
+Author: Lele Gaifax
+Author-email: lele@metapensiero.it
+License: MIT License
+Keywords: json rapidjson
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: C++
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python
+
+.. -*- coding: utf-8 -*-
+.. :Project:   python-rapidjson -- Introduction
+.. :Author:    Ken Robbins <ken@kenrobbins.com>
+.. :License:   MIT License
+.. :Copyright: © 2015 Ken Robbins
+.. :Copyright: © 2016, 2017 Lele Gaifax
+..
+
+==================
+ python-rapidjson
+==================
+
+Python wrapper around RapidJSON
+===============================
+
+RapidJSON_ is an extremely fast C++ JSON serialization library.
+
+We do not support legacy Python versions, you will need to upgrade to Python 3
+to use this library.
+
+Latest version documentation is automatically rendered by `Read the Docs`__.
+
+__ http://python-rapidjson.readthedocs.io/en/latest/
+
+.. image:: https://travis-ci.org/python-rapidjson/python-rapidjson.svg?branch=master
+   :target: https://travis-ci.org/python-rapidjson/python-rapidjson
+   :alt: Build status
+
+.. image:: https://readthedocs.org/projects/python-rapidjson/badge/?version=latest
+   :target: http://python-rapidjson.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation status
+
+
+Getting Started
+---------------
+
+First install ``python-rapidjson``:
+
+.. code-block:: bash
+
+    $ pip install python-rapidjson
+
+Basic usage looks like this:
+
+.. code-block:: python
+
+    >>> import rapidjson
+    >>> data = {'foo': 100, 'bar': 'baz'}
+    >>> rapidjson.dumps(data)
+    '{"bar":"baz","foo":100}'
+    >>> rapidjson.loads('{"bar":"baz","foo":100}')
+    {'bar': 'baz', 'foo': 100}
+
+
+Development
+-----------
+
+If you want to install the development version (maybe to contribute fixes or
+enhancements) you may clone the repository:
+
+.. code-block:: bash
+
+    $ git clone --recursive https://github.com/python-rapidjson/python-rapidjson.git
+
+.. note:: The ``--recursive`` option is needed because we use a *submodule* to
+          include RapidJSON_ sources. Alternatively you can do a plain
+          ``clone`` immediately followed by a ``git submodule update --init``.
+
+          Alternatively, if you already have (a *compatible* version of)
+          RapidJSON includes around, you can compile the module specifying
+          their location with the option ``--rj-include-dir``, for example:
+
+          .. code-block:: shell
+
+             $ python3 setup.py build --rj-include-dir=/usr/include/rapidjson
+
+A set of makefiles implement most common operations, such as *build*, *check*
+and *release*; see ``make help`` output for a list of available targets.
+
+
+Performance
+-----------
+
+``python-rapidjson`` tries to be as performant as possible while staying
+compatible with the ``json`` module.
+
+The following tables show a comparison between this module and other libraries
+with different data sets.  Last row (“overall”) is the total time taken by all
+the benchmarks.
+
+Each number show the factor between the time taken by each contender and
+``python-rapidjson`` (in other words, they are *normalized* against a value of
+1.0 for ``python-rapidjson``): the lower the number, the speedier the
+contender.
+
+In **bold** the winner.
+
+
+Serialization
+~~~~~~~~~~~~~
+
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|       serialize       |  ``dumps()``\ [1]_   | ``Encoder()``\ [2]_  |  ``dumps(n)``\ [3]_  | ``Encoder(n)``\ [4]_ |     ujson\ [5]_      |   simplejson\ [6]_   |     stdlib\ [7]_     |      yajl\ [8]_      |
++=======================+======================+======================+======================+======================+======================+======================+======================+======================+
+|    100 arrays dict    |         1.00         |         0.99         |       **0.73**       |         0.77         |         0.97         |         4.82         |         2.27         |         1.37         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|    100 dicts array    |         1.00         |         1.02         |       **0.82**       |         0.85         |         0.90         |         5.68         |         2.19         |         1.36         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|    256 Trues array    |       **1.00**       |         1.04         |         1.24         |         1.09         |         1.31         |         2.41         |         2.04         |         1.12         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|    256 ascii array    |         1.00         |         1.01         |         1.04         |         1.09         |       **0.49**       |         1.01         |         0.95         |         1.08         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|   256 doubles array   |       **1.00**       |         1.02         |         1.08         |         1.03         |         6.76         |         7.34         |         6.88         |         3.89         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|   256 unicode array   |         1.00         |         0.89         |         0.89         |         0.91         |         0.56         |         0.73         |         0.83         |       **0.47**       |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|    complex object     |         1.00         |         1.01         |         0.85         |       **0.82**       |         1.04         |         4.11         |         2.62         |         2.16         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|   composite object    |         1.00         |         1.02         |         0.72         |       **0.68**       |         0.88         |         2.79         |         1.82         |         1.71         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+|        overall        |         1.00         |         0.99         |       **0.73**       |         0.78         |         0.97         |         4.81         |         2.27         |         1.36         |
++-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+
+
+Deserialization
+~~~~~~~~~~~~~~~
+
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|      deserialize      |   ``loads()``\ [9]_   | ``Decoder()``\ [10]_  |  ``loads(n)``\ [11]_  | ``Decoder(n)``\ [12]_ |         ujson         |      simplejson       |        stdlib         |         yajl          |
++=======================+=======================+=======================+=======================+=======================+=======================+=======================+=======================+=======================+
+|    100 arrays dict    |         1.00          |         1.00          |         0.90          |       **0.90**        |         0.95          |         1.60          |         1.11          |         1.18          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|    100 dicts array    |         1.00          |         1.04          |         0.86          |       **0.86**        |         0.94          |         2.00          |         1.43          |         1.27          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|    256 Trues array    |       **1.00**        |         1.16          |         1.10          |         1.12          |         1.20          |         1.95          |         1.90          |         1.89          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|    256 ascii array    |       **1.00**        |         1.02          |         1.02          |         1.02          |         1.39          |         1.14          |         1.25          |         1.62          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|   256 doubles array   |         1.00          |         0.90          |       **0.16**        |         0.16          |         0.39          |         0.86          |         0.83          |         0.42          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|   256 unicode array   |       **1.00**        |         1.01          |         1.01          |         1.00          |         1.02          |         5.14          |         5.34          |         2.40          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|    complex object     |         1.00          |         1.01          |       **0.73**        |         0.73          |         0.88          |         1.60          |         1.14          |         1.20          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|   composite object    |         1.00          |         1.02          |       **0.81**        |         0.81          |         0.85          |         1.97          |         1.42          |         1.26          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+|        overall        |         1.00          |         1.00          |         0.90          |       **0.90**        |         0.95          |         1.61          |         1.12          |         1.18          |
++-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+-----------------------+
+
+.. [1] ``rapidjson.dumps()``
+.. [2] ``rapidjson.Encoder()``
+.. [3] ``rapidjson.dumps(number_mode=NM_NATIVE)``
+.. [4] ``rapidjson.Encoder(number_mode=NM_NATIVE)``
+.. [5] `ujson 1.35 <https://pypi.python.org/pypi/ujson/1.35>`__
+.. [6] `simplejson 3.11.1 <https://pypi.python.org/pypi/simplejson/3.11.1>`__
+.. [7] Python 3.6.2 standard library ``json``
+.. [8] `yajl 0.3.5 <https://pypi.python.org/pypi/yajl/0.3.5>`__
+.. [9] ``rapidjson.loads()``
+.. [10] ``rapidjson.Decoder()``
+.. [11] ``rapidjson.loads(number_mode=NM_NATIVE)``
+.. [12] ``rapidjson.Decoder(number_mode=NM_NATIVE)``
+
+
+DIY
+~~~
+
+To run these tests yourself, clone the repo and run:
+
+.. code-block:: bash
+
+   $ make benchmarks
+
+or
+
+.. code-block:: bash
+
+   $ make benchmarks-other
+
+The former will focus only on ``RapidJSON`` and is particularly handy coupled
+with the `compare past runs`__ functionality of ``pytest-benchmark``:
+
+.. code-block:: bash
+
+   $ make benchmarks PYTEST_OPTIONS=--benchmark-autosave
+   # hack, hack, hack!
+   $ make benchmarks PYTEST_OPTIONS=--benchmark-compare=0001
+
+   ----------------------- benchmark 'deserialize': 18 tests ------------------------
+   Name (time in us)                                                            Min…
+   ----------------------------------------------------------------------------------
+   test_loads[rapidjson-256 Trues array] (NOW)                         5.2320 (1.0)…
+   test_loads[rapidjson-256 Trues array] (0001)                        5.4180 (1.04)…
+   …
+
+To reproduce the tables above run ``make benchmarks-tables``
+
+__ http://pytest-benchmark.readthedocs.org/en/latest/comparing.html
+
+
+Incompatibility
+---------------
+
+Here are things in the standard ``json`` library supports that we have decided
+not to support:
+
+``separators`` argument
+  This is mostly used for pretty printing and not supported by ``RapidJSON``
+  so it isn't a high priority. We do support ``indent`` kwarg that would get
+  you nice looking JSON anyways.
+
+Coercing keys when dumping
+  ``json`` will turn ``True`` into ``'True'`` if you dump it out but when you
+  load it back in it'll still be a string. We want the dump and load to return
+  the exact same objects so we have decided not to do this coercion.
+
+.. _RapidJSON: https://github.com/miloyip/rapidjson
+
+
+Changes
+-------
+
+0.2.4 (2017-09-17)
+~~~~~~~~~~~~~~~~~~
+
+* Fix compatibility with MacOS/clang
+
+
+0.2.3 (2017-08-24)
+~~~~~~~~~~~~~~~~~~
+
+* Limit the precision of DM_UNIX_TIME timestamps to six decimal digits
+
+
+0.2.2 (2017-08-24)
+~~~~~~~~~~~~~~~~~~
+
+* Nothing new, attempt to fix production of Python 3.6 binary wheels
+
+
+0.2.1 (2017-08-24)
+~~~~~~~~~~~~~~~~~~
+
+* Nothing new, attempt to fix production of Python 3.6 binary wheels
+
+
+0.2.0 (2017-08-24)
+~~~~~~~~~~~~~~~~~~
+
+* New ``parse_mode`` option, implementing relaxed JSON syntax (`issue #73`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/73
+
+* New ``Encoder`` and ``Decoder``, implementing a class-based interface
+
+* New ``Validator``, exposing the underlying *JSON schema* validation (`issue #71`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/71
+
+
+0.1.0 (2017-08-16)
+~~~~~~~~~~~~~~~~~~
+
+* Remove beta status
+
+
+0.1.0b4 (2017-08-14)
+~~~~~~~~~~~~~~~~~~~~
+
+* Make execution of the test suite on Appveyor actually happen
+
+
+0.1.0b3 (2017-08-12)
+~~~~~~~~~~~~~~~~~~~~
+
+* Exclude CI configurations from the source distribution
+
+
+0.1.0b2 (2017-08-12)
+~~~~~~~~~~~~~~~~~~~~
+
+* Fix Powershell wheel upload script in appveyor configuration
+
+
+0.1.0b1 (2017-08-12)
+~~~~~~~~~~~~~~~~~~~~
+
+* Compilable with somewhat old g++ (`issue #69`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/69
+
+* **Backward incompatibilities**:
+
+  - all ``DATETIME_MODE_XXX`` constants have been shortened to ``DM_XXX``
+    ``DATETIME_MODE_ISO8601_UTC`` has been renamed to ``DM_SHIFT_TO_UTC``
+
+  - all ``UUID_MODE_XXX`` constants have been shortened to ``UM_XXX``
+
+* New option ``DM_UNIX_TIME`` to serialize date, datetime and time values as
+  `UNIX timestamps`__ targeting `issue #61`__
+
+  __ https://en.wikipedia.org/wiki/Unix_time
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/61
+
+* New option ``DM_NAIVE_IS_UTC`` to treat naïve datetime and time values as if
+  they were in the UTC timezone (also for issue #61)
+
+* New keyword argument ``number_mode`` to use underlying C library numbers
+
+* Binary wheels for GNU/Linux and Windows on PyPI (one would hope: this is the
+  reason for the beta1 release)
+
+
+0.0.11 (2017-03-05)
+~~~~~~~~~~~~~~~~~~~
+
+* Fix a couple of refcount handling glitches, hopefully targeting `issue
+  #48`__.
+
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/48
+
+
+0.0.10 (2017-03-02)
+~~~~~~~~~~~~~~~~~~~
+
+* Fix source distribution to contain all required stuff (`PR #64`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/pull/64
+
+
+0.0.9 (2017-03-02)
+~~~~~~~~~~~~~~~~~~
+
+* CI testing on GitHub
+
+* Allow using locally installed RapidJSON library (`issue #60`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/60
+
+* Bug fixes (`issue #37`__, `issue #51`__, `issue #57`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/37
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/51
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/57
+
+
+0.0.8 (2016-12-09)
+~~~~~~~~~~~~~~~~~~
+
+* Use unpatched RapidJSON 1.1 (`PR #46`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/pull/46
+
+* Handle serialization and deserialization of datetime, date and time
+  instances (`PR #35`__) and of UUID instances (`PR #40`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/pull/35
+  __ https://github.com/python-rapidjson/python-rapidjson/pull/40
+
+* Sphinx based documentation (`PR #44`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/pull/44
+
+* Refresh benchmarks (`PR #45`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/pull/45
+
+* Bug fixes (`issue #25`__, `issue #38`__, `PR #43`__)
+
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/25
+  __ https://github.com/python-rapidjson/python-rapidjson/issues/38
+  __ https://github.com/python-rapidjson/python-rapidjson/pull/43
+
+
