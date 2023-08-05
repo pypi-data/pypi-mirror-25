@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+# This file is licensed under the WTFPLv2 [http://wtfpl.net]
+
+from argparse import ArgumentParser, FileType
+import ast
+from collections import OrderedDict
+from importlib import import_module
+import json
+import json.decoder
+import json.scanner
+import math
+import os
+import re
+import signal
+import sys
+import traceback
+
+try:
+    import pygments
+    import pygments.formatters
+    import pygments.lexers.data
+
+    def colorize(s):
+        return pygments.highlight(s, pygments.lexers.data.JsonLexer(), pygments.formatters.TerminalFormatter()).rstrip()
+except ImportError:
+    def colorize(s):
+        return s
+
+
+def ph_call(obj, x):
+    if isinstance(obj, Placeholder):
+        return obj(x)
+    return obj
+
+
+class Placeholder(object):
+    def __init__(self, func=None):
+        self._func = func or (lambda x: x)
+
+    # math binary ops
+    def __add__(self, v):
+        return Placeholder(lambda x: self(x) + ph_call(v, x))
+
+    def __radd__(self, v):
+        return Placeholder(lambda x: ph_call(v, x) + self(x))
+
+    def __sub__(self, v):
+        return Placeholder(lambda x: self(x) - ph_call(v, x))
+
+    def __rsub__(self, v):
+        return Placeholder(lambda x: ph_call(v, x) - self(x))
+
+    def __mul__(self, v):
+        return Placeholder(lambda x: self(x) * ph_call(v, x))
+
+    def __rmul__(self, v):
+        return Placeholder(lambda x: ph_call(v, x) * self(x))
+
+    def __truediv__(self, v):
+        return Placeholder(lambda x: self(x) / ph_call(v, x))
+
+    def __rtruediv__(self, v):
+        return Placeholder(lambda x: ph_call(v, x) / self(x))
+
+    def __floordiv__(self, v):
+        return Placeholder(lambda x: self(x) // ph_call(v, x))
+
+    def __rfloordiv__(self, v):
+        return Placeholder(lambda x: ph_call(v, x) // self(x))
+
+    def __mod__(self, v):
+        return Placeholder(lambda x: self(x) % ph_call(v, x))
+
+    def __rmod__(self, v):
+        return Placeholder(lambda x: ph_call(v, x) % self(x))
+
+    # math unary ops
+    def __neg__(self):
+        return Placeholder(lambda x: -self(x))
+
+    def __pos__(self):
+        return Placeholder(lambda x: +self(x))
+
+    # math funcs
+    def __abs__(self):
+        return Placeholder(lambda x: abs(self(x)))
+
+    # bit opts
+    def __and__(self, v):
+        return Placeholder(lambda x: self(x) & ph_call(v, x))
+
+    def __or__(self, v):
+        return Placeholder(lambda x: self(x) | ph_call(v, x))
+
+    def __xor__(self, v):
+        return Placeholder(lambda x: self(x) ^ ph_call(v, x))
+
+    # comparison ops
+    def __eq__(self, v):
+        return Placeholder(lambda x: self(x) == ph_call(v, x))
+
+    def __ne__(self, v):
+        return Placeholder(lambda x: self(x) != ph_call(v, x))
+
+    def __le__(self, v):
+        return Placeholder(lambda x: self(x) <= ph_call(v, x))
+
+    def __lt__(self, v):
+        return Placeholder(lambda x: self(x) < ph_call(v, x))
+
+    def __ge__(self, v):
+        return Placeholder(lambda x: self(x) >= ph_call(v, x))
+
+    def __gt__(self, v):
+        return Placeholder(lambda x: self(x) > ph_call(v, x))
+
+    # object ops
+    def __getattr__(self, v):
+        return Placeholder(lambda x: getattr(self(x), v))
+
+    # container ops
+    def __getitem__(self, v):
+        return Placeholder(lambda x: self(x)[v])
+
+    # evaluation!
+    def __call__(self, v):
+        return self._func(v)
+
+
+def partial_placeholder(callee, *args):
+    def ret(x):
+        new_args = (arg(x) if isinstance(arg, Placeholder) else arg for arg in args)
+        return callee(*new_args)
+
+    return Placeholder(ret)
+
+
+class Dict(OrderedDict):
+    @property
+    class c(object):
+        def __init__(self, d):
+            object.__setattr__(self, '_dict', d)
+
+        def __iter__(self):
+            return iter(self._dict.keys())
+
+        def __getattr__(self, prop):
+            return self._dict[prop]
+
+        def __setattr__(self, prop, val):
+            self._dict[prop] = val
+
+    def __getattr__(self, prop):
+        return self[prop]
+
+    def __setattr__(self, prop, val):
+        self[prop] = val
+
+    def __or__(self, expr):
+        return Dict((k, expr(v)) for k, v in self.items())
+
+
+class Array(list):
+    def __or__(self, expr):
+        return Array(expr(i) for i in self)
+
+
+def parse_array(*args, **kwargs):
+    arr, v = json.decoder.JSONArray(*args, **kwargs)
+    return Array(arr), v
+
+
+class Decoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        super(Decoder, self).__init__(*args, **kwargs)
+        self.parse_array = parse_array
+        self.scan_once = json.scanner.py_make_scanner(self)
+
+
+def encode(obj):
+    if hasattr(obj, '__iter__'):
+        return list(obj)
+    return repr(obj)
+
+
+class Injector(ast.NodeTransformer):
+    def visit_List(self, node):
+        n = ast.Name(id='list', ctx=ast.Load())
+        return ast.Call(func=n, args=[node], keywords=[])
+
+    def visit_Dict(self, node):
+        n = ast.Name(id='dict', ctx=ast.Load())
+        return ast.Call(func=n, args=[node], keywords=[])
+
+    def visit_ListComp(self, node):
+        genex = ast.GeneratorExp(elt=node.elt, generators=node.generators)
+        n = ast.Name(id='list', ctx=ast.Load())
+        return ast.Call(func=n, args=[genex], keywords=[])
+
+    def visit_DictComp(self, node):
+        n = ast.Name(id='dict', ctx=ast.Load())
+        return ast.Call(func=n, args=[node], keywords=[])
+
+
+def parse_and_inject(src):
+    node = ast.parse(src, '<eval>', 'eval')
+    return Injector().visit(node)
+
+
+def main():
+    argparser = ArgumentParser()
+    argparser.add_argument('expr', nargs='?', default='d')
+    argparser.add_argument('files', nargs='*', default='-', type=FileType('r'))
+    argparser.add_argument('--version', action='version', version='0.10.0') # $version
+    argparser.add_argument('--ascii', action='store_const', const=True)
+    args = argparser.parse_args()
+
+    try:
+        node = parse_and_inject(args.expr)
+    except SyntaxError as e:
+        traceback.print_exc(limit=0)
+        return os.EX_USAGE
+    ast.fix_missing_locations(node)
+    code = compile(node, '<eval>', mode='eval')
+
+    inputs = []
+    for fd in args.files:
+        if fd == '-':
+            fd = FileType('r')('-')
+        fn = fd.name
+        try:
+            with fd:
+                data = json.load(fd, cls=Decoder, object_pairs_hook=Dict)
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            print('Cannot decode JSON data in %s: %s' % (fn, e), file=sys.stderr)
+            return os.EX_DATAERR
+        except IOError as e:
+            print('Cannot read %s: %s' % (fn, e), file=sys.stderr)
+            return os.EX_IOERR
+        inputs.append(data)
+
+    vars = {
+        'data': inputs[0],
+        'd': inputs[0],
+        'inputs': inputs,
+
+        'list': Array,
+        'dict': Dict,
+
+        '_': Placeholder(),
+        'p': partial_placeholder,
+        'partial': partial_placeholder,
+
+        'imp': import_module,
+        'math': math,
+        're': re,
+    }
+
+    try:
+        res = eval(code, vars)
+    except Exception as e:
+        lines = traceback.format_list(traceback.extract_tb(sys.exc_info()[2])[1:])
+        print(''.join(lines), end='', file=sys.stderr)
+        print('%s: %s' % (type(e).__name__, e), file=sys.stderr)
+        return os.EX_DATAERR
+
+    s = json.dumps(res, indent=2, default=encode, ensure_ascii=bool(args.ascii))
+    try:
+        if sys.stdout.isatty():
+            print(colorize(s))
+        else:
+            print(s)
+        sys.stdout.close()
+    except IOError:
+        pass
+
+
+if __name__ == '__main__':
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    sys.exit(main() or 0)
