@@ -1,0 +1,249 @@
+PyPI Cloud
+==========
+:Build: |build|_ |coverage|_
+:Documentation: http://pypicloud.readthedocs.org/
+:Downloads: http://pypi.python.org/pypi/pypicloud
+:Source: https://github.com/stevearc/pypicloud
+
+.. |build| image:: https://travis-ci.org/stevearc/pypicloud.png?branch=master
+.. _build: https://travis-ci.org/stevearc/pypicloud
+.. |coverage| image:: https://coveralls.io/repos/stevearc/pypicloud/badge.png?branch=master
+.. _coverage: https://coveralls.io/r/stevearc/pypicloud?branch=master
+
+This package is a Pyramid app that runs a simple PyPI server where all the
+packages are stored on Amazon's Simple Storage Service (S3).
+
+`LIVE DEMO <http://pypi.stevearc.com>`_
+
+Quick Start
+===========
+For more detailed step-by-step instructions, check out the `getting started
+<http://pypicloud.readthedocs.org/en/latest/topics/getting_started.html>`_
+section of the docs.
+
+::
+
+    virtualenv mypypi
+    source mypypi/bin/activate
+    pip install pypicloud[server]
+    pypicloud-make-config -t server.ini
+    pserve server.ini
+
+It's running! Go to http://localhost:6543/ to view the web interface.
+
+Docker
+------
+There is a docker image if you're into that sort of thing. You can find it at:
+https://github.com/stevearc/pypicloud-docker
+
+
+Changelog
+=========
+If you are upgrading an existing installation, read the instructions
+
+0.5.5 - 2017/9/9
+----------------
+* Allow search endpoint to have a trailing slash 
+
+0.5.4 - 2017/8/10
+-----------------
+* Allow overriding the displayed download URL in the web interface 
+* Bump up the DB size of the version field (SQL-only) 
+
+0.5.3 - 2017/4/30
+-----------------
+* Bug fix: S3 uploads failing from web interface and when fallback=cache 
+
+0.5.2 - 2017/4/22
+-----------------
+* Bug fix: The ``/pypi`` path was broken for viewing & uploading packages 
+* Update docs to recommend ``/simple`` as the install/upload URL
+* Beaker session sets ``invalidate_corrupt = true`` by default
+
+0.5.1 - 2017/4/17
+-----------------
+* Bug fix: Deleting packages while using the Dynamo cache would sometimes remove the wrong package from Dynamo 
+
+0.5.0 - 2017/3/29
+-----------------
+**Upgrade breaks**: SQL caching database. You will need to rebuild it.
+
+* Feature: Pip search works now 
+
+0.4.6 - 2017/4/17
+-----------------
+* Bug fix: Deleting packages while using the Dynamo cache would sometimes remove the wrong package from Dynamo 
+
+0.4.5 - 2017/3/25
+-----------------
+* Bug fix: Access backend now works with MySQL family 
+* Bug fix: Return http 409 for duplicate upload to work better with twine 
+* Bug fix: Show upload button in interface if ``default_write = everyone``
+* Confirm prompt before deleting a user or group in the admin interface
+* Do some basica sanity checking of username/password inputs
+
+0.4.4 - 2016/10/5
+-----------------
+* Feature: Add optional AWS S3 Server Side Encryption option 
+
+0.4.3 - 2016/8/2
+----------------
+* Bug fix: Rebuilding cache always ends up with correct name/version 
+* Feature: /health endpoint (nothing fancy, just returns 200) 
+
+0.4.2 - 2016/6/16
+-----------------
+* Bug fix: Show platform-specific versions of wheels 
+
+0.4.1 - 2016/6/8
+----------------
+* Bug fix: LDAP auth disallows empty passwords for anonymous binding 
+* Config generator sets ``pypi.default_read = authenticated`` for prod mode
+
+0.4.0 - 2016/5/16
+-----------------
+**Backwards incompatibility**: This version was released to handle a change in
+the way pip 8.1.2 handles package names. If you are upgrading from a previous
+version, there are detailed instructions for how to upgrade safely.
+
+0.3.13 - 2016/6/8
+-----------------
+* Bug fix: LDAP auth disallows empty passwords for anonymous binding 
+
+0.3.12 - 2016/5/5
+-----------------
+* Feature: Setting ``auth.ldap.service_account`` for LDAP auth 
+
+0.3.11 - 2016/4/28
+------------------
+* Bug fix: Missing newline in config template 
+* Feature: ``pypi.always_show_upstream`` for tweaking fallback behavior 
+
+0.3.10 - 2016/3/21
+------------------
+* Feature: S3 backend setting ``storage.redirect_urls``
+
+0.3.9 - 2016/3/13
+-----------------
+* Bug fix: SQL cache works with MySQL 
+* Feature: S3 backend can use S3-compatible APIs 
+
+0.3.8 - 2016/3/10
+-----------------
+* Feature: Cloudfront storage 
+* Bug fix: Rebuilding cache from storage won't crash on odd file names 
+
+0.3.7 - 2016/1/12
+-----------------
+* Feature: ``/packages`` endpoint to list all files for all packages 
+
+0.3.6 - 2015/12/3
+-----------------
+* Bug fix: Settings parsed incorrectly for LDAP auth 
+
+0.3.5 - 2015/11/15
+------------------
+* Bug fix: Mirror mode: only one package per version is displayed 
+
+0.3.4 - 2015/8/30
+-----------------
+* Add docker-specific option for config creation
+* Move docker config files to a separate repository
+
+0.3.3 - 2015/7/17
+-----------------
+* Feature: LDAP Support 
+* Bug fix: Incorrect package name/version when uploading from web 
+
+0.3.2 - 2015/7/7
+----------------
+* Bug fix: Restore direct links to S3 to fix easy_install 
+
+0.3.1 - 2015/6/18
+-----------------
+* Bug fix: ``pypi.allow_overwrite`` causes crash in sql cache 
+
+0.3.0 - 2015/6/16
+-----------------
+* Fully defines the behavior of every possible type of pip request. See Fallbacks for more detail.
+* Don't bother caching generated S3 urls.
+
+0.2.13 - 2015/5/27
+------------------
+* Bug fix: Crash when mirror mode serves private packages
+
+0.2.12 - 2015/5/14
+------------------
+* Bug fix: Mirror mode works properly with S3 storage backend
+
+0.2.11 - 2015/5/11
+------------------
+* Bug fix: Cache mode will correctly download packages with legacy versioning 
+* Bug fix: Fix the fetch_requirements endpoint 
+* Bug fix: Incorrect expire time comparison with IAM roles 
+* Feature: 'mirror' mode. Caches packages, but lists all available upstream versions.
+
+0.2.10 - 2015/2/27
+------------------
+* Bug fix: S3 download links expire incorrectly with IAM roles 
+* Bug fix: ``fallback = cache`` crashes with distlib 0.2.0 
+
+0.2.9 - 2014/12/14
+------------------
+* Bug fix: Connection problems with new S3 regions 
+* Usability: Warn users trying to log in over http when ``session.secure = true`` 
+
+0.2.8 - 2014/11/11
+------------------
+* Bug fix: Crash when migrating packages from file storage to S3 storage 
+
+0.2.7 - 2014/10/2
+-----------------
+* Bug fix: First download of package using S3 backend and ``pypi.fallback = cache`` returns 404 
+
+0.2.6 - 2014/8/3
+----------------
+* Bug fix: Rebuilding SQL cache sometimes crashes 
+
+0.2.5 - 2014/6/9
+----------------
+* Bug fix: Rebuilding SQL cache sometimes deadlocks 
+
+0.2.4 - 2014/4/29
+-----------------
+* Bug fix: ``ppc-migrate`` between two S3 backends 
+
+0.2.3 - 2014/3/13
+-----------------
+* Bug fix: Caching works with S3 backend 
+
+0.2.2 - 2014/3/13
+-----------------
+* Bug fix: Security bug in user auth 
+* Bug fix: Package caching from pypi was slightly broken 
+* Bug fix: ``ppc-migrate`` works when migrating to the same storage type 
+
+0.2.1 - 2014/3/12
+-----------------
+* Bug fix: Pre-existing S3 download links were broken by 0.2.0 
+
+0.2.0 - 2014/3/12
+-----------------
+**Upgrade breaks**: caching database
+
+* Bug fix: Timestamp display on web interface 
+* Bug fix: User registration stores password as plaintext 
+* Feature: ``ppc-migrate``, command to move packages between storage backends 
+* Feature: Adding support for more than one package with the same version. Now you can upload wheels! 
+* Feature: Allow transparently downloading and caching packages from pypi 
+* Feature: Export/Import access-control data via ``ppc-export`` and ``ppc-import`` 
+* Feature: Can set default read/write permissions for packages 
+* Feature: New cache backend: DynamoDB 
+* Hosting all js & css ourselves (no more CDN links) 
+* Obligatory miscellaneous refactoring
+
+0.1.0 - 2014/1/20
+-----------------
+* First public release
+
+
