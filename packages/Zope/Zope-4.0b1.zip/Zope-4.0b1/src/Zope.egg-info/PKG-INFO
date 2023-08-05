@@ -1,0 +1,375 @@
+Metadata-Version: 1.1
+Name: Zope
+Version: 4.0b1
+Summary: Zope application server / web framework
+Home-page: https://zope.readthedocs.io/en/latest/
+Author: Zope Foundation and Contributors
+Author-email: zope-dev@zope.org
+License: ZPL 2.1
+Description: .. contents::
+        
+        Introduction
+        ============
+        
+        Zope is an open-source web application server.
+        
+        This document provides some general information about Zope and provides
+        links to other documents.
+        
+        Documentation can be found at https://zope.readthedocs.io.
+        
+        Installation
+        ============
+        
+        Installation information can be found at
+        https://zope.readthedocs.io/en/latest/INSTALL-buildout.html
+        
+        Note that you *cannot* simply do ``pip install Zope``, because you need
+        specific versions of all dependencies. Follow the documentation to
+        ensure you get the correct versions, or else installation is very
+        likely to fail.
+        
+        License
+        =======
+        
+        The Zope License is included in ``LICENSE.txt``.
+        
+        Bug tracker
+        ===========
+        
+        Bugs reports should be made through the Zope bugtracker at
+        https://github.com/zopefoundation/Zope/issues.  A bug report should
+        contain detailed information about how to reproduce the bug.
+        
+        
+        Changelog
+        =========
+        
+        This file contains change information for the current Zope release.
+        Change information for previous versions of Zope can be found at
+        https://zope.readthedocs.io/en/2.13/CHANGES.html
+        
+        For the change log of the alpha versions see
+        https://github.com/zopefoundation/Zope/blob/4.0a6/CHANGES.rst
+        
+        4.0b1 (2017-09-15)
+        ------------------
+        
+        With this release the egg of the project is named `Zope` instead of `Zope2`.
+        There is a meta package named `Zope2` which depends on `Zope`.
+        
+        See https://zope.readthedocs.io/en/latest/WHATSNEW.html for a higher level
+        description of the changes.
+        
+        Supported versions
+        ++++++++++++++++++
+        
+        - Add support for Python 3.4, 3.5 and 3.6.
+        
+        - Drop support for Python 2.6.
+        
+        Breaking changes
+        ++++++++++++++++
+        
+        - Removed the old help system, in favor of the current Sphinx documentation
+          hosted at https://zope.readthedocs.io/. For backwards compatibility the
+          `registerHelp` and `registerHelpTitle` methods are still available on the
+          ProductContext used during the `initialize` function.
+        
+        - Remove ZMI re-ordering features.
+        
+        - Retired icons from the `Zope Management Interface` and various smaller
+          cleanups of ZMI screens.
+        
+        - Remove xml-export.
+        
+        - Remove `Globals` package, opened database are now found in
+          `Zope2.opened` next to `Zope2.DB`.
+        
+        - Remove proxy role support from DTML documents and methods.
+        
+        - Remove `Products.ZReST` and the `reStructuredText` wrapper, you can use
+          `docutils` directly to gain `reST` support.
+        
+        - Stop setting ``CLIENT_HOME`` as a builtin, get it via
+          ``App.config.getConfiguration().clienthome`` instead.
+        
+        - Drop `OFS.History` functionality.
+        
+        - Removed `OFS.DefaultObservable` - an early predecessor of `zope.event`.
+        
+        - Removed `OFS.ZDOM`. `OFS.SimpleItem.Item` now implements `getParentNode()`.
+        
+        - Removed special code to create user folders and page templates while creating
+          new `OFS.Folder` instances.
+        
+        - Removed the `App.version_txt.getZopeVersion` API, you can use
+          ``pkg_resources.get_distribution('Zope2').version`` instead.
+        
+        - On the application object, removed `PrincipiaTime` in favor of `ZopeTime` and
+          `PrincipiaRedirect` in favor of `Redirect` or `ZopeRedirect`.
+        
+        - Removed `bobobase_modification_time` from `Persistence.Persistent`, you can
+          use `DateTime(object._p_mtime)` instead.
+        
+        - Removed the special handling of `Set-Cookie` headers in
+          `HTTPResponse.setHeader`. Use the `setCookie`/`appendCookie`/`expireCookie`
+          methods instead, or if low-level control is needed, use `addHeader` instead
+          to get the exact same effect.
+        
+        - Raise ``BadRequest`` instead of returning MessageDialog.
+        
+        - Update available HTTP response code, 302 is now called ``Found``.
+        
+        - Refactor ``browser:view`` and ``browser:page`` directives.
+          This makes their implementation more similar to that in ``zope.browserpage``
+          and adds allowed_interface support for the ``browser:view`` directive.
+          By default the `aq_*` attributes are no longer available on those
+          views/pages.
+        
+        - Removed the last remaining code to support `SOFTWARE_HOME` and `ZOPE_HOME`.
+        
+        - Simplified instance skeleton, removing old `Extensions`, `import`,
+          `lib/python` and `Products` from the default. You can continue to manually
+          add these back.
+        
+        - Remove the `zopectl` script.
+        
+        WSGI
+        ++++
+        
+        - Document running Zope as a WSGI application.
+        
+        - Remove `Connection` and `Transfer-Encoding` headers from WSGI responses.
+          According to PEP 333 WSGI applications must not emit hop-by-hop headers.
+        
+        - Ensure that the ``WSGIPublisher`` begins and ends an *interaction*
+          at the request/response barrier. This is required for instance for
+          the ``checkPermission`` call to function without an explicit
+          ``interaction`` parameter.
+        
+        - Make the WSGIPublisher normalize HTTP exception classes based on name
+          (for example, any exception named NotFound will be converted
+          into `zExceptions.NotFound`). This restores compatibility with
+          similar behavior of the old publisher.
+        
+        - Change the WSGIResponse exception methods to raise exceptions instead
+          of returning responses. This includes ``notFoundError``, ``forbiddenError``,
+          ``debugError``, ``badRequestError`` and ``unauthorized``.
+        
+        - Add support for exception views to WSGIPublisher.
+        
+        - Add support for ``ConflictError`` and ``TransientError`` retry logic directly
+          into WSGIPublisher, thus `repoze.tm2` and `repoze.retry` are no longer
+          needed and no longer supported.
+        
+        - Change Testing to use the WSGI publisher for functional and testbrowser
+          based tests incl. functional doctests. Alternatives are available
+          in ``ZServer.Testing``.
+        
+        - Split a WSGI part out of `Zope2.Startup.ZopeStarter`.
+        
+        - Include ``waitress`` as a default WSGI app server.
+        
+        - Add `egg:Zope#httpexceptions` WSGI middleware.
+        
+        - Add a new `runwsgi` script to serve PasteDeploy files.
+        
+        
+        ZODB
+        ++++
+        
+        - Support ZODB 5.
+        
+        - Removed persistent default content like `standard_error_message`,
+          `error_log`, `temp_folder` and `index_html`.
+        
+        
+        Control panel
+        +++++++++++++
+        
+        - Removed ZMI controls for restarting the process, these no longer apply when
+          managed as a WSGI application.
+        
+        - Remove `DebugInfo` and `DavLocks` from control panel.
+        
+        - Move undo management to the control panel.
+        
+        - Simplify ZMI control panel and globally available management screens.
+        
+        - Remove `control panel` object from the ZODB, it is no longer persistent.
+        
+        
+        ZServer
+        +++++++
+        
+        - Split out ``Lifetime``, ``webdav`` and ``ZServer`` packages into a `ZServer`
+          project.
+        
+        - Move ``EtagSupport``, ``Lockable`` and ``LockItem`` from ``webdav`` into
+          `OFS`.
+        
+        - Move ``ZPublisher.Publish`` module into `ZServer` distribution.
+        
+        - Move ``Products.SiteAccess`` into `ZServer` distribution.
+        
+        - Move ZServer related testing support into ``ZServer.Testing``.
+        
+        zope.conf
+        +++++++++
+        
+        - Always configure a `blob-dir` in the default skeleton.
+        
+        - Removed `mime-types` option from `zope.conf`. You can use the `add_files`
+          API from `zope.contenttype` instead.
+        
+        - Split a WSGI part out of `zopeschema.xml`. This reduces the supported
+          `zope.conf` directives when run under WSGI.
+        
+        - Remove profiling support via `publisher-profile-file` directive.
+        
+        - Removed various persistent product related code and options. The
+          `enable-product-installation` `zope.conf` setting is now a no-op.
+        
+        - Changed the value for `default-zpublisher-encoding` and
+          `management_page_charset` to `utf-8`.
+        
+        - Removed the `enable-ms-author-via` directive which was only required for
+          very old web folder implementations from before 2007.
+        
+        - Changed zope.conf default settings for `zserver-threads` to `2` and
+          `python-check-interval` to `1000`.
+        
+        Dependencies
+        ++++++++++++
+        
+        - Integrate code from and drop dependency on `five.globalrequest`.
+        
+        - Integrate `five.pt` code directly into `Products.PageTemplates`.
+        
+        - Drop `ZopeUndo` dependency.
+        
+        - Remove `Products.StandardCacheManagers` dependency.
+        
+        - Remove dependency on `initgroups`. Use the standard libraries
+          ``os.initgroups`` instead.
+        
+        - Merge `Products.OFSP` project back in.
+        
+        - `Products.SiteErrorLog` is now a separated package and Zope no longer depends
+          on it.
+        
+        - Split `Products.TemporaryFolder` and `Products.ZODBMountPoint` into
+          one new project called `Products.TemporaryFolder`.
+        
+        - Create new `Products.Sessions` distribution including ``Products.Sessions``
+          and ``Products.Transience`` code.
+        
+        - Dropped the direct dependencies on packages that have been factored out of
+          the main Zope 2 tree. Make sure you declare a dependency in your own
+          distribution if you still use one of these:
+        
+            - `Products.BTreeFolder2`
+            - `Products.ExternalMethod`
+            - `Products.MailHost`
+            - `Products.MIMETools`
+            - `Products.PythonScripts`
+            - `Products.SiteErrorLog`
+            - `Products.StandardCacheManagers`
+            - `Products.ZCatalog`
+            - `Record`
+        
+        Deprecations
+        ++++++++++++
+        
+        - Five.browser: Marked `processInputs` and `setPageEncoding` as deprecated.
+          `processInputs` was replaced by the `postProcessInputs` request method and
+          the charset negotiation done by `setPageEncoding` was never fully supported.
+        
+        New features
+        ++++++++++++
+        
+        - Add support to SameSite cookie in ``ZPublisher.HTTPBaseResponse``:
+          https://tools.ietf.org/html/draft-west-first-party-cookies-07
+        
+        - Optimized the `OFS.ObjectManager.__contains__` method to do the
+          least amount of work necessary.
+        
+        - Optimized the `OFS.Traversable.getPhysicalPath` method to avoid excessive
+          amounts of method calls.
+        
+        - During startup open a connection to every configured database, to ensure all
+          of them can indeed be accessed. This avoids surprises during runtime when
+          traversal to some database mountpoint could fail as the underlying storage
+          cannot be opened at all.
+        
+        - Explicitly close all databases on shutdown, which ensures `Data.fs.index`
+          gets written to the file system.
+        
+        - ZPublisher: If `IBrowserPage` is provided by a view, form input is decoded.
+          This makes it easier to use ``zope.formlib`` and ``z3c.form`` in Zope 2.
+        
+        Security fixes
+        ++++++++++++++
+        
+        - Fix reflective XSS in findResult.
+        
+        - Patch zope.interface to remove docstrings and avoid publishing.
+        
+        - Don't copy items the user is not allowed to view.
+        
+        - Quote variable in manage_tabs to avoid XSS.
+        
+        - Removed docstrings from some methods to avoid publishing them.
+        
+        - LP #789863:  Ensure that Request objects cannot be published / traversed
+          directly via a URL.
+        
+        - Port tests for ``str.format`` security fix from Zope 2.13.
+        
+        Bugfixes
+        ++++++++
+        
+        - PropertyManagers and PropertySheets now correctly accept all forms of
+          strings as property values.
+        
+        - Allow handling of multipart requests in functional doctests using ``http``.
+        
+        - Fix Content-Length header for non-ascii responses incl. a base tag.
+        
+        - Fix issue with ``Control_Panel`` on first startup of ZODB from Zope 2.13.
+        
+        - Port tests for ``str.format`` security fix from Zope 2.13.
+        
+        - bobo_traverse of ProductDispatcher did not correctly invalidate cache
+          when a product was not initializes after first access of the cache. Types
+          that were added in test-profiles were not useable.
+        
+        - Issue #16: prevent leaked connections when broken ``EndRequestEvent``
+          subscribers raise exceptions.
+        
+        - Made sure ``getConfiguration().default_zpublisher_encoding`` is set correctly.
+        
+        - Issue #28: Fix publishing of ``IStreamIterator``. This interface does
+          not have seek or tell.  Introduce ``IUnboundStreamIterator`` to support
+          publishing iterators of unknown length.
+        
+        - Removed the (very obsolete) thread lock around the cookie parsing code
+          in HTTPRequest.py; the python `re` module is thread-safe, unlike the
+          ancient `regex` module that was once used here.
+        
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 6 - Mature
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Zope2
+Classifier: License :: OSI Approved :: Zope Public License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: Implementation :: CPython
