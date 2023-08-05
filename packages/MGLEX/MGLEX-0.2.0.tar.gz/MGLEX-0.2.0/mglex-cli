@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+# This file is subject to the terms and conditions of the GPLv3 (see file 'LICENSE' as part of this source code package)
+
+u"""
+This is the mglex command line interface which executes the sub-commands.
+
+Usage:
+  mglex-cli [--version] [--help] <command> [<args>...]
+
+  -h, --help         Show this screen
+  -v, --version      Show version
+
+Here are the commands to run:
+   buildmatrix       Construct a responsibility matrix for grouped data
+   train             Train a model
+   classify          Calculate likelihood of data under a model
+   evaluate          Evaluate classifications using a reference (true) responsibility matrix
+   significance      Give a null model log-likelihood distribution and calculate p-values for unseen data
+   bincompare        Calculate bin divergences using the data likelihood values
+   transform         Transform probability matrices
+   spread            Spread numeric sequence features onto models using a data responsibility matrix
+
+See 'mglex-cli <command> --help' for more information on a specific command.
+"""
+
+import sys
+import importlib
+import mglex.cli
+
+__author__ = "code@fungs.de"
+from mglex import __version__
+
+if __name__ == "__main__":
+    from docopt import docopt
+    arguments = docopt(__doc__, version=__version__, options_first=True)
+
+    try:
+        command = importlib.import_module(".".join(("mglex", "cli", arguments["<command>"])))
+        command.main(arguments["<args>"])
+    except ImportError:
+        sys.stderr.write("Command '%s' does not exist.\n" % arguments["<command>"])
