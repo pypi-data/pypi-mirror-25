@@ -1,0 +1,130 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="ps.plone.mlstiles">
+  <tal:block condition="nocall:view/get_context">
+    <body tal:define="context nocall:view/get_context;
+                      items view/items | nothing;
+                      data view/data;
+                      tile_title python: data.get('tile_title', '');
+                      show_tile_title python: data.get('show_tile_title', True);
+                      tile_title_level python: data.get('tile_title_level', 'h2');
+                      show_title python: data.get('show_title', True);
+                      title_level python: data.get('title_level', 'h3');
+                      show_description python: data.get('show_description', True);
+                      show_banner python: data.get('show_banner', True);
+                      show_logo python: data.get('show_logo', True);
+                      show_location python: data.get('show_location', True);
+                      show_lot_size python: data.get('show_lot_size', True);
+                      show_location_type python: data.get('show_location_type', True);
+                      show_number_of_listings python: data.get('show_number_of_listings', True);
+                      show_number_of_groups python: data.get('show_number_of_groups', True);
+                      show_more_link python: data.get('show_more_link', True);
+                      more_link_text python: data.get('more_link_text', '');">
+      <section class="${view/tile_class}">
+        <div class="tile-header" tal:condition="show_tile_title">
+          <h1 tal:condition="python:tile_title_level == 'h1'">${tile_title}</h1>
+          <h2 tal:condition="python:tile_title_level == 'h2'">${tile_title}</h2>
+          <h3 tal:condition="python:tile_title_level == 'h3'">${tile_title}</h3>
+          <h4 tal:condition="python:tile_title_level == 'h4'">${tile_title}</h4>
+          <h5 tal:condition="python:tile_title_level == 'h5'">${tile_title}</h5>
+          <h6 tal:condition="python:tile_title_level == 'h6'">${tile_title}</h6>
+        </div>
+
+        <div tal:condition="not:items">
+          <p i18n:translate="">The collection doesn't have any results.</p>
+        </div>
+
+        <div class="collection-item tileItem row"
+            tal:repeat="item items | nothing">
+          <tal:item
+              tal:define="item_title item/title/value;
+                          item_url python: view.get_item_url(item);">
+            <tal:title tal:condition="show_title">
+              <h1 class="tileHeadline col-xs-12" tal:condition="python:title_level == 'h1'"><a href="" class="summary url" tal:attributes="href item_url">${item_title}</a></h1>
+              <h2 class="tileHeadline col-xs-12" tal:condition="python:title_level == 'h2'"><a href="" class="summary url" tal:attributes="href item_url">${item_title}</a></h2>
+              <h3 class="tileHeadline col-xs-12" tal:condition="python:title_level == 'h3'"><a href="" class="summary url" tal:attributes="href item_url">${item_title}</a></h3>
+              <h4 class="tileHeadline col-xs-12" tal:condition="python:title_level == 'h4'"><a href="" class="summary url" tal:attributes="href item_url">${item_title}</a></h4>
+              <h5 class="tileHeadline col-xs-12" tal:condition="python:title_level == 'h5'"><a href="" class="summary url" tal:attributes="href item_url">${item_title}</a></h5>
+              <h6 class="tileHeadline col-xs-12" tal:condition="python:title_level == 'h6'"><a href="" class="summary url" tal:attributes="href item_url">${item_title}</a></h6>
+            </tal:title>
+
+            <figure class="col-xs-12 banner"
+                tal:define="image item/banner_image | nothing"
+                tal:condition="python: show_banner and image">
+              <a href="" tal:attributes="href item_url | nothing;
+                                         title item/title/value"><img src="" alt="" class="banner"
+                  tal:attributes="src image/value" /></a>
+              <figcaption>
+                <small tal:content="item/title/value">[Caption]</small>
+              </figcaption>
+            </figure>
+            <figure class="logo col-xs-12 col-sm-12 col-md-3 col-lg-4"
+                tal:define="image item/logo | nothing"
+                tal:condition="show_logo">
+              <a href="" tal:attributes="href item_url;
+                                         title item/title/value"><img src="" alt="" class="logo"
+                         tal:condition="image"
+                         tal:attributes="src image/value" /><img
+                         tal:condition="not:image" alt="" title=""
+                         src="++resource++plone.mls.listing.images/no-image.png" /></a>
+              <figcaption>
+                <small><span tal:replace="item/title/value">[Caption]</span></small>
+              </figcaption>
+            </figure>
+
+            <section class="col-xs-12 col-sm-12"
+                tal:define="klass python: show_logo and ' col-md-9 col-lg-8' or ' col-md-12 col-lg-12'"
+                tal:attributes="class string: col-xs-12 col-sm-12 ${klass}">
+              <dl class="row">
+                <div class="col-md-12 development__location"
+                    tal:define="field item/location | nothing"
+                    tal:condition="python: show_location and field">
+                  <dt tal:content="field/title">[Label]</dt>
+                  <dd tal:content="structure field/value">[Value]</dd>
+                </div>
+
+                <div class="col-md-12 development__lot_size"
+                    tal:define="field item/lot_size | nothing"
+                    tal:condition="python: show_lot_size and field">
+                  <dt tal:content="field/title">[Label]</dt>
+                  <dd tal:content="structure field/value">[Value]</dd>
+                </div>
+
+                <div class="col-md-12 development__location_type"
+                    tal:define="field item/location_type | nothing"
+                    tal:condition="python: show_location_type and field">
+                  <dt tal:content="field/title">[Label]</dt>
+                  <dd tal:content="structure field/value">[Value]</dd>
+                </div>
+
+                <div class="col-md-12 development__number_of_listings"
+                    tal:define="field item/number_of_listings | nothing"
+                    tal:condition="python: show_number_of_listings and field">
+                  <dt tal:content="field/title">[Label]</dt>
+                  <dd tal:content="structure field/value">[Value]</dd>
+                </div>
+
+                <div class="col-md-12 development__number_of_groups"
+                    tal:define="field item/number_of_groups | nothing"
+                    tal:condition="python: show_number_of_groups and field">
+                  <dt tal:content="field/title">[Label]</dt>
+                  <dd tal:content="structure field/value">[Value]</dd>
+                </div>
+
+              </dl>
+            </section>
+            <p class="development__description col-sm-12"
+                tal:define="field item/description | nothing"
+                tal:condition="python: show_description and field"
+                tal:content="field/value">[Value]</p>
+          </tal:item>
+        </div>
+        <div class="tile-footer" tal:condition="show_more_link">
+          <a tal:attributes="href context/@@absolute_url">${more_link_text}</a>
+        </div>
+      </section>
+    </body>
+  </tal:block>
+</html>

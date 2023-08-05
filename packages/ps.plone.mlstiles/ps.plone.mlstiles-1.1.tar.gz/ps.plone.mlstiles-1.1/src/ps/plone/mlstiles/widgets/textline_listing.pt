@@ -1,0 +1,113 @@
+<html lang="en"
+     xml:lang="en"
+     xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:tal="http://xml.zope.org/namespaces/tal"
+     xmlns:metal="http://xml.zope.org/namespaces/metal"
+     xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+     i18n:domain="collective.cover"
+     tal:omit-tag="">
+
+  <style type="text/css">
+.wraplink-box {display: inline-block; margin-left: 1em;}
+#configure_tile input[type=radio] + label.wraplink-no {text-indent: 0px;}
+#configure_tile input[type=radio] + label.wraplink-yes {text-indent: 0px;}
+
+  </style>
+
+  <tal:stored_data define="stored_data python:view.form.getFieldConfiguration(view)">
+    <div class="visibility-box">
+      <span i18n:translate="">Visible</span>
+      <input type="radio" id="" name="" class="" tabindex="" accesskey="" value="on"
+          tal:attributes="id string:${view/id}-visibility-yes;
+                          name string:${view/name}.visibility;
+                          class view/klass;
+                          tabindex view/tabindex;
+                          checked python:not stored_data.get('visibility', None) and 'checked' or stored_data.get('visibility', None) == 'on' and 'checked';
+                          accesskey view/accesskey|nothing;"
+          />
+      <label class="visibility-yes"
+          i18n:translate=""
+          tal:attributes="for string:${view/id}-visibility-yes;">Yes</label>
+      <input type="radio" id="" name="" class="" tabindex="" accesskey="" value="off"
+          tal:attributes="id string:${view/id}-visibility-no;
+                          name string:${view/name}.visibility;
+                          class view/klass;
+                          tabindex view/tabindex;
+                          checked python:stored_data.get('visibility', None) == 'off' and 'checked';
+                          accesskey view/accesskey|nothing;"
+          />
+      <label class="visibility-no"
+          i18n:translate=""
+          tal:attributes="for string:${view/id}-visibility-no;">No</label>
+    </div>
+
+    <div class="order-box">
+      <span i18n:translate="">Order</span>
+      <input type="text" id="" name="" class="" size="2" tabindex="" accesskey=""
+          tal:attributes="id string:${view/id}-order;
+                          name string:${view/name}.order;
+                          class view/klass;
+                          tabindex view/tabindex;
+                          value python:stored_data.get('order', None);
+                          accesskey view/accesskey|nothing;"
+          />
+    </div>
+
+    <tal:if condition="python: isinstance (view.field, modules['zope.schema'].Int)">
+      <span i18n:translate="">Position</span>
+      <input type="text" id="" name="" class="" size="2" tabindex="" accesskey=""
+          tal:attributes="id string:${view/id}-offset;
+                           name string:${view/name}.offset;
+                           class view/klass;
+                           tabindex view/tabindex;
+                           value python:stored_data.get('offset', None);
+                           accesskey view/accesskey|nothing;"
+          />
+    </tal:if>
+
+    <tal:if condition="python: isinstance (view.field, modules['zope.schema'].TextLine)">
+      <span i18n:translate="">HTML tag</span>
+      <select id="" name="" class="" tabindex="" accesskey=""
+          tal:attributes="id string:${view/id}-htmltag-listings;
+                          name string:${view/name}.htmltag-listings;
+                          class view/klass;
+                          tabindex view/tabindex;
+                          accesskey view/accesskey|nothing;"
+          tal:define="values python:['h5', 'h6']">
+        <option
+            tal:repeat="value values"
+            tal:attributes="value value;
+                            selected python:stored_data.get('htmltag-listings', 'h5') == value and 'selected' or None"
+            tal:content="python:value.upper()">HTML TAG</option>
+      </select>
+    </tal:if>
+
+    <tal:if condition="python: isinstance (view.field, modules['zope.schema'].TextLine)">
+      <div class="wraplink-box">
+        <span i18n:translate="" i18n:domain="ps.plone.mlstiles">Wrap content in a link</span>
+        <input type="radio" id="" name="" class="" tabindex="" accesskey="" value="on"
+            tal:attributes="id string:${view/id}-wraplink-yes;
+                            name string:${view/name}.wraplink;
+                            class view/klass;
+                            tabindex view/tabindex;
+                            checked python:stored_data.get('wraplink', None) == 'on' and 'checked';
+                            accesskey view/accesskey|nothing;"
+            />
+        <label class="wraplink-yes"
+            i18n:translate=""
+            tal:attributes="for string:${view/id}-wraplink-yes;">No</label>
+        <input type="radio" id="" name="" class="" tabindex="" accesskey="" value="off"
+            tal:attributes="id string:${view/id}-wraplink-no;
+                            name string:${view/name}.wraplink;
+                            class view/klass;
+                            tabindex view/tabindex;
+                            checked python:not stored_data.get('wraplink', None) and 'checked' or stored_data.get('wraplink', None) == 'off' and 'checked';
+                            accesskey view/accesskey|nothing;"
+            />
+        <label class="wraplink-no"
+            i18n:translate=""
+            tal:attributes="for string:${view/id}-wraplink-no;">Yes</label>
+      </div>
+    </tal:if>
+  </tal:stored_data>
+</html>

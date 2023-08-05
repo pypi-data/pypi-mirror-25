@@ -1,0 +1,43 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="collective.cover">
+
+  <body tal:define="is_empty view/is_empty;
+                    search_form nocall:view/search_form;">
+    <p tal:condition="python: is_empty and view.is_compose_mode()" i18n:translate="">
+      Please drag&amp;drop some content here to populate the tile.
+    </p>
+
+    <div class="listing-search-tile tile-content" tal:condition="not:is_empty">
+      <div class="collection-link" tal:condition="view/is_compose_mode">
+        <a tal:attributes="href view/search_url" i18n:domain="ps.plone.mlstiles" i18n:translate="">Go to related search</a>
+      </div>
+
+      <div class="tile-header" tal:condition="view/show_header">
+        <tal:fields tal:repeat="field view/get_configured_fields">
+          <tal:header
+              tal:define="htmltag python:field.get('htmltag', 'h1')"
+              tal:condition="python:field['id'] == 'header'">
+            <h1 tal:condition="python:htmltag == 'h1'" tal:content="view/data/header"></h1>
+            <h2 tal:condition="python:htmltag == 'h2'" tal:content="view/data/header"></h2>
+            <h3 tal:condition="python:htmltag == 'h3'" tal:content="view/data/header"></h3>
+            <h4 tal:condition="python:htmltag == 'h4'" tal:content="view/data/header"></h4>
+          </tal:header>
+        </tal:fields>
+      </div>
+
+      <div tal:condition="not:search_form">
+        <p i18n:domain="ps.plone.mlstiles" i18n:translate="">The listing search is not yet active.</p>
+      </div>
+
+      <div tal:condition="search_form" tal:replace="structure search_form/render"></div>
+
+      <div class="tile-footer" tal:condition="view/show_footer">
+        <a tal:attributes="href view/search_url" tal:content="view/data/footer" />
+      </div>
+
+    </div>
+  </body>
+</html>

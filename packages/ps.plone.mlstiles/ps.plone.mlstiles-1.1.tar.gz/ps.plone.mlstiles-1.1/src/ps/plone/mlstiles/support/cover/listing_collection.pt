@@ -1,0 +1,183 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="collective.cover">
+
+  <body tal:define="is_empty view/is_empty">
+    <p tal:condition="python: is_empty and view.is_compose_mode()" i18n:translate="">
+      Please drop a collection here to fill the tile.
+    </p>
+
+    <div class="mls-collection-tile listing-collection-tile tile-content" tal:condition="not:is_empty">
+      <tal:results
+          tal:define="results view/items | nothing;
+                      toLocalizedTime nocall:context/@@plone/toLocalizedTime">
+
+        <div class="collection-link" tal:condition="view/is_compose_mode">
+          <a tal:attributes="href view/collection_url" i18n:translate="">Go to related collection</a>
+        </div>
+
+        <div class="tile-header" tal:condition="view/show_header">
+          <tal:fields tal:repeat="field view/configured_fields">
+            <tal:header
+                tal:define="htmltag python:field.get('htmltag', 'h1')"
+                tal:condition="python:field['id'] == 'header'">
+              <h1 tal:condition="python:htmltag == 'h1'" tal:content="view/data/header"></h1>
+              <h2 tal:condition="python:htmltag == 'h2'" tal:content="view/data/header"></h2>
+              <h3 tal:condition="python:htmltag == 'h3'" tal:content="view/data/header"></h3>
+              <h4 tal:condition="python:htmltag == 'h4'" tal:content="view/data/header"></h4>
+            </tal:header>
+          </tal:fields>
+        </div>
+
+        <div tal:condition="not:results">
+          <p i18n:translate="">The collection doesn't have any results.</p>
+        </div>
+
+        <div class="collection-item tileItem visualIEFloatFix"
+             tal:repeat="listing results">
+          <tal:items
+              tal:define="listing_title listing/title/value;
+                          listing_url string:${view/collection_url}/${listing/id/value};">
+            <tal:fields repeat="field view/configured_fields">
+              <tal:title
+                  tal:define="htmltag python:field.get('htmltag', 'h1')"
+                  tal:condition="python:field['id'] == 'title'">
+                <h1 tal:condition="python:htmltag == 'h1'"><a tal:attributes="href listing_url" tal:content="listing_title" /></h1>
+                <h2 tal:condition="python:htmltag == 'h2'"><a tal:attributes="href listing_url" tal:content="listing_title" /></h2>
+                <h3 tal:condition="python:htmltag == 'h3'"><a tal:attributes="href listing_url" tal:content="listing_title" /></h3>
+                <h4 tal:condition="python:htmltag == 'h4'"><a tal:attributes="href listing_url" tal:content="listing_title" /></h4>
+              </tal:title>
+
+              <tal:image
+                  tal:define="image listing/lead_image | nothing"
+                  tal:condition="python:field['id'] == 'image'">
+                <figure
+                    tal:attributes="class view/get_image_position;">
+                  <a href=""
+                      tal:attributes="href listing_url;
+                                      title listing_title"><img src="" alt=""
+                      tal:condition="image"
+                      tal:attributes="src image" /><img
+                      tal:condition="not:image" alt="" title=""
+                      src="++resource++plone.mls.listing.images/no-image.png" /></a>
+                  <figcaption>
+                    <small tal:content="listing_title">[Caption]</small>
+                  </figcaption>
+                </figure>
+              </tal:image>
+
+              <div class="item price"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/price | nothing"
+                  tal:condition="python:field['id'] == 'price' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item workflow_status"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/workflow_status | nothing"
+                  tal:condition="python:field['id'] == 'workflow_status' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item listing_type"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/listing_type | nothing"
+                  tal:condition="python:field['id'] == 'listing_type' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item image_count"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/image_count | nothing"
+                  tal:condition="python:field['id'] == 'image_count' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item object_type"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/object_type | nothing"
+                  tal:condition="python:field['id'] == 'object_type' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item beds_baths"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/beds_baths | nothing"
+                  tal:condition="python:field['id'] == 'beds_baths' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item location"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/location | nothing"
+                  tal:condition="python:field['id'] == 'location' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item location_type"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/location_type | nothing"
+                  tal:condition="python:field['id'] == 'location_type' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item view_type"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/view_type | nothing"
+                  tal:condition="python:field['id'] == 'view_type' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="item/value">[Value]</a></p>
+              </div>
+
+              <div class="item lot_size"
+                  tal:define="htmltag python:field.get('htmltag-listings', 'h5');
+                              wraplink python:field.get('wraplink', False);
+                              item listing/lot_size | nothing"
+                  tal:condition="python:field['id'] == 'lot_size' and item">
+                <h5 class="item-heading" tal:condition="python:htmltag == 'h5'" tal:content="item/label">[Label]</h5>
+                <h6 class="item-heading" tal:condition="python:htmltag == 'h6'" tal:content="item/label">[Label]</h6>
+                <p class="item-body"><a href="" tal:attributes="href listing_url" tal:omit-tag="not: wraplink" tal:content="structure item/value">[Value]</a></p>
+              </div>
+
+            </tal:fields>
+            <div class="visualClear"></div>
+          </tal:items>
+          <div class="visualClear"><!-- --></div>
+        </div>
+        <div class="tile-footer" tal:condition="view/show_footer">
+          <a tal:attributes="href view/collection_url" tal:content="view/data/footer" />
+        </div>
+        <div class="visualClear"><!-- --></div>
+      </tal:results>
+    </div>
+  </body>
+</html>

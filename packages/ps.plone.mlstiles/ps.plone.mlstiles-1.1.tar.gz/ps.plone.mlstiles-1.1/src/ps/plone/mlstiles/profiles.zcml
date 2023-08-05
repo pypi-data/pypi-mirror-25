@@ -1,0 +1,137 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="ps.plone.mlstiles">
+
+  <!-- GenericSetup Profiles. -->
+  <!-- ====================== -->
+
+  <!-- Installation: Plone 4. -->
+  <genericsetup:registerProfile
+      zcml:condition="not-have plone-5"
+      description="Plone 4 support for the Propertyshelf MLS Tiles."
+      directory="profiles/plone4"
+      name="default"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      title="ps.plone.mlstiles"
+      />
+
+  <!-- Installation: Plone 5. -->
+  <genericsetup:registerProfile
+      zcml:condition="have plone-5"
+      description="Plone 5 support for the Propertyshelf MLS Tiles."
+      directory="profiles/plone5"
+      name="default"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      title="ps.plone.mlstiles"
+      />
+
+  <!-- Uninstall: Plone 4 & 5. -->
+  <genericsetup:registerProfile
+      description="A Plone uninstall profile for ps.plone.mlstiles."
+      directory="profiles/uninstall"
+      name="uninstall"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      title="ps.plone.mlstiles - uninstall"
+      />
+
+  <genericsetup:registerProfile
+      name="support_cover"
+      title="Propertyshelf MLS Tiles for collective.cover"
+      directory="profiles/support_cover"
+      description="collective.cover support for the Propertyshelf MLS Plone Embedding."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:registerProfile
+      name="support_mosaic"
+      title="Propertyshelf MLS Tiles for plone.app.mosaic"
+      directory="profiles/support_mosaic"
+      description="plone.app.mosaic support for the Propertyshelf MLS Plone Embedding."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+
+  <!-- GenericSetup Import Steps. -->
+  <!-- ========================== -->
+  <genericsetup:importStep
+      description="Install additional profiles."
+      handler=".setuphandlers.install_additional_profiles"
+      name="ps.plone.mlstiles.additional_profiles"
+      title="ps.plone.mls additional profiles">
+  </genericsetup:importStep>
+
+  <genericsetup:importStep
+      description="Install tiles for collective.cover."
+      handler=".setuphandlers.install_cover_support"
+      name="ps.plone.mlstiles.covertiles"
+      title="ps.plone.mls cover tiles">
+  </genericsetup:importStep>
+
+
+  <!-- GenericSetup Upgrade Steps. -->
+  <!-- =========================== -->
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mlstiles"
+      description="Add featured listings tile."
+      source="1000"
+      destination="1001"
+      handler=".migrations.migrate_to_1001"
+      sortkey="1"
+      profile="ps.plone.mlstiles:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mlstiles"
+      description="Add development collection tile."
+      source="1001"
+      destination="1002"
+      handler=".migrations.migrate_to_1002"
+      sortkey="1"
+      profile="ps.plone.mlstiles:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mlstiles"
+      description="Add browserlayer."
+      source="1002"
+      destination="1003"
+      handler=".migrations.migrate_to_1003"
+      sortkey="1"
+      profile="ps.plone.mlstiles:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mlstiles"
+      description="Upgrade mosaic support."
+      source="1003"
+      destination="1004"
+      handler=".migrations.migrate_to_1004"
+      sortkey="1"
+      profile="ps.plone.mlstiles:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mlstiles"
+      description="Update mosaic tiles."
+      source="3001"
+      destination="3002"
+      handler=".migrations.migrate_to_3002"
+      sortkey="1"
+      profile="ps.plone.mlstiles:support_mosaic"
+      />
+
+
+  <!-- GenericSetup utilities. -->
+  <!-- ======================= -->
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="ps.plone.mlstiles-hiddenprofiles"
+      />
+
+  <subscriber
+    handler=".setuphandlers.handle_profile_imported_event"
+      />
+
+</configure>
