@@ -1,0 +1,54 @@
+{% autoescape None %}
+
+{% comment *********************** %}
+{% comment group set navigation    %}
+{% comment *********************** %}
+{% if len(document_group_set) > 1 %}
+<nav class="esdoc-document-group-set">
+    <ul>
+        {% for index, key in enumerate(sorted(document_group_set.keys())) %}
+            {% set orderCSS =  "" if index > 0 else "first" %}
+            {% if len(document_group_set[key]) == 1 %}
+
+                {% comment *********************** %}
+                {% comment single document groups  %}
+                {% comment *********************** %}
+                {% set doc = document_group_set[key][0] %}
+                <li class="esdoc-document-group-single">
+                    <a class="esdoc-document-nav {{ orderCSS }}" href="#{{ doc.ext.full_id }}">{{ key[3:] }}</a>
+                </li>
+
+            {% else %}
+
+                {% comment *********************** %}
+                {% comment multi document groups   %}
+                {% comment *********************** %}
+                <li class="esdoc-document-group-multi">
+                    <a href="#">
+                      {{ key[3:] }}
+                    </a>
+                    <ul>
+                        {% for doc in document_group_set[key] %}
+                        <li>
+                            <a class="esdoc-document-nav {{ orderCSS }}" href="#{{ doc.ext.full_id }}">{{ doc.ext.display_name }}</a>
+                        </li>
+                        {% end %}
+                    </ul>
+                </li>
+            {% end %}
+        {% end %}
+    </ul>
+</nav>
+{% end %}
+
+{% comment ******************* %}
+{% comment document set        %}
+{% comment ******************* %}
+<div class="esdoc-document-set">
+    {% for doc in document_set %}
+        <article id="{{ doc.ext.full_id }}"
+             class="esdoc-document {{ doc.type_key.lower().replace(".", "-") }}">
+            {{ squeeze(generate_document(doc)) }}
+        </article>
+    {% end %}
+</div>
