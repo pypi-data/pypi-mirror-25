@@ -1,0 +1,35 @@
+NAME='Ozflux sites'
+ROOT='http://dap.ozflux.org.au/thredds/catalog/ozflux/sites/'
+CATALOG='catalog.xml'
+DATA_URL_ROOT='http://dap.ozflux.org.au/thredds/dodsC/ozflux/sites/'
+HTTP_ROOT="/var/www/html/ozfluxapi/downloads/"
+HTTP_HOST="https://ozfluxapi.tern.org.au/"
+SITES=['Yanco',
+       'WombatStateForest',
+       'Whroo',
+       'Warra',
+       'WallabyCreek',
+       'Tumbarumba',
+       'TiTreeEast',
+       'SturtPlains',
+       'Samford',
+       'RobsonCreek',
+       'RiggsCreek',
+       'RedDirtMelonFarm',
+       'Otway',
+       'Nimmo',
+       'Loxton',
+       'Litchfield',
+       'HowardSprings',
+       'GreatWesternWoodlands',
+       'Gingin',
+       'Emerald',
+       'DryRiver',
+       'Dargo',
+       'DalyUncleared',
+       'CumberlandPlains',
+       'CowBay',
+       'CapeTribulation',
+       'Calperum',
+       'AdelaideRiver'    
+    ]
