@@ -1,0 +1,20 @@
+# For a complete reference, please see the online documentation at
+# https://docs.vagrantup.com.
+Vagrant.configure("2") do |config|
+  config.vm.box = "{{ vagrant_distrib }}"
+  {% for bind_dir in bind_dirs %}config.vm.synced_folder "{{ bind_dir.0 }}", "{{ bind_dir.1 }}"
+  {% endfor %}config.vm.network "forwarded_port", guest: {{ SERVER_PORT }}, host: 10080
+  config.vm.provision "shell", inline: <<-SHELL
+sudo locale-gen `echo $LC_ALL`
+sudo apt-get update
+sudo apt-get install -y build-essential python3-dev libmysqlclient-dev libpq-dev rng-tools
+# sudo apt-get install -y libbz2-dev libdb-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-dev libsqlite3-dev libssl-dev libz-dev liblzma-dev tk-dev build-essential python3-dev libmysqlclient-dev libpq-dev
+sudo apt-get install -y ruby ruby-dev
+sudo apt-get install -y `python3 -c 'import sys; print("python%d.%d-venv" % (sys.version_info[0], sys.version_info[1]))'`
+sudo apt-get purge -y {{ DF_MODULE_NAME }} 2> /dev/null || :
+
+echo "HRNGDEVICE=/dev/urandom" | sudo tee -a /etc/default/rng-tools
+sudo /etc/init.d/rng-tools restart
+SHELL
+
+end
