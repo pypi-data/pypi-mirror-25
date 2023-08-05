@@ -1,0 +1,228 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Proactor &#8212; Turberfield-IPC 0.15.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.15.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Proactor Example" href="proactor_example.html" />
+    <link rel="prev" title="DIF Example" href="node_example.html" /> 
+  </head>
+  <body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>Turberfield-IPC 0.15.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Proactor</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="node_example.html">DIF Example</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="proactor_example.html">Proactor Example</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="proactor">
+<span id="id1"></span><h1>Proactor<a class="headerlink" href="#proactor" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-turberfield.ipc.proactor" title="turberfield.ipc.proactor"><code class="xref py py-mod docutils literal"><span class="pre">proactor</span></code></a> module
+establishes a pattern for inter-process communication using two standard
+technologies:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Configuration of processes from a <cite>configparser</cite>-compatible file.</li>
+<li>Message passing via RESTful web-hooks over an http transport.</li>
+</ul>
+</div></blockquote>
+<span class="target" id="module-turberfield.ipc.proactor"></span><div class="section" id="base-class">
+<h2>Base class<a class="headerlink" href="#base-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="turberfield.ipc.proactor.Proactor">
+<em class="property">class </em><code class="descclassname">turberfield.ipc.proactor.</code><code class="descname">Proactor</code><span class="sig-paren">(</span><em>options</em>, <em>loop=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/turberfield/ipc/proactor.html#Proactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#turberfield.ipc.proactor.Proactor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="turberfield.ipc.proactor.Proactor.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>options</em>, <em>loop=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/turberfield/ipc/proactor.html#Proactor.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#turberfield.ipc.proactor.Proactor.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class provides the basic behaviour required for a module which
+performs a job of work.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>options</strong> – An <cite>argparse.Namespace</cite> or other object giving dotted-name
+attribute access to command line options.</li>
+<li><strong>loop</strong> – An event loop compatible with <cite>asyncio.AbstractEventLoop</cite>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="turberfield.ipc.proactor.Proactor.read_config">
+<code class="descname">read_config</code><span class="sig-paren">(</span><em>fObj</em>, <em>timeout=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/turberfield/ipc/proactor.html#Proactor.read_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#turberfield.ipc.proactor.Proactor.read_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read this object’s configuration file from a file stream (eg: standard input).</p>
+<p>This method will raise <cite>asyncio.TimeoutError</cite> if the configuration
+is not seen within the timeout interval.</p>
+<p>It runs within this object’s event loop.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fObj</strong> – A file stream object.</li>
+<li><strong>timeout</strong> – A timeout interval in seconds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="initiator">
+<h2>Initiator<a class="headerlink" href="#initiator" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="turberfield.ipc.proactor.Initiator">
+<em class="property">class </em><code class="descclassname">turberfield.ipc.proactor.</code><code class="descname">Initiator</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/turberfield/ipc/proactor.html#Initiator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#turberfield.ipc.proactor.Initiator" title="Permalink to this definition">¶</a></dt>
+<dd><p>The role of an Initiator is to launch executable modules as worker
+processes, or <cite>jobs</cite>. It is a subclass of
+<a class="reference internal" href="#turberfield.ipc.proactor.Proactor" title="turberfield.ipc.proactor.Proactor"><code class="xref py py-class docutils literal"><span class="pre">Proactor</span></code></a>.</p>
+<dl class="method">
+<dt id="turberfield.ipc.proactor.Initiator.launch">
+<code class="descname">launch</code><span class="sig-paren">(</span><em>module</em>, <em>guid=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/turberfield/ipc/proactor.html#Initiator.launch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#turberfield.ipc.proactor.Initiator.launch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Schedule a job to be spawned in a worker process.</p>
+<p>This is a <em>coroutine</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>module</strong> – <p>A reference to a Python executable module.
+The module will be passed the following command line options:</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--guid</span></kbd></td>
+<td>The guid of the job.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--port</span></kbd></td>
+<td>A TCP port for the job to bind to.</td></tr>
+</tbody>
+</table>
+<p>The module must read its configuration from the standard input stream.</p>
+</li>
+<li><strong>guid</strong> – A unique id for the job. There is usually no need to
+supply this parameter. It will be generated internally.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A guid to identify the new job.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="turberfield.ipc.proactor.Initiator.next_port">
+<em class="property">static </em><code class="descname">next_port</code><span class="sig-paren">(</span><em>cfg</em>, <em>guid</em>, <em>busy=set()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/turberfield/ipc/proactor.html#Initiator.next_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#turberfield.ipc.proactor.Initiator.next_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate a value for the next available port on this host.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cfg</strong> – A <cite>configparser.ConfigParser</cite> object.</li>
+<li><strong>guid</strong> – The global id for the Initiator which allocates ports.</li>
+<li><strong>busy</strong> – A set of integer values; these are port numbers
+known to be busy.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="data-structures">
+<h2>Data structures<a class="headerlink" href="#data-structures" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt id="turberfield.ipc.proactor.Initiator.Worker">
+<code class="descclassname">Initiator.</code><code class="descname">Worker</code><em class="property"> (guid, port, session, module, process). The details for
+a worker process:</em><a class="headerlink" href="#turberfield.ipc.proactor.Initiator.Worker" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><dl class="docutils">
+<dt>guid</dt>
+<dd>A unique id which identifies a section in the configuration file.</dd>
+<dt>port</dt>
+<dd>The port (an integer) the worker process is listening on.</dd>
+<dt>session</dt>
+<dd>An optional value for the job which may be of use in web applications.</dd>
+<dt>module</dt>
+<dd>A reference to he executable Python module used to launch the job.</dd>
+<dt>process</dt>
+<dd>A reference to the Python subprocess.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="node_example.html">DIF Example</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="proactor_example.html">Proactor Example</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, D Haynes.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

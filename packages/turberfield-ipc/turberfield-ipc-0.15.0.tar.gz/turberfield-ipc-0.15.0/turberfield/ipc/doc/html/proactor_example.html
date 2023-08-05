@@ -1,0 +1,157 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Proactor Example &#8212; Turberfield-IPC 0.15.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.15.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Proactor" href="proactor.html" /> 
+  </head>
+  <body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>Turberfield-IPC 0.15.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Proactor Example</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="proactor.html">Proactor</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="proactor-example">
+<h1>Proactor Example<a class="headerlink" href="#proactor-example" title="Permalink to this headline">¶</a></h1>
+<p>Two files in the <em>demo</em> directory show how to create <strong>processor</strong> and <strong>initiator</strong>
+modules. There is also a configuration file for them.</p>
+<div class="section" id="configuration-file">
+<h2>Configuration file<a class="headerlink" href="#configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>The file <cite>demo/proactor.cfg</cite> has four sections.</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>A <cite>DEFAULT</cite> section with global default settings.</li>
+<li>A <cite>turberfield.ipc.demo.initiator</cite> section with defaults for initiator processes.</li>
+<li>A <cite>turberfield.ipc.demo.processor</cite> section with defaults for processors. In this
+example it  is empty.</li>
+<li>A section named with a global id value (line 14). This section contains settings
+for a specific process. Notice how it references the values in the
+<cite>turberfield.ipc.demo.initiator</cite> section.</li>
+</ol>
+</div></blockquote>
+<pre class="code ini literal-block">
+<span class="ln"> 1 </span><span class="keyword">[DEFAULT]</span>
+<span class="ln"> 2 </span><span class="name attribute">host_scheme</span> <span class="operator">=</span> <span class="literal string">http</span>
+<span class="ln"> 3 </span><span class="name attribute">host_addr</span> <span class="operator">=</span> <span class="literal string">localhost</span>
+<span class="ln"> 4 </span><span class="name attribute">host_port</span> <span class="operator">=</span> <span class="literal string">8080</span>
+<span class="ln"> 5 </span><span class="name attribute">hash</span> <span class="operator">=</span> <span class="literal string">#</span>
+<span class="ln"> 6 </span>
+<span class="ln"> 7 </span><span class="keyword">[turberfield.ipc.demo.initiator]</span>
+<span class="ln"> 8 </span><span class="name attribute">listen_addr</span> <span class="operator">=</span> <span class="literal string">0.0.0.0</span>
+<span class="ln"> 9 </span><span class="name attribute">child_port_min</span> <span class="operator">=</span> <span class="literal string">49152</span>
+<span class="ln">10 </span><span class="name attribute">child_port_max</span> <span class="operator">=</span> <span class="literal string">65536</span>
+<span class="ln">11 </span>
+<span class="ln">12 </span><span class="keyword">[turberfield.ipc.demo.processor]</span>
+<span class="ln">13 </span>
+<span class="ln">14 </span><span class="keyword">[8d740c16d9b8419aa7417f7da6deb039]</span>
+<span class="ln">15 </span><span class="name attribute">listen_addr</span> <span class="operator">=</span> <span class="literal string">${turberfield.ipc.demo.initiator:listen_addr}</span>
+<span class="ln">16 </span><span class="name attribute">child_port_min</span> <span class="operator">=</span> <span class="literal string">${turberfield.ipc.demo.initiator:child_port_min}</span>
+<span class="ln">17 </span><span class="name attribute">child_port_max</span> <span class="operator">=</span> <span class="literal string">${turberfield.ipc.demo.initiator:child_port_max}</span>
+<span class="ln">18 </span><span class="name attribute">listen_port</span> <span class="operator">=</span> <span class="literal string">8080</span>
+</pre>
+</div>
+<div class="section" id="run-on-linux">
+<h2>Run on Linux<a class="headerlink" href="#run-on-linux" title="Permalink to this headline">¶</a></h2>
+<p>Install <cite>turberfield-ipc</cite> into a Python virtual environment at <cite>~/py3.5</cite>.</p>
+<p>Open up a console and start the <cite>initiator</cite> process:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">~/</span><span class="n">py3</span><span class="o">.</span><span class="mi">5</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">turberfield</span><span class="o">.</span><span class="n">ipc</span><span class="o">.</span><span class="n">demo</span><span class="o">.</span><span class="n">initiator</span> \
+<span class="o">--</span><span class="n">guid</span><span class="o">=</span><span class="mi">8</span><span class="n">d740c16d9b8419aa7417f7da6deb039</span> \
+<span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">turberfield</span><span class="o">/</span><span class="n">ipc</span><span class="o">/</span><span class="n">demo</span><span class="o">/</span><span class="n">proactor</span><span class="o">.</span><span class="n">cfg</span>
+</pre></div>
+</div>
+<p>This command will run an initiator process, feed into it the configuration file
+and tell it to get its settings from the specific section named by the guid:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">2017</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">14</span> <span class="mi">18</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="mi">425</span> <span class="n">INFO</span>   <span class="o">|</span><span class="mi">1034</span><span class="o">|</span><span class="n">turberfield</span><span class="o">|</span><span class="n">Place</span> <span class="n">defaults</span>
+<span class="mi">2017</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">14</span> <span class="mi">18</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="mi">426</span> <span class="n">INFO</span>   <span class="o">|</span><span class="mi">1034</span><span class="o">|</span><span class="n">turberfield</span><span class="o">|</span><span class="n">Read</span> <span class="n">config</span><span class="o">...</span>
+<span class="mi">2017</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">14</span> <span class="mi">18</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="mi">426</span> <span class="n">INFO</span>   <span class="o">|</span><span class="mi">1034</span><span class="o">|</span><span class="n">turberfield</span><span class="o">.</span><span class="n">ipc</span><span class="o">.</span><span class="n">proactor</span><span class="o">.</span><span class="n">initiator</span><span class="o">|</span><span class="n">Running</span> <span class="n">jobs</span>
+<span class="mi">2017</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">14</span> <span class="mi">18</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="mi">428</span> <span class="n">INFO</span>   <span class="o">|</span><span class="mi">1034</span><span class="o">|</span><span class="n">turberfield</span><span class="o">|</span><span class="n">Serving</span> <span class="n">on</span> <span class="mf">0.0</span><span class="o">.</span><span class="mf">0.0</span><span class="p">:</span><span class="mi">8080</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="launch-a-worker">
+<h2>Launch a worker<a class="headerlink" href="#launch-a-worker" title="Permalink to this headline">¶</a></h2>
+<p>The demo initiator has a web API endpoint which lets you create workers. You can operate
+it from the command line like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="o">-</span><span class="n">X</span> <span class="n">POST</span> <span class="n">localhost</span><span class="p">:</span><span class="mi">8080</span><span class="o">/</span><span class="n">create</span>
+<span class="mi">201</span><span class="p">:</span> <span class="n">Created</span>
+</pre></div>
+</div>
+<p>You’ll see a new processor start up and begin logging messages:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">2017</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">14</span> <span class="mi">18</span><span class="p">:</span><span class="mi">11</span><span class="p">:</span><span class="mi">30</span><span class="p">,</span><span class="mi">302</span> <span class="n">INFO</span>   <span class="o">|</span><span class="mi">1065</span><span class="o">|</span><span class="n">turberfield</span><span class="o">.</span><span class="n">processor</span><span class="o">|</span><span class="n">Read</span> <span class="n">config</span><span class="o">...</span>
+<span class="mi">2017</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">14</span> <span class="mi">18</span><span class="p">:</span><span class="mi">11</span><span class="p">:</span><span class="mi">30</span><span class="p">,</span><span class="mi">306</span> <span class="n">INFO</span>   <span class="o">|</span><span class="mi">1065</span><span class="o">|</span><span class="n">turberfield</span><span class="o">.</span><span class="n">processor</span><span class="o">|</span><span class="n">Serving</span> <span class="n">on</span> <span class="mf">0.0</span><span class="o">.</span><span class="mf">0.0</span><span class="p">:</span><span class="mi">49152</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="reconfiguration-of-a-live-processor">
+<h2>Reconfiguration of a live processor<a class="headerlink" href="#reconfiguration-of-a-live-processor" title="Permalink to this headline">¶</a></h2>
+<p>The initiator endpoint at <code class="docutils literal"><span class="pre">localhost:8080/config/</span></code> allows a processor to request its
+configuration. The processor must use its <em>guid</em> as the last part of the url, and authenticate
+itself with a secret token that it gets from its most recent configuration.</p>
+<p>Every 30 seconds or so you will see the processor request a fresh configuration from the
+initiator. This demo simply logs that data. A more sophisticated application would update
+its configuration. That configuration might well include a refresh of the authentication token.</p>
+</div>
+<div class="section" id="message-passing">
+<h2>Message passing<a class="headerlink" href="#message-passing" title="Permalink to this headline">¶</a></h2>
+<p>The initiator can publish endpoints to its processors, and authenticate the tokens
+they use in their requests.</p>
+<p>Alternatively, processors could respond to API requests whether from the initiator
+or from each other. All sorts of messaging sequences are now possible.</p>
+<p>This flexible system can form the basis of an asynchronous distributed computational
+service controlled by the initiator.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="proactor.html">Proactor</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, D Haynes.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>
