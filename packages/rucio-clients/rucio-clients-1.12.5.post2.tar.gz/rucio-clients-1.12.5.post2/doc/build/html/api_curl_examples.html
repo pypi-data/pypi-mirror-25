@@ -1,0 +1,1054 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>REST API Examples Using Curl &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="REST API Automatic Generated Documentation" href="REST_Intro.html" />
+    <link rel="prev" title="General notes" href="rest.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="REST_Intro.html" title="REST API Automatic Generated Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="rest.html" title="General notes"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="rest-api-examples-using-curl">
+<h1>REST API Examples Using Curl<a class="headerlink" href="#rest-api-examples-using-curl" title="Permalink to this headline">¶</a></h1>
+<p>Below are some examples of The Rucio REST API with Curl. We assume that there is
+a Rucio server running on the localhost on port 80/443.</p>
+<div class="section" id="service">
+<h2>Service<a class="headerlink" href="#service" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="get-ping">
+<span id="id1"></span><h3><cite>GET /PING</cite><a class="headerlink" href="#get-ping" title="Permalink to this headline">¶</a></h3>
+<p>Discover server version information.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; curl -s  -X GET http://localhost/ping
+{&quot;version&quot;: &quot;0-37-g7213ca2-dev1350298880&quot;}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="authentication">
+<h2>Authentication<a class="headerlink" href="#authentication" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="get-auth-userpass">
+<span id="id2"></span><h3><cite>GET /auth/userpass</cite><a class="headerlink" href="#get-auth-userpass" title="Permalink to this headline">¶</a></h3>
+<p>Requesting a X-Rucio-Auth-Token with curl via username and password.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; curl -s -i --cacert /opt/rucio/etc/web/ca.crt  -X GET -H &quot;X-Rucio-Account: root&quot; -H &quot;Rucio-Username: ddmlab&quot; -H &quot;Rucio-Password: secret&quot; https://localhost/auth/userpass
+HTTP/1.1 200 OK
+Date: Mon, 15 Oct 2012 11:37:33 GMT
+Server: Apache/2.2.22 (Unix) mod_ssl/2.2.22 OpenSSL/0.9.8r DAV/2 mod_wsgi/3.3 Python/2.7.3 PHP/5.3.15 mod_fastcgi/2.4.2
+X-X-X-Rucio-Auth-Token: bad32ab79a1648128b5343b29580d96c
+Content-Length: 0
+Content-Type: application/octet-stream
+
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-auth-x509">
+<span id="id3"></span><h3><cite>GET /auth/x509</cite><a class="headerlink" href="#get-auth-x509" title="Permalink to this headline">¶</a></h3>
+<p>Requesting a X-Rucio-Auth-Token with curl via a X509 certificate.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; curl -s -i --cacert /opt/rucio/etc/web/ca.crt -H &quot;X-Rucio-Account: root&quot; -E /opt/rucio/etc/web/client.crt -X GET https://localhost/auth/x509
+HTTP/1.1 200 OK
+Date: Mon, 15 Oct 2012 11:37:33 GMT
+Server: Apache/2.2.22 (Unix) mod_ssl/2.2.22 OpenSSL/0.9.8r DAV/2 mod_wsgi/3.3 Python/2.7.3 PHP/5.3.15 mod_fastcgi/2.4.2
+X-X-X-X-X-Rucio-Auth-Token: 928c0a4747d346999cfaceac0b4a171d
+Content-Length: 0
+Content-Type: application/octet-stream
+
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-auth-gss">
+<span id="id4"></span><h3><cite>GET /auth/gss</cite><a class="headerlink" href="#get-auth-gss" title="Permalink to this headline">¶</a></h3>
+<p>Requesting a X-Rucio-Auth-Token with curl via kerberos.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+</div>
+<div class="section" id="get-auth-x509-proxy">
+<span id="id5"></span><h3><cite>GET /auth/x509_proxy</cite><a class="headerlink" href="#get-auth-x509-proxy" title="Permalink to this headline">¶</a></h3>
+<p>Requesting a X-Rucio-Auth-Token with curl via a Globus proxy.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; curl -s -i --cacert /opt/rucio/etc/web/ca.crt -H &quot;X-Rucio-Account: vgaronne&quot; --cert $X509_USER_PROXY --key $X509_USER_PROXY -X GET https://localhost/auth/x509_proxy
+HTTP/1.1 200 OK
+Date: Mon, 15 Oct 2012 10:58:37 GMT
+Server: Apache/2.2.22 (Unix) mod_ssl/2.2.22 OpenSSL/0.9.8r DAV/2 mod_wsgi/3.3 Python/2.7.3 PHP/5.3.15 mod_fastcgi/2.4.2
+X-X-X-Rucio-Auth-Token: 10520defe5314ef68677be7a479152ae
+Content-Length: 0
+Content-Type: application/octet-stream
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-auth-validate">
+<span id="id6"></span><h3><cite>GET /auth/validate</cite><a class="headerlink" href="#get-auth-validate" title="Permalink to this headline">¶</a></h3>
+<p>Check the validity of a authentication token. Checking the validity of a token will extend its lifetime by one hour.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code>: the token is valid</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code>: The token is not valid</li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; curl -s -i --cacert /opt/rucio/etc/web/ca.crt  -H &quot;X-X-X-Rucio-Auth-Token: $RUCIO_TOKEN&quot; -X GET https://localhost/auth/validate
+HTTP/1.1 200 OK
+Date: Mon, 15 Oct 2012 11:37:33 GMT
+Server: Apache/2.2.22 (Unix) mod_ssl/2.2.22 OpenSSL/0.9.8r DAV/2 mod_wsgi/3.3 Python/2.7.3 PHP/5.3.15 mod_fastcgi/2.4.2
+Content-Length: 85
+Content-Type: application/octet-stream
+
+{&#39;lifetime&#39;: datetime.datetime(2012, 10, 15, 11, 58, 35, 832646), &#39;account&#39;: u&#39;root&#39;}
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-auth-register-api-token">
+<span id="id7"></span><h3><cite>GET /auth/register_api_token</cite><a class="headerlink" href="#get-auth-register-api-token" title="Permalink to this headline">¶</a></h3>
+<p><strong>Responses</strong></p>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+</div>
+<div class="section" id="account">
+<h2>Account<a class="headerlink" href="#account" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-accounts-accountname">
+<span id="id8"></span><h3><cite>POST /accounts/{accountName}</cite><a class="headerlink" href="#post-accounts-accountname" title="Permalink to this headline">¶</a></h3>
+<p>Create account.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="14%" />
+<col width="61%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">accountType</span></code></td>
+<td>String</td>
+<td>The type of the account (user, group, atlas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">201</span> <span class="pre">Created</span></code>: Account created</li>
+<li><code class="docutils literal"><span class="pre">409</span> <span class="pre">Conflict</span></code>: Account already exists</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">201</span> <span class="n">Created</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-accounts-accountname">
+<span id="id9"></span><h3><cite>GET /accounts/{accountName}</cite><a class="headerlink" href="#get-accounts-accountname" title="Permalink to this headline">¶</a></h3>
+<p>Get account information.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+<li><code class="docutils literal"><span class="pre">404</span> <span class="pre">Not</span> <span class="pre">Found</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">accounts</span><span class="o">/</span><span class="n">jdoe</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">200</span> <span class="n">OK</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">04</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">json</span>
+
+<span class="p">{</span><span class="s">&quot;status&quot;</span><span class="p">:</span> <span class="s">&quot;active&quot;</span><span class="p">,</span> <span class="s">&quot;account&quot;</span><span class="p">:</span> <span class="s">&quot;jdoe&quot;</span><span class="p">,</span> <span class="s">&quot;deleted&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span> <span class="s">&quot;created_at&quot;</span><span class="p">:</span> <span class="s">&quot;2012-07-04T13:37:04&quot;</span><span class="p">,</span> <span class="s">&quot;updated_at&quot;</span><span class="p">:</span> <span class="s">&quot;2012-07-04T13:37:04&quot;</span><span class="p">,</span> <span class="s">&quot;deleted_at&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span> <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;user&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="put-accounts-accountname">
+<span id="id10"></span><h3><cite>PUT accounts/{accountName}</cite><a class="headerlink" href="#put-accounts-accountname" title="Permalink to this headline">¶</a></h3>
+<p>Update account information</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+<li><code class="docutils literal"><span class="pre">404</span> <span class="pre">Not</span> <span class="pre">Found</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">201</span> <span class="n">Created</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">04</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">octet</span><span class="o">-</span><span class="n">stream</span>
+
+<span class="n">Created</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-accounts-whoami">
+<span id="id11"></span><h3><cite>GET accounts/whoami</cite><a class="headerlink" href="#get-accounts-whoami" title="Permalink to this headline">¶</a></h3>
+<p>Get information about account whose token is used to sign the request.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">303</span> <span class="pre">See</span> <span class="pre">Other</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">-</span><span class="n">L</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">accounts</span><span class="o">/</span><span class="n">whoami</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">303</span> <span class="n">See</span> <span class="n">Other</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Location</span><span class="p">:</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">account</span><span class="o">/</span><span class="n">root</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Length</span><span class="p">:</span> <span class="mi">0</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">text</span><span class="o">/</span><span class="n">html</span>
+
+<span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">200</span> <span class="n">OK</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">json</span>
+
+<span class="p">{</span><span class="s">&quot;status&quot;</span><span class="p">:</span> <span class="s">&quot;active&quot;</span><span class="p">,</span> <span class="s">&quot;account&quot;</span><span class="p">:</span> <span class="s">&quot;root&quot;</span><span class="p">,</span> <span class="s">&quot;deleted&quot;</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span> <span class="s">&quot;created_at&quot;</span><span class="p">:</span> <span class="s">&quot;2012-07-04T13:36:58&quot;</span><span class="p">,</span> <span class="s">&quot;updated_at&quot;</span><span class="p">:</span> <span class="s">&quot;2012-07-04T13:36:58&quot;</span><span class="p">,</span> <span class="s">&quot;deleted_at&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span> <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;user&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-accounts">
+<span id="id12"></span><h3><cite>GET accounts/</cite><a class="headerlink" href="#get-accounts" title="Permalink to this headline">¶</a></h3>
+<p>List available accounts.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">accounts</span><span class="o">/</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">200</span> <span class="n">OK</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">json</span>
+
+<span class="p">[</span><span class="s">&quot;jdoe&quot;</span><span class="p">,</span> <span class="s">&quot;root&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="delete-accounts-accountname">
+<span id="id13"></span><h3><cite>DELETE accounts/{accountName}</cite><a class="headerlink" href="#delete-accounts-accountname" title="Permalink to this headline">¶</a></h3>
+<p>Disable an account.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">DELETE</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">accounts</span><span class="o">/</span><span class="n">jdoe</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">200</span> <span class="n">OK</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Length</span><span class="p">:</span> <span class="mi">0</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">octet</span><span class="o">-</span><span class="n">stream</span>
+
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="location">
+<h2>Location<a class="headerlink" href="#location" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-locations">
+<span id="id14"></span><h3><cite>POST locations/</cite><a class="headerlink" href="#post-locations" title="Permalink to this headline">¶</a></h3>
+<p>Create a location</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="34%" />
+<col width="20%" />
+<col width="46%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">locationName</span></code></td>
+<td>String</td>
+<td>The name of the location</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">201</span> <span class="pre">Created</span></code>: Location created</li>
+<li><code class="docutils literal"><span class="pre">409</span> <span class="pre">Conflict</span></code>: Location already exists</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">d</span> <span class="s">&#39;{&quot;location&quot;:&quot;MOCK&quot;}&#39;</span> <span class="o">-</span><span class="n">X</span> <span class="n">POST</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">locations</span><span class="o">/</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-locations-locationname">
+<span id="id15"></span><h3><cite>GET locations/{locationName}</cite><a class="headerlink" href="#get-locations-locationname" title="Permalink to this headline">¶</a></h3>
+<p>Get location information.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">locations</span><span class="o">/</span><span class="n">MOCK</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">405</span> <span class="n">Method</span> <span class="n">Not</span> <span class="n">Allowed</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Allow</span><span class="p">:</span> <span class="n">POST</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">text</span><span class="o">/</span><span class="n">html</span>
+<span class="n">X</span><span class="o">-</span><span class="n">Pad</span><span class="p">:</span> <span class="n">avoid</span> <span class="n">browser</span> <span class="n">bug</span>
+
+<span class="k">None</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-locations">
+<span id="id16"></span><h3><cite>GET locations/</cite><a class="headerlink" href="#get-locations" title="Permalink to this headline">¶</a></h3>
+<p>List available locations.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">locations</span><span class="o">/</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">200</span> <span class="n">OK</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">json</span>
+
+<span class="p">[]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="delete-locations-locationname">
+<span id="id17"></span><h3><cite>DELETE locations/{locationName}</cite><a class="headerlink" href="#delete-locations-locationname" title="Permalink to this headline">¶</a></h3>
+<p>Disable a location.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">DELETE</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">locations</span><span class="o">/</span><span class="n">MOCK</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">405</span> <span class="n">Method</span> <span class="n">Not</span> <span class="n">Allowed</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">05</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Allow</span><span class="p">:</span> <span class="n">POST</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">text</span><span class="o">/</span><span class="n">html</span>
+<span class="n">X</span><span class="o">-</span><span class="n">Pad</span><span class="p">:</span> <span class="n">avoid</span> <span class="n">browser</span> <span class="n">bug</span>
+
+<span class="k">None</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="rucio-storage-element">
+<h2>Rucio Storage Element<a class="headerlink" href="#rucio-storage-element" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-locations-locationname-rses">
+<span id="id18"></span><h3><cite>POST /locations/{locationName}/rses/</cite><a class="headerlink" href="#post-locations-locationname-rses" title="Permalink to this headline">¶</a></h3>
+<p>Tag a location with a RSE.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="20%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">rseName</span></code></td>
+<td>String</td>
+<td>RSE name</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">description</span></code>
+(optional)</td>
+<td>String</td>
+<td>Description of the RSE</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">201</span> <span class="pre">Created</span></code>: Location-RSE created</li>
+<li><code class="docutils literal"><span class="pre">409</span> <span class="pre">Conflict</span></code>: Location-RSE already exists</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">d</span> <span class="s">&#39;{&quot;rseName&quot;:&quot;CLOUD_MOCK&quot;, &quot;description&quot;:&quot;cloud&quot;}&#39;</span> <span class="o">-</span><span class="n">X</span> <span class="n">POST</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">locations</span><span class="o">/</span><span class="n">MOCK</span><span class="o">/</span><span class="n">rses</span><span class="o">/</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-locations-locationname-rses">
+<span id="id19"></span><h3><cite>GET locations/{locationName}/rses/</cite><a class="headerlink" href="#get-locations-locationname-rses" title="Permalink to this headline">¶</a></h3>
+<p>List all RSEs associated to a location.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-rses">
+<span id="id20"></span><h3><cite>GET rses/</cite><a class="headerlink" href="#get-rses" title="Permalink to this headline">¶</a></h3>
+<p>List all RSEs.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="20%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">description</span></code>
+(optional)</td>
+<td>String</td>
+<td>Description of the RSE</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+<li><code class="docutils literal"><span class="pre">404</span> <span class="pre">Not</span> <span class="pre">Found</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="delete-locations-locationname-rses-rsename">
+<span id="id21"></span><h3><cite>DELETE locations/{locationName}/rses/{rseName}</cite><a class="headerlink" href="#delete-locations-locationname-rses-rsename" title="Permalink to this headline">¶</a></h3>
+<p>Remove a location from a RSE.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+</div>
+<div class="section" id="identity">
+<h2>Identity<a class="headerlink" href="#identity" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-accounts-accountname-identities">
+<span id="id22"></span><h3><cite>POST accounts/{accountName}/identities/</cite><a class="headerlink" href="#post-accounts-accountname-identities" title="Permalink to this headline">¶</a></h3>
+<p>Grant an x509|gss|userpass identity access to an account.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="20%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">type</span></code></td>
+<td>String</td>
+<td>x509|gss|userpass</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">identity</span></code></td>
+<td>String</td>
+<td>DN|username|gss user</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">201</span> <span class="pre">Created</span></code>: Account-identity created</li>
+<li><code class="docutils literal"><span class="pre">409</span> <span class="pre">Conflict</span></code>: Account-identity already exists</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-accounts-accountname-identities">
+<span id="id23"></span><h3><cite>GET accounts/{accountName}/identities/</cite><a class="headerlink" href="#get-accounts-accountname-identities" title="Permalink to this headline">¶</a></h3>
+<p>List all identities on an account.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="20%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a href="#id24"><span class="problematic" id="id25">``</span></a>type`   `
+(optional)</td>
+<td>String</td>
+<td>x509|gss|userpass</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-identities-x509-gss-userpass-id-accounts">
+<span id="id26"></span><h3><cite>GET identities/{x509|gss|userpass}/{id}/accounts/</cite><a class="headerlink" href="#get-identities-x509-gss-userpass-id-accounts" title="Permalink to this headline">¶</a></h3>
+<p>List all accounts an identity is member of.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="delete-accounts-accountname-identities-x509-gss-userpass-id">
+<span id="id27"></span><h3><cite>DELETE accounts/{accountName}/identities/{x509|gss|userpass}/{id}</cite><a class="headerlink" href="#delete-accounts-accountname-identities-x509-gss-userpass-id" title="Permalink to this headline">¶</a></h3>
+<p>Revoke an x509|gss|userpass identity’s access to an account.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+</div>
+<div class="section" id="scope">
+<h2>Scope<a class="headerlink" href="#scope" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-accounts-accountname-scopes">
+<span id="id28"></span><h3><cite>POST accounts/{accountName}/scopes/</cite><a class="headerlink" href="#post-accounts-accountname-scopes" title="Permalink to this headline">¶</a></h3>
+<p>Create a scope within an account.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="20%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">scopeName</span></code></td>
+<td>String</td>
+<td>Scope name</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">201</span> <span class="pre">Created</span></code>: Account-scope created</li>
+<li><code class="docutils literal"><span class="pre">409</span> <span class="pre">Conflict</span></code>: Account-scope already exists</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-accounts-accountname-scopes">
+<span id="id29"></span><h3><cite>GET accounts/{accountName}/scopes/</cite><a class="headerlink" href="#get-accounts-accountname-scopes" title="Permalink to this headline">¶</a></h3>
+<p>Get the scopes for an account.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-scopes">
+<span id="id30"></span><h3><cite>GET scopes/</cite><a class="headerlink" href="#get-scopes" title="Permalink to this headline">¶</a></h3>
+<p>List all scopes.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">curl</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">cacert</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">rucio</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">web</span><span class="o">/</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;X-Rucio-Auth-Token: $TOKEN&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">GET</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">scope</span><span class="o">/</span><span class="n">ddmlab</span><span class="o">/</span>
+</pre></div>
+</div>
+<p><strong>Example Response</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">500</span> <span class="n">Internal</span> <span class="n">Server</span> <span class="n">Error</span>
+<span class="n">Date</span><span class="p">:</span> <span class="n">Wed</span><span class="p">,</span> <span class="mi">04</span> <span class="n">Jul</span> <span class="mi">2012</span> <span class="mi">13</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">06</span> <span class="n">GMT</span>
+<span class="n">Server</span><span class="p">:</span> <span class="n">Apache</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="p">(</span><span class="n">Unix</span><span class="p">)</span> <span class="n">mod_fastcgi</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">2</span> <span class="n">mod_ssl</span><span class="o">/</span><span class="mf">2.2</span><span class="o">.</span><span class="mi">21</span> <span class="n">OpenSSL</span><span class="o">/</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">8</span><span class="n">r</span> <span class="n">DAV</span><span class="o">/</span><span class="mi">2</span> <span class="n">mod_wsgi</span><span class="o">/</span><span class="mf">3.3</span> <span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">3</span> <span class="n">PHP</span><span class="o">/</span><span class="mf">5.3</span><span class="o">.</span><span class="mi">8</span>
+<span class="n">Connection</span><span class="p">:</span> <span class="n">close</span>
+<span class="n">Transfer</span><span class="o">-</span><span class="n">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">text</span><span class="o">/</span><span class="n">html</span>
+
+<span class="n">AccountNotFound</span><span class="p">:</span> <span class="n">Account</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">exist</span><span class="o">.</span>
+<span class="n">Details</span><span class="p">:</span> <span class="n">Account</span> <span class="n">ID</span> <span class="s">&#39;ddmlab/&#39;</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">exist</span>
+<span class="p">{}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="delete-accounts-accountname-scopes-scopename">
+<span id="id31"></span><h3><cite>DELETE accounts/{accountName}/scopes/{scopeName}</cite><a class="headerlink" href="#delete-accounts-accountname-scopes-scopename" title="Permalink to this headline">¶</a></h3>
+<p>Delete a scope from an account.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+</div>
+<div class="section" id="dataset">
+<h2>Dataset<a class="headerlink" href="#dataset" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-datasets-scopename">
+<span id="id32"></span><h3><cite>POST datasets/{scopeName}/</cite><a class="headerlink" href="#post-datasets-scopename" title="Permalink to this headline">¶</a></h3>
+<p>Register a dataset.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="20%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">datasetName</span></code></td>
+<td>String</td>
+<td>dataset name</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">...</span></code></td>
+<td>…</td>
+<td>…</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">201</span> <span class="pre">Created</span></code>: Dataset created</li>
+<li><code class="docutils literal"><span class="pre">409</span> <span class="pre">Conflict</span></code>: Dataset already exists</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-datasets-scopename-datasetname">
+<span id="id33"></span><h3><cite>GET datasets/{scopeName}/{datasetName}/</cite><a class="headerlink" href="#get-datasets-scopename-datasetname" title="Permalink to this headline">¶</a></h3>
+<p>List dataset content.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="id34">
+<span id="id35"></span><h3><cite>GET datasets/{scopeName}/{datasetName}</cite><a class="headerlink" href="#id34" title="Permalink to this headline">¶</a></h3>
+<p>List dataset meta-data.</p>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="put-datasets-datasetname">
+<span id="id36"></span><h3><cite>PUT datasets/{datasetName}</cite><a class="headerlink" href="#put-datasets-datasetname" title="Permalink to this headline">¶</a></h3>
+<p>Update dataset meta-data.</p>
+</div>
+<div class="section" id="post-datasets-scopename-datasetname">
+<span id="id37"></span><h3><cite>POST datasets/{scopeName}/{datasetName}/</cite><a class="headerlink" href="#post-datasets-scopename-datasetname" title="Permalink to this headline">¶</a></h3>
+<p>Add file(s) to a dataset.</p>
+</div>
+<div class="section" id="get-datasets-scopename-datasetname-filename">
+<span id="id38"></span><h3><cite>GET datasets/{scopeName}/{datasetName}/{fileName}</cite><a class="headerlink" href="#get-datasets-scopename-datasetname-filename" title="Permalink to this headline">¶</a></h3>
+<p>Get file meta-data.</p>
+</div>
+<div class="section" id="get-datasets">
+<span id="id39"></span><h3><cite>GET datasets/</cite><a class="headerlink" href="#get-datasets" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="file">
+<h2>File<a class="headerlink" href="#file" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-locations-locationname-files">
+<span id="id40"></span><h3><cite>POST /locations/{locationName}/files/</cite><a class="headerlink" href="#post-locations-locationname-files" title="Permalink to this headline">¶</a></h3>
+<p>Register a file.</p>
+<p><strong>Parameters</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="20%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">fileName</span></code></td>
+<td>String</td>
+<td>file name</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">...</span></code></td>
+<td>…</td>
+<td>…</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">201</span> <span class="pre">Created</span></code>: File created</li>
+<li><code class="docutils literal"><span class="pre">409</span> <span class="pre">Conflict</span></code>: File already exists</li>
+<li><code class="docutils literal"><span class="pre">401</span> <span class="pre">Unauthorized</span></code></li>
+</ul>
+</div></blockquote>
+<p><strong>Example Request</strong></p>
+<p><strong>Example Response</strong></p>
+</div>
+<div class="section" id="get-files-scopename-locations">
+<span id="id41"></span><h3><cite>GET /files/{scopeName}/locations/</cite><a class="headerlink" href="#get-files-scopename-locations" title="Permalink to this headline">¶</a></h3>
+<p>List file replicas.</p>
+</div>
+<div class="section" id="put-files-scopename-filename">
+<span id="id42"></span><h3><cite>PUT /files/{scopeName}/{fileName}/</cite><a class="headerlink" href="#put-files-scopename-filename" title="Permalink to this headline">¶</a></h3>
+<p>Update file meta-data.</p>
+</div>
+<div class="section" id="get-files-scopename-filename">
+<span id="id43"></span><h3><cite>GET /files/{scopeName}/{fileName}</cite><a class="headerlink" href="#get-files-scopename-filename" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="get-files">
+<span id="id44"></span><h3><cite>GET files/</cite><a class="headerlink" href="#get-files" title="Permalink to this headline">¶</a></h3>
+<p>Search files.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">REST API Examples Using Curl</a><ul>
+<li><a class="reference internal" href="#service">Service</a><ul>
+<li><a class="reference internal" href="#get-ping"><cite>GET /PING</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#authentication">Authentication</a><ul>
+<li><a class="reference internal" href="#get-auth-userpass"><cite>GET /auth/userpass</cite></a></li>
+<li><a class="reference internal" href="#get-auth-x509"><cite>GET /auth/x509</cite></a></li>
+<li><a class="reference internal" href="#get-auth-gss"><cite>GET /auth/gss</cite></a></li>
+<li><a class="reference internal" href="#get-auth-x509-proxy"><cite>GET /auth/x509_proxy</cite></a></li>
+<li><a class="reference internal" href="#get-auth-validate"><cite>GET /auth/validate</cite></a></li>
+<li><a class="reference internal" href="#get-auth-register-api-token"><cite>GET /auth/register_api_token</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#account">Account</a><ul>
+<li><a class="reference internal" href="#post-accounts-accountname"><cite>POST /accounts/{accountName}</cite></a></li>
+<li><a class="reference internal" href="#get-accounts-accountname"><cite>GET /accounts/{accountName}</cite></a></li>
+<li><a class="reference internal" href="#put-accounts-accountname"><cite>PUT accounts/{accountName}</cite></a></li>
+<li><a class="reference internal" href="#get-accounts-whoami"><cite>GET accounts/whoami</cite></a></li>
+<li><a class="reference internal" href="#get-accounts"><cite>GET accounts/</cite></a></li>
+<li><a class="reference internal" href="#delete-accounts-accountname"><cite>DELETE accounts/{accountName}</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#location">Location</a><ul>
+<li><a class="reference internal" href="#post-locations"><cite>POST locations/</cite></a></li>
+<li><a class="reference internal" href="#get-locations-locationname"><cite>GET locations/{locationName}</cite></a></li>
+<li><a class="reference internal" href="#get-locations"><cite>GET locations/</cite></a></li>
+<li><a class="reference internal" href="#delete-locations-locationname"><cite>DELETE locations/{locationName}</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rucio-storage-element">Rucio Storage Element</a><ul>
+<li><a class="reference internal" href="#post-locations-locationname-rses"><cite>POST /locations/{locationName}/rses/</cite></a></li>
+<li><a class="reference internal" href="#get-locations-locationname-rses"><cite>GET locations/{locationName}/rses/</cite></a></li>
+<li><a class="reference internal" href="#get-rses"><cite>GET rses/</cite></a></li>
+<li><a class="reference internal" href="#delete-locations-locationname-rses-rsename"><cite>DELETE locations/{locationName}/rses/{rseName}</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#identity">Identity</a><ul>
+<li><a class="reference internal" href="#post-accounts-accountname-identities"><cite>POST accounts/{accountName}/identities/</cite></a></li>
+<li><a class="reference internal" href="#get-accounts-accountname-identities"><cite>GET accounts/{accountName}/identities/</cite></a></li>
+<li><a class="reference internal" href="#get-identities-x509-gss-userpass-id-accounts"><cite>GET identities/{x509|gss|userpass}/{id}/accounts/</cite></a></li>
+<li><a class="reference internal" href="#delete-accounts-accountname-identities-x509-gss-userpass-id"><cite>DELETE accounts/{accountName}/identities/{x509|gss|userpass}/{id}</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#scope">Scope</a><ul>
+<li><a class="reference internal" href="#post-accounts-accountname-scopes"><cite>POST accounts/{accountName}/scopes/</cite></a></li>
+<li><a class="reference internal" href="#get-accounts-accountname-scopes"><cite>GET accounts/{accountName}/scopes/</cite></a></li>
+<li><a class="reference internal" href="#get-scopes"><cite>GET scopes/</cite></a></li>
+<li><a class="reference internal" href="#delete-accounts-accountname-scopes-scopename"><cite>DELETE accounts/{accountName}/scopes/{scopeName}</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dataset">Dataset</a><ul>
+<li><a class="reference internal" href="#post-datasets-scopename"><cite>POST datasets/{scopeName}/</cite></a></li>
+<li><a class="reference internal" href="#get-datasets-scopename-datasetname"><cite>GET datasets/{scopeName}/{datasetName}/</cite></a></li>
+<li><a class="reference internal" href="#id34"><cite>GET datasets/{scopeName}/{datasetName}</cite></a></li>
+<li><a class="reference internal" href="#put-datasets-datasetname"><cite>PUT datasets/{datasetName}</cite></a></li>
+<li><a class="reference internal" href="#post-datasets-scopename-datasetname"><cite>POST datasets/{scopeName}/{datasetName}/</cite></a></li>
+<li><a class="reference internal" href="#get-datasets-scopename-datasetname-filename"><cite>GET datasets/{scopeName}/{datasetName}/{fileName}</cite></a></li>
+<li><a class="reference internal" href="#get-datasets"><cite>GET datasets/</cite></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#file">File</a><ul>
+<li><a class="reference internal" href="#post-locations-locationname-files"><cite>POST /locations/{locationName}/files/</cite></a></li>
+<li><a class="reference internal" href="#get-files-scopename-locations"><cite>GET /files/{scopeName}/locations/</cite></a></li>
+<li><a class="reference internal" href="#put-files-scopename-filename"><cite>PUT /files/{scopeName}/{fileName}/</cite></a></li>
+<li><a class="reference internal" href="#get-files-scopename-filename"><cite>GET /files/{scopeName}/{fileName}</cite></a></li>
+<li><a class="reference internal" href="#get-files"><cite>GET files/</cite></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="rest.html"
+                        title="previous chapter">General notes</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="REST_Intro.html"
+                        title="next chapter">REST API Automatic Generated Documentation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api_curl_examples.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="REST_Intro.html" title="REST API Automatic Generated Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="rest.html" title="General notes"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
