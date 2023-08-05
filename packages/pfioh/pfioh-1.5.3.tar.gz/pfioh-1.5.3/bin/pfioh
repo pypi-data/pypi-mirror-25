@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+#
+# (c) 2017 Fetal-Neonatal Neuroimaging & Developmental Science Center
+#                   Boston Children's Hospital
+#
+#              http://childrenshospital.org/FNNDSC/
+#                        dev@babyMRI.org
+#
+
+import  sys
+import  os
+import  socket
+from    argparse            import RawTextHelpFormatter
+from    argparse            import ArgumentParser
+from    distutils.sysconfig import get_python_lib
+
+import  pudb
+
+# The following convolutions are necessary to accommodate both
+# development and deployed instances of the 'pfioh.py' module
+# and related dependencies.
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../pfioh'))
+try:
+    import pfioh
+    import mount_dir
+    import swift_store
+except:
+    sys.path.insert(1, os.path.join(get_python_lib(True, True), 'site-packages'))
+    sys.path.insert(1, os.path.join(get_python_lib(True, True), 'site-packages/pfioh'))
+    import pfioh
+    import mount_dir
+    import swift_store
+
+from    _colors             import Colors
+
+str_defIP   = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
+str_version = "1.5.3"
+str_desc    = Colors.CYAN + """
+        __ _       _
+       / _(_)     | |
+ _ __ | |_ _  ___ | |__
+| '_ \|  _| |/ _ \| '_ \\
+| |_) | | | | (_) | | | |
+| .__/|_| |_|\___/|_| |_|
+| |
+|_|
+
+
+                            Path-File-IO-over-HTTP
+
+           A simple IO handler that pushes/pulls file paths over http
+
+                              -- version """ + \
+             Colors.YELLOW + str_version + Colors.CYAN + """ --
+
+    'pfioh' is a file/dir transfer tool, akin conceptually to 'ftp' or 'scp',
+    that allows software agents to perform useful file transfers over http.
+
+    'pfioh' handles HTTP REST-like requests on a given port -- it can accept
+    incoming file data from a client, and can also return server-side file trees
+    to a client.
+
+    'pfioh' can also zip up/unzip file trees so that entire paths can be easily
+    transferred.
+    
+""" + \
+        Colors.BLINK_RED +  """
+        
+              +-------------------------------------------------------+
+              | NOTE THAT THIS SERVER DOES NOT CURRENTLY AUTHENTICATE |
+              | AND WILL HONOR *ALL* FILE/PATH PUSH/PULL REQUESTS!    |
+              +-------------------------------------------------------+
+              
+""" + Colors.NO_COLOUR
+
+str_historyNotes = Colors.YELLOW + """
+
+    HISTORY
+    -------
+    
+    1 June 2017: v1.2.0
+    o Add internal key-coded storage lookup.
+
+    NOTES:
+    ------
+    o The text 'path' in an action verb triggers hidden behavior!
+
+
+"""
+
+parser  = ArgumentParser(description = str_desc, formatter_class = RawTextHelpFormatter)
+
+parser.add_argument(
+    '--ip',
+    action  = 'store',
+    dest    = 'ip',
+    default = str_defIP,
+    help    = 'IP to expose.'
+)
+parser.add_argument(
+    '--port',
+    action  = 'store',
+    dest    = 'port',
+    default = '5055',
+    help    = 'Port to use.'
+)
+parser.add_argument(
+    '--version',
+    help    = 'if specified, print version number',
+    dest    = 'b_version',
+    action  = 'store_true',
+    default = False
+)
+parser.add_argument(
+    '--man',
+    help    = 'request help',
+    dest    = 'man',
+    action  = 'store',
+    default = ''
+)
+parser.add_argument(
+    '--forever',
+    help    = 'if specified, serve forever, otherwise terminate after single service.',
+    dest    = 'b_forever',
+    action  = 'store_true',
+    default = False
+)
+parser.add_argument(
+    '--storeBase',
+    action  = 'store',
+    dest    = 'storeBase',
+    default = '/tmp',
+    help    = 'Base path for internal storage.'
+)
+
+parser.add_argument(
+    '--swift-storage',
+    action  = 'store_true',
+    dest    = 'b_swiftStorage',
+    default = False,
+    help    = 'If specified, use Swift as object Storage'
+)
+
+parser.add_argument(
+    '--test',
+    help    = 'if specified, perform internal tests',
+    dest    = 'b_test',
+    action  = 'store_true',
+    default = False
+)
+parser.add_argument(
+    '--httpResponse',
+    help    = 'if specified, return HTTP responses',
+    dest    = 'b_httpResponse',
+    action  = 'store_true',
+    default = False
+)
+parser.add_argument(
+    '--createDirsAsNeeded',
+    help    = 'if specified, allow the service to create base storage directories as needed',
+    dest    = 'b_createDirsAsNeeded',
+    action  = 'store_true',
+    default = False
+)
+
+args            = parser.parse_args()
+args.port       = int(args.port)
+
+if args.b_version:
+    print("Version: %s" % str_version)
+    sys.exit(1)
+
+if args.b_swiftStorage:
+    server = pfioh.ThreadedHTTPServer((args.ip, args.port), swift_store.SwiftStore)        
+else:
+    server = pfioh.ThreadedHTTPServer((args.ip, args.port), mount_dir.MountDir) 
+
+server.setup(args = vars(args), desc = str_desc, ver = str_version)
+
+if args.b_test:
+    handler     = pfioh.StoreHandler(test = True)
+    handler.do_POST(
+        d_msg = {
+            "action": "hello",
+            "meta": {
+                "askAbout":     "sysinfo",
+                "echoBack":     "Hi there!"
+                }
+            }
+    )
+    sys.exit(0)
+
+if args.b_forever and not args.b_test:
+    server.serve_forever()
+else:
+    server.handle_request()
