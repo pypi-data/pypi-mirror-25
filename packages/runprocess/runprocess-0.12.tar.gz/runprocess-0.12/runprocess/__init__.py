@@ -1,0 +1,2 @@
+from __future__ import absolute_import
+from runprocess.runprocess import runprocess,runprocess_realtime,runprocess_auto_check,runprocess_realtime_auto_check,runprocess_full,runprocess_full_realtime,runprocess_full_auto_check,runprocess_full_realtime_auto_check,get_hostname
