@@ -1,0 +1,23 @@
+version: '{build}-{branch}'
+build: off
+cache:
+  - '%LOCALAPPDATA%\pip\Cache'
+environment:
+  matrix:
+    - TOXENV: check
+    - TOXENV: 'py26-pytest30,py26-pytest31'
+    - TOXENV: 'py27-pytest30,py27-pytest31'
+    - TOXENV: 'py35-pytest30,py35-pytest31'
+    - TOXENV: 'py36-pytest30,py36-pytest31'
+    - TOXENV: 'pypy-pytest30,pypy-pytest31'
+init:
+  - ps: echo $env:TOXENV
+  - ps: ls C:\Python*
+install:
+  - call scripts\install-pypy.bat
+  - C:\Python36\python -m pip install tox
+test_script:
+  - C:\Python36\python -m tox
+on_failure:
+  - ps: dir "env:"
+  - ps: get-content .tox\*\log\*
