@@ -1,0 +1,484 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._archiving.iarchiving &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._archiving.iarchiving</h1><div class="highlight"><pre>
+<span></span><span class="c1"># iarchiving.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2012 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:data:`ArchiverTypes` and :attr:`BackupLevelRestartReasons` enums, :class:`IArchiving` interface and</span>
+<span class="sd">:class:`ArchiveInfo` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ArchiverTypes&quot;</span><span class="p">,</span> <span class="s2">&quot;BackupLevelRestartReasons&quot;</span><span class="p">,</span> <span class="s2">&quot;IArchiving&quot;</span><span class="p">,</span> <span class="s2">&quot;ArchiveInfo&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">.._py_additions</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.._mainf</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CONSTANTS</span>
+
+<span class="c1">#: Archiver types.</span>
+<span class="n">ArchiverTypes</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+    <span class="s2">&quot;Tar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarGz&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarBz2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarXz&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarInternal&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarGzInternal&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarBz2Internal&quot;</span><span class="p">)</span>
+
+
+
+<span class="c1">#: Reasons for restarting of the :term:`backup level`.</span>
+<span class="n">BackupLevelRestartReasons</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+
+    <span class="c1">#: :term:`Backup level` restart did not occurred.</span>
+    <span class="s2">&quot;NoRestart&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Maximal number of restarts to a lower :term:`backup level` was reached.  Full restart was done.</span>
+    <span class="s2">&quot;RestartCountLimitReached&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Maximal age without full restart was reached.  Full restart was done.</span>
+    <span class="s2">&quot;LastFullRestartAgeLimitReached&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Maximal :term:`backup level` reached.  Restart to a lower level was done.</span>
+    <span class="s2">&quot;BackupLevelLimitReached&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Maximal age without a restart was reached.  Restart to a lower level was done.</span>
+    <span class="s2">&quot;LastRestartAgeLimitReached&quot;</span><span class="p">)</span>
+
+<span class="c1"># }}} CONSTANTS</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="IArchiving"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.IArchiving">[docs]</a><span class="k">class</span> <span class="nc">IArchiving</span><span class="p">(</span><span class="n">IComponentInterface</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Provides access to the :term:`Archiving` component.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IArchiving.makeBackup"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.IArchiving.makeBackup">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">makeBackup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a :term:`backup` based on ``specFile``.</span>
+
+<span class="sd">        :param specFile: Path to the :term:`archive specification file`.</span>
+<span class="sd">        :type specFile: ``str``</span>
+
+<span class="sd">        :raise ValueError: If the desired archiver type is not supported.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiving.filterValidSpecFiles"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.IArchiving.filterValidSpecFiles">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">filterValidSpecFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFiles</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns names of :term:`configured archives &lt;configured archive&gt;` from valid only</span>
+<span class="sd">        :term:`archive specification files &lt;archive specification file&gt;` passed in ``specFiles``.</span>
+
+<span class="sd">        :param specFiles: Paths to archive specification files that shall be validated and from which the names</span>
+<span class="sd">          shall be retrieved.</span>
+<span class="sd">        :type specFiles: ``Iterable&lt;str&gt;``</span>
+
+<span class="sd">        :return: Iterable of names of validly configured archives.</span>
+<span class="sd">        :rtype: ``Iterable&lt;str&gt;``&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiving.getArchiveInfo"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.IArchiving.getArchiveInfo">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getArchiveInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns information about archive represented by the ``specFile`` parameter.</span>
+
+<span class="sd">        :param specFile: Path to the :term:`archive specification file`.</span>
+<span class="sd">        :type specFile: ``str``</span>
+
+<span class="sd">        :return: Information about an archive or ``None``.</span>
+<span class="sd">        :rtype: :class:`ArchiveInfo`&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiving.getStoredArchiveInfo"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.IArchiving.getStoredArchiveInfo">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getStoredArchiveInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns information about an archive from stored data.</span>
+
+<span class="sd">        Unlike in the :meth:`getArchiveInfo` method the information is not read from the</span>
+<span class="sd">        :term:`archive specification file` but from other stored data about the archive created by the component in</span>
+<span class="sd">        previous runs.  Such data can be fetched for example from application storage (:class:`.IStorage`) or other</span>
+<span class="sd">        sources specific to the archiver.  It is expected that the large portion of data will be missing in the</span>
+<span class="sd">        returned information.</span>
+
+<span class="sd">        See also: :meth:`getStoredArchiveNames()`</span>
+
+<span class="sd">        :param archiveName: Name of the archive which information shall be returned.</span>
+<span class="sd">        :type archiveName: ``str``</span>
+
+<span class="sd">        :return: Information about an archive or ``None`` if no data for the archive was found.</span>
+<span class="sd">        :rtype: :class:`ArchiveInfo`&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiving.getStoredArchiveNames"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.IArchiving.getStoredArchiveNames">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getStoredArchiveNames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns iterable of archive names which has some data stored in a persistent storage.</span>
+
+<span class="sd">        See also: :meth:`getStoredArchiveInfo()`</span>
+
+<span class="sd">        :return: Iterable of archive names.</span>
+<span class="sd">        :rtype: ``Iterable&lt;str&gt;``&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiving.purgeStoredArchiveData"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.IArchiving.purgeStoredArchiveData">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">purgeStoredArchiveData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes all data stored for the archive named ``archiveName``.</span>
+
+<span class="sd">        See also: :meth:`getStoredArchiveInfo()`</span>
+
+<span class="sd">        :param archiveName: Name of the archive which data shall be purged.</span>
+<span class="sd">        :type archiveName: ``str``</span>
+
+<span class="sd">        :raise KeyError: If ``archiveName`` does not have any stored data to purge.</span>
+<span class="sd">        :raise OSError: If an error occurred during the operation of removing data from a physical storage.&quot;&quot;&quot;</span></div></div>
+
+
+
+<div class="viewcode-block" id="ArchiveInfo"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiving.ArchiveInfo">[docs]</a><span class="k">class</span> <span class="nc">ArchiveInfo</span><span class="p">(</span><span class="n">metaclass</span> <span class="o">=</span> <span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Information about an archive.</span>
+
+<span class="sd">    .. note:: Class should be instantiated by calling the :meth:`IArchiving.getArchiveInfo()` or \</span>
+<span class="sd">       :meth:`IArchiving.getStoredArchiveInfo()` factory methods.&quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_archiverType</span> <span class="o">=</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">Tar</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_destDir</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_incremental</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backupLevel</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nextBackupLevel</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restarting</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restartAfterLevel</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restartReason</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restartLevel</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restartCount</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fullRestartAfterCount</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lastRestart</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restartAfterAge</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lastFullRestart</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fullRestartAfterAge</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the name of the archive.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the path to the archive&#39;s root.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the archive&#39;s root can not be retrieved.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">archiverType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the archiver type for this archive.</span>
+
+<span class="sd">        .. note:: Value is guaranteed to be non-\ ``None``.</span>
+
+<span class="sd">        :rtype: :attr:`ArchiverTypes`&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_archiverType</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">destDir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the archive&#39;s destination directory.</span>
+
+<span class="sd">        .. note:: Value is guaranteed to be non-\ ``None``.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_destDir</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">incremental</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the status of incremental archiving activation.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving.</span>
+
+<span class="sd">        :rtype: ``bool``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_incremental</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the current :term:`backup level`.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the archive is not incremental or used :attr:`archiverType` does not support</span>
+<span class="sd">           incremental archiving.</span>
+
+<span class="sd">        .. note:: For archiver types that supports incremental archiving, whether the return value will be ``None`` or \</span>
+<span class="sd">           not does not depend on the *current* :attr:`incremental` value.  If the archive was configured and created \</span>
+<span class="sd">           as incremental previously then the :term:`backup level` will be defined even if the current \</span>
+<span class="sd">           :attr:`incremental` value would be ``False`` and vice versa.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupLevel</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nextBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the next :term:`backup level`.</span>
+
+<span class="sd">        See also :attr:`backupLevel`.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the archive is not incremental or used :attr:`archiverType` does not support</span>
+<span class="sd">           incremental archiving.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nextBackupLevel</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restarting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the status of :term:`backup level` restarting activation.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving.</span>
+
+<span class="sd">        :rtype: ``bool``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restarting</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restartAfterLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the maximal :term:`backup level`; after it is reached it will be restarted to a lower value.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restartAfterLevel</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restartReason</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the reason for the upcoming :term:`backup level` restart.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving or the restart</span>
+<span class="sd">           reason can not be determined.</span>
+
+<span class="sd">        :rtype: :attr:`BackupLevelRestartReasons`&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restartReason</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restartLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a :term:`backup level` to which a next restart would be done.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restartLevel</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restartCount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the number of :term:`backup level` restarts already performed.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving or if \</span>
+<span class="sd">           :attr:`restarting` was not enabled for the archive in the past.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restartCount</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fullRestartAfterCount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the number of restarts after which the :term:`backup level` will be restarted to 0.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving or if no value \</span>
+<span class="sd">           is defined for :attr:`.Options.FULL_RESTART_AFTER_COUNT`.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fullRestartAfterCount</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lastRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the date when the last :term:`backup level` restart occurred.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving or if \</span>
+<span class="sd">           :attr:`restarting` was not enabled for the archive in the past.</span>
+
+<span class="sd">        :rtype: ``datetime.date``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lastRestart</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restartAfterAge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the number of days after which the :term:`backup level` should be restarted.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving or if no value is</span>
+<span class="sd">           defined for :attr:`.Options.RESTART_AFTER_AGE`.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restartAfterAge</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lastFullRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the date when the last :term:`backup level` restart to level 0 occurred.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving or if \</span>
+<span class="sd">           :attr:`restarting` was not enabled for the archive in the past.</span>
+
+<span class="sd">        :rtype: ``datetime.date``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lastFullRestart</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fullRestartAfterAge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the number of days after which the :term:`backup level` should be restarted to level 0.</span>
+
+<span class="sd">        .. note:: Will be ``None`` if the :attr:`archiverType` does not support incremental archiving or if no value is</span>
+<span class="sd">           defined for :attr:`.Options.FULL_RESTART_AFTER_AGE`.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fullRestartAfterAge</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

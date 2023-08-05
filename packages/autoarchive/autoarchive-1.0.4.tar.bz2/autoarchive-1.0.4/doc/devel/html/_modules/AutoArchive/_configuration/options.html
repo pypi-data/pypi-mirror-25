@@ -1,0 +1,517 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._configuration.options &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._configuration.options</h1><div class="highlight"><pre>
+<span></span><span class="c1"># options.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2012 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`Options`, :class:`OptionsUtils` static classes and :class:`Option` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Options&quot;</span><span class="p">,</span> <span class="s2">&quot;OptionsUtils&quot;</span><span class="p">,</span> <span class="s2">&quot;Option&quot;</span><span class="p">,</span> <span class="s2">&quot;SpecialOptionTypes&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+
+<span class="kn">from</span> <span class="nn">.._archiving</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="Option"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.Option">[docs]</a><span class="k">class</span> <span class="nc">Option</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Represents a configuration option.</span>
+
+<span class="sd">    :param name: Option name.</span>
+<span class="sd">    :type name: ``str``</span>
+<span class="sd">    :param optType: Type of the option.</span>
+<span class="sd">    :type optType: ``type`` or ``str``&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">optType</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__optType</span> <span class="o">=</span> <span class="n">optType</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__name</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;&lt;Option </span><span class="si">{}</span><span class="s2"> of type </span><span class="si">{}</span><span class="s2">&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optType</span><span class="p">)</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_optType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the option type.</span>
+
+<span class="sd">        :rtype: ``type`` or ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__optType</span></div>
+
+
+
+<span class="c1"># all option type constants defined in this class has to have uppercase names; there can not be any other constants</span>
+<span class="c1"># defined that has uppercase names and are type of str, besides those representing option types</span>
+<div class="viewcode-block" id="SpecialOptionTypes"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.SpecialOptionTypes">[docs]</a><span class="k">class</span> <span class="nc">SpecialOptionTypes</span><span class="p">(</span><span class="n">metaclass</span> <span class="o">=</span> <span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Constants for special option types.</span>
+
+<span class="sd">    Normally, options are of some standard type, such as ``int``, ``str``, etc.  Some of them however, requires special</span>
+<span class="sd">    handling for which the special option types are defined in this class.</span>
+
+<span class="sd">    .. note:: It is not allowed to change values of these constants.&quot;&quot;&quot;</span>
+
+    <span class="c1"># {{{ special option types constants</span>
+
+    <span class="c1">#: A filesystem path.</span>
+    <span class="n">PATH</span> <span class="o">=</span> <span class="s2">&quot;path&quot;</span>
+
+    <span class="c1"># }}} special option types constants</span>
+
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+
+<span class="c1"># all option constants defined in this class has to have uppercase names; there can not be any other constants defined</span>
+<span class="c1"># that has uppercase names and are type of Option, besides those representing options</span>
+<div class="viewcode-block" id="Options"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.Options">[docs]</a><span class="k">class</span> <span class="nc">Options</span><span class="p">(</span><span class="n">metaclass</span> <span class="o">=</span> <span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Constants for configuration options.</span>
+
+<span class="sd">    These constants should be used to access options in the :class:`.IConfiguration` implementation provided by the</span>
+<span class="sd">    :term:`Configuration` :term:`component`.</span>
+
+<span class="sd">    .. note:: It is not allowed to change values of these constants.&quot;&quot;&quot;</span>
+
+    <span class="c1"># {{{ option constants</span>
+
+    <span class="c1"># {{{ archiving related options</span>
+
+    <span class="c1">#: Archiver type.  Guaranteed to be defined.</span>
+    <span class="n">ARCHIVER</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;archiver&quot;</span><span class="p">,</span> <span class="n">ArchiverTypes</span><span class="p">)</span>
+
+    <span class="c1">#: Compression strength level.</span>
+    <span class="n">COMPRESSION_LEVEL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;compression-level&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Directory where the backup will be created.  Guaranteed to be defined.</span>
+    <span class="n">DEST_DIR</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;dest-dir&quot;</span><span class="p">,</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">PATH</span><span class="p">)</span>
+
+    <span class="c1"># }}} archiving related options</span>
+
+    <span class="c1"># {{{ incremental archiving related options</span>
+
+    <span class="c1">#: Incremental backup.</span>
+    <span class="n">INCREMENTAL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;incremental&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Backup level used in incremental archiving.</span>
+    <span class="n">LEVEL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Turns on backup level restarting.</span>
+    <span class="n">RESTARTING</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;restarting&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Maximal backup level.  If reached, it will be restarted back to a lower level (which is typically level 1 but it</span>
+    <span class="c1">#: depends on :attr:`MAX_RESTART_LEVEL_SIZE`).  Guaranteed to be defined.</span>
+    <span class="n">RESTART_AFTER_LEVEL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;restart-after-level&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Number of days after which the backup level is restarted.  Similarly to :attr:`RESTART_AFTER_LEVEL` it will be</span>
+    <span class="c1">#: restarted to level 1 or higher.</span>
+    <span class="n">RESTART_AFTER_AGE</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;restart-after-age&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Number of backup level restarts after which the level is restarted to 0.</span>
+    <span class="n">FULL_RESTART_AFTER_COUNT</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;full-restart-after-count&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Number of days after which the backup level is restarted to 0.</span>
+    <span class="n">FULL_RESTART_AFTER_AGE</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;full-restart-after-age&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Maximal percentage size of a :term:`backup` (of level &gt; 0) to which level is allowed restart to.  The size is</span>
+    <span class="c1">#: percentage of size of the level 0 backup file.  If a backup of particular level has its size bigger than</span>
+    <span class="c1">#: defined percentage, restart to that level will not be allowed.</span>
+    <span class="n">MAX_RESTART_LEVEL_SIZE</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;max-restart-level-size&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Turns on removing backups of levels that are no longer valid due to the backup level restart.  All backups of</span>
+    <span class="c1">#: the backup level higher than the one currently being created will be removed.</span>
+    <span class="n">REMOVE_OBSOLETE_BACKUPS</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;remove-obsolete-backups&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1"># }}} incremental archiving related options</span>
+
+    <span class="c1"># {{{ general options</span>
+
+    <span class="c1">#: Turns on verbose output.</span>
+    <span class="n">VERBOSE</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Turns on quiet output.  Only errors will be shown.  If QUIET is turned on at the same level as VERBOSE</span>
+    <span class="c1">#: (e. g. both are specified on the command line) then QUIET has higher priority than VERBOSE.</span>
+    <span class="n">QUIET</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;quiet&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Operate on all configured archive specification files.</span>
+    <span class="n">ALL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Directory where :term:`archive specification files &lt;archive specification file&gt;` will be searched.</span>
+    <span class="c1">#: Guaranteed to be defined.</span>
+    <span class="n">ARCHIVE_SPECS_DIR</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;archive-specs-dir&quot;</span><span class="p">,</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">PATH</span><span class="p">)</span>
+
+    <span class="c1">#: User configuration file.  Guaranteed to be defined.</span>
+    <span class="n">USER_CONFIG_FILE</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;user-config-file&quot;</span><span class="p">,</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">PATH</span><span class="p">)</span>
+
+    <span class="c1">#: User configuration directory.  Guaranteed to be defined.</span>
+    <span class="n">USER_CONFIG_DIR</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;user-config-dir&quot;</span><span class="p">,</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">PATH</span><span class="p">)</span>
+
+    <span class="c1"># }}} general options</span>
+
+    <span class="c1"># {{{ force options</span>
+
+    <span class="c1">#: Force archiver type regardless to what is specified in the :term:`archive specification file`.</span>
+    <span class="n">FORCE_ARCHIVER</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;force-archiver&quot;</span><span class="p">,</span> <span class="n">ArchiverTypes</span><span class="p">)</span>
+
+    <span class="c1">#: Force incremental backup regardless to what is specified in the :term:`archive specification file`.</span>
+    <span class="n">FORCE_INCREMENTAL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;force-incremental&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Force the backup level restarting regardless to what is specified in the :term:`archive specification file`.</span>
+    <span class="n">FORCE_RESTARTING</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;force-restarting&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Force compression level regardless to what is specified in the :term:`archive specification file`.</span>
+    <span class="n">FORCE_COMPRESSION_LEVEL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;force-compression-level&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#: Force the directory where the backup will be created.</span>
+    <span class="n">FORCE_DEST_DIR</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;force-dest-dir&quot;</span><span class="p">,</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">PATH</span><span class="p">)</span>
+
+    <span class="c1"># }}} force options</span>
+
+    <span class="c1"># {{{ negation options</span>
+
+    <span class="c1">#: Disable incremental backup.</span>
+    <span class="n">NO_INCREMENTAL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;no-incremental&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Turns off backup level restarting.</span>
+    <span class="n">NO_RESTARTING</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;no-restarting&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Do not operate on all configured archive specification files.</span>
+    <span class="n">NO_ALL</span> <span class="o">=</span> <span class="n">Option</span><span class="p">(</span><span class="s2">&quot;no-all&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1"># }}} negation options</span>
+
+    <span class="c1"># }}} option constants</span>
+
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils">[docs]</a><span class="k">class</span> <span class="nc">OptionsUtils</span><span class="p">(</span><span class="n">metaclass</span> <span class="o">=</span> <span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="s2">&quot;Various utility methods working with :class:`Options`.&quot;</span>
+
+    <span class="n">__ARCHIVER_OPTION_ENUM_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tar&quot;</span><span class="p">:</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">,</span>
+                                  <span class="s2">&quot;targz&quot;</span><span class="p">:</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">,</span>
+                                  <span class="s2">&quot;tarbz2&quot;</span><span class="p">:</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">,</span>
+                                  <span class="s2">&quot;tarxz&quot;</span><span class="p">:</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarXz</span><span class="p">,</span>
+                                  <span class="s2">&quot;tar_internal&quot;</span><span class="p">:</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarInternal</span><span class="p">,</span>
+                                  <span class="s2">&quot;targz_internal&quot;</span><span class="p">:</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarGzInternal</span><span class="p">,</span>
+                                  <span class="s2">&quot;tarbz2_internal&quot;</span><span class="p">:</span> <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarBz2Internal</span><span class="p">}</span>
+
+    <span class="n">__NEGATION_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;no-&quot;</span>
+    <span class="n">__FORCE_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;force-&quot;</span>
+
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.getAllOptions"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.getAllOptions">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getAllOptions</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot;Iterator over all known options.</span>
+
+<span class="sd">        :return: All options defined in :class:`Options`.</span>
+<span class="sd">        :rtype: ``Iterator&lt;Option&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">Options</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">isupper</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">member</span><span class="p">],</span> <span class="n">Option</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">Options</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">member</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.getAllSpecialOptionTypes"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.getAllSpecialOptionTypes">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getAllSpecialOptionTypes</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot;Iterator over all known special option types.</span>
+
+<span class="sd">        :return: All option types defined in :class:`SpecialOptionTypes`.</span>
+<span class="sd">        :rtype: ``Iterator&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">isupper</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">member</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+
+                <span class="k">yield</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">member</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.getOption"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.getOption">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getOption</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">optionName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return option with given name.</span>
+
+<span class="sd">        :param optionName: Name of the option that shall be returned.</span>
+<span class="sd">        :type optionName: ``str``</span>
+
+<span class="sd">        :return: First option from :meth:`getAllOptions()` which name is ``optionName``.</span>
+<span class="sd">        :rtype: :class:`Option`</span>
+
+<span class="sd">        :raise KeyError: If option with name ``optionName`` does not exist.&quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">opt</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span> <span class="o">==</span> <span class="n">optionName</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">getAllOptions</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unknown option with name: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">optionName</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.isExistingOption"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.isExistingOption">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">isExistingOption</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">optionName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check whether an option with name ``optionName`` does exists in :class:`OptionsUtils`.</span>
+
+<span class="sd">        :param optionName: Name of the option which existence shall be checked.</span>
+<span class="sd">        :type optionName: ``str``</span>
+
+<span class="sd">        :return: ``True`` if option with name ``optionName`` exists; ``False`` otherwise.</span>
+<span class="sd">        :rtype: ``bool``&quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="n">optionName</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.tryGetNegationForm"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.tryGetNegationForm">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tryGetNegationForm</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns :term:`negation form &lt;negation option form&gt;` for ``option`` or ``None``.</span>
+
+<span class="sd">        :param option: An option in the :term:`normal form &lt;normal option form&gt;` for which the negation form for shall</span>
+<span class="sd">          be returned.</span>
+<span class="sd">        :type option: :class:`Option`</span>
+
+<span class="sd">        :return: Negation form of the passed ``option`` or ``None`` if it does not have a negation form.</span>
+<span class="sd">        :rtype: :class:`Option`&quot;&quot;&quot;</span>
+
+        <span class="n">negationFormName</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__NEGATION_PREFIX</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cls</span><span class="o">.</span><span class="n">isExistingOption</span><span class="p">(</span><span class="n">negationFormName</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="n">negationFormName</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.tryGetForceForm"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.tryGetForceForm">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tryGetForceForm</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns :term:`force form &lt;force option form&gt;` for ``option`` or ``None``.</span>
+
+<span class="sd">        :param option: An option in the :term:`normal form &lt;normal option form&gt;` for which the force form for shall be</span>
+<span class="sd">          returned.</span>
+<span class="sd">        :type option: :class:`Option`</span>
+
+<span class="sd">        :return: Force form of the passed ``option`` or ``None`` if it does not have a force form.</span>
+<span class="sd">        :rtype: :class:`Option`&quot;&quot;&quot;</span>
+
+        <span class="n">forceFormName</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__FORCE_PREFIX</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cls</span><span class="o">.</span><span class="n">isExistingOption</span><span class="p">(</span><span class="n">forceFormName</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="n">forceFormName</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.strToOptionType"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.strToOptionType">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">strToOptionType</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">optionValue</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converts string option value to its proper, defined type.</span>
+
+<span class="sd">        :param option: Option which value shall be converted.</span>
+<span class="sd">        :type option: :class:`Option`</span>
+<span class="sd">        :param optionValue: Value to be converted.</span>
+<span class="sd">        :type optionValue: ``str``</span>
+
+<span class="sd">        :return: Converted ``optionValue``.</span>
+<span class="sd">        :rtype: ``object``</span>
+
+<span class="sd">        :raise ValueError: If ``optionValue`` can not be converted to ``option``\ &#39;s type.</span>
+<span class="sd">        :raise RuntimeError: If ``option``\ &#39;s type is not supported.&quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">optionValue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">optionValue</span>
+
+        <span class="k">elif</span> <span class="n">optionValue</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">option</span><span class="o">.</span><span class="n">_optType</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">option</span><span class="o">.</span><span class="n">_optType</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">option</span><span class="o">.</span><span class="n">_optType</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">optionValue</span>
+
+            <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">option</span><span class="o">.</span><span class="n">_optType</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">optionValue</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">):</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">optionValue</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">option</span><span class="o">.</span><span class="n">_optType</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">optionValue</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">option</span><span class="o">.</span><span class="n">_optType</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">optionValue</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">option</span><span class="o">.</span><span class="n">_optType</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">getAllSpecialOptionTypes</span><span class="p">():</span>
+
+            <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">_optType</span> <span class="o">==</span> <span class="n">SpecialOptionTypes</span><span class="o">.</span><span class="n">PATH</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">optionValue</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">_optType</span> <span class="ow">is</span> <span class="n">ArchiverTypes</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__strToArchiverType</span><span class="p">(</span><span class="n">optionValue</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unknown option type.&quot;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="OptionsUtils.archiverTypeToStr"><a class="viewcode-back" href="../../../api/configuration.html#AutoArchive._archiving._core._archive_spec.OptionsUtils.archiverTypeToStr">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">archiverTypeToStr</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">archiverType</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converts :data:`.ArchiverTypes` to string representation.</span>
+
+<span class="sd">        Value of the ``archiverType`` parameter is converted to a string representation that is accepted by the</span>
+<span class="sd">        :meth:`strToOptionType()` method.</span>
+
+<span class="sd">        :param archiverType: Archiver type that shall be converted.</span>
+<span class="sd">        :type archiverType: :data:`.ArchiverTypes`</span>
+
+<span class="sd">        :return: String form of passed ``archiverType``.</span>
+<span class="sd">        :rtype: ``str``</span>
+
+<span class="sd">        :raise ValueError: If ``archiverType`` is not known.&quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span>
+                    <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="n">cls</span><span class="o">.</span><span class="n">__ARCHIVER_OPTION_ENUM_MAP</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span>
+                    <span class="n">archiverType</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__ARCHIVER_OPTION_ENUM_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown archiver type: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">archiverType</span><span class="p">)</span></div>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__strToArchiverType</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">archiverStr</span><span class="p">):</span>
+        <span class="s2">&quot;Converts string to :data:`.ArchiverTypes`.&quot;</span>
+
+        <span class="k">if</span> <span class="n">archiverStr</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">__ARCHIVER_OPTION_ENUM_MAP</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">__ARCHIVER_OPTION_ENUM_MAP</span><span class="p">[</span><span class="n">archiverStr</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unknown archiver type: </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">archiverStr</span><span class="p">))</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

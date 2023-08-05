@@ -1,0 +1,265 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._py_additions &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._py_additions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _py_additions.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2013 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;Various enhancements to Python.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Enum&quot;</span><span class="p">,</span> <span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="s2">&quot;classproperty&quot;</span><span class="p">,</span> <span class="s2">&quot;staticproperty&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Iterable</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="Enum"><a class="viewcode-back" href="../../api/autoarchive.html#AutoArchive._archiving.iarchiving.Enum">[docs]</a><span class="k">class</span> <span class="nc">Enum</span><span class="p">(</span><span class="n">Iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simple enum class.</span>
+
+<span class="sd">    Example Usage::</span>
+
+<span class="sd">       codes = Enum(&quot;FOO&quot;, &quot;BAR&quot;, &quot;BAZ&quot;) # codes.BAZ will be 2 and so on and str.BAZ will be &quot;BAZ&quot;</span>
+
+<span class="sd">    :param names: Iterable of Enum members.</span>
+<span class="sd">    :type names: ``Iterator&lt;str&gt;``&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__names</span> <span class="o">=</span> <span class="n">names</span>
+
+        <span class="k">for</span> <span class="n">number</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DescriptiveDecimalInt</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__names</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__names</span><span class="p">)))</span>
+
+
+
+    <span class="k">class</span> <span class="nc">_DescriptiveDecimalInt</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">description</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+
+
+
+        <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__str__</span><span class="p">()</span>
+
+
+
+        <span class="nd">@property</span>
+        <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__description</span>
+
+        <span class="nd">@description</span><span class="o">.</span><span class="n">setter</span>
+        <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__description</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+
+<div class="viewcode-block" id="event"><a class="viewcode-back" href="../../api/autoarchive.html#AutoArchive._archiving.iarchiving.event">[docs]</a><span class="k">class</span> <span class="nc">event</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Decorator that declares a function as an *event*.</span>
+
+<span class="sd">    Implements a C#-like events (a call dispatchers).  Decorating a function or method with this decorator declares</span>
+<span class="sd">    it as an *event*.  In order to subscribe a handler function to the event, one should use the “+=” operator</span>
+<span class="sd">    and to unsubscribe the “-=” operator.  Such event can be fired by a calling the decorated function.  This will</span>
+<span class="sd">    dispatch the event to all subscribers, i.e. subscribed handler methods are called.</span>
+
+<span class="sd">    .. note:: Decorated function should implement only ``pass`` as its body.</span>
+
+<span class="sd">    .. note:: Decorated function can take any number of parameters or keyword parameters.  Subscriber functions has</span>
+<span class="sd">       to take same parameters as the event.</span>
+
+<span class="sd">    Example usage::</span>
+
+<span class="sd">       class Button:</span>
+<span class="sd">          # ...</span>
+<span class="sd">          @event</span>
+<span class="sd">          def clicked(self, some_parameter):</span>
+<span class="sd">              &quot;Fired when the button was clicked.&quot;</span>
+<span class="sd">              pass</span>
+<span class="sd">          def _fireClicked(self, some_parameter):</span>
+<span class="sd">              clicked(some_parameter)</span>
+<span class="sd">          # ...</span>
+
+<span class="sd">       class Ui:</span>
+<span class="sd">           def __init__(self, button):</span>
+<span class="sd">               button.clicked += self._onButtonClicked</span>
+<span class="sd">           def _onButtonClicked(self, some_parameter):</span>
+<span class="sd">               &quot;Handle the button click.&quot;</span>
+<span class="sd">               # play a sound...</span>
+
+<span class="sd">    :param eventFunction: Decorated function or method that becomes an *event*.</span>
+<span class="sd">    :type eventFunction: ``function``&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eventFunction</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__eventFunction</span> <span class="o">=</span> <span class="n">eventFunction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__subscribers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="s2">&quot;Fires the event.&quot;</span>
+
+        <span class="c1"># call the event function just to check that the event is called with correct number of parameters; besides</span>
+        <span class="c1"># that this call is not necessary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__eventFunction</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># call subscriber methods</span>
+        <span class="k">for</span> <span class="n">subscriber</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__subscribers</span><span class="p">:</span>
+            <span class="n">subscriber</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subscriber</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Subscribes the ``subscriber`` to the *event*.</span>
+
+<span class="sd">        :param subscriber: A listener that wants to be subscribed to the event.</span>
+<span class="sd">        :type subscriber: ``function``</span>
+
+<span class="sd">        :note: Same object is subscribed only once, even if multiple attempts to subscribe it are performed.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__subscribers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">subscriber</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subscriber</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unsubscribes the ``subscriber`` from the *event*.</span>
+
+<span class="sd">        :param subscriber: A listener that wants to be unsubscribed from the event.</span>
+<span class="sd">        :type subscriber: ``function``&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__subscribers</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">subscriber</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+
+<div class="viewcode-block" id="classproperty"><a class="viewcode-back" href="../../api/autoarchive.html#AutoArchive._archiving.iarchiving.classproperty">[docs]</a><span class="k">class</span> <span class="nc">classproperty</span><span class="p">(</span><span class="nb">property</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator that makes the decorated method a class property.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="nb">type</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">classmethod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fget</span><span class="p">)</span><span class="o">.</span><span class="n">__get__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="p">)()</span></div>
+
+
+
+<div class="viewcode-block" id="staticproperty"><a class="viewcode-back" href="../../api/autoarchive.html#AutoArchive._archiving.iarchiving.staticproperty">[docs]</a><span class="k">class</span> <span class="nc">staticproperty</span><span class="p">(</span><span class="nb">property</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator that makes the decorated method a static property.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="nb">type</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fget</span><span class="p">)</span><span class="o">.</span><span class="n">__get__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="p">)()</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

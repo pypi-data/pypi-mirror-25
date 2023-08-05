@@ -1,0 +1,316 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._services.archiver._tar_archiver_provider_base &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._services.archiver._tar_archiver_provider_base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># tar_archiver_provider_base.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2015 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_TarArchiverProviderBase` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_TarArchiverProviderBase&quot;</span><span class="p">,</span> <span class="s2">&quot;_BACKUP_TYPES_TO_EXTENSIONS&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">..._py_additions</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._archiving</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CONSTANTS</span>
+
+<span class="n">_BACKUP_TYPES_TO_EXTENSIONS</span> <span class="o">=</span> <span class="p">{</span><span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">:</span> <span class="s2">&quot;tar&quot;</span><span class="p">,</span>
+                               <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">:</span> <span class="s2">&quot;tar.gz&quot;</span><span class="p">,</span>
+                               <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">:</span> <span class="s2">&quot;tar.bz2&quot;</span><span class="p">,</span>
+                               <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarXz</span><span class="p">:</span> <span class="s2">&quot;tar.xz&quot;</span><span class="p">}</span>
+
+<span class="c1"># }}} CONSTANTS</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_TarArchiverProviderBase"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase">[docs]</a><span class="k">class</span> <span class="nc">_TarArchiverProviderBase</span><span class="p">(</span><span class="n">IArchiver</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for tar archiver service providers.</span>
+
+<span class="sd">    Abstract constructor of this class, should be called from derived constructors.  It initializes the</span>
+<span class="sd">    :attr:`workDir_` property.</span>
+
+<span class="sd">    :param workDir: Path to a writable directory.  The service will use it as persistent storage.</span>
+<span class="sd">    :type workDir: ``str``&quot;&quot;&quot;</span>
+
+    <span class="n">__PARTIAL_FILE_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;._partial&quot;</span>
+
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workDir</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__workDir</span> <span class="o">=</span> <span class="n">workDir</span>
+
+
+
+    <span class="c1"># {{{ IArchiver members</span>
+
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">fileAdd</span><span class="p">(</span><span class="n">filesystemObjectName</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.fileAdd`.&quot;</span>
+
+
+
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">backupOperationError</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">filesystemObjectName</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">unknownErrorString</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.backupOperationError`.&quot;</span>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.backupFiles"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.backupFiles">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">backupFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs basic checks before the backup creation.</span>
+
+<span class="sd">        .. note:: Derived classes should call this base method on the beginning of the overridden method.</span>
+
+<span class="sd">        See also: :meth:`.IArchiver.backupFiles()`.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedFeature_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__raiseIfEmptyIncludeFiles</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.backupFilesIncrementally"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.backupFilesIncrementally">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">backupFilesIncrementally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs basic checks before the incremental backup creation.</span>
+
+<span class="sd">        .. note:: Derived classes should call this base method on the beginning of the overridden method.</span>
+
+<span class="sd">        See also: :meth:`.IArchiver.backupFilesIncrementally()`.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedFeature_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span> <span class="mi">99</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__raiseIfEmptyIncludeFiles</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.removeBackup"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.removeBackup">[docs]</a>    <span class="k">def</span> <span class="nf">removeBackup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.removeBackup()`.&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span>
+            <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.removeBackupIncrements"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.removeBackupIncrements">[docs]</a>    <span class="k">def</span> <span class="nf">removeBackupIncrements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.removeBackupIncrements()`.&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not supported.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getSupportedFeatures"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.getSupportedFeatures">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getSupportedFeatures</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.getSupportedFeatures()`.&quot;</span>
+
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getMaxBackupLevel"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.getMaxBackupLevel">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.getMaxBackupLevel()`.&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not supported.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getStoredBackupIds"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.getStoredBackupIds">[docs]</a>    <span class="k">def</span> <span class="nf">getStoredBackupIds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.getMaxBackupLevel()`.&quot;</span>
+
+        <span class="k">return</span> <span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.purgeStoredBackupData"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.purgeStoredBackupData">[docs]</a>    <span class="k">def</span> <span class="nf">purgeStoredBackupData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IArchiver.purgeStoredBackupData()`.&quot;</span>
+
+        <span class="k">pass</span></div>
+
+    <span class="c1"># }}} IArchiver members</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">workDir_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets path to the working directory.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__workDir</span>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getBackupFilePath_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.getBackupFilePath_">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getBackupFilePath_</span><span class="p">(</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupType</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assembles the backup file name and returns a path to it.</span>
+
+<span class="sd">        :param backupId: ID of the backup for which the path shall be returned.</span>
+<span class="sd">        :type backupId: ``str``</span>
+<span class="sd">        :param backupType: Type of the backup.</span>
+<span class="sd">        :type backupType: :data:`BackupTypes`</span>
+<span class="sd">        :param destination: Path to the directory where the to the backup shall be created.</span>
+<span class="sd">        :type destination: ``str``</span>
+<span class="sd">        :param level: Backup level.</span>
+<span class="sd">        :type level: ``int``</span>
+
+<span class="sd">        :return: Path to the backup file.</span>
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="n">levelToken</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">)</span> <span class="k">if</span> <span class="n">level</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">destination</span><span class="p">,</span> <span class="n">backupId</span> <span class="o">+</span> <span class="n">levelToken</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">_BACKUP_TYPES_TO_EXTENSIONS</span><span class="p">[</span><span class="n">backupType</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getWorkingPath_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.getWorkingPath_">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getWorkingPath_</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">properPath</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">properPath</span> <span class="o">+</span> <span class="n">cls</span><span class="o">.</span><span class="n">__PARTIAL_FILE_SUFFIX</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.raiseIfUnsupportedBackupType_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.raiseIfUnsupportedBackupType_">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raises an exception if the passed ``backupType`` is not supported by the implementation.</span>
+
+<span class="sd">        See also: :attr:`.IArchiver.supportedBackupTypes`.</span>
+
+<span class="sd">        :param backupType: The backup type that shall be checked.</span>
+<span class="sd">        :type backupType: :data:`.BackupTypes`</span>
+
+<span class="sd">        :raise ValueError: If the passed ``backupType`` is not supported by the concrete implementation.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">backupType</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">supportedBackupTypes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unsupported backup type: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">backupType</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.raiseIfUnsupportedFeature_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._tar_archiver_provider_base._TarArchiverProviderBase.raiseIfUnsupportedFeature_">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">raiseIfUnsupportedFeature_</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">__parametersToFeatures</span><span class="p">(</span><span class="n">compressionStrength</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">getSupportedFeatures</span><span class="p">(</span><span class="n">backupType</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Feature </span><span class="si">{}</span><span class="s2"> is not supported be the backup type </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                                              <span class="nb">str</span><span class="p">(</span><span class="n">feature</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">backupType</span><span class="p">)))</span></div>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__raiseIfEmptyIncludeFiles</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">includeFiles</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">includeFiles</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Nothing to backup.&quot;</span><span class="p">)</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__parametersToFeatures</span><span class="p">(</span><span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">compressionStrength</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">CompressionStrength</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">Incremental</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">features</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

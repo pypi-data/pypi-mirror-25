@@ -1,0 +1,322 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._ui._cmdline._core.cmdline_ui_component &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._ui._cmdline._core.cmdline_ui_component</h1><div class="highlight"><pre>
+<span></span><span class="c1"># cmdline_ui_component.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2012 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`CmdlineUiComponent` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CmdlineUiComponent&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">...._py_additions</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">...._mainf</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">...._configuration</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._user_action_executor</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="CmdlineUiComponent"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent">[docs]</a><span class="k">class</span> <span class="nc">CmdlineUiComponent</span><span class="p">(</span><span class="n">IComponent</span><span class="p">,</span> <span class="n">IComponentUi</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Implementation of the command-line user interface.</span>
+
+<span class="sd">    Class serves as the component of :term:`Mainf` framework and uses the :meth:`run()` method as an entry point for</span>
+<span class="sd">    executing user actions specified on the command-line.  It implements the :class:`.IComponentUi` such that it uses</span>
+<span class="sd">    standard output and standard error as the user interface.  The instance is exposed as</span>
+<span class="sd">    :class:`.IComponentInterface`.&quot;&quot;&quot;</span>
+
+    <span class="c1">#: Maximal length of the archive name in output messages.</span>
+    <span class="n">__MAX_NAME_LENGTH</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+
+    <span class="c1"># {{{ IComponent implementation</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interfaceAccessor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span> <span class="o">=</span> <span class="n">interfaceAccessor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IAppConfig</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__userActionExecutor</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># overall backup result</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupStatus</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+
+<div class="viewcode-block" id="CmdlineUiComponent.run"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Executes an action defined for the specified command.</span>
+
+<span class="sd">        Command is read from the :attr:`.IMainfContext.appEnvironment.options`.  If ``options`` has an attribute that</span>
+<span class="sd">        matches one of the :class:`.CmdlineCommands` and the value of that attribute is ``True`` then the action for</span>
+<span class="sd">        the matching command is executed.  If there is no such attribute, then the default action ``create`` is</span>
+<span class="sd">        executed.</span>
+
+<span class="sd">        :attr:`.CmdlineCommands.CREATE` command triggers the ``Create`` action.  It takes all specified</span>
+<span class="sd">        :term:`archive specification files &lt;archive specification file&gt;` and for each it creates a backup using</span>
+<span class="sd">        :term:`Archiving` component.  Archive specification files can be specified by following ways:</span>
+
+<span class="sd">          - By archive names passed in :attr:`.IMainfContext.appEnvironment.arguments`.</span>
+
+<span class="sd">            Archive name can not contain the string defined by :attr:`.ConfigConstants.ARCHIVE_SPEC_EXT` at the end</span>
+<span class="sd">            otherwise it would be taken as the path to an archive specification file.  Archive specification files</span>
+<span class="sd">            corresponding to the names are looked up in the path defined by :attr:`.Options.ARCHIVE_SPECS_DIR` option.</span>
+
+<span class="sd">          - By paths to archive specification files passed in :attr:`.IMainfContext.appEnvironment.arguments`.</span>
+
+<span class="sd">            A path must end with the string defined by :attr:`.ConfigConstants.ARCHIVE_SPEC_EXT`.</span>
+
+<span class="sd">          - By passing empty :attr:`.IMainfContext.appEnvironment.arguments` and setting the option</span>
+<span class="sd">            :attr:`.Options.ALL` to ``True``.</span>
+
+<span class="sd">            In this case the action shall be executed for all known archives as served by Configuration component</span>
+<span class="sd">            (typically all archive specification files in :attr:`.Options.ARCHIVE_SPECS_DIR` directory).</span>
+
+<span class="sd">        :attr:`.CmdlineCommands.LIST` command triggers the ``List`` action.  It lists information about</span>
+<span class="sd">        :term:`selected &lt;selected archive&gt;` and :term:`orphaned &lt;orphaned archive&gt;` archives to standard output.</span>
+<span class="sd">        Archives can be specified by the same way as for the ``Create`` action except the last point where the ``List``</span>
+<span class="sd">        action does not require the option :attr:`.Options.ALL` to be ``True``.  Orphaned archives are always listed.</span>
+
+<span class="sd">        List of orphaned archives is obtained by following operation: from the list of</span>
+<span class="sd">        :term:`stored archives &lt;stored archive&gt;` (as served by :term:`Archiving` component) is subtracted the unique</span>
+<span class="sd">        list of valid selected archives and valid :term:`configured archives &lt;configured archive&gt;`.</span>
+
+<span class="sd">        Output has two possible formats depending on the :attr:`.Options.VERBOSE` option.</span>
+
+<span class="sd">        :attr:`.CmdlineCommands.PURGE` command triggers the ``Purge`` action.  It removes all stored information about</span>
+<span class="sd">        specified orphaned archives.</span>
+
+<span class="sd">        Orphaned archives names can be passed in :attr:`.IMainfContext.appEnvironment.arguments` or if</span>
+<span class="sd">        :attr:`.Options.ALL` is ``True`` then all orphaned archives are processed.</span>
+
+<span class="sd">        See also: :meth:`.IComponent.run`.&quot;&quot;&quot;</span>
+
+        <span class="n">mainfContext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IMainfContext</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span> <span class="o">=</span> <span class="n">mainfContext</span><span class="o">.</span><span class="n">appEnvironment</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="o">.</span><span class="n">registerComponentInterface</span><span class="p">(</span><span class="n">IComponentUi</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__userActionExecutor</span> <span class="o">=</span> <span class="n">_UserActionExecutor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__userActionExecutor</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span></div>
+
+    <span class="c1"># }}} IComponent implementation</span>
+
+
+
+    <span class="c1"># {{{ IComponentUi implementation</span>
+
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">messageShown</span><span class="p">(</span><span class="n">messageKind</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponentUi.messageShown`.&quot;</span>
+
+        <span class="k">pass</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">verbosity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;See: :attr:`.IComponentUi.verbosity`.&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span>
+        <span class="k">return</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Normal</span>
+
+
+
+<div class="viewcode-block" id="CmdlineUiComponent.showVerbose"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent.showVerbose">[docs]</a>    <span class="k">def</span> <span class="nf">showVerbose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponentUi.showVerbose`.&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Verbose</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUiComponent.showNotification"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent.showNotification">[docs]</a>    <span class="k">def</span> <span class="nf">showNotification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponentUi.showNotification`.&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">!=</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Notification</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUiComponent.showInfo"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent.showInfo">[docs]</a>    <span class="k">def</span> <span class="nf">showInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponentUi.showInfo`.&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">!=</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__userActionExecutor</span><span class="o">.</span><span class="n">processedArchSpec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Info</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUiComponent.showWarning"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent.showWarning">[docs]</a>    <span class="k">def</span> <span class="nf">showWarning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponentUi.showWarning`.&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">!=</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printAttentionMsg</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Warning</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUiComponent.showError"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent.showError">[docs]</a>    <span class="k">def</span> <span class="nf">showError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponentUi.showError`.&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__printAttentionMsg</span><span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Error</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUiComponent.presentLine"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core.cmdline_ui_component.CmdlineUiComponent.presentLine">[docs]</a>    <span class="k">def</span> <span class="nf">presentLine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponentUi.presentLine`.&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">line</span><span class="p">)</span></div>
+
+    <span class="c1"># }}} IComponentUi implementation</span>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__printStandardMsg</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">currentArchSpec</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">archSpecToken</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;[</span><span class="si">{}</span><span class="s2">] &quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__getArchSpecToken</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">))</span> <span class="k">if</span> <span class="n">currentArchSpec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">archSpecToken</span><span class="p">,</span> <span class="n">msg</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__printAttentionMsg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attentionString</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="n">archSpecToken</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot; [</span><span class="si">{}</span><span class="s2">] &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchSpecToken</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__userActionExecutor</span><span class="o">.</span><span class="n">processedArchSpec</span><span class="p">))</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__userActionExecutor</span><span class="o">.</span><span class="n">processedArchSpec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot; &quot;</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{executableName}</span><span class="s2">: </span><span class="si">{attentionString}</span><span class="s2">!</span><span class="si">{archSpecToken}{msg}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">executableName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">executableName</span><span class="p">,</span>
+                <span class="n">attentionString</span> <span class="o">=</span> <span class="n">attentionString</span><span class="p">,</span>
+                <span class="n">archSpecToken</span> <span class="o">=</span> <span class="n">archSpecToken</span><span class="p">,</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span><span class="p">))</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__getArchSpecToken</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">currentArchSpec</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">_shortenString</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cls</span><span class="o">.</span><span class="n">__MAX_NAME_LENGTH</span><span class="p">),</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">currentArchSpec</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_shortenString</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+        <span class="n">halfLength</span> <span class="o">=</span> <span class="n">length</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">token</span><span class="p">[:</span><span class="n">halfLength</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;~&quot;</span> <span class="o">+</span> <span class="n">token</span><span class="p">[</span><span class="o">-</span><span class="n">halfLength</span> <span class="o">-</span> <span class="p">((</span><span class="n">length</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">length</span> <span class="k">else</span> <span class="n">token</span></div>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

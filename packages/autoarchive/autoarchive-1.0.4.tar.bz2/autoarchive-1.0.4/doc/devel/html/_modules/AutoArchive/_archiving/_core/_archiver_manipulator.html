@@ -1,0 +1,400 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._archiving._core._archiver_manipulator &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._archiving._core._archiver_manipulator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _archiver_manipulator.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_ArchiverManipulator` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_ArchiverManipulator&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">date</span>
+
+<span class="kn">from</span> <span class="nn">..._py_additions</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._services.archiver</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._mainf</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._configuration</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._archiving_constants</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._archive_spec</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._backup_information_provider</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_ArchiverManipulator"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._archiver_manipulator._ArchiverManipulator">[docs]</a><span class="k">class</span> <span class="nc">_ArchiverManipulator</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Performs actions with backups.</span>
+
+<span class="sd">    Uses :class:`.IArchiver` services to manipulate with or create backups.</span>
+
+<span class="sd">    .. note:: ``backupInformationProvider`` is not updated by this class.</span>
+
+<span class="sd">    :param backupInformationProvider: Represents the archive that this instance shall be manipulating with.</span>
+<span class="sd">    :type backupInformationProvider`: :class:`._BackupInformationProvider`</span>
+<span class="sd">    :param interfaceAccessor: An :class:`.IInterfaceAccessor` instance.</span>
+<span class="sd">    :type interfaceAccessor: :class:`.IInterfaceAccessor`</span>
+
+<span class="sd">    :raise RuntimeError: If the archiver service could not be created.&quot;&quot;&quot;</span>
+
+    <span class="n">__ARCHIVER_TYPE_TO_BACKUP_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">:</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">,</span>
+                                          <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">:</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">,</span>
+                                          <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">:</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">,</span>
+                                          <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarXz</span><span class="p">:</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarXz</span><span class="p">,</span>
+                                          <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarInternal</span><span class="p">:</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">,</span>
+                                          <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarGzInternal</span><span class="p">:</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">,</span>
+                                          <span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarBz2Internal</span><span class="p">:</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">}</span>
+
+    <span class="n">__OPTION_TO_FEATURE_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="n">Options</span><span class="o">.</span><span class="n">COMPRESSION_LEVEL</span><span class="p">:</span> <span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">CompressionStrength</span><span class="p">,</span>
+                               <span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">:</span> <span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">Incremental</span><span class="p">}</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupInformationProvider</span><span class="p">,</span> <span class="n">interfaceAccessor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span> <span class="o">=</span> <span class="n">backupInformationProvider</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">archiveSpec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupOperationStatus</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span> <span class="o">=</span> <span class="n">interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IComponentUi</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span> <span class="o">=</span> <span class="n">interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IStorage</span><span class="p">)</span><span class="o">.</span><span class="n">createStoragePortion</span><span class="p">(</span>
+            <span class="n">realm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">_ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span> <span class="o">=</span> <span class="n">ArchiverServiceCreator</span><span class="o">.</span><span class="n">getOrCreateArchiverService</span><span class="p">(</span>
+            <span class="n">_ArchiverMaps</span><span class="o">.</span><span class="n">ARCHIVER_TYPE_TO_SERVICE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">]],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__reportUnsupportedOptions</span><span class="p">()</span>
+
+
+
+<div class="viewcode-block" id="_ArchiverManipulator.createBackup"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._archiver_manipulator._ArchiverManipulator.createBackup">[docs]</a>    <span class="k">def</span> <span class="nf">createBackup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the :term:`archiver` and creates a :term:`backup`.</span>
+
+<span class="sd">        :return: Path to the created backup.</span>
+<span class="sd">        :rtype: ``str``</span>
+
+<span class="sd">        :raise RuntimeError: If the backup operation was aborted due to a fatal error.</span>
+<span class="sd">        :raise OSError: If a system error occurred while making the backup.&quot;&quot;&quot;</span>
+
+        <span class="n">backupDefinition</span> <span class="o">=</span> <span class="n">BackupDefinition</span><span class="p">()</span>
+        <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">_ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">]</span>
+        <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ARCHIVER_TYPE_TO_BACKUP_TYPE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">]]</span>
+        <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">DEST_DIR</span><span class="p">]</span>
+        <span class="n">backupDefinition</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">_ArchiveSpecOptions</span><span class="o">.</span><span class="n">PATH</span><span class="p">]</span>
+        <span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">_ArchiveSpecOptions</span><span class="o">.</span><span class="n">INCLUDE_FILES</span><span class="p">]</span>
+        <span class="n">backupDefinition</span><span class="o">.</span><span class="n">excludeFiles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">_ArchiveSpecOptions</span><span class="o">.</span><span class="n">EXCLUDE_FILES</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupOperationStatus</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">backupOperationError</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onBackupOperationError</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">fileAdd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onFileAdd</span>
+
+        <span class="n">compressionLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">COMPRESSION_LEVEL</span><span class="p">]</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isOptionSupported</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">COMPRESSION_LEVEL</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">isOptionSupported</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__reportBackupLevelRestart</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__reportBackupLevelTooHigh</span><span class="p">()</span>
+                <span class="n">backupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">backupFilesIncrementally</span><span class="p">(</span>
+                    <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionLevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">REMOVE_OBSOLETE_BACKUPS</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">removeBackupIncrements</span><span class="p">(</span>
+                        <span class="n">backupDefinition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">backupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">backupFiles</span><span class="p">(</span><span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionLevel</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">fileAdd</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onFileAdd</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">backupOperationError</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onBackupOperationError</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupOperationStatus</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span>
+                <span class="s2">&quot;Error(s) occurred during the backup creation. Please check program&#39;s output.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">backupFilePath</span></div>
+
+
+
+<div class="viewcode-block" id="_ArchiverManipulator.saveBackupLevelInfo"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._archiver_manipulator._ArchiverManipulator.saveBackupLevelInfo">[docs]</a>    <span class="k">def</span> <span class="nf">saveBackupLevelInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupFilePath</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Saves all the information required for backup level restarting to the persistent storage.</span>
+
+<span class="sd">        .. note:: This method should be called only once after the backup was created.</span>
+
+<span class="sd">        :param backupFilePath: Path to the created backup.</span>
+<span class="sd">        :type backupFilePath: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">]</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isOptionSupported</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">)</span> <span class="ow">or</span> \
+           <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTARTING</span><span class="p">]:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># increase and save restart count</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">restartCount</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">restartCount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># save last restart date</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_RESTART</span><span class="p">,</span> <span class="n">today</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_FULL_RESTART</span><span class="p">,</span> <span class="n">today</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span>
+
+        <span class="c1"># save the size of the created backup</span>
+        <span class="n">archiveSize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">backupFilePath</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">BACKUP_SIZE</span> <span class="o">+</span>
+                                        <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span><span class="p">),</span> <span class="n">archiveSize</span><span class="p">)</span>
+
+        <span class="c1"># &gt;clear stored backup sizes for higher levels</span>
+        <span class="n">levelIdx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">tryRemoveVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">BACKUP_SIZE</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">levelIdx</span><span class="p">)):</span>
+            <span class="n">levelIdx</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="_ArchiverManipulator.isOptionSupported"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._archiver_manipulator._ArchiverManipulator.isOptionSupported">[docs]</a>    <span class="k">def</span> <span class="nf">isOptionSupported</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns ``True`` if the passed ``option`` is supported by the current configuration of this instance.</span>
+
+<span class="sd">        Whether an option is supported or not depends on the archiver type set in the archive specification file</span>
+<span class="sd">        that is currently attached.</span>
+
+<span class="sd">        :param option: The option which shall be tested for support.</span>
+<span class="sd">        :type option: :class:`.Option`</span>
+
+<span class="sd">        :return: ``True`` if the passed ``option`` is supported; ``False`` otherwise.</span>
+<span class="sd">        :rtype: ``bool``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__OPTION_TO_FEATURE_MAP</span><span class="p">[</span><span class="n">option</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">getSupportedFeatures</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ARCHIVER_TYPE_TO_BACKUP_TYPE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">]])</span> \
+            <span class="k">if</span> <span class="n">option</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__OPTION_TO_FEATURE_MAP</span> <span class="k">else</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="_ArchiverManipulator.tryPurgeStoredArchiveData"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._archiver_manipulator._ArchiverManipulator.tryPurgeStoredArchiveData">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tryPurgeStoredArchiveData</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">archiveName</span><span class="p">,</span> <span class="n">userConfigDir</span><span class="p">,</span> <span class="n">storage</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes all data stored for the archive named ``archiveName`` if any.</span>
+
+<span class="sd">        See also: :meth:`._BackupInformationProvider.getStoredArchiveNames()`</span>
+
+<span class="sd">        :param archiveName: Name of the archive which data shall be purged.</span>
+<span class="sd">        :type archiveName: ``str``</span>
+<span class="sd">        :param userConfigDir: Path to the user configuration directory.</span>
+<span class="sd">        :type userConfigDir: ``str``</span>
+<span class="sd">        :param storage: The application storage.</span>
+<span class="sd">        :type storage: :class:`.IStorage`</span>
+
+<span class="sd">        :return: ``True`` if data was purged; ``False`` otherwise.</span>
+<span class="sd">        :rtype: ``bool``</span>
+
+<span class="sd">        :raise RuntimeError: If the archiver service could not be created.</span>
+<span class="sd">        :raise OSError: If an error occurred during the operation of removing data from a physical storage.&quot;&quot;&quot;</span>
+
+        <span class="n">archiveDataStored</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">serviceProvider</span> <span class="ow">in</span> <span class="n">ArchiverServiceProviders</span><span class="p">:</span>
+            <span class="n">archiverService</span> <span class="o">=</span> <span class="n">ArchiverServiceCreator</span><span class="o">.</span><span class="n">getOrCreateArchiverService</span><span class="p">(</span><span class="n">serviceProvider</span><span class="p">,</span> <span class="n">userConfigDir</span><span class="p">)</span>
+            <span class="n">archiveDataStored</span> <span class="o">=</span> <span class="n">archiveDataStored</span> <span class="ow">or</span> <span class="n">archiveName</span> <span class="ow">in</span> <span class="n">archiverService</span><span class="o">.</span><span class="n">getStoredBackupIds</span><span class="p">()</span>
+            <span class="n">archiverService</span><span class="o">.</span><span class="n">purgeStoredBackupData</span><span class="p">(</span><span class="n">archiveName</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">storage</span><span class="o">.</span><span class="n">removeRealm</span><span class="p">(</span><span class="n">archiveName</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span> <span class="ow">or</span> <span class="n">archiveDataStored</span></div>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="k">def</span> <span class="nf">__reportUnsupportedOptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__OPTION_TO_FEATURE_MAP</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="o">.</span><span class="n">getRawValue</span><span class="p">(</span><span class="n">option</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isOptionSupported</span><span class="p">(</span><span class="n">option</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="s2">&quot;Option </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> is not supported by the archiver of type </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+                    <span class="n">option</span><span class="p">,</span> <span class="n">OptionsUtils</span><span class="o">.</span><span class="n">archiverTypeToStr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">])))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__onBackupOperationError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">filesystemObjectName</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">unknownErrorString</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Stat</span> <span class="ow">and</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">PermissionDenied</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Cannot access </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">. Permission denied.&quot;</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span> <span class="ow">and</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">PermissionDenied</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Cannot open file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">. Permission denied.&quot;</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Stat</span> <span class="ow">or</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span> <span class="ow">or</span>
+                           <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Read</span> <span class="ow">or</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">UnknownFileOperation</span><span class="p">)</span> <span class="ow">and</span> \
+             <span class="p">(</span><span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownError</span> <span class="ow">or</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownOsError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Error occurred while accessing file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">. </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">,</span>
+                             <span class="n">unknownErrorString</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Read</span> <span class="ow">and</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">FileChanged</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;File changed as we read it: </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">SocketIgnored</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Socket ignored: </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownTypeIgnored</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unknown file type ignored: </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Read</span> <span class="ow">and</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">DirectoryRenamed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Directory has been renamed: </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Finish</span> <span class="ow">and</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">SomeFilesChanged</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="s2">&quot;Some files were changed during the backup creation.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">UnknownFileOperation</span> <span class="ow">and</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownOsError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;A system error occurred while accessing file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                        <span class="n">filesystemObjectName</span><span class="p">,</span> <span class="n">unknownErrorString</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">UnknownFileOperation</span> <span class="ow">and</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;An error occurred while accessing file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                        <span class="n">filesystemObjectName</span><span class="p">,</span> <span class="n">unknownErrorString</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownOsError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;A system error occurred: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">unknownErrorString</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;An error occurred: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">unknownErrorString</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;An unknown error occurred: </span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">!&quot;</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span>
+                                        <span class="n">filesystemObjectName</span><span class="p">,</span> <span class="n">unknownErrorString</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__onFileAdd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filesystemObjectName</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="n">filesystemObjectName</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__reportBackupLevelRestart</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Shows a user message for current :attr:`restartReason`.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">RestartCountLimitReached</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="s2">&quot;Maximal backup level restart count reached. Restarting to level 0.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">LastFullRestartAgeLimitReached</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="s2">&quot;Maximal backup level full restart age reached. Restarting to level 0.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">BackupLevelLimitReached</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Maximal backup level reached. Restarting to level </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">LastRestartAgeLimitReached</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;Maximal backup level restart age reached. Restarting to level </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__reportBackupLevelTooHigh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">configuredBackupLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">LEVEL</span><span class="p">]</span>
+        <span class="n">nextBackupLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span>
+        <span class="k">if</span> <span class="n">configuredBackupLevel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">configuredBackupLevel</span> <span class="o">&gt;</span> <span class="n">nextBackupLevel</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;Backup level value </span><span class="si">{}</span><span class="s2"> is too high. Using level </span><span class="si">{}</span><span class="s2"> instead.&quot;</span><span class="p">,</span>
+                <span class="n">configuredBackupLevel</span><span class="p">,</span> <span class="n">nextBackupLevel</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__showError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupOperationStatus</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

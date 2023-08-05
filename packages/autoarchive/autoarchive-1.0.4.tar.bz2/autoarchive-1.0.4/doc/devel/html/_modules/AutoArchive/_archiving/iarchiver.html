@@ -1,0 +1,483 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._archiving.iarchiver &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._archiving.iarchiver</h1><div class="highlight"><pre>
+<span></span><span class="c1"># iarchiver.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2012 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:const:`MIN_COMPRESSION_STRENGTH` and :const:`MAX_COMPRESSION_STRENGTH` constants, :data:`BackupTypes`,</span>
+<span class="sd">:data:`ArchiverFeatures`, :data:`BackupSubOperations`, :data:`BackupOperationErrors` enums and :class:`IArchiver`</span>
+<span class="sd">interface and :class:`BackupDefinition` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MIN_COMPRESSION_STRENGTH&quot;</span><span class="p">,</span> <span class="s2">&quot;MAX_COMPRESSION_STRENGTH&quot;</span><span class="p">,</span> <span class="s2">&quot;BackupTypes&quot;</span><span class="p">,</span> <span class="s2">&quot;ArchiverFeatures&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;BackupSubOperations&quot;</span><span class="p">,</span> <span class="s2">&quot;BackupOperationErrors&quot;</span><span class="p">,</span> <span class="s2">&quot;IArchiver&quot;</span><span class="p">,</span> <span class="s2">&quot;BackupDefinition&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.._py_additions</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CONSTANTS</span>
+
+<span class="c1">#: Minimal compression strength value.</span>
+<span class="n">MIN_COMPRESSION_STRENGTH</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1">#: Maximal compression strength value.</span>
+<span class="n">MAX_COMPRESSION_STRENGTH</span> <span class="o">=</span> <span class="mi">9</span>
+
+<span class="c1"># }}} CONSTANTS</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<span class="c1">#: Backup types.</span>
+<span class="n">BackupTypes</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+    <span class="s2">&quot;Tar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarGz&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarBz2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarXz&quot;</span><span class="p">)</span>
+
+
+
+<span class="c1">#: Features that archiver service may support.</span>
+<span class="n">ArchiverFeatures</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+    <span class="s2">&quot;CompressionStrength&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Incremental&quot;</span><span class="p">)</span>
+
+
+
+<span class="c1">#: Operations executed during backup creation.</span>
+<span class="n">BackupSubOperations</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+
+    <span class="c1">#: Unknown operation</span>
+    <span class="s2">&quot;Unknown&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Unknown operation on a filesystem object.</span>
+    <span class="s2">&quot;UnknownFileOperation&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: :meth:`os.stat()` (or access) operation on a filesystem object.</span>
+    <span class="s2">&quot;Stat&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Filesystem object open operation.</span>
+    <span class="s2">&quot;Open&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: File read operation.</span>
+    <span class="s2">&quot;Read&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Finishing the backup creation.</span>
+    <span class="s2">&quot;Finish&quot;</span><span class="p">)</span>
+
+
+
+<span class="c1">#: Errors that may occur during backup operation.</span>
+<span class="n">BackupOperationErrors</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+
+    <span class="c1">#: Unknown error.</span>
+    <span class="s2">&quot;UnknownError&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: An operation on a filesystem object was not successful due to other/unknown system error.</span>
+    <span class="s2">&quot;UnknownOsError&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: An operation on a filesystem object was not successful due to permission denied system error.</span>
+    <span class="s2">&quot;PermissionDenied&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: A socket was ignored.</span>
+    <span class="s2">&quot;SocketIgnored&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: An unknown filesystem object typ was ignored.</span>
+    <span class="s2">&quot;UnknownTypeIgnored&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: The file was changed while it has been adding to the backup.</span>
+    <span class="s2">&quot;FileChanged&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Some files were changed during backup creation.</span>
+    <span class="s2">&quot;SomeFilesChanged&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: A directory has been renamed since last backup level.</span>
+    <span class="s2">&quot;DirectoryRenamed&quot;</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="IArchiver"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver">[docs]</a><span class="k">class</span> <span class="nc">IArchiver</span><span class="p">(</span><span class="n">metaclass</span> <span class="o">=</span> <span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;SPI for backup creation and management.&quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span> <span class="nf">supportedBackupTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a set of backup types supported by this archiver service.</span>
+
+<span class="sd">        :rtype: ``set&lt;BackupTypes&gt;``&quot;&quot;&quot;</span>
+
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">fileAdd</span><span class="p">(</span><span class="n">filesystemObjectName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raised when an filesystem object is added to the backup.</span>
+
+<span class="sd">        :param filesystemObjectName: Name of the filesystem object.</span>
+<span class="sd">        :type filesystemObjectName: ``str``&quot;&quot;&quot;</span>
+
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">backupOperationError</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">filesystemObjectName</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">unknownErrorString</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raised when an non-fatal error occur during the backup operation.</span>
+
+<span class="sd">        :param operation: The operation which was running when the error occurred.</span>
+<span class="sd">        :type operation: :data:`BackupSubOperations`</span>
+<span class="sd">        :param error: The error that occurred.</span>
+<span class="sd">        :type error: :data:`BackupOperationErrors`</span>
+<span class="sd">        :param filesystemObjectName: Name of the filesystem object that was processed when the error occurred.  It is</span>
+<span class="sd">           non-None only if ``operation`` is one of ``UnknownFileOperation``, ``Stat``, ``Open`` or ``Read``.</span>
+<span class="sd">        :type filesystemObjectName: ``str``</span>
+<span class="sd">        :param unknownErrorString: Error string.  It is non-None only if the ``error`` is either ``UnknownError`` or,</span>
+<span class="sd">           ``UnknownOsError``.</span>
+<span class="sd">        :type unknownErrorString: ``str``&quot;&quot;&quot;</span>
+
+
+
+<div class="viewcode-block" id="IArchiver.backupFiles"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.backupFiles">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">backupFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a backup.</span>
+
+<span class="sd">        :param backupDefinition: Defines the backup that shall be created.  All attributes of the passed instance has</span>
+<span class="sd">           to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param compressionStrength: Value from interval &lt;MIN_COMPRESSION_STRENGTH, MAX_COMPRESSION_STRENGTH&gt;</span>
+<span class="sd">           representing the strength of compression.  It has to be non-None only for backup types that supports</span>
+<span class="sd">           compression and compression strength setting.</span>
+<span class="sd">        :type compressionStrength: ``int``</span>
+
+<span class="sd">        :return: Path to the created backup.</span>
+<span class="sd">        :rtype: ``str``</span>
+
+<span class="sd">        :raise RuntimeError: If ``compressionStrength`` is non-``None`` and ``backupDefinition.backupType`` does not</span>
+<span class="sd">           supports compression or compression strength setting.  If an unknown error occurred during backup creation.</span>
+<span class="sd">        :raise ValueError: If ``compressionStrength`` is outside of required interval or if</span>
+<span class="sd">           ``backupDefinition.backupType`` is not supported by the implementation.</span>
+<span class="sd">        :raise OSError: If a system error occurred while making the backup.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiver.backupFilesIncrementally"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.backupFilesIncrementally">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">backupFilesIncrementally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates an incremental backup.</span>
+
+<span class="sd">        A backup of specified level or the next level in a row will be created.  The maximal backup level will be</span>
+<span class="sd">        increased (see :meth:`getMaxBackupLevel()`).</span>
+
+<span class="sd">        :param backupDefinition: Defines the backup that shall be created.  All attributes of the passed instance has</span>
+<span class="sd">           to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param compressionStrength: Value from interval &lt;MIN_COMPRESSION_STRENGTH, MAX_COMPRESSION_STRENGTH&gt;</span>
+<span class="sd">           representing the strength of compression.  It has to be non-None only for backup types that supports</span>
+<span class="sd">           compression and compression strength setting.</span>
+<span class="sd">        :type compressionStrength: ``int``</span>
+<span class="sd">        :param level: Backup level that shall be created.  If ``None``, the next level in a row will be created, which</span>
+<span class="sd">           is the the one returned by :meth:`getMaxBackupLevel()`.  The value has to be from interval</span>
+<span class="sd">           &lt;0, :meth:`getMaxBackupLevel()`&gt;.</span>
+<span class="sd">        :type level: ``int``</span>
+
+<span class="sd">        :return: Path to the created backup.</span>
+<span class="sd">        :rtype: ``str``</span>
+
+<span class="sd">        :raise RuntimeError: If ``compressionStrength`` is non-``None`` and ``backupDefinition.backupType`` does not</span>
+<span class="sd">           supports compression or compression strength setting.  If an unknown error occurred during backup creation.</span>
+<span class="sd">        :raise ValueError: If ``compressionStrength`` or ``level`` is outside of required interval or if</span>
+<span class="sd">           ``backupDefinition.backupType`` is not supported by the implementation.</span>
+<span class="sd">        :raise NotImplementedError: If incremental backup is not supported.</span>
+<span class="sd">        :raise OSError: If a system error occurred while making the backup.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiver.removeBackup"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.removeBackup">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">removeBackup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a backup.</span>
+
+<span class="sd">        Backup defined by ``backupDefinition`` will be removed.</span>
+
+<span class="sd">        :param backupDefinition: Defines backup that shall be removed.  :attr:`BackupDefinition.backupId`,</span>
+<span class="sd">           :attr:`BackupDefinition.backupType` and :attr:`BackupDefinition.destination` attributes of the passed</span>
+<span class="sd">           instance has to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+
+<span class="sd">        :raise ValueError: If ``backupDefinition.backupType`` is not supported by the implementation.</span>
+<span class="sd">        :raise OSError: If a system error occurred during removing operation.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiver.removeBackupIncrements"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.removeBackupIncrements">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">removeBackupIncrements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove backup increments starting from ``level``.</span>
+
+<span class="sd">        Backups (increments) of backup level higher or equal than ``level`` or higher that the current backup level - in</span>
+<span class="sd">        case ``level`` is ``None`` - will be removed.  The maximal backup level (:meth:`getMaxBackupLevel()`) will be</span>
+<span class="sd">        set to the value ``level``.</span>
+
+<span class="sd">        :param backupDefinition: Defines backup that shall be removed.  :attr:`BackupDefinition.backupId`,</span>
+<span class="sd">           :attr:`BackupDefinition.backupType` and :attr:`BackupDefinition.destination` attributes of the passed</span>
+<span class="sd">           instance has to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param level: The first level that shall be removed.  All backups of levels higher or equal than ``level`` will</span>
+<span class="sd">           be removed.  If ``None``, backups of levels higher or equal than the one returned by</span>
+<span class="sd">           :meth:`getMaxBackupLevel()` will be removed.  The value has to be &gt;= 0.</span>
+<span class="sd">        :type level: ``int``</span>
+
+<span class="sd">        :raise ValueError: If ``level`` is outside of required interval or if ``backupDefinition.backupType`` is not</span>
+<span class="sd">           supported by the implementation.</span>
+<span class="sd">        :raise NotImplementedError: If incremental backup is not supported.</span>
+<span class="sd">        :raise OSError: If a system error occurred during removing operation.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiver.getSupportedFeatures"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.getSupportedFeatures">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getSupportedFeatures</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a set of supported features, ether all of them or for given ``backupType``.</span>
+
+<span class="sd">        :param backupType: The backup type for which the features shall be returned or ``None`` if all supported</span>
+<span class="sd">           features shall be returned.</span>
+<span class="sd">        :type backupType: :data:`BackupTypes`</span>
+
+<span class="sd">        :return: Supported features for given ``backupType`` or all supported features.</span>
+<span class="sd">        :rtype: ``set&lt;ArchiverFeatures&gt;``</span>
+
+<span class="sd">        :raise ValueError: If the given ``backupType`` is not supported by this service&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiver.getMaxBackupLevel"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.getMaxBackupLevel">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getMaxBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determines and returns maximal backup level that can be created.</span>
+
+<span class="sd">        :param backupId: ID of the backup for which the level shall be determined.</span>
+<span class="sd">        :type backupId: ``str``</span>
+
+<span class="sd">        :return: The maximal backup level that can be created by :meth:`backupFilesIncrementally()`.</span>
+<span class="sd">        :rtype: ``int``</span>
+
+<span class="sd">        :raise NotImplementedError: If incremental backup is not supported.</span>
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiver.getStoredBackupIds"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.getStoredBackupIds">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getStoredBackupIds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns iterable of archive IDs which has some data stored in a persistent storage.</span>
+
+<span class="sd">        See also: :meth:`purgeStoredBackupData()`.</span>
+
+<span class="sd">        :return: Iterable of archive names.</span>
+<span class="sd">        :rtype: ``Iterable&lt;str&gt;``</span>
+
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="IArchiver.purgeStoredBackupData"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.IArchiver.purgeStoredBackupData">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">purgeStoredBackupData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes internal data from a persistent storage for the passed ``backupId``.</span>
+
+<span class="sd">        See also: :meth:`getStoredBackupIds()`.</span>
+
+<span class="sd">        :param backupId: ID of the backup of which data shall be purged.</span>
+<span class="sd">        :type backupId: ``str``</span>
+
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span></div></div>
+
+
+
+<div class="viewcode-block" id="BackupDefinition"><a class="viewcode-back" href="../../../api/archiving.html#AutoArchive._archiving.iarchiver.BackupDefinition">[docs]</a><span class="k">class</span> <span class="nc">BackupDefinition</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Container class for information needed to create a backup.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupType</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destination</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__includeFiles</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__excludeFiles</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backupId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The backup identifier, typically the name is used.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span>
+
+    <span class="nd">@backupId</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backupId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backupType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Type of the backup.</span>
+
+<span class="sd">        :rtype: :data:`BackupTypes`&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupType</span>
+
+    <span class="nd">@backupType</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backupType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupType</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">destination</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Path to the directory which contains the backup.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__destination</span>
+
+    <span class="nd">@destination</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">destination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destination</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Path to the root directory of the source content.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__root</span>
+
+    <span class="nd">@root</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">includeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set of source filesystem objects paths relative to :attr:`root`.</span>
+
+<span class="sd">        :rtype: ``Set&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__includeFiles</span>
+
+    <span class="nd">@includeFiles</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">includeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__includeFiles</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">excludeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set of excluded filesystem objects paths relative to :attr:`root`.</span>
+
+<span class="sd">        :rtype: ``Set&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__excludeFiles</span>
+
+    <span class="nd">@excludeFiles</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">excludeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__excludeFiles</span> <span class="o">=</span> <span class="n">value</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

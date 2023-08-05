@@ -1,0 +1,315 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._configuration._core.configuration_component &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._configuration._core.configuration_component</h1><div class="highlight"><pre>
+<span></span><span class="c1"># configuration_component.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2012 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`ConfigurationComponent` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ConfigurationComponent&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">..._utils</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._mainf</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._archiving</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._app_config</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._file_storage</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._cmdline_arguments_processor</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._config_file_processor</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="ConfigurationComponent"><a class="viewcode-back" href="../../../../api/configuration.core.html#AutoArchive._configuration._core.configuration_component.ConfigurationComponent">[docs]</a><span class="k">class</span> <span class="nc">ConfigurationComponent</span><span class="p">(</span><span class="n">IComponent</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;:class:`.IComponent` for support of configuration options and a persistent storage.</span>
+
+<span class="sd">    During construction it registers :class:`.IAppConfig` and :class:`.IStorage` component interfaces to</span>
+<span class="sd">    ``interfaceAccessor``.  It also creates :term:`user configuration directory` and</span>
+<span class="sd">    :term:`archive specifications directory` if either of them does not exists.</span>
+
+<span class="sd">    The :class:`.IAppConfig` provides access to configuration options.  It is instantiated and populated during</span>
+<span class="sd">    construction from :attr:`.IMainfContext.appEnvironment.options` (command-line options) and from configuration files.</span>
+<span class="sd">    The :term:`system configuration file` is &quot;/etc/aa/aa.conf&quot;.  The :term:`user configuration file` location is</span>
+<span class="sd">    determined by values of :attr:`.Options.USER_CONFIG_FILE` and :attr:`.Options.USER_CONFIG_DIR` options.  The</span>
+<span class="sd">    :term:`user configuration directory` is automatically created if it does not exists.  The format of configuration</span>
+<span class="sd">    files is defined by the standard :mod:`configparser` module (without interpolation).</span>
+
+<span class="sd">    The :class:`.IAppConfig` instance is populated in a way that same options specified in multiple sources overrides</span>
+<span class="sd">    each other so that the order of precedence from highest to lowest is following: command-line,</span>
+<span class="sd">    user configuration file, system configuration file.  However the implementation recognizes certain types of options</span>
+<span class="sd">    that does not follow this rule (see :meth:`.IConfiguration.__getitem__()`).</span>
+
+<span class="sd">    Some of the options, if not specified in neither of possible sources, has some predefined default value.  The list</span>
+<span class="sd">    of these options with their predefined value follows:</span>
+
+<span class="sd">    * :attr:`.Options.ARCHIVER`\ : :attr:`.ArchiverTypes.TarGz`</span>
+<span class="sd">    * :attr:`.Options.DEST_DIR`\ : ``os.curdir``</span>
+<span class="sd">    * :attr:`.Options.RESTART_AFTER_LEVEL`\ : 10</span>
+<span class="sd">    * :attr:`.Options.ARCHIVE_SPECS_DIR`\ : :attr:`.Options.USER_CONFIG_DIR` + &quot;archive_specs&quot;</span>
+<span class="sd">    * :attr:`.Options.USER_CONFIG_FILE`\ : :attr:`.Options.USER_CONFIG_DIR` + &quot;aa.conf&quot;</span>
+<span class="sd">    * :attr:`.Options.USER_CONFIG_DIR`\ : &quot;~/.config/aa&quot;</span>
+
+<span class="sd">    :class:`.IStorage` provides access to the persistent storage.  It is also instantiated and populated during</span>
+<span class="sd">    construction of this class.  The storage utilizes local filesystem, specifically a subdirectory of</span>
+<span class="sd">    :term:`user configuration directory` named ``storage``.  It is automatically created if it does not exists.&quot;&quot;&quot;</span>
+
+    <span class="c1"># user configuration directory</span>
+    <span class="n">__FACTORY_USER_CONFIG_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s2">&quot;~/.config/aa&quot;</span><span class="p">)</span>
+
+    <span class="c1"># configuration file name</span>
+    <span class="n">__CONFIG_FILE_NAME</span> <span class="o">=</span> <span class="s2">&quot;aa.conf&quot;</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interfaceAccessor</span><span class="p">):</span>
+        <span class="n">mainfContext</span> <span class="o">=</span> <span class="n">interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IMainfContext</span><span class="p">)</span>
+
+        <span class="n">appConfig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__createAndPopulateConfig</span><span class="p">(</span><span class="n">mainfContext</span><span class="o">.</span><span class="n">appEnvironment</span><span class="p">)</span>
+        <span class="n">interfaceAccessor</span><span class="o">.</span><span class="n">registerComponentInterface</span><span class="p">(</span><span class="n">IAppConfig</span><span class="p">,</span> <span class="n">appConfig</span><span class="p">)</span>
+
+        <span class="n">userDirectoryCreated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__createUserConfigDirectory</span><span class="p">(</span><span class="n">appConfig</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__createArchiveSpecsDirectory</span><span class="p">(</span><span class="n">appConfig</span><span class="p">,</span> <span class="n">userDirectoryCreated</span><span class="p">)</span>
+
+        <span class="n">interfaceAccessor</span><span class="o">.</span><span class="n">registerComponentInterface</span><span class="p">(</span>
+            <span class="n">IStorage</span><span class="p">,</span> <span class="n">_FileStorage</span><span class="p">(</span><span class="n">appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">],</span> <span class="n">appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">]))</span>
+
+
+
+<div class="viewcode-block" id="ConfigurationComponent.run"><a class="viewcode-back" href="../../../../api/configuration.core.html#AutoArchive._configuration._core.configuration_component.ConfigurationComponent.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.IComponent.run()`.&quot;</span>
+
+        <span class="c1"># nothing to do here</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__createAndPopulateConfig</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">appEnvironment</span><span class="p">):</span>
+
+        <span class="n">optparseValues</span> <span class="o">=</span> <span class="n">appEnvironment</span><span class="o">.</span><span class="n">options</span>
+        <span class="n">cmdlineArgumentsProcessor</span> <span class="o">=</span> <span class="n">_CmdlineArgumentsProcessor</span><span class="p">(</span><span class="n">optparseValues</span><span class="p">)</span>
+
+        <span class="n">cmdlineUserConfigDir</span><span class="p">,</span> <span class="n">cmdlineUserConfigFile</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__getUserPathsFromCmdline</span><span class="p">(</span>
+            <span class="n">cmdlineArgumentsProcessor</span><span class="p">,</span> <span class="n">appEnvironment</span><span class="p">)</span>
+
+        <span class="c1"># create IAppConfig which will be registered to _interfaceAccessor</span>
+        <span class="n">appConfig</span> <span class="o">=</span> <span class="n">_AppConfig</span><span class="p">()</span>
+
+        <span class="n">cls</span><span class="o">.</span><span class="n">__prePopulateWithDefaults</span><span class="p">(</span><span class="n">appConfig</span><span class="p">)</span>
+
+        <span class="c1"># populate appConfig with config. file options</span>
+        <span class="n">configFileProcessor</span> <span class="o">=</span> <span class="n">_ConfigFileProcessor</span><span class="p">(</span>
+            <span class="n">appEnvironment</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__FACTORY_USER_CONFIG_DIR</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">usrDir</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">usrDir</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__CONFIG_FILE_NAME</span><span class="p">),</span>
+            <span class="n">cmdlineUserConfigDir</span><span class="p">,</span> <span class="n">cmdlineUserConfigFile</span><span class="p">)</span>
+        <span class="n">configFileProcessor</span><span class="o">.</span><span class="n">populateConfiguration</span><span class="p">(</span><span class="n">appConfig</span><span class="p">)</span>
+
+        <span class="c1"># populate appConfig with command line options</span>
+        <span class="n">cmdlineArgumentsProcessor</span><span class="o">.</span><span class="n">populateConfiguration</span><span class="p">(</span><span class="n">appConfig</span><span class="p">)</span>
+
+        <span class="n">cls</span><span class="o">.</span><span class="n">__postPopulateWithDefaults</span><span class="p">(</span><span class="n">appConfig</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">appConfig</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__getUserPathsFromCmdline</span><span class="p">(</span><span class="n">cmdlineArgumentsProcessor</span><span class="p">,</span> <span class="n">appEnvironment</span><span class="p">):</span>
+
+        <span class="c1"># create temporary IAppConfig and populate it with command line options</span>
+        <span class="n">cmdlineAppConfig</span> <span class="o">=</span> <span class="n">_AppConfig</span><span class="p">()</span>
+        <span class="n">cmdlineArgumentsProcessor</span><span class="o">.</span><span class="n">populateConfiguration</span><span class="p">(</span><span class="n">cmdlineAppConfig</span><span class="p">)</span>
+
+        <span class="c1"># determine and create user config directory if it does not exists</span>
+        <span class="n">cmdlineUserConfigDir</span> <span class="o">=</span> <span class="n">cmdlineAppConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">]</span>
+
+        <span class="c1"># get user config file passed as an command-line option, if any and show error if it does not exists</span>
+        <span class="n">cmdlineUserConfigFile</span> <span class="o">=</span> <span class="n">cmdlineAppConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_FILE</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cmdlineUserConfigFile</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">cmdlineUserConfigFile</span><span class="p">):</span>
+                <span class="n">_Utils</span><span class="o">.</span><span class="n">printError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Configuration file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> does not exists.&quot;</span><span class="p">,</span>
+                                             <span class="n">cmdlineUserConfigFile</span><span class="p">),</span> <span class="n">appEnvironment</span><span class="o">.</span><span class="n">executableName</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cmdlineUserConfigDir</span><span class="p">,</span> <span class="n">cmdlineUserConfigFile</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__prePopulateWithDefaults</span><span class="p">(</span><span class="n">configuration</span><span class="p">):</span>
+        <span class="n">configuration</span><span class="o">.</span><span class="n">_addOrReplaceOption</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">),</span> <span class="n">OptionsUtils</span><span class="o">.</span><span class="n">archiverTypeToStr</span><span class="p">(</span><span class="n">ArchiverTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">))</span>
+
+        <span class="n">configuration</span><span class="o">.</span><span class="n">_addOrReplaceOption</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">DEST_DIR</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span><span class="p">)</span>
+
+        <span class="n">configuration</span><span class="o">.</span><span class="n">_addOrReplaceOption</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_LEVEL</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__postPopulateWithDefaults</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">__addOptionIfNone</span><span class="p">(</span><span class="n">configuration</span><span class="p">,</span> <span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__FACTORY_USER_CONFIG_DIR</span><span class="p">)</span>
+
+        <span class="n">cls</span><span class="o">.</span><span class="n">__addOptionIfNone</span><span class="p">(</span>
+            <span class="n">configuration</span><span class="p">,</span> <span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_FILE</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">],</span> <span class="n">cls</span><span class="o">.</span><span class="n">__CONFIG_FILE_NAME</span><span class="p">))</span>
+
+        <span class="n">cls</span><span class="o">.</span><span class="n">__addOptionIfNone</span><span class="p">(</span>
+            <span class="n">configuration</span><span class="p">,</span> <span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">],</span> <span class="s2">&quot;archive_specs&quot;</span><span class="p">))</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__addOptionIfNone</span><span class="p">(</span><span class="n">configuration</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">configuration</span><span class="o">.</span><span class="n">getRawValue</span><span class="p">(</span><span class="n">option</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">configuration</span><span class="o">.</span><span class="n">_addOrReplaceOption</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__createUserConfigDirectory</span><span class="p">(</span><span class="n">configuration</span><span class="p">):</span>
+        <span class="n">userConfigDir</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">userConfigDir</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">]:</span>
+                    <span class="n">_Utils</span><span class="o">.</span><span class="n">printWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="s2">&quot;User configuration directory does not exists. Creating </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">userConfigDir</span><span class="p">))</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">userConfigDir</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">_Utils</span><span class="o">.</span><span class="n">printError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="s2">&quot;Unable to create user configuration directory: </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">. The reason is: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">userConfigDir</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">strerror</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__createArchiveSpecsDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">userDirectoryCreated</span><span class="p">):</span>
+        <span class="n">userConfigDir</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">]</span>
+        <span class="n">archiveSpecsDirectory</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">archiveSpecsDirectory</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+
+                <span class="c1"># show warning only if we are not quiet and if the user configuration directory was not just created;</span>
+                <span class="c1"># or in case it was just created the archive specifications directory is not its subdirectory</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">]</span> <span class="ow">and</span> \
+                   <span class="p">(</span><span class="ow">not</span> <span class="n">userDirectoryCreated</span> <span class="ow">or</span>
+                    <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">commonprefix</span><span class="p">((</span><span class="n">userConfigDir</span><span class="p">,</span> <span class="n">archiveSpecsDirectory</span><span class="p">))</span> <span class="o">==</span> <span class="n">userConfigDir</span><span class="p">):</span>
+
+                    <span class="n">_Utils</span><span class="o">.</span><span class="n">printWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="s2">&quot;Archive specifications directory does not exists. Creating </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+                            <span class="n">archiveSpecsDirectory</span><span class="p">))</span>
+
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">archiveSpecsDirectory</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">_Utils</span><span class="o">.</span><span class="n">printError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="s2">&quot;Unable to create archive specifications directory: </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">. The reason is: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">archiveSpecsDirectory</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">strerror</span><span class="p">))</span></div>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

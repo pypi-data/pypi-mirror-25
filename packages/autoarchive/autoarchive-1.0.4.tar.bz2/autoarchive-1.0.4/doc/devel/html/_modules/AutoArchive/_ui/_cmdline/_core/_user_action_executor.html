@@ -1,0 +1,614 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._ui._cmdline._core._user_action_executor &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._ui._cmdline._core._user_action_executor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _user_action_executor.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2012 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_UserActionExecutor` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_UserActionExecutor&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">date</span>
+
+<span class="kn">from</span> <span class="nn">...._utils</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">...._py_additions</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">...._mainf</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">...._configuration</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">...._archiving</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_UserActionExecutor"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core._user_action_executor._UserActionExecutor">[docs]</a><span class="k">class</span> <span class="nc">_UserActionExecutor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Takes care of execution of a user action specified on the command line.</span>
+
+<span class="sd">    :param interfaceAccessor: An :class:`.IInterfaceAccessor` instance.</span>
+<span class="sd">    :type interfaceAccessor: :class:`.IInterfaceAccessor`&quot;&quot;&quot;</span>
+
+    <span class="c1">#: Enumerates statuses how a backup operation can finish.</span>
+    <span class="n">__ActionResults</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+
+        <span class="c1">#: Backup operation finished successfully.</span>
+        <span class="s2">&quot;Successful&quot;</span><span class="p">,</span>
+
+        <span class="c1">#: Backup operation finished successfully with some issues (warnings).</span>
+        <span class="s2">&quot;Issues&quot;</span><span class="p">,</span>
+
+        <span class="c1">#: Backup operation failed.</span>
+        <span class="s2">&quot;Failed&quot;</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interfaceAccessor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span> <span class="o">=</span> <span class="n">interfaceAccessor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IAppConfig</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IComponentUi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IArchiving</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__action</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__selectedArchiveSpecs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Successful</span>
+
+        <span class="n">mainfContext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IMainfContext</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span> <span class="o">=</span> <span class="n">mainfContext</span><span class="o">.</span><span class="n">appEnvironment</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getUserAction</span><span class="p">()</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the user action.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__action</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">processedArchSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets currently processed :term:`archive specification file`.</span>
+
+<span class="sd">        .. note:: The returned value can be either the archive specification file name or path to it.</span>
+
+<span class="sd">        :rtype archSpec: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span>
+
+
+
+<div class="viewcode-block" id="_UserActionExecutor.execute"><a class="viewcode-back" href="../../../../../api/ui.cmdline.core.html#AutoArchive._ui._cmdline._core._user_action_executor._UserActionExecutor.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Executes the user action.</span>
+
+<span class="sd">        :return: ``True`` if the action execution was successful; ``False`` otherwise.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__validateUserAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__setSelectedArchiveSpecs</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">CREATE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__executeCreateAction</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">LIST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__executeListAction</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">PURGE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__executePurgeAction</span><span class="p">()</span></div>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="k">def</span> <span class="nf">__getUserAction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">optparseValues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">options</span>
+        <span class="k">for</span> <span class="n">optParseOption</span> <span class="ow">in</span> <span class="n">optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">optParseOption</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">CmdlineCommandsUtils</span><span class="o">.</span><span class="n">isExistingCommand</span><span class="p">(</span><span class="n">optParseOption</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">optParseOption</span>
+        <span class="k">return</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">CREATE</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__validateUserAction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">CREATE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">]:</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="s2">&quot;No archive specification given. Please pass the name or path to an &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;archive specification file as the program&#39;s argument; or use option &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;--all if you want to process all configured archive specifications.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">PURGE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">]:</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="s2">&quot;No archive name given. Please pass the name of an archive as the &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;program&#39;s argument or use option --all if you want to purge all &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;orphaned archive data.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+
+    <span class="c1"># {{{ create action</span>
+
+    <span class="k">def</span> <span class="nf">__executeCreateAction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Successful</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">messageShown</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onMessageShown</span>
+
+        <span class="k">for</span> <span class="n">specName</span><span class="p">,</span> <span class="n">specFile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__selectedArchiveSpecs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="n">specName</span> <span class="ow">or</span> <span class="n">specFile</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Processing </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">...&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span><span class="p">))</span>
+
+            <span class="c1"># create the archive</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span><span class="o">.</span><span class="n">makeBackup</span><span class="p">(</span><span class="n">specFile</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">messageShown</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onMessageShown</span>
+
+        <span class="c1"># print results</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Successful</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="s2">&quot;Backup creation completed successfully.&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Issues</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="s2">&quot;Backup creation completed successfully. One or more warnings were &quot;</span> <span class="o">+</span>
+                                               <span class="s2">&quot;shown. Check program&#39;s output for details.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="s2">&quot;Backup creation for one or more archives finished with error(s)! &quot;</span> <span class="o">+</span>
+                                               <span class="s2">&quot;Check program&#39;s output for details.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Successful</span>
+
+    <span class="c1"># }}} create action</span>
+
+
+
+    <span class="c1"># {{{ list action</span>
+
+    <span class="k">def</span> <span class="nf">__executeListAction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Successful</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">messageShown</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onMessageShown</span>
+
+        <span class="n">orphanedArchives</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getOrphanedArchives</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">archiveSpecInfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__selectedArchiveSpecs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="n">archiveSpecInfo</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="n">archiveSpecInfo</span><span class="o">.</span><span class="n">path</span>
+
+            <span class="c1"># if the archive is orphaned do not even try to get information about it because it most certainly will</span>
+            <span class="c1"># fail and an error will be shown which is undesirable</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="ow">in</span> <span class="n">orphanedArchives</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">archiveInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span><span class="o">.</span><span class="n">getArchiveInfo</span><span class="p">(</span><span class="n">archiveSpecInfo</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">archiveInfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Failed</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__showVerboseArchiveInfo</span><span class="p">(</span><span class="n">archiveInfo</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__showStandardArchiveInfo</span><span class="p">(</span><span class="n">archiveInfo</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">selectedArchiveSpecsNames</span> <span class="o">=</span> <span class="p">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__selectedArchiveSpecs</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">orphanedArchiveName</span> <span class="ow">in</span> <span class="n">orphanedArchives</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="n">orphanedArchiveName</span>
+
+            <span class="c1"># if user passed some arguments and option ALL is not enabled then we will going to list only those</span>
+            <span class="c1"># orphaned archives which were specified (as arguments)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">])</span> <span class="ow">and</span> \
+               <span class="p">(</span><span class="n">orphanedArchiveName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">selectedArchiveSpecsNames</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">archiveInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span><span class="o">.</span><span class="n">getStoredArchiveInfo</span><span class="p">(</span><span class="n">orphanedArchiveName</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__showVerboseArchiveInfo</span><span class="p">(</span><span class="n">archiveInfo</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__showStandardArchiveInfo</span><span class="p">(</span><span class="n">archiveInfo</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">messageShown</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onMessageShown</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Successful</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__showStandardArchiveInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveInfo</span><span class="p">,</span> <span class="n">orphaned</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.cmdline_ui_component</span> <span class="k">import</span> <span class="n">CmdlineUiComponent</span>
+
+        <span class="n">termWidth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getTermWidth</span><span class="p">()</span>
+        <span class="n">levels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__formatLevelsString</span><span class="p">(</span><span class="n">archiveInfo</span><span class="p">)</span>
+        <span class="n">usableWidth</span> <span class="o">=</span> <span class="n">termWidth</span> <span class="o">-</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">))</span>
+        <span class="n">pathWidth</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">usableWidth</span> <span class="o">*</span> <span class="mf">0.4</span><span class="p">)</span>
+        <span class="n">nameWidth</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">usableWidth</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">)</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;{name:&lt;</span><span class="si">{nameWidth}</span><span class="s2">} {path:&lt;</span><span class="si">{pathWidth}</span><span class="s2">} {destDir:&lt;</span><span class="si">{pathWidth}</span><span class="s2">} </span><span class="si">{levels}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="n">CmdlineUiComponent</span><span class="o">.</span><span class="n">_shortenString</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">nameWidth</span><span class="p">),</span> <span class="n">orphaned</span><span class="p">),</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">CmdlineUiComponent</span><span class="o">.</span><span class="n">_shortenString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__question</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="n">pathWidth</span><span class="p">),</span>
+            <span class="n">destDir</span> <span class="o">=</span> <span class="n">CmdlineUiComponent</span><span class="o">.</span><span class="n">_shortenString</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">destDir</span><span class="p">,</span> <span class="n">pathWidth</span><span class="p">),</span>
+            <span class="n">levels</span> <span class="o">=</span> <span class="n">levels</span><span class="p">,</span>
+            <span class="n">nameWidth</span> <span class="o">=</span> <span class="n">nameWidth</span><span class="p">,</span>
+            <span class="n">pathWidth</span> <span class="o">=</span> <span class="n">pathWidth</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">presentLine</span><span class="p">(</span><span class="n">archiveInfoMsg</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__showVerboseArchiveInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveInfo</span><span class="p">,</span> <span class="n">orphaned</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Name: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">orphaned</span><span class="p">))</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Root: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__question</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Archiver type: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">OptionsUtils</span><span class="o">.</span><span class="n">archiverTypeToStr</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">archiverType</span><span class="p">))</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Destination directory: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">destDir</span><span class="p">)</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Current backup level/next/max.: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__formatLevelsString</span><span class="p">(</span><span class="n">archiveInfo</span><span class="p">))</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;Target backup level for non-full restart: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__question</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">restartLevel</span><span class="p">,</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span>
+                           <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">))</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;Upcoming restart reason: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__question</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__reasonToStr</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">restartReason</span><span class="p">),</span>
+                                           <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span>
+                           <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">))</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Restart count/max.: </span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">restartCount</span><span class="p">),</span>
+                                                    <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">),</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">fullRestartAfterCount</span><span class="p">),</span>
+                                                    <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">))</span>
+        <span class="n">age</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">lastRestart</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="k">if</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">lastRestart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Days since last restart/max.: </span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">age</span><span class="p">),</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span>
+                                                                      <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">),</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">restartAfterAge</span><span class="p">),</span>
+                                                    <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">))</span>
+        <span class="n">age</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">lastFullRestart</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="k">if</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">lastFullRestart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">archiveInfoMsg</span> <span class="o">+=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Days since last full restart/max.: </span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">age</span><span class="p">),</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span>
+                                                                      <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">),</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">fullRestartAfterAge</span><span class="p">),</span>
+                                                    <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="n">archiveInfoMsg</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__formatLevelsString</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveInfo</span><span class="p">):</span>
+        <span class="n">levels</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">backupLevel</span><span class="p">),</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__question</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">nextBackupLevel</span><span class="p">,</span>
+                                           <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">backupLevel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span>
+                           <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">archiveInfo</span><span class="o">.</span><span class="n">restartAfterLevel</span><span class="p">),</span> <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">or</span>
+                                                                       <span class="ow">not</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">restarting</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">levels</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__bracket</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">condition</span><span class="p">):</span>
+        <span class="n">leftBracket</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">rightBracket</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">condition</span> <span class="ow">and</span> <span class="n">token</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">leftBracket</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span>
+            <span class="n">rightBracket</span> <span class="o">=</span> <span class="s2">&quot;]&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{leftBracket}{token}{rightBracket}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">leftBracket</span> <span class="o">=</span> <span class="n">leftBracket</span><span class="p">,</span> <span class="n">token</span> <span class="o">=</span> <span class="n">token</span><span class="p">,</span>
+                          <span class="n">rightBracket</span> <span class="o">=</span> <span class="n">rightBracket</span><span class="p">)</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__dash</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;-&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__question</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">condition</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">condition</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;?&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">__dash</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__reasonToStr</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">reason</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">reason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span><span class="p">:</span>
+            <span class="n">reasonStr</span> <span class="o">=</span> <span class="s2">&quot;No restart scheduled for the next backup.&quot;</span>
+        <span class="k">elif</span> <span class="n">reason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">RestartCountLimitReached</span><span class="p">:</span>
+            <span class="n">reasonStr</span> <span class="o">=</span> <span class="s2">&quot;Maximal restart count reached.&quot;</span>
+        <span class="k">elif</span> <span class="n">reason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">LastFullRestartAgeLimitReached</span><span class="p">:</span>
+            <span class="n">reasonStr</span> <span class="o">=</span> <span class="s2">&quot;Maximal age without full restart reached.&quot;</span>
+        <span class="k">elif</span> <span class="n">reason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">BackupLevelLimitReached</span><span class="p">:</span>
+            <span class="n">reasonStr</span> <span class="o">=</span> <span class="s2">&quot;Maximal backup level reached.&quot;</span>
+        <span class="k">elif</span> <span class="n">reason</span> <span class="ow">is</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">LastRestartAgeLimitReached</span><span class="p">:</span>
+            <span class="n">reasonStr</span> <span class="o">=</span> <span class="s2">&quot;Maximal age without a restart reached.&quot;</span>
+        <span class="k">elif</span> <span class="n">reason</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reasonStr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reasonStr</span> <span class="o">=</span> <span class="s2">&quot;Unknown reason.&quot;</span>
+        <span class="k">return</span> <span class="n">reasonStr</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__getTermWidth</span><span class="p">():</span>
+
+        <span class="k">def</span> <span class="nf">getWinWidth</span><span class="p">(</span><span class="n">fd</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">struct</span><span class="o">,</span> <span class="nn">fcntl</span><span class="o">,</span> <span class="nn">termios</span>
+                <span class="n">expectStruct</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;hh&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;hh&quot;</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">termios</span><span class="o">.</span><span class="n">TIOCGWINSZ</span><span class="p">,</span> <span class="n">expectStruct</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">width</span>
+
+
+
+        <span class="c1"># try get terminal width from standard file descriptors using ioctl</span>
+        <span class="k">for</span> <span class="n">stdFd</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">getWinWidth</span><span class="p">(</span><span class="n">stdFd</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">width</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">width</span>
+
+        <span class="c1"># try get terminal width from controlling terminal file descriptor using ioctl</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">ctermid</span><span class="p">())</span> <span class="k">as</span> <span class="n">termFd</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">getWinWidth</span><span class="p">(</span><span class="n">termFd</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># try environment variable</span>
+        <span class="k">if</span> <span class="s2">&quot;COLUMNS&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;COLUMNS&quot;</span><span class="p">]</span>
+
+        <span class="c1"># try call external program stty</span>
+        <span class="n">status</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">getstatusoutput</span><span class="p">(</span><span class="s2">&quot;stty size&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">splitOutput</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splitOutput</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">splitOutput</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="mi">80</span>
+
+    <span class="c1"># }}} list action</span>
+
+
+
+    <span class="c1"># {{{ purge action</span>
+
+    <span class="k">def</span> <span class="nf">__executePurgeAction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">reportPurgedArchive</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showVerbose</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Purging </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span><span class="p">))</span>
+
+
+
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">orphanedArchives</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getOrphanedArchives</span><span class="p">())</span>
+        <span class="n">knownValidArchiveNames</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getKnownValidArchiveNames</span><span class="p">())</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">argument</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveNameArguments</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="n">argument</span>
+                <span class="k">if</span> <span class="n">argument</span> <span class="ow">in</span> <span class="n">orphanedArchives</span><span class="p">:</span>
+                    <span class="n">reportPurgedArchive</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span><span class="o">.</span><span class="n">purgeStoredArchiveData</span><span class="p">(</span><span class="n">argument</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">argument</span> <span class="ow">in</span> <span class="n">knownValidArchiveNames</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="s2">&quot;Archive is not orphaned. Not purging.&quot;</span><span class="p">)</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showInfo</span><span class="p">(</span><span class="s2">&quot;Nothing to purge.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">orphanedArchive</span> <span class="ow">in</span> <span class="n">orphanedArchives</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="n">orphanedArchive</span>
+
+                    <span class="c1"># archives specified via name arguments were purged in the loop above so exclude them here</span>
+                    <span class="k">if</span> <span class="n">orphanedArchive</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveNameArguments</span><span class="p">():</span>
+
+                        <span class="n">reportPurgedArchive</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span><span class="o">.</span><span class="n">purgeStoredArchiveData</span><span class="p">(</span><span class="n">orphanedArchive</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">__processedArchSpec</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Purge failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">strerror</span><span class="p">))</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="c1"># }}} purge action</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__onMessageShown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messageKind</span><span class="p">):</span>
+        <span class="s2">&quot;Sets the backup status.&quot;</span>
+
+        <span class="c1"># SMELL: Split status evaluation and message presentation.</span>
+        <span class="k">if</span> <span class="n">messageKind</span> <span class="o">==</span> <span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Warning</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Failed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Issues</span>
+        <span class="k">elif</span> <span class="n">messageKind</span> <span class="o">==</span> <span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__actionResult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ActionResults</span><span class="o">.</span><span class="n">Failed</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__setSelectedArchiveSpecs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="nd">@_Utils</span><span class="o">.</span><span class="n">uniq</span>
+        <span class="k">def</span> <span class="nf">getSelectedArchiveSpecs</span><span class="p">():</span>
+            <span class="n">archiveSpecsDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">archiveName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveNameArguments</span><span class="p">():</span>
+                <span class="k">yield</span> <span class="n">ArchiveSpecInfo</span><span class="p">(</span><span class="n">archiveName</span><span class="p">,</span>
+                                      <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">archiveSpecsDir</span><span class="p">,</span> <span class="n">archiveName</span> <span class="o">+</span> <span class="n">ConfigConstants</span><span class="o">.</span><span class="n">ARCHIVE_SPEC_EXT</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">archiveSpec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveSpecPathArguments</span><span class="p">():</span>
+                <span class="k">yield</span> <span class="n">ArchiveSpecInfo</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">archiveSpec</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">]:</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">empty</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">for</span> <span class="n">archiveSpecInfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="o">.</span><span class="n">getArchiveSpecs</span><span class="p">():</span>
+                        <span class="n">empty</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">yield</span> <span class="n">archiveSpecInfo</span>
+                    <span class="k">if</span> <span class="n">empty</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="s2">&quot;No configured archive specification files were found.&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="s2">&quot;An error occurred while obtaining the list of all archive specification files: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="p">))</span>
+
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__selectedArchiveSpecs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">getSelectedArchiveSpecs</span><span class="p">())</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getArchiveNameArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">arg</span>
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">arg</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ConfigConstants</span><span class="o">.</span><span class="n">ARCHIVE_SPEC_EXT</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getArchiveSpecPathArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">arg</span>
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">arg</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">ConfigConstants</span><span class="o">.</span><span class="n">ARCHIVE_SPEC_EXT</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getOrphanedArchives</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">knownValidArchiveNames</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getKnownValidArchiveNames</span><span class="p">())</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">name</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span><span class="o">.</span><span class="n">getStoredArchiveNames</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">knownValidArchiveNames</span><span class="p">)</span>
+
+
+
+    <span class="nd">@_Utils</span><span class="o">.</span><span class="n">uniq</span>
+    <span class="k">def</span> <span class="nf">__getKnownValidArchiveNames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">selectedArchiveSpecFiles</span> <span class="o">=</span> <span class="p">(</span><span class="n">archSpecInf</span><span class="o">.</span><span class="n">path</span>
+                                    <span class="k">for</span> <span class="n">archSpecInf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__selectedArchiveSpecs</span><span class="p">)</span>
+        <span class="n">configuredArchiveSpecsFiles</span> <span class="o">=</span> <span class="p">(</span><span class="n">archSpecInf</span><span class="o">.</span><span class="n">path</span>
+                                       <span class="k">for</span> <span class="n">archSpecInf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appConfig</span><span class="o">.</span><span class="n">getArchiveSpecs</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiving</span><span class="o">.</span><span class="n">filterValidSpecFiles</span><span class="p">(</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">selectedArchiveSpecFiles</span><span class="p">,</span> <span class="n">configuredArchiveSpecsFiles</span><span class="p">))</span></div>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

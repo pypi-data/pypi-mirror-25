@@ -1,0 +1,407 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._archiving._core._backup_information_provider &#8212; AutoArchive Developer Manual (ver. 1.0.4)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._archiving._core._backup_information_provider</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _backup_information_provider.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2012 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_BackupInformationProvider` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_BackupInformationProvider&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">..._utils</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._services.archiver</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._mainf</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..._configuration</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._archiving_constants</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">._archive_spec</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_BackupInformationProvider"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._backup_information_provider._BackupInformationProvider">[docs]</a><span class="k">class</span> <span class="nc">_BackupInformationProvider</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Provides information about backups.</span>
+
+<span class="sd">    :param archiveSpec: Archive specification of the backup that this instance will provide information about.</span>
+<span class="sd">    :type archiveSpec: :class:`._ArchiveSpec`</span>
+<span class="sd">    :param interfaceAccessor: An :class:`.IInterfaceAccessor` instance.</span>
+<span class="sd">    :type interfaceAccessor: :class:`.IInterfaceAccessor`</span>
+
+<span class="sd">    :raise RuntimeError: If the archiver service could not be created.</span>
+<span class="sd">    :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveSpec</span><span class="p">,</span> <span class="n">interfaceAccessor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span> <span class="o">=</span> <span class="n">archiveSpec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__nextBackupLevel</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__restartReason</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__restartLevel</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span> <span class="o">=</span> <span class="n">interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IComponentUi</span><span class="p">)</span>
+
+        <span class="c1"># SMELL: Similar initialization is done also in _ArchiverManipulator.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span> <span class="o">=</span> <span class="n">interfaceAccessor</span><span class="o">.</span><span class="n">getComponentInterface</span><span class="p">(</span><span class="n">IStorage</span><span class="p">)</span><span class="o">.</span><span class="n">createStoragePortion</span><span class="p">(</span>
+            <span class="n">realm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">_ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span> <span class="o">=</span> <span class="n">ArchiverServiceCreator</span><span class="o">.</span><span class="n">getOrCreateArchiverService</span><span class="p">(</span>
+            <span class="n">_ArchiverMaps</span><span class="o">.</span><span class="n">ARCHIVER_TYPE_TO_SERVICE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">]],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">Incremental</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">getSupportedFeatures</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiverService</span><span class="o">.</span><span class="n">getMaxBackupLevel</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">_ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__restartLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getRestartLevel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__nextBackupLevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__restartReason</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getNextBackupLevelAndRestartReason</span><span class="p">()</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">archiveSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the archive specification that corresponds to the backup about which this instance provides information.</span>
+
+<span class="sd">        :rtype: :class:`._ArchiveSpec`&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">currentBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the current backup level or ``None``.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nextBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the backup level that would be created if the backup creation was triggered.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__nextBackupLevel</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restartReason</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the reason for upcoming backup level restart.</span>
+
+<span class="sd">        :rtype: :attr:`BackupLevelRestartReasons`&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__restartReason</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">restartLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a :term:`backup level` to which a next restart would be done.</span>
+
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__restartLevel</span>
+
+
+
+<div class="viewcode-block" id="_BackupInformationProvider.getLastRestartDate"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._backup_information_provider._BackupInformationProvider.getLastRestartDate">[docs]</a>    <span class="k">def</span> <span class="nf">getLastRestartDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the last restart date from the persistent storage and returns it.</span>
+
+<span class="sd">        :return: Date of the last backup level restart.</span>
+<span class="sd">        :rtype: ``datetime.date``&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">getRestartDate</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_RESTART</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_BackupInformationProvider.getLastFullRestartDate"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._backup_information_provider._BackupInformationProvider.getLastFullRestartDate">[docs]</a>    <span class="k">def</span> <span class="nf">getLastFullRestartDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the last full restart date from the persistent storage and returns it.</span>
+
+<span class="sd">        :return: Date of the last full backup level restart.</span>
+<span class="sd">        :rtype: ``datetime.date``&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">getRestartDate</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_FULL_RESTART</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_BackupInformationProvider.getRestartDate"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._backup_information_provider._BackupInformationProvider.getRestartDate">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getRestartDate</span><span class="p">(</span><span class="n">storageVariable</span><span class="p">,</span> <span class="n">storagePortion</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the date of a backup level restart from storage and returns it.</span>
+
+<span class="sd">        :param storageVariable: Variable that holds the restart date in the persistent storage.</span>
+<span class="sd">        :type storageVariable: ``str``</span>
+<span class="sd">        :param storagePortion: The persistent storage where the variable is located.</span>
+<span class="sd">        :type storagePortion: :class:`.IStoragePortion`</span>
+<span class="sd">        :return: A backup level restart date.</span>
+<span class="sd">        :rtype: ``datetime.date``&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">storageVariable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">storagePortion</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="n">storageVariable</span><span class="p">),</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="_BackupInformationProvider.getStoredArchiveNames"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._backup_information_provider._BackupInformationProvider.getStoredArchiveNames">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getStoredArchiveNames</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">userConfigDir</span><span class="p">,</span> <span class="n">storage</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns iterable of archive names which has some data stored in a persistent storage.</span>
+
+<span class="sd">        Persistent storages from which archive names are retrieved are specific to the concrete archiver service.</span>
+<span class="sd">        A typical storage used by archivers is the application storage (:class:`.IStorage`).</span>
+
+<span class="sd">        :param userConfigDir: Path to the user configuration directory.</span>
+<span class="sd">        :type userConfigDir: ``str``</span>
+<span class="sd">        :param storage: The application storage.</span>
+<span class="sd">        :type storage: :class:`.IStorage`</span>
+
+<span class="sd">        :return: Set of archive names.</span>
+<span class="sd">        :rtype: ``set&lt;str&gt;``</span>
+
+<span class="sd">        :raise RuntimeError: If the archiver service could not be created.&quot;&quot;&quot;</span>
+
+        <span class="n">archiveNames</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">serviceProvider</span> <span class="ow">in</span> <span class="n">ArchiverServiceProviders</span><span class="p">:</span>
+            <span class="n">archiverService</span> <span class="o">=</span> <span class="n">ArchiverServiceCreator</span><span class="o">.</span><span class="n">getOrCreateArchiverService</span><span class="p">(</span><span class="n">serviceProvider</span><span class="p">,</span> <span class="n">userConfigDir</span><span class="p">)</span>
+            <span class="n">archiveNames</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">archiverService</span><span class="o">.</span><span class="n">getStoredBackupIds</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">storage</span><span class="o">.</span><span class="n">getRealms</span><span class="p">(),</span> <span class="n">archiveNames</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="_BackupInformationProvider.getBackupLevelForBackup"><a class="viewcode-back" href="../../../../api/archiving.core.html#AutoArchive._archiving._core._backup_information_provider._BackupInformationProvider.getBackupLevelForBackup">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getBackupLevelForBackup</span><span class="p">(</span><span class="n">archiveName</span><span class="p">,</span> <span class="n">userConfigDir</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns current backup level for the passed ``archiveName``.</span>
+
+<span class="sd">        :param archiveName: Name of the archive for which the backup level shall be returned.</span>
+<span class="sd">        :type archiveName: ``str``</span>
+<span class="sd">        :param userConfigDir: Path to the user configuration directory.</span>
+<span class="sd">        :type userConfigDir: ``str``</span>
+
+<span class="sd">        :return: Current backup level for ``archiveName`` or None</span>
+<span class="sd">        :rtype: ``int``</span>
+
+<span class="sd">        :raise RuntimeError: If the archiver service could not be created.</span>
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+        <span class="n">backupLevel</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">serviceProvider</span> <span class="ow">in</span> <span class="n">ArchiverServiceProviders</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">Incremental</span> <span class="ow">in</span> <span class="n">ArchiverServiceCreator</span><span class="o">.</span><span class="n">getSupportedFeatures</span><span class="p">(</span><span class="n">serviceProvider</span><span class="p">):</span>
+                <span class="n">archiverService</span> <span class="o">=</span> <span class="n">ArchiverServiceCreator</span><span class="o">.</span><span class="n">getOrCreateArchiverService</span><span class="p">(</span><span class="n">serviceProvider</span><span class="p">,</span> <span class="n">userConfigDir</span><span class="p">)</span>
+                <span class="n">backupLevel</span> <span class="o">=</span> <span class="n">archiverService</span><span class="o">.</span><span class="n">getMaxBackupLevel</span><span class="p">(</span><span class="n">archiveName</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">backupLevel</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">backupLevel</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">backupLevel</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__getNextBackupLevelAndRestartReason</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">configuredBackupLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">LEVEL</span><span class="p">]</span>
+        <span class="n">nextBackupLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span> \
+            <span class="k">if</span> <span class="p">(</span><span class="n">configuredBackupLevel</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">configuredBackupLevel</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">configuredBackupLevel</span>
+        <span class="n">restartReason</span> <span class="o">=</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTARTING</span><span class="p">]</span> <span class="ow">and</span> <span class="n">configuredBackupLevel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">nextBackupLevel</span><span class="p">,</span> <span class="n">restartReason</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__restartBackupLevel</span><span class="p">(</span><span class="n">nextBackupLevel</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">nextBackupLevel</span><span class="p">,</span> <span class="n">restartReason</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__restartBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nextLevel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restarts the passed ``nextLevel`` backup level for ``backupId`` if needed.</span>
+
+<span class="sd">        :param nextLevel: Next backup level if it would not be restarted.</span>
+<span class="sd">        :type nextLevel: ``int``</span>
+
+<span class="sd">        :return: Backup level after restart and the reason for the restart.</span>
+<span class="sd">        :rtype: ``tuple[int, BackupLevelRestartReasons]``&quot;&quot;&quot;</span>
+
+        <span class="c1"># full restart handling</span>
+        <span class="k">if</span> <span class="n">nextLevel</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">nextLevel</span><span class="p">,</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_COUNT</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="s2">&quot;Unable to read the restart count. Setting it to 0.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">))</span> <span class="o">&gt;=</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_COUNT</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">RestartCountLimitReached</span>
+
+        <span class="n">today</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_AGE</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_FULL_RESTART</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="s2">&quot;Unable to read the last full restart date. Setting it to today.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_FULL_RESTART</span><span class="p">,</span> <span class="n">today</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">today</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">getRestartDate</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_FULL_RESTART</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="p">))</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_AGE</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">LastFullRestartAgeLimitReached</span>
+
+        <span class="c1"># standard restart handling</span>
+        <span class="k">if</span> <span class="n">nextLevel</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">nextLevel</span><span class="p">,</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span>
+
+        <span class="k">if</span> <span class="n">nextLevel</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_LEVEL</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">restartLevel</span><span class="p">,</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">BackupLevelLimitReached</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_AGE</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_RESTART</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="s2">&quot;Unable to read the last restart date. Setting it to today.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_RESTART</span><span class="p">,</span> <span class="n">today</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">today</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">getRestartDate</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_RESTART</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="p">))</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_AGE</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">restartLevel</span><span class="p">,</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">LastRestartAgeLimitReached</span>
+
+        <span class="k">return</span> <span class="n">nextLevel</span><span class="p">,</span> <span class="n">BackupLevelRestartReasons</span><span class="o">.</span><span class="n">NoRestart</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getRestartLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the :term:`backup level` to which would the backup with ``backupId`` be restarted.</span>
+
+<span class="sd">        The restart backup level is determined based on the backup file size.  Full restart is not taken into</span>
+<span class="sd">        account; the returned value will always be &gt; 0.</span>
+
+<span class="sd">        :return: The restart-target backup level.</span>
+<span class="sd">        :rtype: ``int``&quot;&quot;&quot;</span>
+
+        <span class="n">maxRestartLevelSize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">MAX_RESTART_LEVEL_SIZE</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">maxRestartLevelSize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="c1"># if no backup was created yet</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">BACKUP_SIZE</span> <span class="o">+</span> <span class="s2">&quot;0&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="n">level0Size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveSizeOrSetToZero</span><span class="p">()</span>
+        <span class="n">restartLevel</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">level0Size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">while</span> <span class="p">(</span><span class="n">restartLevel</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maxBackupLevel</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> \
+                  <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveSizeOrSetToZero</span><span class="p">(</span><span class="n">restartLevel</span><span class="p">)</span> <span class="o">/</span> <span class="n">level0Size</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">&gt;</span> <span class="n">maxRestartLevelSize</span><span class="p">:</span>
+                <span class="n">restartLevel</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">restartLevel</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getArchiveSizeOrSetToZero</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">archiveSize</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">backupSizeVariable</span> <span class="o">=</span> <span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">BACKUP_SIZE</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">backupSizeVariable</span><span class="p">):</span>
+            <span class="n">archiveSize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="n">backupSizeVariable</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to obtain size of the level </span><span class="si">{}</span><span class="s2"> backup file.&quot;</span><span class="p">,</span> <span class="n">level</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__storagePortion</span><span class="o">.</span><span class="n">saveValue</span><span class="p">(</span><span class="n">backupSizeVariable</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">archiveSize</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.0.4)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>
