@@ -1,0 +1,93 @@
+{# Article edit page #}
+
+{% extends 'base/base.html' %}
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'wheatgrass_blog/css/forms.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'wheatgrass_blog/css/components/article.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'wheatgrass_blog/css/components/article-form.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'whteagrass_blog/third-party/css/dropzone.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'whteagrass_blog/third-party/css/dropzone-basic.min.css' %}" type="text/css" />
+{% endblock %}
+
+{% block misc %}
+    <script src="{% static 'whteagrass_blog/third-party/js/dropzone.min.js' %}"></script>
+    <script src="{% static 'whteagrass_blog/third-party/js/clipboard.min.js' %}"></script>
+    <script src="{% static 'wheatgrass_blog/js/components/article.js' %}"></script>
+    <script>
+        // Ask for confirmation before leaving the page.
+        window.onbeforeunload = function() {
+            return true;
+        };
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col col-md-9 col-sm-12">
+            <div class="card">
+                <h1>Edit Article</h1>
+                    <a href="{% url 'article' article.id %}" id="article-create-next" class="btn btn-success"><i class="fa fa-newspaper-o" aria-hidden="true"></i> Go to Article</a>
+                <hr />
+                <form id="article-edit-submit" onsubmit="articleEditSubmit();return false;"
+                    action="{% url 'api_article_edit' %}">
+
+                    <div class="inputs">{{ form|crispy }}</div>
+                    <input type="hidden" name="id" value="{{ article.id }}" />
+                    <input type="submit" value="Submit" class="btn btn-default" />
+                    <span class="form-submit-message" id="article-edit-submit-message"></span>
+
+                </form>
+            </div>
+        </div>
+        <div class="col col-md-3 col-sm-12">
+            <div class="card">
+                <form action="{% url 'api_article_file_upload' %}" class="dropzone" id="article-file-submit">
+                    <div class="fallback">
+                        <input name="image" type="file" />
+                    </div>
+                    <input type="hidden" name="article" value="{{ article.id }}" />
+                </form>
+                <span id="article-file-upload-message"></span>
+            </div>
+            <div class="card">
+                <h3>Associated Files</h3>
+                <div id="article-file-list">
+                    {% for file, filename, image in article_files %}
+                        <div class="media article-file-item" id="article-file-item-{{ file.id }}">
+                            <div class="input-group article-file-url">
+                                <input type="text" class="form-control" value="{{ filename }}" readonly />
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default btn-article-file-url" type="button" data-clipboard-text="{{ file.associated_file.url }}" title="Copy URL">
+                                        <i class="fa fa-clipboard" aria-hidden="true"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            <div class="media-left">
+                                {% if image %}
+                                    <img class="media-object" src="{{ file.associated_file.url }}" alt="Image Thumbnail" />
+                                {% else %}
+                                    <img class="media-object" src="{% static 'wheatgrass_blog/img/article-file-placeholder.png' %}" alt="Image Thumbnail Placeholder" />
+                                {% endif %}
+                            </div>
+                            <div class="media-body">
+                                <div id="article-file-options-{{ file.id }}" >
+                                    <button class="btn btn-danger btn-article-file-delete" onclick="articleFileDelete('{{ file.id }}', '{{ file.associated_file.url }}')">
+                                        <i class="fa fa-trash-o" aria-hidden="true"></i>
+                                    </button>
+                                    <a class="btn btn-primary btn-article-file-edit" href="{% url 'admin:article_articlefile_change' file.id %}" target="_blank">
+                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p id="article-file-empty">None.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
