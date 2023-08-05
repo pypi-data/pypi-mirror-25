@@ -1,0 +1,241 @@
+Metadata-Version: 1.1
+Name: vulnix
+Version: 1.3.0
+Summary: Scans a Nix store for derivations that are affected by vulnerabilities.
+Home-page: https://github.com/flyingcircusio/vulnix
+Author: Flying Circus Internet Operations GmbH
+Author-email: mail@flyingcircus.io
+License: BSD-3-Clause
+Description: Nix(OS) vulnerability scanner
+        =============================
+        
+        This is a utility that validates a Nix store for any packages that are
+        reachable from live paths and likely to be affected by vulnerabilities
+        listed in the NVD.
+        
+        It implements a CLI utility to inspect the current status and a
+        monitoring integration for Sensu.
+        
+        Example output:
+        
+        ::
+        
+            Security issues for sqlite, libxml2, ... (and 10 more)
+        
+            sqlite-2.9.3 (inprogress)
+                https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2016-2073
+                https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-8710
+        
+                See https://plan.flyingcircus.io/issues/18544
+        
+        
+            libxml2-2.9.3
+                https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-3717
+        
+        
+        System requirements
+        -------------------
+        
+        - Depends on common Nix tools like `nix-store`. These are expected to be in
+          $PATH.
+        - Depends on being able to interact with the Nix store database
+          (/nix/var/nix/db). This means that it must either run as the same user that
+          owns the Nix store database or `nix-daemon` must be active.
+        - It refuses to work without some locale environment settings. Try `export
+          LANG=C.UTF-8` if you see encoding errors.
+        
+        
+        Whitelist
+        =========
+        
+        The whitelist file uses a sub-set of the
+        `YAML <https://en.wikipedia.org/wiki/YAML>`__ language to define rules
+        which matches shall be ignored or in other words are declared to be
+        trusted or in progress, hence the term whitelist. If the match is
+        **partial**, e.G. there is a package which is affected by more than one
+        vulnerability, but only one is whitelist, the match will still be
+        printed except for the declared exception.
+        
+        Syntax
+        ------
+        
+        Every rule starts with the ``-`` and a new-line, declaring a list
+        element.
+        
+        +--------------+--------------------+--------------------+
+        | Element      | Example value      | Description        |
+        +==============+====================+====================+
+        | cve          | cve: CVE-2015-2503 | Ignores all        |
+        |              |                    | matches which are  |
+        |              |                    | referred by the    |
+        |              |                    | CVE                |
+        +--------------+--------------------+--------------------+
+        | comment      | comment: microsoft | comments the rule  |
+        |              | access, accidently |                    |
+        |              | matching the       |                    |
+        |              | 'access'           |                    |
+        |              | derivation         |                    |
+        +--------------+--------------------+--------------------+
+        | name         | name: libxslt      | refers to the name |
+        |              |                    | attribute of a     |
+        |              |                    | package derivation |
+        +--------------+--------------------+--------------------+
+        | status       | status: inprogress | Marks the found    |
+        |              |                    | vulnerabilty as    |
+        |              |                    | being worked on.   |
+        |              |                    | "\*" will be added |
+        |              |                    | to the derivation  |
+        +--------------+--------------------+--------------------+
+        | version      | version: 2.0       | refers to the name |
+        |              |                    | attribute of a     |
+        |              |                    | package derivation |
+        +--------------+--------------------+--------------------+
+        | vendor       | microsoft          | refers to the      |
+        |              |                    | [NIST]             |
+        |              |                    | (https://nvd       |
+        |              |                    | .nist.gov/cp       |
+        |              |                    | e.cfm) term of the |
+        |              |                    | person or          |
+        |              |                    | organization which |
+        |              |                    | created the        |
+        |              |                    | software           |
+        +--------------+--------------------+--------------------+
+        | product      | access             | Like vendor it's a |
+        |              |                    | term coined by     |
+        |              |                    | NIST and is an     |
+        |              |                    | analogy to what    |
+        |              |                    | name means for Nix |
+        +--------------+--------------------+--------------------+
+        
+        Example
+        -------
+        
+        There is an `example`_ for a
+        working whitelist file as part of the unit tests.
+        
+        .. _example: https://raw.githubusercontent.com/flyingcircusio/vulnix/master/src/vulnix/default_whitelist.yaml
+        
+        
+        Hacking
+        =======
+        
+        To create a development environment, use a Python 3 virtualenv::
+        
+            pyvenv-3.5 .
+            bin/pip install -e .\[test]
+        
+        Run tests::
+        
+            bin/py.test
+        
+        
+        Changes
+        =======
+        
+        1.3.0 (2017-09-18)
+        ------------------
+        
+        - `.drv` files may be specified directly on the command line.
+        - Updated PyPI dependencies.
+        - Document system requirements (#12).
+        - Don't leave large files in /tmp around.
+        - Remove duplicate CVEs in output (#25).
+        - Fix bug with reporting less than 3 vulnerabilities (#28).
+        
+        
+        1.2.2 (2017-01-28)
+        ------------------
+        
+        - Packaging improvements: pin versions in setup.py, include NVDCVE test data in
+          sdist.
+        - Reduce NVDCVE fixture size. This cuts tests run time by more than 50%.
+        
+        
+        1.2.1 (2017-01-27)
+        ------------------
+        
+        - Skip `/nix/var/nix/gcroots/booted-system` during system check.
+        - Make output a bit easier to read by removing visual clutter.
+        
+        
+        1.2 (2016-12-22)
+        ----------------
+        
+        - Improve CPU and memory usage: refactored the way we fetch, parse, store and
+          process data. We now leverage ZODB as the storage for parsed data that is
+          efficient to look up.
+        
+          On our test systems this caused memory usage to drop from > 1GiB to ~70MiB
+          and a pure evaluation of existing data to around 7-10 seconds.
+        
+          This change requires a re-retrieval of all historic sources.
+        
+        - Improve unit test coverage with at least a smoke test for our new fetching
+          procedure.
+        
+        1.1.5 (2016-10-13)
+        ------------------
+        
+        - Keep a reverse index: product name -> vulnerabilities to speed up scan process.
+        - Mark 'in progress' vulnerabilities with an asterisk
+        - The '-w' switch accepts URLs, too
+        - vulnix no longer scans /var/nix/var/gcroots/booted-system
+        - only cached files are saved (archives are to be deleted)
+        - added travis build: runs periodically against nixpkgs/master and updates
+          requirements*.nix files in case of success
+        
+        
+        1.1.4 (2016-08-25)
+        ------------------
+        
+        - Add `src` to PYTHONPATH so that tests run also on older NixOS versions
+          (tested on 15.09).
+        - Correct URL, add metadata.
+        - Add nix to propagatedBuildInputs, as vulnix calls `nix-store` at runtime.
+        
+        
+        1.1.3 (2016-08-16)
+        ------------------
+        
+        - Pin the Python version to 3.4 (Nix only)
+        
+        
+        1.1.2 (2016-08-15)
+        ------------------
+        
+        - Add Nix expressions (Nix/NixOS) to MANIFEST.in
+        
+        
+        1.1.1 (2016-08-12)
+        ------------------
+        
+        - Add VERSION to MANIFEST.in
+        
+        
+        1.1 (2016-08-11)
+        ----------------
+        
+        - Scans the whole system (NixOS only), the current user environment, or a
+          project-specific path (e.g., ./result). #1
+        
+        - Allow to specify site-specific whitelists in addition to the builtin default
+          whitelist. #4
+        
+        - Fully repeatable install using default.nix. Thanks to Rok Garbas. #4
+        
+        - Cache pre-parsed NVD files for improved scanning speed. #2
+        
+        - Support multiple whitelists (repeat -w option). #3
+        
+        - Cache NVD files in `~/.cache/vulnix`. #7
+        
+        - Document whitelist file format. #10
+        
+        - Fix Nix build on macOS. #11
+        
+Keywords: security
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
