@@ -1,0 +1,54 @@
+Metadata-Version: 1.0
+Name: jtitor-basis
+Version: 0.1.0
+Summary: Framework for cross-platform scripts that run in stages. Privately listed since it's not quite done.
+Home-page: http://pypi.python.org/pypi/jtitor_basis/0.1.0/
+Author: jTitor
+Author-email: name@addr.ess
+License: MIT
+Description: # What is It?
+        Common code for initial setup scripts when something more advanced isn't available. Requires Python 2.7 or higher.
+        
+        # Arguments and Flags
+        Basis takes the following flags:
+        
+        * `--help`: Displays info on options.
+        * `--check-only`: Only checks if steps have been run on the system; the machine will not be changed in any way.
+        * `--verbose`: Displays verbose messages.
+        * `--debug`: Displays debug messages.
+        
+        # How to Use
+        Import with `from basis import Basis`; create a `Basis` instance, then call `run()` with a step executor method. The method should take one parameter, `step`, which you use to run individual steps through its `Step.perform()` method.
+        
+        `run()` returns an error code; 0 is success with all other values indicating a failure.
+        
+        ## Creating Steps
+        All steps should have the following fields and methods:
+        
+        * `Name`: A human-readable description of what the step does.
+        * `check(self, stepExecutor)`: A method that determines if the step needs to run. Can return the following codes:
+          * `StepResult.NotDone`: The step needs to be performed.
+          * `StepResult.AlreadyDone`: The step has already been performed on this machine.
+          * `StepResult.Unnecessary`: This machine doesn't need to perform the step (different OS, for example)
+          * `StepResult.WrongVersion`: The machine has an invalid version of the step's content.
+          * `StepResult.Fail`: An unspecified failure.
+          * `StepResult.Success`: An unspecified success.
+        * `run(self, stepExecutor)`: The method that runs the step. This can change the machine's state. Returns True if the step was successful and setup should continue, False otherwise.
+        
+        ## The Step Executor
+        The step executor has the following methods:
+        
+        * `perform(self, step)`: Checks if a step needs to be done, and if so performs the step.
+        * `shellCommand(self, commandName, command)`: Runs `command` in the shell, returning True if the command successfully executed and False otherwise. `commandName` is a human readable description of the command.
+        * `shellCommandWithOutput(self, commandName, command)`: Runs `command` in the shell and returns its standard output instead of its status. `commandName` is a human readable description of the command.
+        * `package.run(self, packages)`: Installs the given packages, where `packages` is a space-separated list of packages to install. Returns True if all packages installed correctly, False otherwise.
+        * `package.update(self)`: Updates all packages installed on the machine. Returns True if all packages were updated correctly, False otherwise.
+        * `package.checkInstalled(self, package)`: Checks if a specified package is installed, returning True if the package is installed and False otherwise. Only works one package at a time; do not pass this a list and expect it to work.
+        * `package.msirun(self, msiPath)`: Runs a MSI installer in silent mode, returning True if the installer was successful and False otherwise. Only works on Windows; if run in any other OS it returns False.
+        
+        ## Customizing Basis
+        The Basis instance itself has several fields:
+        
+        * `installStartMessage`: Message to print when installing.
+        * `checkStartMessage`: Message to print when --check_only is set.
+Platform: UNKNOWN
