@@ -1,0 +1,449 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>rucio.client.accountclient &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for rucio.client.accountclient</h1><div class="highlight"><pre>
+<span class="c"># Copyright European Organization for Nuclear Research (CERN)</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># You may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Authors:</span>
+<span class="c"># - Thomas Beermann, &lt;thomas.beermann@cern.ch&gt;, 2012-2013</span>
+<span class="c"># - Vincent Garonne, &lt;vincent.garonne@cern.ch&gt;, 2012-2015</span>
+<span class="c"># - Cedric Serfon, &lt;cedric.serfon@cern.ch&gt;, 2014</span>
+<span class="c"># - Martin Barisits, &lt;martin.barisits@cern.ch&gt;, 2014</span>
+<span class="c"># - Cheng-Hsi Chao, &lt;cheng-hsi.chao@cern.ch&gt;, 2014</span>
+<span class="c"># - Ralph Vigne, &lt;ralph.vigne@cern.ch&gt;, 2015</span>
+<span class="c"># - Joaquin Bogado, &lt;joaquin.bogado@cern.ch&gt;, 2015</span>
+
+<span class="kn">from</span> <span class="nn">json</span> <span class="k">import</span> <span class="n">dumps</span>
+<span class="kn">from</span> <span class="nn">requests.status_codes</span> <span class="k">import</span> <span class="n">codes</span>
+
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">BaseClient</span>
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">choice</span>
+<span class="kn">from</span> <span class="nn">rucio.common.utils</span> <span class="k">import</span> <span class="n">build_url</span>
+
+
+<div class="viewcode-block" id="AccountClient"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient">[docs]</a><span class="k">class</span> <span class="nc">AccountClient</span><span class="p">(</span><span class="n">BaseClient</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Account client class for working with rucio accounts&quot;&quot;&quot;</span>
+
+    <span class="n">ACCOUNTS_BASEURL</span> <span class="o">=</span> <span class="s">&#39;accounts&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rucio_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ca_cert</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">creds</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s">&#39;rucio-clients&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AccountClient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">rucio_host</span><span class="p">,</span> <span class="n">auth_host</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">ca_cert</span><span class="p">,</span> <span class="n">auth_type</span><span class="p">,</span> <span class="n">creds</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">user_agent</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AccountClient.add_account"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.add_account">[docs]</a>    <span class="k">def</span> <span class="nf">add_account</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to create a new account.</span>
+
+<span class="sd">        :param account: the name of the account.</span>
+<span class="sd">        :param type: The account type</span>
+<span class="sd">        :param email: The Email address associated with the account.</span>
+
+<span class="sd">        :return: True if account was created successfully else False.</span>
+<span class="sd">        :raises Duplicate: if account already exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="s">&#39;email&#39;</span><span class="p">:</span> <span class="n">email</span><span class="p">})</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.delete_account"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.delete_account">[docs]</a>    <span class="k">def</span> <span class="nf">delete_account</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to disable an account.</span>
+
+<span class="sd">        :param account: the name of the account.</span>
+<span class="sd">        :return: True is account was disabled successfully. False otherwise.</span>
+<span class="sd">        :raises AccountNotFound: if account doesn&#39;t exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.get_account"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.get_account">[docs]</a>    <span class="k">def</span> <span class="nf">get_account</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to get information about a given account.</span>
+
+<span class="sd">        :param account: the name of the account.</span>
+<span class="sd">        :return: a list of attributes for the account. None if failure.</span>
+<span class="sd">        :raises AccountNotFound: if account doesn&#39;t exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">acc</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.set_account_status"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.set_account_status">[docs]</a>    <span class="k">def</span> <span class="nf">set_account_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Set the status of an account.</span>
+
+<span class="sd">        :param account: Name of the account.</span>
+<span class="sd">        :param status: The status for the account.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;status&#39;</span><span class="p">:</span> <span class="n">status</span><span class="p">})</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.list_accounts"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.list_accounts">[docs]</a>    <span class="k">def</span> <span class="nf">list_accounts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">identity</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to list all rucio accounts.</span>
+
+<span class="sd">        :param type: The account type</span>
+<span class="sd">        :param identity: The identity key name. For example x509 DN, or a username.</span>
+
+<span class="sd">        :return: a list containing account info dictionary for all rucio accounts.</span>
+<span class="sd">        :raises AccountNotFound: if account doesn&#39;t exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">account_type</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s">&#39;account_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">account_type</span>
+        <span class="k">if</span> <span class="n">identity</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s">&#39;identity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">identity</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">accounts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">accounts</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.whoami"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.whoami">[docs]</a>    <span class="k">def</span> <span class="nf">whoami</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get information about account whose token is used</span>
+
+<span class="sd">        :return: a list of attributes for the account. None if failure.</span>
+<span class="sd">        :raises AccountNotFound: if account doesn&#39;t exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_account</span><span class="p">(</span><span class="s">&#39;whoami&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.add_identity"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.add_identity">[docs]</a>    <span class="k">def</span> <span class="nf">add_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">authtype</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a membership association between identity and account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        :param identity: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">        :param authtype: The type of the authentication (x509, gss, userpass).</span>
+<span class="sd">        :param default: If True, the account should be used by default with the provided identity.</span>
+<span class="sd">        :param email: The Email address associated with the identity.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;identity&#39;</span><span class="p">:</span> <span class="n">identity</span><span class="p">,</span> <span class="s">&#39;authtype&#39;</span><span class="p">:</span> <span class="n">authtype</span><span class="p">,</span> <span class="s">&#39;default&#39;</span><span class="p">:</span> <span class="n">default</span><span class="p">,</span> <span class="s">&#39;email&#39;</span><span class="p">:</span> <span class="n">email</span><span class="p">})</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;identities&#39;</span><span class="p">])</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.del_identity"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.del_identity">[docs]</a>    <span class="k">def</span> <span class="nf">del_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">authtype</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an identity&#39;s membership association with an account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        :param identity: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">        :param authtype: The type of the authentication (x509, gss, userpass).</span>
+<span class="sd">        :param default: If True, the account should be used by default with the provided identity.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;identity&#39;</span><span class="p">:</span> <span class="n">identity</span><span class="p">,</span> <span class="s">&#39;authtype&#39;</span><span class="p">:</span> <span class="n">authtype</span><span class="p">,</span> <span class="s">&#39;default&#39;</span><span class="p">:</span> <span class="n">default</span><span class="p">})</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;identities&#39;</span><span class="p">])</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.list_identities"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.list_identities">[docs]</a>    <span class="k">def</span> <span class="nf">list_identities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List all identities on an account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;identities&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">identities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">identities</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.list_account_rules"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.list_account_rules">[docs]</a>    <span class="k">def</span> <span class="nf">list_account_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the associated rules of an account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;rules&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.get_account_limits"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.get_account_limits">[docs]</a>    <span class="k">def</span> <span class="nf">get_account_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the account rse limits of this account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;limits&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.get_account_limit"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.get_account_limit">[docs]</a>    <span class="k">def</span> <span class="nf">get_account_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">rse</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the account rse limits of this account for the specific rse.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        :param rse:     The rse name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;limits&#39;</span><span class="p">,</span> <span class="n">rse</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.get_account_usage"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.get_account_usage">[docs]</a>    <span class="k">def</span> <span class="nf">get_account_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">rse</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the account usage for one or all rses of this account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        :param rse:     The rse name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">rse</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;usage&#39;</span><span class="p">,</span> <span class="n">rse</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;usage/&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.list_account_attributes"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.list_account_attributes">[docs]</a>    <span class="k">def</span> <span class="nf">list_account_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the attributes for an account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;attr/&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.add_account_attribute"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.add_account_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">add_account_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds an attribute to an account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        :param key: The attribute key.</span>
+<span class="sd">        :param value: The attribute value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;key&#39;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;attr&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AccountClient.delete_account_attribute"><a class="viewcode-back" href="../../../account.html#rucio.client.accountclient.AccountClient.delete_account_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">delete_account_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete an attribute for an account.</span>
+
+<span class="sd">        :param account: The account name.</span>
+<span class="sd">        :param key: The attribute key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNTS_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;attr&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="k">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="../../../_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
