@@ -1,0 +1,24 @@
+Nikola Documentation
+====================
+
+Those are the docs for the current GitHub master.  It might be incompatible
+with the stable release.  The docs for the stable release are available `on
+the Nikola website <https://getnikola.com/documentation.html>`_.
+
+Please note that some examples of Nikola-specific reST syntax might not be
+visible in this version of Nikola docs.
+
+.. toctree::
+   :maxdepth: 5
+
+   manual
+   creating-a-site
+   Creating a Theme <creating-a-theme>
+   theming
+   template-variables
+   extending
+   internals
+   social_buttons
+   path_handlers
+   Code Documentation <modules>
+
