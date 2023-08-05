@@ -1,0 +1,1 @@
+- No longer specify self as requirement.  (Admittedly, that was a bit silly.)

@@ -1,0 +1,1 @@
+- Fix the way changelogdir is packaged.

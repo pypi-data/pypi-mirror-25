@@ -1,0 +1,1 @@
+- Added configuration option for reverse-sorted sections.
