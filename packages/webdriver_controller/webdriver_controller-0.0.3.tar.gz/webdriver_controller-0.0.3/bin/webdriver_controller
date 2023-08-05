@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+
+from webdriver_controller.controller import WebdriverController
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description='Webdriver controller')
+    sub_parsers = parser.add_subparsers(dest='commands')
+    sp_download = sub_parsers.add_parser(
+        'download', help='download Selenium Webdriver binaries')
+    sp_cleanup = sub_parsers.add_parser(
+        'cleanup', help='remove downloaded Selenium Webdriver binaries')
+    sp_list = sub_parsers.add_parser(
+        'list', help='list downloaded Selenium Webdriver version')
+    sp_start = sub_parsers.add_parser('start', help='start Selenium binaries')
+    driver_group = sp_start.add_mutually_exclusive_group(required=True)
+    driver_group.add_argument(
+        '--standalone',
+        action='store_true',
+        help='start Selenium Standalone server')
+    driver_group.add_argument(
+        '--chrome', action='store_true', help='start ChromeDriver')
+
+    return parser
+
+
+def main():
+    if sys.version_info.major < 3:
+        print('Python 3.5+ is required')
+        sys.exit(1)
+
+    # aiohttp support
+    if sys.version_info.minor < 5:
+        print('Python 3.5+ is required')
+        sys.exit(1)
+
+    parser = get_parser()
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
+    args = parser.parse_args()
+    controller = WebdriverController()
+
+    if args.commands == 'cleanup':
+        controller.cleanup()
+
+    if args.commands == 'download':
+        controller.download()
+
+    if args.commands == 'list':
+        controller.list()
+
+    if args.commands == 'start':
+        if args.standalone:
+            controller.start('standalone')
+
+        if args.chrome:
+            controller.start('chrome')
+
+
+if __name__ == '__main__':
+    sys.exit(main())
