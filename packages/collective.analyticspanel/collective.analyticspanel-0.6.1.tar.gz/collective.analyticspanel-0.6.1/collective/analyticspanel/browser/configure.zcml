@@ -1,0 +1,63 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="collective.analyticspanel">
+
+    <browser:resourceDirectory
+        name="collective.analyticspanel.images"
+        directory="images"
+        />
+
+    <!-- Control panel -->
+    <browser:page
+        name="analytics-settings"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".controlpanel.AnalyticsSettingsControlPanel"
+        permission="collective.analyticspanel.ManageAnalyticsSettings"
+        layer="..interfaces.IAnalyticsPanelLayer"
+        />
+
+<!--hide webstats_js field (plone 4/5 compatible) -->
+
+  <browser:page
+      name="site-controlpanel"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".site_p4.SiteControlPanel"
+      permission="cmf.ManagePortal"
+      layer="..interfaces.IAnalyticsPanelLayer"
+      zcml:condition="not-have plone-5"
+      />
+  <browser:page
+      name="site-controlpanel"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".site.SiteControlPanel"
+      permission="cmf.ManagePortal"
+      layer="..interfaces.IAnalyticsPanelLayer"
+      zcml:condition="have plone-5"
+      />
+
+    <!-- Plone default footer viewlet -->
+    <browser:viewlet
+        name="plone.analytics"
+        manager="plone.app.layout.viewlets.interfaces.IPortalFooter"
+        class=".viewlet.AnalyticsViewlet"
+        permission="zope2.View"
+        layer="..interfaces.IAnalyticsPanelLayer"
+        />
+
+    <!--
+	     Modern approach: analytics in the head
+		 Please note that IHtmlHeadLinks is not optimal, but Plone is not providing any
+		 viewlet manager at the very-end of HTML head
+	-->
+    <browser:viewlet
+        name="plone.analytics"
+        manager="plone.app.layout.viewlets.interfaces.IHtmlHeadLinks"
+        class=".viewlet.HeaderAnalyticsViewlet"
+        permission="zope2.View"
+        layer="..interfaces.IAnalyticsPanelLayer"
+        />
+
+</configure>
