@@ -1,0 +1,50 @@
+#compdef vimpck
+#autoload
+
+_vimpck () {
+  local cmd
+  if (( CURRENT > 2)); then
+    cmd=${words[2]}
+    # Set the context for the subcommand.
+    curcontext="${curcontext%:*:*}:vimpck-$cmd"
+    # Narrow the range of words we are looking at to exclude `vimpck'
+    (( CURRENT-- ))
+    shift words
+    # Run the completion for the subcommand
+    case "${cmd}" in
+      ls)
+        _arguments : \
+          "--start[list only autostarting plugins]" \
+          "--opt[list only optional plugins]" \
+          ;;
+      rm)
+        _arguments : \
+          "-r[remove entry from configuration file]"
+        _vimpck_complete_inst_plugins
+        ;;
+      upgrade)
+        _vimpck_complete_inst_plugins
+        ;;
+    esac
+  else
+    local -a subcommands
+    subcommands=(
+      "ls:List installed plugin(s)" \
+      "rm:Remove installed plugins" \
+      "install:Install plugins defined in the vimpckrc" \
+      "upgrade:Upgrade plugins" \
+      "help:Output help message" \
+      "clean:Remove unused plugins"
+    )
+    _describe -t commands 'vimpck' subcommands
+    _arguments : \
+      "--help[Output help message]" \
+      "-h[Output help message]"
+  fi
+}
+
+_vimpck_complete_inst_plugins () {
+  local IFS=$'\n'
+  _values 'installed plugins' $(vimpck ls 2>/dev/null)
+
+}
