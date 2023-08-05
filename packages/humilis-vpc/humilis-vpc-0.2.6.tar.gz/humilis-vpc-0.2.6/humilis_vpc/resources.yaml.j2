@@ -1,0 +1,248 @@
+---
+resources:
+    ############################################################## VPC & SUBNETS
+    Vpc:
+      Type: "AWS::EC2::VPC"
+      Properties:
+        CidrBlock: "{{vpc.cidr}}"
+        EnableDnsHostnames: {{enable_dns_hostnames}}
+        Tags:
+            - Key: Name
+              Value: {{vpc.name}}
+    {% for subnet in public_subnets %}
+    PublicSubnet{{loop.index}}:
+      Type: "AWS::EC2::Subnet"
+      Properties:
+        VpcId:
+          Ref: Vpc
+        {% if subnet.az %}
+        AvailabilityZone:
+            "Fn::Join":
+              - ""
+              - [{Ref: "AWS::Region"}, "{{subnet.az}}"]
+        {% endif %}
+        CidrBlock: "{{subnet.cidr}}"
+        Tags:
+            - Key: Name
+              Value: {{subnet.name or (_env.name + '-' + _env.stage + '-public')}}
+    PublicSubnet{{loop.index}}RouteTableAssociation:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      Properties:
+        SubnetId:
+          Ref: PublicSubnet{{loop.index}}
+        RouteTableId:
+          Ref: VpcRouteTable
+    {% endfor %}
+    {% for subnet in private_subnets %}
+    PrivateSubnet{{loop.index}}:
+      Type: "AWS::EC2::Subnet"
+      Properties:
+        MapPublicIpOnLaunch: yes
+        VpcId:
+          Ref: Vpc
+        {% if subnet.az %}
+        AvailabilityZone:
+            "Fn::Join":
+              - ""
+              - [{Ref: "AWS::Region"}, "{{subnet.az}}"]
+        {% endif %}
+        CidrBlock: "{{subnet.cidr}}"
+        Tags:
+            - Key: Name
+              Value: {{subnet.name or (_env.name + '-' + _env.stage + '-private')}}
+    {% endfor %}
+    {# The Internet gateway #}
+    InternetGateway:
+      Type: "AWS::EC2::InternetGateway"
+      Properties:
+        Tags:
+            - Key: Name
+              Value: {{vpc.name}}
+
+    AttachGateway:
+      Type: "AWS::EC2::VPCGatewayAttachment"
+      Properties:
+        VpcId:
+          Ref: Vpc
+        InternetGatewayId:
+          Ref: InternetGateway
+
+    ######################################################################## DNS
+    {% if domain %}
+    DnsHostedZone:
+      Type: "AWS::Route53::HostedZone"
+      Properties:
+        HostedZoneConfig:
+          Comment: "Private hosted zone for {{domain}}"
+        Name: "{{domain}}"
+        VPCs:
+          - VPCId: {Ref: Vpc}
+            VPCRegion: {Ref: "AWS::Region"}
+    {% endif %}
+    #################################################################### ROUTING
+    VpcRouteTable:
+      Type: "AWS::EC2::RouteTable"
+      Properties:
+        VpcId:
+          Ref: Vpc
+        Tags:
+            - Key: Name
+              Value: {{vpc.name}}-public
+      DependsOn: AttachGateway
+    Route:
+      Type: "AWS::EC2::Route"
+      Properties:
+        RouteTableId:
+          Ref: VpcRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId:
+          Ref: InternetGateway
+    {% for _ in private_subnets %}
+    PrivateSubnet{{loop.index}}RouteTable:
+      Type: "AWS::EC2::RouteTable"
+      Properties:
+        VpcId:
+          Ref: Vpc
+        Tags:
+            - Key: Name
+              Value: {{vpc.name}}-private
+    PrivateSubnet{{loop.index}}RouteTableAssociation:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet{{loop.index}}
+        RouteTableId:
+          Ref: PrivateSubnet{{loop.index}}RouteTable
+    RouteToNatFromPrivateSubnet{{loop.index}}:
+      Type: "AWS::EC2::Route"
+      Properties:
+        RouteTableId:
+          Ref: PrivateSubnet{{loop.index}}RouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId:
+          Ref: NatGateway
+    {% endfor %}
+    {# Security: Network ACLs #}
+    NetworkAcl:
+      Type: "AWS::EC2::NetworkAcl"
+      Properties:
+        VpcId:
+          Ref: Vpc
+    InboundSshAcl:
+      Type: "AWS::EC2::NetworkAclEntry"
+      Properties:
+        NetworkAclId:
+          Ref: NetworkAcl
+        RuleNumber: 100
+        Protocol: 6
+        RuleAction: allow
+        Egress: "false"
+        CidrBlock: "0.0.0.0/0"
+        PortRange:
+          From: 22
+          To: 22
+    OutboundSshAcl:
+      Type: "AWS::EC2::NetworkAclEntry"
+      Properties:
+        NetworkAclId:
+          Ref: NetworkAcl
+        RuleNumber: 100
+        Protocol: 6
+        RuleAction: allow
+        Egress: "true"
+        CidrBlock: "0.0.0.0/0"
+        PortRange:
+          From: 22
+          To: 22
+    OutBoundHttpAcl:
+      Type: "AWS::EC2::NetworkAclEntry"
+      Properties:
+        NetworkAclId:
+          Ref: NetworkAcl
+        RuleNumber: 101
+        Protocol: 6
+        RuleAction: allow
+        Egress: "true"
+        CidrBlock: "0.0.0.0/0"
+        PortRange:
+          From: 80
+          To: 80
+    {% if private_subnets %}
+    {# An Elastic IP reservation to associate to the NAT gateway #}
+    NatEip:
+      Type: 'AWS::EC2::EIP'
+      Properties: {}
+    {# A NAT gateway in the first public subnet #}
+    NatGateway:
+        Type: "AWS::EC2::NatGateway"
+        Properties:
+          SubnetId:
+            Ref: PublicSubnet1
+          AllocationId:
+            "Fn::GetAtt":
+              - NatEip
+              - AllocationId
+    {% endif %}
+    ######################################################################## EFS
+    {% if has_efs %}
+    FileSystem:
+        Type: "AWS::EFS::FileSystem"
+        Properties:
+            PerformanceMode: generalPurpose
+            FileSystemTags:
+                - Key: Name
+                  Value: "{{_env.name}}-{{_env.stage}}-{{_layer.name}}"
+
+    MountTargetSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            VpcId: {Ref: Vpc}
+            GroupDescription: "{{_env.name}}-{{_env.stage}} EFS secgroup"
+            SecurityGroupIngress: []
+
+    # Allow all instances in the MountTargetSecurityGroup to access the EFS
+    MountTargetSecurityGroupIngress:
+        Type: "AWS::EC2::SecurityGroupIngress"
+        Properties:
+            GroupId: {Ref: MountTargetSecurityGroup}
+            IpProtocol: -1
+            FromPort: -1
+            ToPort: -1
+            SourceSecurityGroupId: {Ref: MountTargetSecurityGroup}
+
+    {% set azs = [] %}
+    {% for subnet in public_subnets %}
+    {% if subnet.az %}
+    {% set az = subnet.az %}
+    {% else %}
+    {% set az = 'a' %}
+    {% endif %}
+    {% if az not in azs %}
+    {% set _ = azs.append(az) %}
+    MountTarget{{az.upper()}}:
+      Type: "AWS::EFS::MountTarget"
+      Properties:
+        FileSystemId: {Ref: FileSystem}
+        # The subnet parameter was deprecated for the subnet_id parameter
+        SubnetId: {Ref: PublicSubnet{{loop.index}}}
+        SecurityGroups: [{Ref: MountTargetSecurityGroup}]
+    {% endif %}
+    {% endfor %}
+    {% for subnet in private_subnets %}
+    {% if subnet.az %}
+    {% set az = subnet.az %}
+    {% else %}
+    {% set az = 'a' %}
+    {% endif %}
+    {% if az not in azs %}
+    {% set _ = azs.append(az) %}
+    MountTarget{{az.upper()}}:
+      Type: "AWS::EFS::MountTarget"
+      Properties:
+        FileSystemId: {Ref: FileSystem}
+        # The subnet parameter was deprecated for the subnet_id parameter
+        SubnetId: {Ref: PublicSubnet{{loop.index}}}
+        SecurityGroups: [{Ref: MountTargetSecurityGroup}]
+    {% endif %}
+    {% endfor %}
+    {% endif %}
