@@ -1,0 +1,1 @@
+from .guildwars2 import *
