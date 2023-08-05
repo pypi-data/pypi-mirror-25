@@ -1,0 +1,5 @@
+====================
+collective.sortedlisting
+====================
+
+User documentation
