@@ -1,0 +1,168 @@
+# The 'asns' section can be used to provide some AS-level options
+# that are shared among all the clients from the same AS.
+#
+# The whole section is optional.
+asns:
+  # The AS in the format "AS<ASN>".
+  AS3333:
+
+    # AS's authorized AS-SET(s) can be set here.
+    #
+    # If the client's configuration does not provide any AS-SET
+    # and prefixes/origin enforcing is used then the following
+    # AS-SETs are used.
+    #
+    # Example:
+    #   asns:
+    #     AS1:
+    #       as_sets:
+    #         - "AS-AS1"
+    #     AS2:
+    #       as_sets:
+    #         - "AS-AS2"
+    #   clients:
+    #     - asn: 1
+    #       ip: "192.0.2.11"
+    #       cfg:
+    #         filtering:
+    #           irrdb:
+    #             as_sets:
+    #               - "AS-AS1-CUSTOMERS"
+    #    - asn: 2
+    #      ip: "192.0.2.22"
+    #
+    # This configuration leads to:
+    # - AS-AS1-CUSTOMERS to be used for AS1 client, because client
+    #   level 'as_sets' has higher priority over AS-level;
+    # - AS-AS2 to be used for AS2 client, because no 'as_sets' are
+    #   given for that client.
+    #
+    # More details on the Configuration page on ReadTheDocs:
+    # https://arouteserver.readthedocs.io/en/latest/CONFIG.html
+    as_sets:
+      #- "NAME1"
+      #- "NAME2"
+
+  AS10745:
+    as_sets:
+      #- "NAME3"
+
+# This is the list of all the route server's clients.
+clients:
+    # Client's ASN.
+  - asn: 3333
+
+    # Client's IP address(es).
+    # For clients with multiple IP addresses (dual-stack clients
+    # for example) a list of addresses can be provided here:
+    # ip:
+    #   - "192.0.2.11"
+    #   - "2001:db8:1:1::11"
+    ip: "192.0.2.11"
+
+    # A brief description.
+    #description: ""
+
+    # An optional MD5 password used for authentication of BGP
+    # session (RFC2385).
+    #password: ""
+
+    # The following configuration statements are optional.
+    # Settings provided here override those provided in the
+    # general configuration on a client-by-client basis.
+    #
+    # Please pay attention to the following client specific
+    # settings:
+    #
+    # - filtering.black_list_pref
+    # - filtering.irrdb.as_sets
+    #
+    # Please refer to the general configuration file for more
+    # details.
+
+    cfg:
+      #prepend_rs_as: False
+
+      #passive: True
+
+      #gtsm: False
+
+      #add_path: False
+
+      filtering:
+
+        next_hop:
+          #policy: "strict"
+
+          # Clients having 'policy' set to 'authorized_addresses'
+          # must have the following option configured with the list
+          # of IP addresses allowed to be used in the NEXT_HOP
+          # attribute for the routes they announce to the route
+          # server.
+          #authorized_addresses_list:
+            #- "IP_ADDRESS_1"
+            #- "IP_ADDRESS_2"
+
+        #ipv4_pref_len:
+        #  min: 8
+        #  max: 24
+        #ipv6_pref_len:
+        #  min: 12
+        #  max: 48
+
+        # List of prefixes that are unconditionally rejected
+        # for this client.
+        black_list_pref:
+          #- prefix:
+          #  length:
+          #  comment: ""
+
+        #max_as_path_len: 32
+
+        #reject_invalid_as_in_as_path: True
+
+        irrdb:
+
+          # Client's AS-SET(s) can be set here.
+          # If not AS-SETs are provided here, those from the 'asns'
+          # section will be used.
+          #
+          # More details on the Configuration page on ReadTheDocs:
+          # https://arouteserver.readthedocs.io/en/latest/CONFIG.html
+          as_sets:
+            #- "NAME1"
+            #- "NAME2"
+
+          #enforce_origin_in_as_set: True
+          #enforce_prefix_in_as_set: True
+
+        rpki:
+          #reject_invalid: True
+
+        max_prefix:
+          #action: "shutdown"
+          #peering_db: True
+
+          #limit_ipv4: 170000
+          #limit_ipv6:  12000
+
+        reject_policy:
+          #policy: "reject"
+
+      blackhole_filtering:
+        #announce_to_client: True
+
+      # The list of custom BGP communities that will be added to
+      # routes received from this client.
+      # These custom BGP communities must be declared in the general
+      # configuration file.
+      #attach_custom_communities:
+      #  - "custom_community1_name"
+      #  - "custom_community2_name"
+
+  - asn: 10745
+
+    # Client's IP address.
+    ip:
+    - "192.0.2.22"
+    - "2001:db:1:1::22"
