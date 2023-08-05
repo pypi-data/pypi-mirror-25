@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+#
+# BOTLIB Framework to program bots
+#
+# botlib/bot.py
+#
+# Copyright 2017 B.H.J Thate
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is 
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in 
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
+# THE SOFTWARE.
+#
+# Bart Thate
+# Heerhugowaard
+# The Netherlands
+
+""" botlib's main bot program """
+
+import os; import sys; sys.path.insert(0, os.getcwd())
+
+from botlib.utils import parse_cli, reset, startup, enable_history
+from botlib.space import cfg, events, kernel, exceptions
+from botlib import __version__
+
+startup()
+
+def main():
+    """ init config, create bot, start kernel, wait for completion and shutdown the bot """
+    cfg = parse_cli()
+    cfg.name = "BOTLIB"
+    cfg.version = __version__
+    enable_history()
+    kernel.boot(cfg)
+    kernel.wait()
+    kernel.shutdown()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("")
+    if cfg.test and exceptions:
+        print("There are exceptions:\n")
+        for ex in exceptions:
+            print(ex)
+    reset()
+    os._exit(0)
