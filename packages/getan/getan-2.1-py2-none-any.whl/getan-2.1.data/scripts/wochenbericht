@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# wochenbericht
+# -------------
+# (c) 2008 by Sascha L. Teichmann
+
+# Little script to summarize times within a given week.
+# usage:
+# ./wochenbericht [<week of year>] [<getan database file>]
+# week defaults to current week, database to time.db
+#
+# This is Free Software in terms of GPLv3 or later. See
+# LICENSE coming with getan for details.
+#
+usage() {
+    cat <<EOF
+usage: ./wochenbericht [<week of year>] [<year>] [<getan database file>] 
+    <week of year>        defaults to current week
+    <year>                defaults to current year
+    <getan database file> defaults to time.db
+EOF
+    exit 1
+}
+
+if [ "$1" ==  "--help" -o "$1" == "-h" ]; then
+    usage
+fi
+
+
+if [[ "$1" -eq "" ]]; then
+    WEEK=`date +'%W'`
+    # remove hash below if you want previous week
+    #WEEK=`expr ${WEEK} '-' 1 '|' 52`
+else
+    WEEK=$1
+fi
+
+if [[ "$2" -eq "" ]]; then
+    YEAR=`date +'%Y'`
+else
+    YEAR=$2
+fi
+
+TIME_DB=${3:-time.db}
+
+if [ ! -f ${TIME_DB} ]; then
+    echo "error: Database file ${TIME_DB} does not exist."
+    usage
+fi
+
+sqlite3 ${TIME_DB} "
+SELECT coalesce(description, 'Verschiedenes'), total FROM projects 
+INNER JOIN (
+    SELECT 
+        project_id,
+        sum(strftime('%s', stop_time) - strftime('%s', start_time)) AS total
+    FROM entries
+    WHERE (strftime('%W', start_time) = '${WEEK}' AND
+        strftime('%Y', start_time) = '${YEAR}') OR 
+        (strftime('%W', stop_time)  = '${WEEK}' AND
+        strftime('%Y', stop_time) = '${YEAR}')
+    GROUP BY project_id
+) ON id = project_id
+WHERE active;
+" | awk '
+function human_time(t) {
+    h = int(t / 3600)
+    m = int((t % 3600)/60.0 + 0.5)
+    while (m >= 60) { ++h; m -= 60 }
+    return sprintf("%2d:%02dh", h, m)
+}
+BEGIN { FS="|"; sum = 0 }
+      { sum += $2 
+        printf("%s: %s\n", human_time($2), $1) 
+      }
+END   { printf("%s: Gesamt\n", human_time(sum)) } 
+'
