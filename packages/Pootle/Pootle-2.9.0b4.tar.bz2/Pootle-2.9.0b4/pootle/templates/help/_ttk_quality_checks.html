@@ -1,0 +1,454 @@
+
+<h3 id="accelerators">Accelerators</h3>
+
+<p>Checks whether accelerators are consistent between the two strings.</p>
+<p>This test is capable of checking the different type of accelerators
+that are used in different projects, like Mozilla or KDE. The test will
+pick up accelerators that are missing and ones that shouldn't be there.</p>
+<p>See <a class="reference external" href="http://docs.translatehouse.org/projects/localization-guide/en/latest/guide/translation/accelerators.html">accelerators on the localization guide</a>
+for a full description on accelerators.</p>
+
+
+<h3 id="acronyms">Acronyms</h3>
+
+<p>Checks that acronyms that appear are unchanged.</p>
+<p>If an acronym appears in the original this test will check that it
+appears in the translation. Translating acronyms is a language decision
+but many languages leave them unchanged. In that case this test is
+useful for tracking down translations of the acronym and correcting
+them.</p>
+
+
+<h3 id="blank">Blank</h3>
+
+<p>Checks whether a translation is totally blank.</p>
+<p>This will check to see if a translation has inadvertently been
+translated as blank i.e. as spaces. This is different from untranslated
+which is completely empty. This test is useful in that if something is
+translated as &quot;  &quot; it will appear to most tools as if it is translated.</p>
+
+
+<h3 id="brackets">Brackets</h3>
+
+<p>Checks that the number of brackets in both strings match.</p>
+<p>If <tt class="docutils literal">([{</tt> or <tt class="docutils literal">}])</tt> appear in the original this will check that the
+same number appear in the translation.</p>
+
+
+<h3 id="cedillas">Romanian: Avoid cedilla diacritics</h3>
+
+<p>Check if the translation contains an illegal cedilla character</p>
+<p>Cedillas are obsoleted diacritics for Romanian:</p>
+<ul class="simple">
+<li>U+0162 Latin capital letter T with cedilla</li>
+<li>U+0163 Latin small letter T with cedilla</li>
+<li>U+015E Latin capital letter S with cedilla</li>
+<li>U+015F Latin small letter S with cedilla</li>
+</ul>
+<p>Cedilla-letters are only valid for Turkish (S-cedilla) and Gagauz
+languages (S-cedilla and T-comma). Fun fact: Gagauz is the only known
+language to use T-cedilla.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">param str1:</th><td class="field-body">the source string</td>
+</tr>
+<tr class="field"><th class="field-name">param str2:</th><td class="field-body">the target (translated) string</td>
+</tr>
+<tr class="field"><th class="field-name">return:</th><td class="field-body">True if str2 contains a cedilla character</td>
+</tr>
+</tbody>
+</table>
+
+
+<h3 id="compendiumconflicts">Compendium conflict</h3>
+
+<p>Checks for Gettext compendium conflicts (#-#-#-#-#).</p>
+<p>When you use msgcat to create a PO compendium it will insert
+<tt class="docutils literal"><span class="pre">#-#-#-#-#</span></tt> into entries that are not consistent. If the compendium
+is used later in a message merge then these conflicts will appear in
+your translations. This test quickly extracts those for correction.</p>
+
+
+<h3 id="credits">Translator credits</h3>
+
+<p>Checks for messages containing translation credits instead of
+normal translations.</p>
+<p>Some projects have consistent ways of giving credit to translators by
+having a unit or two where translators can fill in their name and
+possibly their contact details. This test allows you to find these
+units easily to check that they are completed correctly and also
+disables other tests that might incorrectly get triggered for these
+units (such as urls, emails, etc.)</p>
+
+
+<h3 id="doublequoting">Double quotes</h3>
+
+<p>Checks whether doublequoting is consistent between the two strings.</p>
+<p>Checks on double quotes <tt class="docutils literal">&quot;</tt> to ensure that you have the same number
+in both the original and the translated string. This tests takes into
+account that several languages use different quoting characters, and
+will test for them instead.</p>
+
+
+<h3 id="doublespacing">Double spaces</h3>
+
+<p>Checks for bad double-spaces by comparing to original.</p>
+<p>This will identify if you have [space][space] in when you don't have it
+in the original or it appears in the original but not in your
+translation. Some of these are spurious and how you correct them
+depends on the conventions of your language.</p>
+
+
+<h3 id="doublewords">Repeated word</h3>
+
+<p>Checks for repeated words in the translation.</p>
+<p>Words that have been repeated in a translation will be highlighted with
+this test e.g. &quot;the the&quot;, &quot;a a&quot;. These are generally typos that need
+correcting. Some languages may have valid repeated words in their
+structure, in that case either ignore those instances or switch this
+test off.</p>
+
+
+<h3 id="emails">E-mail</h3>
+
+<p>Checks that emails are not translated.</p>
+<p>Generally you should not be translating email addresses. This check
+will look to see that email addresses e.g. <tt class="docutils literal">info&#64;example.com</tt> are not
+translated. In some cases of course you should translate the address
+but generally you shouldn't.</p>
+
+
+<h3 id="endpunc">Ending punctuation</h3>
+
+<p>Checks whether punctuation at the end of the strings match.</p>
+<p>This will ensure that the ending of your translation has the same
+punctuation as the original. E.g. if it ends in :[space] then so should
+yours. It is useful for ensuring that you have ellipses [...] in all
+your translations, not simply three separate full-stops. You may pick
+up some errors in the original: feel free to keep your translation and
+notify the programmers. In some languages, characters such as <tt class="docutils literal">?</tt> or
+<tt class="docutils literal">!</tt> are always preceded by a space e.g. [space]? — do what your
+language customs dictate. Other false positives you will notice are,
+for example, if through changes in word-order you add &quot;), etc. at the
+end of the sentence. Do not change these: your language word-order
+takes precedence.</p>
+<p>It must be noted that if you are tempted to leave out [full-stop] or
+[colon] or add [full-stop] to a sentence, that often these have been
+done for a reason, e.g. a list where fullstops make it look cluttered.
+So, initially match them with the English, and make changes once the
+program is being used.</p>
+<p>This check is aware of several language conventions for punctuation
+characters, such as the custom question marks for Greek and Arabic,
+Devanagari Danda, full-width punctuation for CJK languages, etc.
+Support for your language can be added easily if it is not there yet.</p>
+
+
+<h3 id="endwhitespace">Ending whitespace</h3>
+
+<p>Checks whether whitespace at the end of the strings matches.</p>
+<p>Operates the same as endpunc but is only concerned with whitespace.
+This filter is particularly useful for those strings which will
+evidently be followed by another string in the program, e.g.
+[Password: ] or [Enter your username: ]. The whitespace is an inherent
+part of the string. This filter makes sure you don't miss those
+important but otherwise invisible spaces!</p>
+<p>If your language uses full-width punctuation (like Chinese), the visual
+spacing in the character might be enough without an added extra space.</p>
+
+
+<h3 id="escapes">Escapes</h3>
+
+<p>Checks whether escaping is consistent between the two strings.</p>
+<p>Checks escapes such as <tt class="docutils literal">\n</tt> <tt class="docutils literal">\u0000</tt> to ensure that if they exist
+in the original string you also have them in the translation.</p>
+
+
+<h3 id="filepaths">File paths</h3>
+
+<p>Checks that file paths have not been translated.</p>
+<p>Checks that paths such as <tt class="docutils literal">/home/user1</tt> have not been translated.
+Generally you do not translate a file path, unless it is being used as
+an example, e.g. <tt class="docutils literal">your_user_name/path/to/filename.conf</tt>.</p>
+
+
+<h3 id="functions">Functions</h3>
+
+<p>Checks that function names are not translated.</p>
+<p>Checks that function names e.g. <tt class="docutils literal">rgb()</tt> or <tt class="docutils literal">getEntity.Name()</tt> are
+not translated.</p>
+
+
+<h3 id="kdecomments">Old KDE comment</h3>
+
+<p>Checks to ensure that no KDE style comments appear in the
+translation.</p>
+<p>KDE style translator comments appear in PO files as
+<tt class="docutils literal">&quot;_: comment\n&quot;</tt>. New translators often translate the comment. This
+test tries to identify instances where the comment has been translated.</p>
+
+
+<h3 id="long">Long</h3>
+
+<p>Checks whether a translation is much longer than the original
+string.</p>
+<p>This is most useful in the special case where the translation is
+multiple characters long while the source text is only 1 character
+long. Otherwise, we use a general ratio that will catch very big
+differences but is set conservatively to limit the number of false
+positives.</p>
+
+
+<h3 id="musttranslatewords">Must translate words</h3>
+
+<p>Checks that words configured as definitely translatable don't appear
+in the translation.</p>
+<p>If for instance in your language you decide that you must translate
+'OK' then this test will flag any occurrences of 'OK' in the
+translation if it appeared in the source string. You must specify a
+file containing all of the <em>must translate</em> words using
+<tt class="docutils literal"><span class="pre">--musttranslatefile</span></tt>.</p>
+
+
+<h3 id="newlines">Newlines</h3>
+
+<p>Checks whether newlines are consistent between the two strings.</p>
+<p>Counts the number of <tt class="docutils literal">\n</tt> newlines (and variants such as <tt class="docutils literal">\r\n</tt>)
+and reports and error if they differ.</p>
+
+
+<h3 id="niciun_nicio">Romanian: Use "niciun"/"nicio"</h3>
+
+<p>Checks for sequences containing 'nici un'/'nici o' which are obsolete
+Romanian syntax. Correct is 'niciun'/'nicio'</p>
+
+
+<h3 id="notranslatewords">Don't translate words</h3>
+
+<p>Checks that words configured as untranslatable appear in the
+translation too.</p>
+<p>Many brand names should not be translated, this test allows you to
+easily make sure that words like: Word, Excel, Impress, Calc, etc. are
+not translated. You must specify a file containing all of the
+<em>no translate</em> words using <tt class="docutils literal"><span class="pre">--notranslatefile</span></tt>.</p>
+
+
+<h3 id="nplurals">Number of plurals</h3>
+
+<p>Checks for the correct number of noun forms for plural translations.</p>
+<p>This uses the plural information in the language module of the
+Translate Toolkit. This is the same as the Gettext nplural value. It
+will check that the number of plurals required is the same as the
+number supplied in your translation.</p>
+
+
+<h3 id="numbers">Numbers</h3>
+
+<p>Checks whether numbers of various forms are consistent between the
+two strings.</p>
+<p>You will see some errors where you have either written the number in
+full or converted it to the digit in your translation. Also changes in
+order will trigger this error.</p>
+
+
+<h3 id="options">Options</h3>
+
+<p>Checks that command line options are not translated.</p>
+<p>In messages that contain command line options, such as <tt class="docutils literal"><span class="pre">--help</span></tt>,
+this test will check that these remain untranslated. These could be
+translated in the future if programs can create a mechanism to allow
+this, but currently they are not translated. If the options has a
+parameter, e.g. <tt class="docutils literal"><span class="pre">--file=FILE</span></tt>, then the test will check that the
+parameter has been translated.</p>
+
+
+<h3 id="printf">printf()</h3>
+
+<p>Checks whether printf format strings match.</p>
+<p>If the printf formatting variables are not identical, then this will
+indicate an error. Printf statements are used by programs to format
+output in a human readable form (they are placeholders for variable
+data). They allow you to specify lengths of string variables, string
+padding, number padding, precision, etc. Generally they will look like
+this: <tt class="docutils literal">%d</tt>, <tt class="docutils literal">%5.2f</tt>, <tt class="docutils literal">%100s</tt>, etc. The test can also manage
+variables-reordering using the <tt class="docutils literal">%1$s</tt> syntax. The variables' type and
+details following data are tested to ensure that they are strictly
+identical, but they may be reordered.</p>
+<p>See also <a class="reference external" href="http://en.wikipedia.org/wiki/Printf_format_string">printf Format String</a>.</p>
+
+
+<h3 id="puncspacing">Punctuation spacing</h3>
+
+<p>Checks for bad spacing after punctuation.</p>
+<p>In the case of [full-stop][space] in the original, this test checks
+that your translation does not remove the space. It checks also for
+[comma], [colon], etc.</p>
+<p>Some languages don't use spaces after common punctuation marks,
+especially where full-width punctuation marks are used. This check will
+take that into account.</p>
+
+
+<h3 id="purepunc">Pure punctuation</h3>
+
+<p>Checks that strings that are purely punctuation are not changed.</p>
+<p>This extracts strings like <tt class="docutils literal">+</tt> or <tt class="docutils literal">-</tt> as these usually should not
+be changed.</p>
+
+
+<h3 id="pythonbraceformat">Python brace placeholders</h3>
+
+<p>Checks whether python brace format strings match.</p>
+
+
+<h3 id="sentencecount">Number of sentences</h3>
+
+<p>Checks that the number of sentences in both strings match.</p>
+<p>Adds the number of sentences to see that the sentence count is the same
+between the original and translated string. You may not always want to
+use this test, if you find you often need to reformat your translation,
+because the original is badly-expressed, or because the structure of
+your language works better that way. Do what works best for your
+language: it's the meaning of the original you want to convey, not the
+exact way it was written in the English.</p>
+
+
+<h3 id="short">Short</h3>
+
+<p>Checks whether a translation is much shorter than the original
+string.</p>
+<p>This is most useful in the special case where the translation is 1
+characters long while the source text is multiple characters long.
+Otherwise, we use a general ratio that will catch very big differences
+but is set conservatively to limit the number of false positives.</p>
+
+
+<h3 id="simplecaps">Simple capitalization</h3>
+
+<p>Checks the capitalisation of two strings isn't wildly different.</p>
+<p>This will pick up many false positives, so don't be a slave to it. It
+is useful for identifying translations that don't start with a capital
+letter (upper-case letter) when they should, or those that do when they
+shouldn't. It will also highlight sentences that have extra capitals;
+depending on the capitalisation convention of your language, you might
+want to change these to Title Case, or change them all to normal
+sentence case.</p>
+
+
+<h3 id="simpleplurals">Simple plural(s)</h3>
+
+<p>Checks for English style plural(s) for you to review.</p>
+<p>This test will extract any message that contains words with a final
+&quot;(s)&quot; in the source text. You can then inspect the message, to check
+that the correct plural form has been used for your language. In some
+languages, plurals are made by adding text at the beginning of words,
+making the English style messy. In this case, they often revert to the
+plural form. This test allows an editor to check that the plurals used
+are correct. Be aware that this test may create a number of false
+positives.</p>
+<p>For languages with no plural forms (only one noun form) this test will
+simply test that nothing like &quot;(s)&quot; was used in the translation.</p>
+
+
+<h3 id="singlequoting">Single quotes</h3>
+
+<p>Checks whether singlequoting is consistent between the two strings.</p>
+<p>The same as doublequoting but checks for the <tt class="docutils literal">'</tt> character. Because
+this is used in contractions like it's and in possessive forms like
+user's, this test can output spurious errors if your language doesn't
+use such forms. If a quote appears at the end of a sentence in the
+translation, i.e. <tt class="docutils literal">'.</tt>, this might not be detected properly by the
+check.</p>
+
+
+<h3 id="startcaps">Starting capitalization</h3>
+
+<p>Checks that the message starts with the correct capitalisation.</p>
+<p>After stripping whitespace and common punctuation characters, it then
+checks to see that the first remaining character is correctly
+capitalised. So, if the sentence starts with an upper-case letter, and
+the translation does not, an error is produced.</p>
+<p>This check is entirely disabled for many languages that don't make a
+distinction between upper and lower case. Contact us if this is not yet
+disabled for your language.</p>
+
+
+<h3 id="startpunc">Starting punctuation</h3>
+
+<p>Checks whether punctuation at the beginning of the strings match.</p>
+<p>Operates as endpunc but you will probably see fewer errors.</p>
+
+
+<h3 id="startwhitespace">Starting whitespace</h3>
+
+<p>Checks whether whitespace at the beginning of the strings matches.</p>
+<p>As in endwhitespace but you will see fewer errors.</p>
+
+
+<h3 id="tabs">Tabs</h3>
+
+<p>Checks whether tabs are consistent between the two strings.</p>
+<p>Counts the number of <tt class="docutils literal">\t</tt> tab markers and reports an error if they
+differ.</p>
+
+
+<h3 id="unchanged">Unchanged</h3>
+
+<p>Checks whether a translation is basically identical to the original
+string.</p>
+<p>This checks to see if the translation isn’t just a copy of the English
+original. Sometimes, this is what you want, but other times you will
+detect words that should have been translated.</p>
+
+
+<h3 id="urls">URLs</h3>
+
+<p>Checks that URLs are not translated.</p>
+<p>This checks only basic URLs (http, ftp, mailto etc.) not all URIs (e.g.
+afp, smb, file). Generally, you don't want to translate URLs, unless
+they are example URLs (<a class="reference external" href="http://your_server.com/filename.html">http://your_server.com/filename.html</a>). If the
+URL is for configuration information, then you need to query the
+developers about placing configuration information in PO files. It
+shouldn't really be there, unless it is very clearly marked: such
+information should go into a configuration file.</p>
+
+
+<h3 id="validchars">Valid characters</h3>
+
+<p>Checks that only characters specified as valid appear in the
+translation.</p>
+<p>Often during character conversion to and from UTF-8 you get some
+strange characters appearing in your translation. This test presents a
+simple way to try and identify such errors.</p>
+<p>This test will only run of you specify the <tt class="docutils literal"><span class="pre">--validcharsfile</span></tt> command
+line option. This file contains all the characters that are valid in
+your language. You must use UTF-8 encoding for the characters in the
+file.</p>
+<p>If the test finds any characters not in your valid characters file then
+the test will print the character together with its Unicode value
+(e.g. 002B).</p>
+
+
+<h3 id="variables">Placeholders</h3>
+
+<p>Checks whether variables of various forms are consistent between the
+two strings.</p>
+<p>This checks to make sure that variables that appear in the original
+also appear in the translation. It can handle variables from projects
+like KDE or OpenOffice. It does not at the moment cope with variables
+that use the reordering syntax of Gettext PO files.</p>
+
+
+<h3 id="xmltags">XML tags</h3>
+
+<p>Checks that XML/HTML tags have not been translated.</p>
+<p>This check finds the number of tags in the source string and checks
+that the same number are in the translation. If the counts don't match
+then either the tag is missing or it was mistakenly translated by the
+translator, both of which are errors.</p>
+<p>The check ignores tags or things that look like tags that cover the
+whole string e.g. <tt class="docutils literal">&lt;Error&gt;</tt> but will produce false positives for
+things like <tt class="docutils literal">An &lt;Error&gt; occurred</tt> as here <tt class="docutils literal">Error</tt> should be
+translated. It also will allow translation of the <em>alt</em> attribute in
+e.g. <tt class="docutils literal">&lt;img <span class="pre">src=&quot;bob.png&quot;</span> <span class="pre">alt=&quot;Image</span> description&quot;&gt;</tt> or similar
+translatable attributes in OpenOffice.org help files.</p>
