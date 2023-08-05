@@ -1,0 +1,1 @@
+from idea2production import  __version__
