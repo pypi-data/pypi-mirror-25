@@ -1,0 +1,103 @@
+#  Copyright (c) 2015-2016 Cisco Systems, Inc.
+#
+#  Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"), to
+#  deal in the Software without restriction, including without limitation the
+#  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+#  sell copies of the Software, and to permit persons to whom the Software is
+#  furnished to do so, subject to the following conditions:
+#
+#  The above copyright notice and this permission notice shall be included in
+#  all copies or substantial portions of the Software.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+#  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+#  DEALINGS IN THE SOFTWARE.
+
+import pytest
+import sh
+
+from molecule.command import verify
+
+
+def test_execute(mocker, patched_ansible_lint, patched_trailing,
+                 patched_ssh_config, molecule_instance):
+    patched_testinfra = mocker.patch('molecule.verifier.testinfra.Testinfra')
+
+    v = verify.Verify({}, {}, molecule_instance)
+    result = v.execute()
+
+    patched_ansible_lint.assert_called_once_with(molecule_instance)
+    patched_trailing.assert_called_once_with(molecule_instance)
+    patched_testinfra.assert_called_once_with(molecule_instance)
+    patched_ssh_config.assert_called_once_with()
+    assert (None, None) == result
+
+
+def test_execute_exits_when_ansible_lint_fails(
+        mocker, patched_ansible_lint, patched_trailing, molecule_instance):
+    patched_ansible_lint.side_effect = sh.ErrorReturnCode_2(sh.ls, b'', b'')
+
+    v = verify.Verify({}, {}, molecule_instance)
+    with pytest.raises(SystemExit):
+        v.execute()
+
+    patched_ansible_lint.assert_called_once_with(molecule_instance)
+
+
+def test_execute_with_serverspec(mocker, patched_ansible_lint,
+                                 patched_trailing, patched_ssh_config,
+                                 molecule_instance):
+    molecule_instance.verifier = 'serverspec'
+    patched_serverspec = mocker.patch(
+        'molecule.verifier.serverspec.Serverspec')
+
+    v = verify.Verify({}, {}, molecule_instance)
+    v.execute()
+
+    patched_ansible_lint.assert_called_once_with(molecule_instance)
+    patched_trailing.assert_called_once_with(molecule_instance)
+    patched_serverspec.assert_called_once_with(molecule_instance)
+    patched_ssh_config.assert_called_once_with()
+
+
+def test_execute_with_goss(mocker, patched_ansible_lint, patched_trailing,
+                           patched_ssh_config, molecule_instance):
+    molecule_instance.verifier = 'goss'
+    patched_goss = mocker.patch('molecule.verifier.goss.Goss')
+
+    v = verify.Verify({}, {}, molecule_instance)
+    v.execute()
+
+    patched_ansible_lint.assert_called_once_with(molecule_instance)
+    patched_trailing.assert_called_once_with(molecule_instance)
+    patched_goss.assert_called_once_with(molecule_instance)
+    patched_ssh_config.assert_called_once_with()
+
+
+def test_execute_exits_when_command_fails_and_exit_flag_set(
+        mocker, patched_ansible_lint, patched_trailing, patched_ssh_config,
+        patched_print_error, molecule_instance):
+    patched_testinfra = mocker.patch('molecule.verifier.testinfra.Testinfra')
+    patched_testinfra.side_effect = sh.ErrorReturnCode_1(sh.ls, b'', b'')
+
+    v = verify.Verify({}, {}, molecule_instance)
+    with pytest.raises(SystemExit):
+        v.execute()
+
+
+def test_execute_returns_when_command_fails_and_exit_flag_unset(
+        mocker, patched_ansible_lint, patched_trailing, patched_ssh_config,
+        patched_print_error, molecule_instance):
+    patched_testinfra = mocker.patch('molecule.verifier.testinfra.Testinfra')
+    patched_testinfra.side_effect = sh.ErrorReturnCode_1(sh.ls, b'', b'')
+
+    v = verify.Verify({}, {}, molecule_instance)
+    result = v.execute(exit=False)
+
+    patched_print_error.assert_called()
+    assert (1, b'') == result
