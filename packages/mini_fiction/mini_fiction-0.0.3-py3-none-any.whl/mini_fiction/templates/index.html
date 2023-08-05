@@ -1,0 +1,66 @@
+{% extends base %}
+
+{% block fulltitle %}
+    {%- if full_title -%}
+        {{- full_title -}}
+    {%- else -%}
+        {{- super() -}}
+    {%- endif -%}
+{% endblock %}
+
+{% block extrahead %}
+    {{- super() }}
+    {% if site_description -%}
+        <meta name="description" content="{{ site_description }}" />
+    {%- endif -%}
+{% endblock %}
+
+{% block content %}
+<div class="row welcome-box">
+  <div class="span12 genra">
+    {% for category in categories -%}
+        <a class="gen" style="background-color: {{ category.color }}" href="{{ url_for('search.simple', search_type='category', search_id=category.id) }}">{{ category.name }}</a>
+    {%- endfor %}
+  </div>
+</div>
+
+<div class="row">
+    <div class="span8 top-list">
+        <h2>Новые добавления</h2>
+        {% include "includes/stories.html" %}
+        <p class="more">
+            <a href="{{ url_for('stream.stories') }}">Лента добавлений</a>
+            | <a href="{{ url_for('object_lists.top') }}">Топ</a>
+            | <a href="{{ url_for('feeds.stories') }}" data-noajax="1">RSS</a>
+            {% if current_user.is_staff %}| <a href="{{ url_for('editlog.index') }}">{{ _('Moderation log') }}</a>{% endif %}
+        </p>
+    </div>
+    <div class="span4 sidelist top-list">
+        <div>
+            <h2>Обновившиеся рассказы</h2>
+            {% include "includes/chapters_short.html" %}
+            <p class="more"><a href="{{ url_for('stream.chapters') }}">Лента обновлений</a> | <a href="{{ url_for('feeds.chapters') }}" data-noajax="1">RSS</a></p>
+        </div>
+
+        <div>
+            <h2>Последние комментарии</h2>
+            {{ comments_html|safe }}
+            <p class="more"><a href="{{ url_for('stream.comments') }}">Лента комментариев</a></p>
+        </div>
+
+        <div>
+            <h2>Последние новости</h2>
+
+            <div class="news-list news-list-short">{% for newsitem in news %}
+                <div class="newsitem newsitem-listitem" id="newsitem_{{ newsitem.id }}">
+                    <a href="{{ url_for('news.show', name=newsitem.name) }}" class="newsitem-title-link">{{ newsitem.title }}</a><br/>
+                    <time datetime="{{ newsitem.date.strftime('%Y-%m-%dT%H:%M:%SZ') }}" class="newsitem-date">
+                        {{- newsitem.date|datetimeformat('d MMMM Y') -}}, {{ ngettext("%(num)d comment", "%(num)d comments", newsitem.comments_count) }}
+                    </time>
+                </div>
+            {% endfor %}</div>
+            <p class="more"><a href="{{ url_for('news.index') }}">Все новости</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
