@@ -1,0 +1,726 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>rucio.client.didclient &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for rucio.client.didclient</h1><div class="highlight"><pre>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Copyright European Organization for Nuclear Research (CERN)</span>
+
+<span class="sd">  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="sd">  You may not use this file except in compliance with the License.</span>
+<span class="sd">  You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="sd">  Authors:</span>
+<span class="sd">  - Vincent Garonne, &lt;vincent.garonne@cern.ch&gt;, 2012-2017</span>
+<span class="sd">  - Mario Lassnig, &lt;mario.lassnig@cern.ch&gt;, 2012-2013</span>
+<span class="sd">  - Thomas Beermann, &lt;thomas.beermann@cern.ch&gt; 2013</span>
+<span class="sd">  - Yun-Pin Sun, &lt;yun-pin.sun@cern.ch&gt;, 2013</span>
+<span class="sd">  - Cedric Serfon, &lt;cedric.serfon@cern.ch&gt;, 2014-2015</span>
+<span class="sd">  - Ralph Vigne, &lt;ralph.vigne@cern.ch&gt;, 2015</span>
+<span class="sd">  - Martin Barisits, &lt;martin.barisits@cern.ch&gt;, 2014-2015</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">json</span> <span class="k">import</span> <span class="n">dumps</span>
+<span class="kn">from</span> <span class="nn">requests.status_codes</span> <span class="k">import</span> <span class="n">codes</span>
+
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">BaseClient</span>
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">choice</span>
+<span class="kn">from</span> <span class="nn">rucio.common.utils</span> <span class="k">import</span> <span class="n">build_url</span><span class="p">,</span> <span class="n">render_json</span><span class="p">,</span> <span class="n">render_json_list</span><span class="p">,</span> <span class="n">date_to_str</span>
+
+
+<div class="viewcode-block" id="DIDClient"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient">[docs]</a><span class="k">class</span> <span class="nc">DIDClient</span><span class="p">(</span><span class="n">BaseClient</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;DataIdentifier client class for working with data identifiers&quot;&quot;&quot;</span>
+
+    <span class="n">DIDS_BASEURL</span> <span class="o">=</span> <span class="s">&#39;dids&#39;</span>
+    <span class="n">ARCHIVES_BASEURL</span> <span class="o">=</span> <span class="s">&#39;archives&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rucio_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ca_cert</span><span class="o">=</span><span class="k">None</span><span class="p">,</span>
+                 <span class="n">auth_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">creds</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s">&#39;rucio-clients&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DIDClient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">rucio_host</span><span class="p">,</span> <span class="n">auth_host</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">ca_cert</span><span class="p">,</span>
+                                        <span class="n">auth_type</span><span class="p">,</span> <span class="n">creds</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">user_agent</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DIDClient.list_dids"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_dids">[docs]</a>    <span class="k">def</span> <span class="nf">list_dids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;collection&#39;</span><span class="p">,</span> <span class="n">long</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List all data identifiers in a scope which match a given pattern.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param filters: A dictionary of key/value pairs like {&#39;name&#39;: &#39;file_name&#39;,&#39;rse-expression&#39;: &#39;tier0&#39;}.</span>
+<span class="sd">        :param type: The type of the did: &#39;all&#39;(container, dataset or file)|&#39;collection&#39;(dataset or container)|&#39;dataset&#39;|&#39;container&#39;|&#39;file&#39;</span>
+<span class="sd">        :param long: Long format option to display more information for each DID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="s">&#39;dids&#39;</span><span class="p">,</span> <span class="s">&#39;search&#39;</span><span class="p">])</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">long</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s">&#39;long&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;created_before&#39;</span><span class="p">,</span> <span class="s">&#39;created_after&#39;</span><span class="p">):</span>
+                <span class="n">payload</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">date_to_str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">payload</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="n">payload</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">dids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dids</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_did"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_did">[docs]</a>    <span class="k">def</span> <span class="nf">add_did</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">statuses</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">lifetime</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">dids</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">rse</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add data identifier for a dataset or container.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :paran type: The data identifier type (file|dataset|container).</span>
+<span class="sd">        :param statuses: Dictionary with statuses, e.g.g {&#39;monotonic&#39;:True}.</span>
+<span class="sd">        :meta: Meta-data associated with the data identifier is represented using key/value pairs in a dictionary.</span>
+<span class="sd">        :rules: Replication rules associated with the data identifier. A list of dictionaries, e.g., [{&#39;copies&#39;: 2, &#39;rse_expression&#39;: &#39;TIERS1&#39;}, ].</span>
+<span class="sd">        :param lifetime: DID&#39;s lifetime (in seconds).</span>
+<span class="sd">        :param dids: The content.</span>
+<span class="sd">        :param rse: The RSE name when registering replicas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="c"># Build json</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="nb">type</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">statuses</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;statuses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">statuses</span>
+        <span class="k">if</span> <span class="n">meta</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;meta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta</span>
+        <span class="k">if</span> <span class="n">rules</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rules</span>
+        <span class="k">if</span> <span class="n">lifetime</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;lifetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lifetime</span>
+        <span class="k">if</span> <span class="n">dids</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;dids&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dids</span>
+        <span class="k">if</span> <span class="n">rse</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;rse&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rse</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">render_json</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_dids"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_dids">[docs]</a>    <span class="k">def</span> <span class="nf">add_dids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dids</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bulk add datasets/containers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">render_json_list</span><span class="p">(</span><span class="n">dids</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_dataset"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">add_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">statuses</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">lifetime</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">rse</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add data identifier for a dataset.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param statuses: Dictionary with statuses, e.g.g {&#39;monotonic&#39;:True}.</span>
+<span class="sd">        :meta: Meta-data associated with the data identifier is represented using key/value pairs in a dictionary.</span>
+<span class="sd">        :rules: Replication rules associated with the data identifier. A list of dictionaries, e.g., [{&#39;copies&#39;: 2, &#39;rse_expression&#39;: &#39;TIERS1&#39;}, ].</span>
+<span class="sd">        :param lifetime: DID&#39;s lifetime (in seconds).</span>
+<span class="sd">        :param files: The content.</span>
+<span class="sd">        :param rse: The RSE name when registering replicas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_did</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DATASET&#39;</span><span class="p">,</span>
+                            <span class="n">statuses</span><span class="o">=</span><span class="n">statuses</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="n">rules</span><span class="p">,</span>
+                            <span class="n">lifetime</span><span class="o">=</span><span class="n">lifetime</span><span class="p">,</span> <span class="n">dids</span><span class="o">=</span><span class="n">files</span><span class="p">,</span> <span class="n">rse</span><span class="o">=</span><span class="n">rse</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_datasets"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_datasets">[docs]</a>    <span class="k">def</span> <span class="nf">add_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dsns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bulk add datasets.</span>
+
+<span class="sd">        :param dsns: A list of datasets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_dids</span><span class="p">(</span><span class="n">dids</span><span class="o">=</span><span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">dsn</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">+</span> <span class="p">[(</span><span class="s">&#39;type&#39;</span><span class="p">,</span> <span class="s">&#39;DATASET&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">dsn</span> <span class="ow">in</span> <span class="n">dsns</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_container"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_container">[docs]</a>    <span class="k">def</span> <span class="nf">add_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">statuses</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">lifetime</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add data identifier for a container.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param statuses: Dictionary with statuses, e.g.g {&#39;monotonic&#39;:True}.</span>
+<span class="sd">        :meta: Meta-data associated with the data identifier is represented using key/value pairs in a dictionary.</span>
+<span class="sd">        :rules: Replication rules associated with the data identifier. A list of dictionaries, e.g., [{&#39;copies&#39;: 2, &#39;rse_expression&#39;: &#39;TIERS1&#39;}, ].</span>
+<span class="sd">        :param lifetime: DID&#39;s lifetime (in seconds).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_did</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;CONTAINER&#39;</span><span class="p">,</span> <span class="n">statuses</span><span class="o">=</span><span class="n">statuses</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">rules</span><span class="o">=</span><span class="n">rules</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_containers"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_containers">[docs]</a>    <span class="k">def</span> <span class="nf">add_containers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cnts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bulk add containers.</span>
+
+<span class="sd">        :param cnts: A list of containers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_dids</span><span class="p">(</span><span class="n">dids</span><span class="o">=</span><span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">cnts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">+</span> <span class="p">[(</span><span class="s">&#39;type&#39;</span><span class="p">,</span> <span class="s">&#39;CONTAINER&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">cnt</span> <span class="ow">in</span> <span class="n">cnts</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="DIDClient.attach_dids"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.attach_dids">[docs]</a>    <span class="k">def</span> <span class="nf">attach_dids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dids</span><span class="p">,</span> <span class="n">rse</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attach data identifier.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param dids: The content.</span>
+<span class="sd">        :param rse: The RSE name when registering replicas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;dids&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;dids&#39;</span><span class="p">:</span> <span class="n">dids</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">rse</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;rse&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rse</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">render_json</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.detach_dids"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.detach_dids">[docs]</a>    <span class="k">def</span> <span class="nf">detach_dids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dids</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Detach data identifier</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param dids: The content.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;dids&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;dids&#39;</span><span class="p">:</span> <span class="n">dids</span><span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">render_json</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.attach_dids_to_dids"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.attach_dids_to_dids">[docs]</a>    <span class="k">def</span> <span class="nf">attach_dids_to_dids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attachments</span><span class="p">,</span> <span class="n">ignore_duplicate</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add dids to dids.</span>
+
+<span class="sd">        :param attachments: The attachments.</span>
+<span class="sd">            attachments is: [attachment, attachment, ...]</span>
+<span class="sd">            attachment is: {&#39;scope&#39;: scope, &#39;name&#39;: name, &#39;dids&#39;: dids}</span>
+<span class="sd">            dids is: [{&#39;scope&#39;: scope, &#39;name&#39;: name}, ...]</span>
+<span class="sd">            :param ignore_duplicate: If True, ignore duplicate entries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="s">&#39;attachments&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;ignore_duplicate&#39;</span><span class="p">:</span> <span class="n">ignore_duplicate</span><span class="p">,</span> <span class="s">&#39;attachments&#39;</span><span class="p">:</span> <span class="n">attachments</span><span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="ow">in</span> <span class="p">(</span><span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">,</span> <span class="n">codes</span><span class="o">.</span><span class="n">no_content</span><span class="p">,</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">True</span>
+
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_files_to_datasets"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_files_to_datasets">[docs]</a>    <span class="k">def</span> <span class="nf">add_files_to_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attachments</span><span class="p">,</span> <span class="n">ignore_duplicate</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add files to datasets.</span>
+
+<span class="sd">        :param attachments: The attachments.</span>
+<span class="sd">            attachments is: [attachment, attachment, ...]</span>
+<span class="sd">            attachment is: {&#39;scope&#39;: scope, &#39;name&#39;: name, &#39;dids&#39;: dids}</span>
+<span class="sd">            dids is: [{&#39;scope&#39;: scope, &#39;name&#39;: name}, ...]</span>
+<span class="sd">        :param ignore_duplicate: If True, ignore duplicate entries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attach_dids_to_dids</span><span class="p">(</span><span class="n">attachments</span><span class="o">=</span><span class="n">attachments</span><span class="p">,</span>
+                                        <span class="n">ignore_duplicate</span><span class="o">=</span><span class="n">ignore_duplicate</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_datasets_to_containers"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_datasets_to_containers">[docs]</a>    <span class="k">def</span> <span class="nf">add_datasets_to_containers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attachments</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add datasets_to_containers.</span>
+
+<span class="sd">        :param attachments: The attachments.</span>
+<span class="sd">            attachments is: [attachment, attachment, ...]</span>
+<span class="sd">            attachment is: {&#39;scope&#39;: scope, &#39;name&#39;: name, &#39;dids&#39;: dids}</span>
+<span class="sd">            dids is: [{&#39;scope&#39;: scope, &#39;name&#39;: name}, ...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attach_dids_to_dids</span><span class="p">(</span><span class="n">attachments</span><span class="o">=</span><span class="n">attachments</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_containers_to_containers"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_containers_to_containers">[docs]</a>    <span class="k">def</span> <span class="nf">add_containers_to_containers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attachments</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add containers_to_containers.</span>
+
+<span class="sd">        :param attachments: The attachments.</span>
+<span class="sd">            attachments is: [attachment, attachment, ...]</span>
+<span class="sd">            attachment is: {&#39;scope&#39;: scope, &#39;name&#39;: name, &#39;dids&#39;: dids}</span>
+<span class="sd">            dids is: [{&#39;scope&#39;: scope, &#39;name&#39;: name}, ...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attach_dids_to_dids</span><span class="p">(</span><span class="n">attachments</span><span class="o">=</span><span class="n">attachments</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_files_to_dataset"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_files_to_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">add_files_to_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">rse</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add files to datasets.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The dataset name.</span>
+<span class="sd">        :param files: The content.</span>
+<span class="sd">        :param rse: The RSE name when registering replicas.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attach_dids</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">dids</span><span class="o">=</span><span class="n">files</span><span class="p">,</span> <span class="n">rse</span><span class="o">=</span><span class="n">rse</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_files_to_archive"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_files_to_archive">[docs]</a>    <span class="k">def</span> <span class="nf">add_files_to_archive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add files to archive.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The dataset name.</span>
+<span class="sd">        :param files: The content.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attach_dids</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">dids</span><span class="o">=</span><span class="n">files</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_datasets_to_container"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_datasets_to_container">[docs]</a>    <span class="k">def</span> <span class="nf">add_datasets_to_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dsns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add datasets to container.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The dataset name.</span>
+<span class="sd">        :param dsns: The content.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attach_dids</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">dids</span><span class="o">=</span><span class="n">dsns</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_containers_to_container"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_containers_to_container">[docs]</a>    <span class="k">def</span> <span class="nf">add_containers_to_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cnts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add containers to container.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The dataset name.</span>
+<span class="sd">        :param dsns: The content.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attach_dids</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">dids</span><span class="o">=</span><span class="n">cnts</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.list_content"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_content">[docs]</a>    <span class="k">def</span> <span class="nf">list_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List data identifier contents.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;dids&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.list_content_history"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_content_history">[docs]</a>    <span class="k">def</span> <span class="nf">list_content_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List data identifier contents history.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;dids&#39;</span><span class="p">,</span> <span class="s">&#39;history&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.list_files"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_files">[docs]</a>    <span class="k">def</span> <span class="nf">list_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">long</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List data identifier file contents.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param long: A boolean to choose if GUID is returned or not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;files&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">long</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s">&#39;long&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">True</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.get_did"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.get_did">[docs]</a>    <span class="k">def</span> <span class="nf">get_did</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a single data identifier.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.get_metadata"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.get_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get data identifier metadata</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;meta&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">meta</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.set_metadata"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.set_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">set_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set data identifier metadata</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param key: the key.</span>
+<span class="sd">        :param value: the value.</span>
+<span class="sd">        :param recursive: Option to propagate the metadata change to content.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;meta&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s">&#39;recursive&#39;</span><span class="p">:</span> <span class="n">recursive</span><span class="p">})</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.set_status"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.set_status">[docs]</a>    <span class="k">def</span> <span class="nf">set_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set data identifier status</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param kwargs:  Keyword arguments of the form status_name=value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;status&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="ow">in</span> <span class="p">(</span><span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">,</span> <span class="n">codes</span><span class="o">.</span><span class="n">no_content</span><span class="p">,</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">True</span>
+
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.close"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        close dataset/container</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The dataset/container name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="nb">open</span><span class="o">=</span><span class="k">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.delete_metadata"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.delete_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">delete_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete data identifier metadata</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier.</span>
+<span class="sd">        :param key: the key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;meta&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.list_did_rules"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_did_rules">[docs]</a>    <span class="k">def</span> <span class="nf">list_did_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the associated rules of a data identifier.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;rules&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.list_associated_rules_for_file"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_associated_rules_for_file">[docs]</a>    <span class="k">def</span> <span class="nf">list_associated_rules_for_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the associated rules a file is affected from..</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name:  The file name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;associated_rules&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.get_dataset_by_guid"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.get_dataset_by_guid">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataset_by_guid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the parent datasets for a given GUID.</span>
+<span class="sd">       :param guid: The GUID.</span>
+
+<span class="sd">        :returns: A did</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="s">&#39;guid&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.scope_list"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.scope_list">[docs]</a>    <span class="k">def</span> <span class="nf">scope_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List data identifiers in a scope.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        :param recursive: boolean, True or False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s">&#39;recursive&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">True</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.list_parent_dids"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_parent_dids">[docs]</a>    <span class="k">def</span> <span class="nf">list_parent_dids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List parent dataset/containers of a did.</span>
+
+<span class="sd">        :param scope: The scope.</span>
+<span class="sd">        :param name:  The name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;parents&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.create_did_sample"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.create_did_sample">[docs]</a>    <span class="k">def</span> <span class="nf">create_did_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_scope</span><span class="p">,</span> <span class="n">input_name</span><span class="p">,</span> <span class="n">output_scope</span><span class="p">,</span> <span class="n">output_name</span><span class="p">,</span> <span class="n">nbfiles</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a sample from an input collection.</span>
+
+<span class="sd">        :param input_scope: The scope of the input DID.</span>
+<span class="sd">        :param input_name: The name of the input DID.</span>
+<span class="sd">        :param output_scope: The scope of the output dataset.</span>
+<span class="sd">        :param output_name: The name of the output dataset.</span>
+<span class="sd">        :param account: The account.</span>
+<span class="sd">        :param nbfiles: The number of files to register in the output dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="n">input_scope</span><span class="p">,</span> <span class="n">input_name</span><span class="p">,</span> <span class="n">output_scope</span><span class="p">,</span> <span class="n">output_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">nbfiles</span><span class="p">),</span> <span class="s">&#39;sample&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">({}))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.resurrect"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.resurrect">[docs]</a>    <span class="k">def</span> <span class="nf">resurrect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dids</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resurrect a list of dids.</span>
+
+<span class="sd">        :param dids:  A list of dids [{&#39;scope&#39;: scope, &#39;name&#39;: name}, ...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">DIDS_BASEURL</span><span class="p">,</span> <span class="s">&#39;resurrect&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">dids</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.add_temporary_dids"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.add_temporary_dids">[docs]</a>    <span class="k">def</span> <span class="nf">add_temporary_dids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dids</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bulk add temporary data identifiers.</span>
+
+<span class="sd">        :param dids: A list of dids.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="s">&#39;tmp_dids&#39;</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">dids</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DIDClient.list_archive_content"><a class="viewcode-back" href="../../../did.html#rucio.client.didclient.DIDClient.list_archive_content">[docs]</a>    <span class="k">def</span> <span class="nf">list_archive_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List archive contents.</span>
+
+<span class="sd">        :param scope: The scope name.</span>
+<span class="sd">        :param name: The data identifier name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ARCHIVES_BASEURL</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;files&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="../../../_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>

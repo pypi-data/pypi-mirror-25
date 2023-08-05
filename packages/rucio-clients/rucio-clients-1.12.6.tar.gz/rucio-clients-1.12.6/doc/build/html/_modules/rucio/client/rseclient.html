@@ -1,0 +1,586 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>rucio.client.rseclient &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for rucio.client.rseclient</h1><div class="highlight"><pre>
+<span class="c"># Copyright European Organization for Nuclear Research (CERN)</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># You may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Authors:</span>
+<span class="c"># - Thomas Beermann, &lt;thomas.beermann@cern.ch&gt;, 2012</span>
+<span class="c"># - Vincent Garonne, &lt;vincent.garonne@cern.ch&gt;, 2012-2015</span>
+<span class="c"># - Mario Lassnig, &lt;mario.lassnig@cern.ch&gt;, 2013</span>
+<span class="c"># - Ralph Vigne, &lt;ralph.vigne@cern.ch&gt;, 2013-2015</span>
+<span class="c"># - Martin Barisits, &lt;martin.barisits@cern.ch&gt;, 2013</span>
+<span class="c"># - Cedric Serfon, &lt;cedric.serfon@cern.ch&gt;, 2014</span>
+
+<span class="kn">from</span> <span class="nn">json</span> <span class="k">import</span> <span class="n">dumps</span><span class="p">,</span> <span class="n">loads</span>
+<span class="kn">from</span> <span class="nn">requests.status_codes</span> <span class="k">import</span> <span class="n">codes</span>
+<span class="kn">from</span> <span class="nn">urllib</span> <span class="k">import</span> <span class="n">quote</span>
+
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">BaseClient</span>
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">choice</span>
+<span class="kn">from</span> <span class="nn">rucio.common.utils</span> <span class="k">import</span> <span class="n">build_url</span>
+
+
+<div class="viewcode-block" id="RSEClient"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient">[docs]</a><span class="k">class</span> <span class="nc">RSEClient</span><span class="p">(</span><span class="n">BaseClient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;RSE client class for working with rucio RSEs&quot;&quot;&quot;</span>
+
+    <span class="n">RSE_BASEURL</span> <span class="o">=</span> <span class="s">&#39;rses&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rucio_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ca_cert</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">creds</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s">&#39;rucio-clients&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RSEClient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">rucio_host</span><span class="p">,</span> <span class="n">auth_host</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">ca_cert</span><span class="p">,</span> <span class="n">auth_type</span><span class="p">,</span> <span class="n">creds</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">user_agent</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RSEClient.get_rse"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.get_rse">[docs]</a>    <span class="k">def</span> <span class="nf">get_rse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns details about the referred RSE.</span>
+
+<span class="sd">        :param rse: Name of the referred RSE</span>
+
+<span class="sd">        :returns: A dict containing all attributes of the referred RSE</span>
+
+<span class="sd">        :raises RSENotFound: if the referred RSE was not found in the database</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">rse</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">rse</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.add_rse"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.add_rse">[docs]</a>    <span class="k">def</span> <span class="nf">add_rse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to create a new RSE.</span>
+
+<span class="sd">        :param rse: the name of the rse.</span>
+<span class="sd">        :param deterministic: Boolean to know if the pfn is generated deterministically.</span>
+<span class="sd">        :param volatile: Boolean for RSE cache.</span>
+<span class="sd">        :param city: City for the RSE.</span>
+<span class="sd">        :param region_code: The region code for the RSE.</span>
+<span class="sd">        :param country_name: The country.</span>
+<span class="sd">        :param continent: The continent.</span>
+<span class="sd">        :param time_zone: Timezone.</span>
+<span class="sd">        :param staging_area: Staging area.</span>
+<span class="sd">        :param ISP: Internet service provider.</span>
+
+<span class="sd">        :return: True if location was created successfully else False.</span>
+<span class="sd">        :raises Duplicate: if rse already exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;rses/&#39;</span> <span class="o">+</span> <span class="n">rse</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.update_rse"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.update_rse">[docs]</a>    <span class="k">def</span> <span class="nf">update_rse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update RSE properties like availability or name.</span>
+
+<span class="sd">        :param rse: the name of the new rse.</span>
+<span class="sd">        :param  parameters: A dictionnary with property (name, read, write, delete as keys).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;rses/&#39;</span> <span class="o">+</span> <span class="n">rse</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">parameters</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.delete_rse"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.delete_rse">[docs]</a>    <span class="k">def</span> <span class="nf">delete_rse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to delete a rse.</span>
+
+<span class="sd">        :param rse: the name of the rse.</span>
+<span class="sd">        :return: True if location was created successfully else False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;rses/&#39;</span> <span class="o">+</span> <span class="n">rse</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.list_rses"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.list_rses">[docs]</a>    <span class="k">def</span> <span class="nf">list_rses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse_expression</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to list all rucio locations(RSEs).</span>
+
+<span class="sd">        :rse_expression: RSE Expression to use as filter.</span>
+<span class="sd">        :return:         a list containing the names of all rucio locations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">rse_expression</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;rses&#39;</span><span class="p">,</span> <span class="s">&quot;?expression=&quot;</span> <span class="o">+</span> <span class="n">quote</span><span class="p">(</span><span class="n">rse_expression</span><span class="p">)]</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;rses/&#39;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.add_rse_attribute"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.add_rse_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">add_rse_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to add a RSE attribute.</span>
+
+<span class="sd">        :param rse: the name of the rse.</span>
+<span class="sd">        :param key: the attribute key.</span>
+<span class="sd">        :param value: the attribute value.</span>
+
+<span class="sd">        :return: True if RSE attribute was created successfully else False.</span>
+<span class="sd">        :raises Duplicate: if RSE attribute already exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;attr&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.delete_rse_attribute"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.delete_rse_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">delete_rse_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to delete a RSE attribute.</span>
+
+<span class="sd">        :param rse: the RSE name.</span>
+<span class="sd">        :param key: the attribute key.</span>
+
+<span class="sd">        :return: True if RSE attribute was deleted successfully else False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;attr&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.list_rse_attributes"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.list_rse_attributes">[docs]</a>    <span class="k">def</span> <span class="nf">list_rse_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to get RSE attributes.</span>
+
+<span class="sd">        :param rse: The RSE name.</span>
+
+<span class="sd">        :return: True if RSE attribute was created successfully else False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;attr/&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">attributes</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">attributes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.add_protocol"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.add_protocol">[docs]</a>    <span class="k">def</span> <span class="nf">add_protocol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to create a new protocol for the given RSE.</span>
+
+<span class="sd">        :param rse: the name of the  rse.</span>
+<span class="sd">        :param scheme: identifier of this protocol</span>
+<span class="sd">        :param params: Attributes of the protocol. Supported are:</span>
+<span class="sd">            hostname:       hostname for this protocol (default = localhost)</span>
+<span class="sd">            port:           port for this protocol (default = 0)</span>
+<span class="sd">            prefix:         string used as a prfeix for this protocol when generating</span>
+<span class="sd">                            the PFN (default = None)</span>
+<span class="sd">            impl:           qualified name of the implementation class for this</span>
+<span class="sd">                            protocol (mandatory)</span>
+<span class="sd">            read:           integer representing the priority of this procotol for</span>
+<span class="sd">                            read operations (default = -1)</span>
+<span class="sd">            write:          integer representing the priority of this procotol for</span>
+<span class="sd">                            write operations (default = -1)</span>
+<span class="sd">            delete:         integer representing the priority of this procotol for</span>
+<span class="sd">                            delet operations (default = -1)</span>
+<span class="sd">            extended_attributes:  miscellaneous protocol specific information e.g. spacetoken</span>
+<span class="sd">                            for SRM (default = None)</span>
+
+
+<span class="sd">        :return: True if protocol was created successfully else False.</span>
+
+<span class="sd">        :raises Duplicate: if protocol with same hostname, port and protocol identifier</span>
+<span class="sd">                            already exists for the given RSE.</span>
+<span class="sd">        :raises RSENotFound: if the RSE doesn&#39;t exist.</span>
+<span class="sd">        :raises KeyNotFound: if params is missing manadtory attributes to create the</span>
+<span class="sd">                             protocol.</span>
+<span class="sd">        :raises AccessDenied: if not authorized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scheme</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;protocols&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.get_protocols"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.get_protocols">[docs]</a>    <span class="k">def</span> <span class="nf">get_protocols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">protocol_domain</span><span class="o">=</span><span class="s">&#39;ALL&#39;</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns protocol information. Parameter comibantions are:</span>
+<span class="sd">        (operation OR default) XOR protocol.</span>
+
+<span class="sd">        :param rse: the RSE name.</span>
+<span class="sd">        :param protocol_domain: The scope of the protocol. Supported are &#39;LAN&#39;, &#39;WAN&#39;, and &#39;ALL&#39; (as default).</span>
+<span class="sd">        :param operation: The name of the requested operation (read, write, or delete).</span>
+<span class="sd">                          If None, all operations are queried.</span>
+<span class="sd">        :param default: Indicates if only the default operations should be returned.</span>
+<span class="sd">        :param scheme: The identifier of the requested protocol.</span>
+
+<span class="sd">        :returns: A list with details about each matching protocol.</span>
+
+<span class="sd">        :raises RSENotFound: if the RSE doesn&#39;t exist.</span>
+<span class="sd">        :raises RSEProtocolNotSupported: if no matching protocol entry could be found.</span>
+<span class="sd">        :raises RSEOperationNotSupported: if no matching protocol entry for the requested</span>
+<span class="sd">                                          operation could be found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="k">None</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">scheme</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;protocols&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;protocols&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">operation</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s">&#39;operation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">operation</span>
+            <span class="k">if</span> <span class="n">default</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="n">params</span><span class="p">[</span><span class="s">&#39;protocol_domain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">protocol_domain</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">protocols</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">protocols</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.delete_protocols"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.delete_protocols">[docs]</a>    <span class="k">def</span> <span class="nf">delete_protocols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes matching protocols from RSE. Protocols using the same identifier can be</span>
+<span class="sd">        distinguished by hostname and port.</span>
+
+<span class="sd">        :param rse: the RSE name.</span>
+<span class="sd">        :param scheme: identifier of the protocol.</span>
+<span class="sd">        :param hostname: hostname of the protocol.</span>
+<span class="sd">        :param port: port of the protocol.</span>
+
+<span class="sd">        :returns: True if success.</span>
+
+<span class="sd">        :raises RSEProtocolNotSupported: if no matching protocol entry could be found.</span>
+<span class="sd">        :raises RSENotFound: if the RSE doesn&#39;t exist.</span>
+<span class="sd">        :raises AccessDenied: if not authorized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;protocols&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">hostname</span><span class="p">:</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hostname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">port</span><span class="p">:</span>
+                <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;DEL&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.update_protocols"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.update_protocols">[docs]</a>    <span class="k">def</span> <span class="nf">update_protocols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates matching protocols from RSE. Protocol using the same identifier can be</span>
+<span class="sd">        distinguished by hostname and port.</span>
+
+<span class="sd">        :param rse: the RSE name.</span>
+<span class="sd">        :param scheme: identifier of the protocol.</span>
+<span class="sd">        :param data: A dict providing the new values of the protocol attibutes.</span>
+<span class="sd">                     Keys must match column names in database.</span>
+<span class="sd">        :param hostname: hostname of the protocol.</span>
+<span class="sd">        :param port: port of the protocol.</span>
+
+<span class="sd">        :returns: True if success.</span>
+
+<span class="sd">        :raises RSEProtocolNotSupported: if no matching protocol entry could be found.</span>
+<span class="sd">        :raises RSENotFound: if the RSE doesn&#39;t exist.</span>
+<span class="sd">        :raises KeyNotFound: if invalid data was provided for update.</span>
+<span class="sd">        :raises AccessDenied: if not authorized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;protocols&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">hostname</span><span class="p">:</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hostname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">port</span><span class="p">:</span>
+                <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.swap_protocols"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.swap_protocols">[docs]</a>    <span class="k">def</span> <span class="nf">swap_protocols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">scheme_a</span><span class="p">,</span> <span class="n">scheme_b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Swaps the priorities of the provided operation.</span>
+
+<span class="sd">        :param rse: the RSE name.</span>
+<span class="sd">        :param domain: the domain in which priorities should be swapped i.e. wan or lan.</span>
+<span class="sd">        :param operation: the operation that should be swapped i.e. read, write, or delete.</span>
+<span class="sd">        :param scheme_a: the scheme of one of the two protocols to be swapped, e.g. srm.</span>
+<span class="sd">        :param scheme_b: the scheme of the other of the two protocols to be swapped, e.g. http.</span>
+
+<span class="sd">        :returns: True if success.</span>
+
+<span class="sd">        :raises RSEProtocolNotSupported: if no matching protocol entry could be found.</span>
+<span class="sd">        :raises RSENotFound: if the RSE doesn&#39;t exist.</span>
+<span class="sd">        :raises KeyNotFound: if invalid data was provided for update.</span>
+<span class="sd">        :raises AccessDenied: if not authorized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">protocol_a</span> <span class="o">=</span> <span class="n">protocol_b</span> <span class="o">=</span> <span class="k">None</span>
+        <span class="n">protocols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_protocols</span><span class="p">(</span><span class="n">rse</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="k">False</span><span class="p">,</span> <span class="n">scheme_a</span><span class="p">)[</span><span class="s">&#39;protocols&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">protocols</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">scheme_a</span><span class="p">:</span>
+                <span class="n">protocol_a</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">scheme_b</span><span class="p">:</span>
+                <span class="n">protocol_b</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">protocol_a</span> <span class="ow">or</span> <span class="n">protocol_b</span><span class="p">)</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">False</span>
+        <span class="n">priority_a</span> <span class="o">=</span> <span class="n">protocol_a</span><span class="p">[</span><span class="s">&#39;domains&#39;</span><span class="p">][</span><span class="n">domain</span><span class="p">][</span><span class="n">operation</span><span class="p">]</span>
+        <span class="n">priority_b</span> <span class="o">=</span> <span class="n">protocol_b</span><span class="p">[</span><span class="s">&#39;domains&#39;</span><span class="p">][</span><span class="n">domain</span><span class="p">][</span><span class="n">operation</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_protocols</span><span class="p">(</span><span class="n">rse</span><span class="p">,</span> <span class="n">protocol_a</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">],</span> <span class="p">{</span><span class="s">&#39;domains&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">domain</span><span class="p">:</span> <span class="p">{</span><span class="n">operation</span><span class="p">:</span> <span class="n">priority_b</span><span class="p">}}},</span> <span class="n">protocol_a</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">],</span> <span class="n">protocol_a</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_protocols</span><span class="p">(</span><span class="n">rse</span><span class="p">,</span> <span class="n">protocol_b</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">],</span> <span class="p">{</span><span class="s">&#39;domains&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">domain</span><span class="p">:</span> <span class="p">{</span><span class="n">operation</span><span class="p">:</span> <span class="n">priority_a</span><span class="p">}}},</span> <span class="n">protocol_b</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">],</span> <span class="n">protocol_b</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="k">True</span></div>
+
+<div class="viewcode-block" id="RSEClient.set_rse_usage"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.set_rse_usage">[docs]</a>    <span class="k">def</span> <span class="nf">set_rse_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">used</span><span class="p">,</span> <span class="n">free</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set RSE usage information.</span>
+
+<span class="sd">        :param rse: the RSE name.</span>
+<span class="sd">        :param source: the information source, e.g. srm.</span>
+<span class="sd">        :param used: the used space in bytes.</span>
+<span class="sd">        :param free: the free in bytes.</span>
+
+<span class="sd">        :returns: True if successful, otherwise false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;usage&#39;</span><span class="p">]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;source&#39;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span> <span class="s">&#39;used&#39;</span><span class="p">:</span> <span class="n">used</span><span class="p">,</span> <span class="s">&#39;free&#39;</span><span class="p">:</span> <span class="n">free</span><span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.get_rse_usage"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.get_rse_usage">[docs]</a>    <span class="k">def</span> <span class="nf">get_rse_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get RSE usage information.</span>
+
+<span class="sd">        :param rse: the RSE name.</span>
+<span class="sd">        :param filters: dictionary of attributes by which the results should be filtered</span>
+
+<span class="sd">        :returns: True if successful, otherwise false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;usage&#39;</span><span class="p">]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.list_rse_usage_history"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.list_rse_usage_history">[docs]</a>    <span class="k">def</span> <span class="nf">list_rse_usage_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List RSE usage history information.</span>
+
+<span class="sd">        :param rse: The RSE name.</span>
+<span class="sd">        :param filters: dictionary of attributes by which the results should be filtered.</span>
+
+<span class="sd">        :returns:  list of dictionnaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;usage&#39;</span><span class="p">,</span> <span class="s">&#39;history&#39;</span><span class="p">]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.set_rse_limits"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.set_rse_limits">[docs]</a>    <span class="k">def</span> <span class="nf">set_rse_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set RSE limit information.</span>
+
+<span class="sd">        :param rse: The RSE name.</span>
+<span class="sd">        :param name: The name of the limit.</span>
+<span class="sd">        :param value: The feature value. Set to -1 to remove the limit.</span>
+
+<span class="sd">        :returns: True if successful, otherwise false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;limits&#39;</span><span class="p">]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dumps</span><span class="p">({</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">}))</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+
+        <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RSEClient.get_rse_limits"><a class="viewcode-back" href="../../../rse.html#rucio.client.rseclient.RSEClient.get_rse_limits">[docs]</a>    <span class="k">def</span> <span class="nf">get_rse_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rse</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get RSE limits.</span>
+
+<span class="sd">        :param rse: The RSE name.</span>
+
+<span class="sd">        :returns: True if successful, otherwise false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RSE_BASEURL</span><span class="p">,</span> <span class="n">rse</span><span class="p">,</span> <span class="s">&#39;limits&#39;</span><span class="p">]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="../../../_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
