@@ -1,0 +1,46 @@
+#coding=utf-8
+import importlib
+import sys
+import traceback
+from django.core.management.base import BaseCommand
+from django_xz_queue.consumer import Worker
+
+
+class Command(BaseCommand):
+    """
+
+    Example usage:
+    python manage.py xzworker queue_name
+    """
+
+    # args = '<queue queue ...>'
+
+    def add_arguments(self, parser):
+        parser.add_argument('queue_name', help='queue name is must')
+    #     parser.add_argument('--pid', action='store', dest='pid',
+    #                         default=None, help='PID file to write the worker`s pid into')
+    #     parser.add_argument('--burst', action='store_true', dest='burst',
+    #                         default=False, help='Run worker in burst mode')
+    #     parser.add_argument('--name', action='store', dest='name',
+    #                         default=None, help='Name of the worker')
+    #     parser.add_argument('--queue-class', action='store', dest='queue_class',
+    #                         default='django_rq.queues.DjangoRQ', help='Queues class to use')
+    #     parser.add_argument('--worker-ttl', action='store', type=int,
+    #                         dest='worker_ttl', default=420,
+    #                         help='Default worker timeout to be used')
+    #     if LooseVersion(get_version()) >= LooseVersion('1.10'):
+    #         parser.add_argument('args', nargs='*', type=str,
+    #                             help='The queues to work on, separated by space')
+
+    def handle(self, *args, **options):
+        try:
+            queue_name = options.get('queue_name', args[0] if args else '')
+            if not queue_name:
+                print ('需要参数queue_name;[HOW TO USE]python manage.py xzworker <your_queue_name>')
+                sys.exit(1)
+            worker = Worker(options.get('queue_name', queue_name))
+            worker.run()
+        except Exception as e:
+            traceback.print_exc()
+            sys.exit(1)
+
