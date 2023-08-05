@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Get wmi class object from windows server
+# Print class name, keys and values for each object founded
+#
+
+import sys
+from wmi_query import wmi_parse
+from wmi_query import wmi_query
+
+
+def main():
+    wmi = wmi_query.wmi_query(opts=_opts)
+    wmi.run()
+    for x in wmi.data_dict[wmi.name()]:
+        print "\n\t{}\n".format(wmi.name())
+        for y in wmi.get_item_keys():
+            print " {}:\t{}".format(y, wmi.data_dict[wmi.name()][x][y])
+
+
+if(__name__ == "__main__"):
+    _parser = wmi_parse.set_parser()
+    if(len(sys.argv) < 2):
+        _parser.print_help()
+        sys.exit("Find -help")
+    _opts = vars(_parser.parse_args())
+    main()
