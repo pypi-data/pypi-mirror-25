@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+""" Vectools - A bioinformatics-focused command-line utility for linear algebra, table manipulation,
+machine leaning, network-graphs, and more.
+
+This file handles command line input to all vectools functions. It determines whether to print the main help menu,
+a function help menu (Note: All function help data is self-contained), or run a function.
+
+The rest of Vectools can be found in the following directories:
+examples/ - Contains files that can be used for example input.
+features/ - Contains files for integration testing.
+lib/      - Contains the sub-section classes.
+lib/__init__.py - A dictionary mapping function names to their respective classes and functions.
+test/     - Contains files for unit testing.
+
+"""
+from __future__ import print_function
+from lib import operations_dict
+import sys
+import argparse
+import os.path
+from signal import signal, SIGPIPE, SIG_DFL
+from lib.main_script_helper_functions import get_main_help_string, import_from
+
+real_path = "/".join(os.path.realpath(__file__).split("/")[:-1])
+with open(real_path+"/VERSION") as f:
+    __version__ = f.read().strip()
+
+# Ignore SIG_PIPE and don't throw exceptions on it... (http://docs.python.org/library/signal.html)
+# Problem with broken pipe error (Errno-32) solved with
+# http://newbebweb.blogspot.de/2012/02/python-head-ioerror-errno-32-broken.html
+signal(SIGPIPE, SIG_DFL)
+
+reserved_flags = (
+    "--update-help",
+    "--commands?",
+    "--help", "-help", "-h", "--h",
+)
+help_menu_file = "vectools_docstring.txt"
+
+# First catch keyboard interrupts i.e. Ctrl-C or Ctrl-D
+try:
+    if len(sys.argv) > 1 and not sys.argv[1] in reserved_flags:
+        # Run an operation or function, this can also print the help menu for a function.
+        # Get the base program name.
+        program_name = os.path.basename(sys.argv[0])
+
+        # The name of the operation should be the first argument.
+        operation_name = sys.argv[1]
+
+        # Rebase the sys.argv command, pretend the operation is the program that was ran.
+        sys.argv = sys.argv[1:]
+
+        # Helps catch cases where the argument supplied does not match the available operations.
+        operation_found = False
+
+        # Since we organize the data structure by headings, loop through each heading.
+        # This isn't the most efficient method, but it allows pretty formatting of the main help menu.
+        for section_name in operations_dict:
+            # Check for the operation name within each heading.
+            if operation_name in operations_dict[section_name]:
+
+                # import the function for its respective module.
+                function_path = operations_dict[section_name][operation_name]
+                module_to_import = ".".join(function_path.split(".")[:-1])
+                function_to_import = function_path.split(".")[-1]
+                imported_function = import_from(module_to_import, function_to_import)
+
+                # Build the argument parser for the operation.
+                parser = argparse.ArgumentParser(
+                    prog=" ".join((program_name, operation_name)),
+                    formatter_class=argparse.RawTextHelpFormatter,
+                    epilog="\n".join(imported_function.__doc__.split("\n")[1:])
+                )
+
+                # Run the operation.
+                # If a help argument is passed after the function, a function specific help menu will be printed.
+                # Note: help information for each function is self-contained.
+                imported_function(parser)
+                operation_found = True
+                break
+
+        if not operation_found:
+            sys.stderr.write("Function {} not found.\n".format(operation_name))
+    else:
+        # Handle the main help page.
+        parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+
+        # --update-help is a hidden value for updating the main help menu.
+        # Dynamically genetaring the help menu takes extra time, so it is not done every time.
+        update_bool = True if len(sys.argv) > 1 and sys.argv[1] == "--update-help" else False
+
+        # Get main help string.
+        help_str = get_main_help_string(operations_dict, doc_f=help_menu_file, update_help_str=update_bool)
+
+        print("Version: %s" % __version__)
+        # Add main help string to Argparse.
+        parser.add_argument('operation', type=str, nargs=1, help='Operations Available:\n' + help_str)
+
+        parser.print_help()
+
+except KeyboardInterrupt:
+    exit("Program killed by user.")
