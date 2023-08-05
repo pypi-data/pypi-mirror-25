@@ -1,0 +1,148 @@
+Metadata-Version: 1.0
+Name: flask-nameko
+Version: 1.4.0
+Summary: A wrapper for using nameko services with Flask
+Home-page: https://github.com/clef/flask_nameko
+Author: Jesse Pollak
+Author-email: jesse@getclef.com
+License: ISCL
+Description-Content-Type: UNKNOWN
+Description: # flask_nameko
+        
+        A wrapper for using nameko services with Flask
+        
+        ## Installation
+        
+        Install it via PyPI:
+        
+            pip install flask_nameko
+        
+        ## Usage
+        
+        To start using `flask_nameko`, you need to create and configure a new `FlaskPooledClusterRpcProxy` singleton, which you'll use to communicate with your Nameko cluster.
+        
+            # __init__.py
+            from flask import Flask
+            from flask_nameko import FlaskPooledClusterRpcProxy
+        
+            rpc = FlaskPooledClusterRpcProxy()
+        
+            def create_app():
+                app = Flask(__name__)
+                app.config.update(dict(
+                    NAMEKO_AMQP_URI='amqp://localhost'
+                ))
+        
+                rpc.init_app(app)
+        
+            app = create_app()
+        
+        Then, you can use the `FlaskPooledClusterRpcProxy` singleton just as you would normally use a `ClusterRpcProxy`, by accessing individual services by name and calling methods on them:
+        
+            # routes.py
+        
+            from . import (
+                app,
+                rpc
+            )
+        
+            @app.route('/'):
+            def index():
+                result = rpc.service.do_something('test')
+                return result
+        
+        ## API
+        
+        ### Configuration
+        
+        `FlaskPooledClusterRpcProxy` accepts all nameko configuration values, prefixed with the `NAMEKO_` prefix. In addition, it exposes additional configuration options:
+        
+        * `NAMEKO_INITIAL_CONNECTIONS (int, default=2)` - the number of initial connections to the Nameko cluster to create
+        * `NAMEKO_MAX_CONNECTIONS (int, default=8)` - the max number of connections to the Nameko cluster to create before raises an error
+        * `NAMEKO_CONNECT_ON_METHOD_CALL (bool, default=True)` - whether connections to services should be loaded when the service is accessed (False) or when a method is called on a service (True)
+        * `NAMEKO_RPC_TIMEOUT` (int, default=None) - the default timeout before raising an error when trying to call a service RPC method
+        * `NAMEKO_POOL_RECYCLE` (int, default=None) - if specified, connections that are older than this interval, specified in seconds, will be automatically recycled on checkout. This setting is useful for environments where connections are happening through a proxy like HAProxy which automatically closes connections after a specified interval.
+        
+        ### Proxies
+        
+        *flask_nameko.**FlaskPooledClusterRpcProxy**(app=None, connect_on_method_call=True)*
+        
+           This class is used to create a pool of connections to a Nameko cluster. It provides the following options:
+           
+               * `connect_on_method_call` - if this is true, the connection to a service is created when a method is called on a service rather than when the service is accessed
+        
+           *init_app(app=None)*
+        
+           Configure the proxy for a given app.
+        
+        ## Development
+        
+            $ git clone git@github.com:jessepollak/flask_nameko.git flask_nameko
+            $ cd flask_nameko
+            $ make develop
+        
+        
+        =======
+        History
+        =======
+        
+        `1.4.0 <https://github.com/clef/flask-nameko/compare/v1.3.0...v1.4.0>`__ (2017-09-10)
+        -------------------------------------------------------------------------------------
+        
+        Features
+        ~~~~~~~~~~~~~
+        
+        -  **Python**: Python 3 support + fix pep8 voilations
+           (`69d116 <https://github.com/jessepollak/flask-nameko/commit/69d116>`__)
+        
+        `1.3.0 <https://github.com/clef/flask-nameko/compare/v1.2.0...v1.3.0>`__ (2016-09-20)
+        -------------------------------------------------------------------------------------
+        
+        Documentation
+        ~~~~~~~~~~~~~
+        
+        -  **README**: adds docs for NAMEKO\_POOL\_RECYCLE
+           (`a27a1be <https://github.com/clef/flask-nameko/commit/a27a1be>`__)
+        
+        Features
+        ~~~~~~~~
+        
+        -  **ConnectionPool**: add pool recycling to eliminate closed connection
+           issue
+           (`4d90f1d <https://github.com/clef/flask-nameko/commit/4d90f1d>`__)
+        
+        `1.2.0 <https://github.com/clef/flask-nameko/compare/v1.1.1...v1.2.0>`__ (2016-09-16)
+        -------------------------------------------------------------------------------------
+        
+        Features
+        ~~~~~~~~
+        
+        -  **PooledClusterRpcProxy**: add support for NAMEKO\_RPC\_TIMEOUT
+           setting
+           (`d4d6042 <https://github.com/clef/flask-nameko/commit/d4d6042>`__)
+        
+        `1.1.0 <https://github.com/clef/flask-nameko/compare/v1.0.1...v1.1.0>`__ (2016-08-09)
+        -------------------------------------------------------------------------------------
+        
+        Features
+        ~~~~~~~~
+        
+        -  **FlaskPooledClusterRpcProxy**: add lazy\_load\_services config
+           (`26184f6 <https://github.com/clef/flask-nameko/commit/26184f6>`__)
+        
+        `0.1.0 <https://github.com/clef/flask-nameko/compare/89698bba0ece0781f931b006009d3b3468e7883a...v0.1.0>`__ (2016-07-28)
+        -----------------------------------------------------------------------------------------------------------------------
+        
+        Features
+        ~~~~~~~~
+        
+        -  **flask\_nameko**: adds FlaskPooledClusterRpcProxy
+           (`285df05 <https://github.com/clef/flask-nameko/commit/285df05>`__)
+        
+        0.1.0
+        ------------------
+        
+        * First release on PyPI.
+        
+Keywords: flask_nameko
+Platform: UNKNOWN
