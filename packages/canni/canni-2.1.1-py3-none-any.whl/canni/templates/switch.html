@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>
+        {{ pagetitle }}
+    </title>
+    <!--
+        WARNING: This should not be used as a reference on how to do things, I have utterly no idea what I'm doing here!
+    -->
+    <style>
+
+
+        /* Thanks so much to Stephen Morley for his code: http://code.stephenmorley.org/html-and-css/tabbed-panels/ */
+        body{
+            padding : 1.5em;
+            background : #f8f8f8;
+            font-family : sans-serif;
+            line-height : 1.5;
+        }
+
+        .tabbed{
+            float : left;
+            width : 100%;
+        }
+
+        .tabbed > input{
+            display : none;
+        }
+
+        .tabbed > section > h1{
+            float : left;
+            box-sizing : border-box;
+            margin : 0;
+            padding : 0.5em 0.5em 0;
+            overflow : hidden;
+            font-size : 1em;
+            font-weight : normal;
+        }
+
+        .tabbed > input:first-child + section > h1{
+            padding-left : 1em;
+        }
+
+        .tabbed > section > h1 > label{
+            display : block;
+            padding : 0.25em 0.75em;
+            border : 1px solid #ddd;
+            border-bottom : none;
+            border-top-left-radius : 4px;
+            border-top-right-radius : 4px;
+            box-shadow : 0 0 0.5em rgba(0,0,0,0.0625);
+            background : #fff;
+            cursor : pointer;
+            -moz-user-select : none;
+            -ms-user-select : none;
+            -webkit-user-select : none;
+        }
+
+        .tabbed > section > div{
+            position : relative;
+            z-index : 1;
+            float : right;
+            box-sizing : border-box;
+            width : 100%;
+            margin : 2.5em 0 0 -100%;
+            padding : 0.5em 0.75em;
+            border : 1px solid #ddd;
+            border-radius : 4px;
+            box-shadow : 0 0 0.5em rgba(0,0,0,0.0625);
+            background : #fff;
+        }
+
+        .tabbed > input:checked + section > h1{
+            position : relative;
+            z-index : 2;
+        }
+
+        .tabbed > input:not(:checked) + section > div{
+            display : none;
+        }
+    </style>
+    <script>
+        function copyToClipboardFromDiv(qselector) {
+              /*
+               * Thanks to https://stackoverflow.com/a/38672314 by
+               * the glorious user https://stackoverflow.com/users/2529834/hani
+               */
+              // creating new textarea element and giving it id 't'
+              let t = document.createElement('textarea')
+              t.id = 't'
+              // Optional step to make less noise in the page, if any!
+              t.style.height = 0
+              // You have to append it to your page somewhere, I chose <body>
+              document.body.appendChild(t)
+              // Copy whatever is in your div to our new textarea
+              t.value = document.getElementById(qselector).innerText.replace(/\\n/g, '\n')
+              // Now copy whatever inside the textarea to clipboard
+              let selector = document.querySelector('#t')
+              selector.select()
+              document.execCommand('copy')
+              // Remove the textarea
+              document.body.removeChild(t)
+        }
+
+
+        function randomCopy(qselector) {
+            /*
+             * Choose (and call for copy of) an random element from a group of elements which match a specifc class (qselector).
+             */
+            let vlist = document.getElementsByClassName(qselector)
+            random_item = vlist[Math.floor(Math.random() * vlist.length)];
+            copyToClipboardFromDiv(random_item.id)
+        }
+
+        function staticCopy(qselector) {
+            /*
+             * Choose (and call for copy of) the element with the same id as the qselector parameter.
+             */
+            copyToClipboardFromDiv(qselector)
+        }
+
+    </script>
+</head>
+<body>
+
+<div class="tabbed">
+    {% for tab in switch.get_tabinfos() %}
+    {% set tab_loop = loop %}
+    {% if loop.first %}
+    <input name="tabbed" id="tab{{ loop.index0 }}" type="radio" checked>
+    {% else %}
+    <input name="tabbed" id="tab{{ loop.index0 }}" type="radio">
+    {% endif%}
+    <section>
+        <h1>
+            <label for="tab{{ loop.index0 }}">{{ tab.name }}</label>
+        </h1>
+        <div>
+            <table>
+                <tr>
+                    <th>[x]</th>
+                    <th>title</th>
+                    <th>text</th>
+                    <th>action</th>
+                </tr>
+                {% for item in tab.zipped_choices %}
+                {% set item_loop = loop %}
+                <tr style="{{ loop.cycle('background-color: #e8e8e8;', '') }}">
+                    {% if item[2] %}
+                    <td><input type="checkbox"></td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
+                    <td>{{ item[0] }}</td>
+                    <td>
+                        {% for chance in item[1] %}
+                        {% if loop.first %}
+                        <div id="tab{{ tab_loop.index0 }}item{{ item_loop.index0 }}chance{{ loop.index0 }}"
+                             class="tab{{ tab_loop.index0 }}item{{ item_loop.index0 }}">{{ chance }}</div>
+                        {% else %}
+                        <div id="tab{{ tab_loop.index0 }}item{{ item_loop.index0 }}chance{{ loop.index0 }}"
+                             class="tab{{ tab_loop.index0 }}item{{ item_loop.index0 }}" style="display: none">{{ chance }}</div>
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td  style="display: inline-flex">
+                        {% if item[1] != None and item[1] != [] and item[0] != ''  %}
+                        <button onclick="randomCopy('tab{{ tab_loop.index0 }}item{{ loop.index0 }}')">random copy ({{ item[1]|length }})</button>
+                        <button onclick="staticCopy('tab{{ tab_loop.index0 }}item{{ loop.index0 }}chance0')">copy</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </section>
+    {% endfor %}
+</div>
+</body>
+</html>
