@@ -1,0 +1,17 @@
+Decorator based console script argument parsing framework for JSON/XML
+for increased standardization and reusability of command line argument
+definition blocks.
+
+Home-page: https://github.com/spacequal/json-xml-argparse
+Author: Branden Allen
+Author-email: ballen@cfa.harvard.edu
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=2.7
