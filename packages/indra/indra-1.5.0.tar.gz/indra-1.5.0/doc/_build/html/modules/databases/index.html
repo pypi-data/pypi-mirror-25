@@ -1,0 +1,1378 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Database clients (indra.databases) &mdash; INDRA 1.5.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="INDRA 1.5.0 documentation" href="../../index.html"/>
+        <link rel="up" title="INDRA modules reference" href="../index.html"/>
+        <link rel="next" title="Literature clients (indra.literature)" href="../literature/index.html"/>
+        <link rel="prev" title="NDEx CX API (indra.sources.ndex_cx_api)" href="../sources/ndex_cx/index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../index.html" class="icon icon-home"> INDRA
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#installing-python">Installing Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#installing-indra">Installing INDRA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#installing-via-github">Installing via Github</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#cloning-the-source-code-from-github">Cloning the source code from Github</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#installing-releases-with-pip">Installing releases with pip</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#indra-dependencies">INDRA dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#pysb-and-bionetgen">PySB and BioNetGen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#pyjnius">Pyjnius</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#graphviz">Graphviz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#matplotlib">Matplotlib</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../installation.html#optional-additional-dependencies">Optional additional dependencies</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started with INDRA</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started.html#importing-indra-and-its-modules">Importing INDRA and its modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started.html#basic-usage-examples">Basic usage examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started.html#reading-a-sentence-with-trips">Reading a sentence with TRIPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started.html#reading-a-pubmed-central-article-with-reach">Reading a PubMed Central article with REACH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started.html#getting-the-neighborhood-of-proteins-from-the-bel-large-corpus">Getting the neighborhood of proteins from the BEL Large Corpus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started.html#getting-paths-between-two-proteins-from-pathwaycommons-biopax">Getting paths between two proteins from PathwayCommons (BioPAX)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started.html#constructing-indra-statements-manually">Constructing INDRA Statements manually</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting_started.html#assembling-a-pysb-model-and-exporting-to-sbml">Assembling a PySB model and exporting to SBML</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">INDRA modules reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../statements.html">INDRA Statements (<code class="docutils literal"><span class="pre">indra.statements</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sources/index.html">Processors for model input (<code class="docutils literal"><span class="pre">indra.sources</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../sources/bel/index.html">BEL (<code class="docutils literal"><span class="pre">indra.sources.bel</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../sources/bel/index.html#module-indra.sources.bel.bel_api">BEL API (<code class="docutils literal"><span class="pre">indra.sources.bel.bel_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../sources/bel/index.html#module-indra.sources.bel.processor">BEL Processor (<code class="docutils literal"><span class="pre">indra.sources.bel.processor</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../sources/biopax/index.html">Biopax (<code class="docutils literal"><span class="pre">indra.sources.biopax</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../sources/biopax/index.html#module-indra.sources.biopax.biopax_api">Biopax API (<code class="docutils literal"><span class="pre">indra.sources.biopax.biopax_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../sources/biopax/index.html#module-indra.sources.biopax.processor">Biopax Processor (<code class="docutils literal"><span class="pre">indra.sources.biopax.processor</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../sources/biopax/index.html#module-indra.sources.biopax.pathway_commons_client">Pathway Commons Client (<code class="docutils literal"><span class="pre">indra.sources.biopax.pathway_commons_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../sources/reach/index.html">REACH (<code class="docutils literal"><span class="pre">indra.sources.reach</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../sources/reach/index.html#module-indra.sources.reach.reach_api">REACH API (<code class="docutils literal"><span class="pre">indra.sources.reach.reach_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../sources/reach/index.html#module-indra.sources.reach.processor">REACH Processor (<code class="docutils literal"><span class="pre">indra.sources.reach.processor</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../sources/reach/index.html#module-indra.sources.reach.reach_reader">REACH reader (<code class="docutils literal"><span class="pre">indra.sources.reach.reach_reader</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../sources/trips/index.html">TRIPS (<code class="docutils literal"><span class="pre">indra.sources.trips</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../sources/trips/index.html#module-indra.sources.trips.trips_api">TRIPS API (<code class="docutils literal"><span class="pre">indra.sources.trips.trips_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../sources/trips/index.html#module-indra.sources.trips.processor">TRIPS Processor (<code class="docutils literal"><span class="pre">indra.sources.trips.processor</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../sources/trips/index.html#module-indra.sources.trips.trips_client">TRIPS Client (<code class="docutils literal"><span class="pre">indra.sources.trips.trips_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../sources/ndex_cx/index.html">NDEx CX API (<code class="docutils literal"><span class="pre">indra.sources.ndex_cx_api</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../sources/ndex_cx/index.html#ndex-cx-processor-indra-sources-ndex-cx-processor">NDEx CX Processor (<code class="docutils literal"><span class="pre">indra.sources.ndex_cx.processor</span></code>)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Database clients (<code class="docutils literal"><span class="pre">indra.databases</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.hgnc_client">HGNC client (<code class="docutils literal"><span class="pre">indra.hgnc_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.uniprot_client">Uniprot client (<code class="docutils literal"><span class="pre">indra.databases.uniprot_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.chebi_client">ChEBI client (<code class="docutils literal"><span class="pre">indra.databases.chebi_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.biogrid_client">BioGRID client (<code class="docutils literal"><span class="pre">indra.databases.biogrid_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.context_client">Cell type context client (<code class="docutils literal"><span class="pre">indra.databases.context_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.relevance_client">Network relevance client (<code class="docutils literal"><span class="pre">indra.databases.relevance_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.ndex_client">NDEx client (<code class="docutils literal"><span class="pre">indra.databases.ndex_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-indra.databases.cbio_client">cBio portal client (<code class="docutils literal"><span class="pre">indra.databases.cbio_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../literature/index.html">Literature clients (<code class="docutils literal"><span class="pre">indra.literature</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../literature/index.html#module-indra.literature.pubmed_client">Pubmed client (<code class="docutils literal"><span class="pre">indra.literature.pubmed_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../literature/index.html#module-indra.literature.pmc_client">Pubmed Central client (<code class="docutils literal"><span class="pre">indra.literature.pmc_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../literature/index.html#module-indra.literature.crossref_client">CrossRef client (<code class="docutils literal"><span class="pre">indra.literature.crossref_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../literature/index.html#module-indra.literature.elsevier_client">Elsevier client (<code class="docutils literal"><span class="pre">indra.literature.elsevier_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../preassembler/index.html">Preassembly (<code class="docutils literal"><span class="pre">indra.preassembler</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../preassembler/index.html#module-indra.preassembler">Preassembler (<code class="docutils literal"><span class="pre">indra.preassembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../preassembler/index.html#module-indra.preassembler.grounding_mapper">Entity grounding curation and mapping (<code class="docutils literal"><span class="pre">indra.preassembler.grounding_mapper</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../preassembler/index.html#module-indra.preassembler.sitemapper">Site curation and mapping (<code class="docutils literal"><span class="pre">indra.preassembler.sitemapper</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../preassembler/index.html#module-indra.preassembler.hierarchy_manager">Hierarchy manager (<code class="docutils literal"><span class="pre">indra.preassembler.hierarchy_manager</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../belief/index.html">Belief Engine (<code class="docutils literal"><span class="pre">indra.belief</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mechlinker/index.html">Mechanism Linker (<code class="docutils literal"><span class="pre">indra.mechlinker</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../assemblers/index.html">Assemblers of model output (<code class="docutils literal"><span class="pre">indra.assemblers</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../assemblers/pysb_assembler.html">Executable PySB models (<code class="docutils literal"><span class="pre">indra.assemblers.pysb_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../assemblers/cx_assembler.html">Cytoscape networks (<code class="docutils literal"><span class="pre">indra.assemblers.cx_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../assemblers/english_assembler.html">Natural language (<code class="docutils literal"><span class="pre">indra.assemblers.english_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../assemblers/graph_assembler.html">Node-edge graphs (<code class="docutils literal"><span class="pre">indra.assemblers.graph_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../assemblers/sif_assembler.html">SIF / Boolean networks (<code class="docutils literal"><span class="pre">indra.assemblers.sif_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../assemblers/index_card_assembler.html">MITRE &#8220;index cards&#8221; (<code class="docutils literal"><span class="pre">indra.assemblers.index_card_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../assemblers/sbgn_assembler.html">SBGN output (<code class="docutils literal"><span class="pre">indra.assemblers.sbgn_assembler</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../explanation/index.html">Explanation (<code class="docutils literal"><span class="pre">indra.explanation</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../explanation/index.html#module-indra.explanation.model_checker">Check whether a rule-based model satisfies a property (<code class="docutils literal"><span class="pre">indra.explanation.model_checker</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">Tools (<code class="docutils literal"><span class="pre">indra.tools</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tools/index.html#module-indra.tools.assemble_corpus">Run assembly components in a pipeline (<code class="docutils literal"><span class="pre">indra.tools.assemble_corpus</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tools/index.html#module-indra.tools.gene_network">Build a network from a gene list (<code class="docutils literal"><span class="pre">indra.tools.gene_network</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tools/index.html#module-indra.tools.executable_subnetwork">Build an executable model from a fragment of a large network (<code class="docutils literal"><span class="pre">indra.tools.executable_subnetwork</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tools/index.html#module-indra.tools.incremental_model">Build a model incrementally over time (<code class="docutils literal"><span class="pre">indra.tools.incremental_model</span></code>)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/nl_modeling.html">Using natural language to build models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/nl_modeling.html#read-indra-statements-from-a-natural-language-string">Read INDRA Statements from a natural language string</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/nl_modeling.html#assemble-the-indra-statements-into-a-rule-based-executable-model">Assemble the INDRA Statements into a rule-based executable model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/nl_modeling.html#exporting-the-model-into-other-common-formats">Exporting the model into other common formats</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/machine_reading.html">Large-Scale Machine Reading with Starcluster</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading.html#install-reach">Install REACH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading.html#install-amazon-s3-support">Install Amazon S3 support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading.html#install-other-dependencies">Install other dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading.html#assemble-a-corpus-of-pmids">Assemble a Corpus of PMIDs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading.html#process-the-papers-with-reach">Process the papers with REACH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading.html#extract-indra-statements-from-the-reach-output-on-s3">Extract INDRA Statements from the REACH output on S3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading.html#running-the-whole-pipeline-with-one-script">Running the whole pipeline with one script</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/machine_reading_aws.html">Large-Scale Machine Reading with Amazon Batch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/machine_reading_aws.html#how-it-works">How it Works</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/gene_network.html">Assembling everything known about a particular gene</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/gene_network.html#collect-mechanisms-from-pathwaycommons-and-the-bel-large-corpus">Collect mechanisms from PathwayCommons and the BEL Large Corpus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/gene_network.html#collect-a-list-of-publications-that-discuss-the-gene-of-interest">Collect a list of publications that discuss the gene of interest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/gene_network.html#get-the-full-text-or-abstract-corresponding-to-the-publications">Get the full text or abstract corresponding to the publications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/gene_network.html#read-the-content-of-the-publications">Read the content of the publications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/gene_network.html#combine-all-statements-and-run-pre-assembly">Combine all statements and run pre-assembly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/gene_network.html#assemble-the-statements-into-a-network-model">Assemble the statements into a network model</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../rest_api.html">REST API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../rest_api.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../rest_api.html#launching-the-rest-service">Launching the REST service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../rest_api.html#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">INDRA</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">INDRA modules reference</a> &raquo;</li>
+      
+    <li>Database clients (<code class="docutils literal"><span class="pre">indra.databases</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/modules/databases/index.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="database-clients-indra-databases">
+<h1>Database clients (<code class="xref py py-mod docutils literal"><span class="pre">indra.databases</span></code>)<a class="headerlink" href="#database-clients-indra-databases" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-indra.databases.hgnc_client">
+<span id="hgnc-client-indra-hgnc-client"></span><h2>HGNC client (<code class="xref py py-mod docutils literal"><span class="pre">indra.hgnc_client</span></code>)<a class="headerlink" href="#module-indra.databases.hgnc_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_entrez_id">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_entrez_id</code><span class="sig-paren">(</span><em>hgnc_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_entrez_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_entrez_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Entrez ID corresponding to the given HGNC ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hgnc_id</strong> (<em>str</em>) &#8211; The HGNC ID to be converted. Note that the HGNC ID is a number that is
+passed as a string. It is not the same as the HGNC gene symbol.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>entrez_id</strong> &#8211; The Entrez ID corresponding to the given HGNC ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_hgnc_from_entrez">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_hgnc_from_entrez</code><span class="sig-paren">(</span><em>entrez_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_hgnc_from_entrez"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_hgnc_from_entrez" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the HGNC ID corresponding to the given Entrez ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>entrez_id</strong> (<em>str</em>) &#8211; The EntrezC ID to be converted, a number passed as a strig.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>hgnc_id</strong> &#8211; The HGNC ID corresponding to the given Entrez ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_hgnc_from_mouse">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_hgnc_from_mouse</code><span class="sig-paren">(</span><em>mgi_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_hgnc_from_mouse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_hgnc_from_mouse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the HGNC ID corresponding to the given MGI mouse gene ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mgi_id</strong> (<em>str</em>) &#8211; The MGI ID to be converted. Example: &#8220;2444934&#8221;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>hgnc_id</strong> &#8211; The HGNC ID corresponding to the given MGI ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_hgnc_from_rat">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_hgnc_from_rat</code><span class="sig-paren">(</span><em>rgd_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_hgnc_from_rat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_hgnc_from_rat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the HGNC ID corresponding to the given RGD rat gene ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rgd_id</strong> (<em>str</em>) &#8211; The RGD ID to be converted. Example: &#8220;1564928&#8221;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>hgnc_id</strong> &#8211; The HGNC ID corresponding to the given RGD ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_hgnc_id">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_hgnc_id</code><span class="sig-paren">(</span><em>hgnc_name</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_hgnc_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_hgnc_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the HGNC ID corresponding to the given HGNC symbol.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hgnc_name</strong> (<em>str</em>) &#8211; The HGNC symbol to be converted. Example: BRAF</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>hgnc_id</strong> &#8211; The HGNC ID corresponding to the given HGNC symbol.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_hgnc_name">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_hgnc_name</code><span class="sig-paren">(</span><em>hgnc_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_hgnc_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_hgnc_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the HGNC symbol corresponding to the given HGNC ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hgnc_id</strong> (<em>str</em>) &#8211; The HGNC ID to be converted.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>hgnc_name</strong> &#8211; The HGNC symbol corresponding to the given HGNC ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_mouse_id">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_mouse_id</code><span class="sig-paren">(</span><em>hgnc_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_mouse_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_mouse_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the MGI mouse ID corresponding to the given HGNC ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hgnc_id</strong> (<em>str</em>) &#8211; The HGNC ID to be converted. Example: &#8220;&#8221;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>mgi_id</strong> &#8211; The MGI ID corresponding to the given HGNC ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_rat_id">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_rat_id</code><span class="sig-paren">(</span><em>hgnc_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_rat_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_rat_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the RGD rat ID corresponding to the given HGNC ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hgnc_id</strong> (<em>str</em>) &#8211; The HGNC ID to be converted. Example: &#8220;&#8221;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>rgd_id</strong> &#8211; The RGD ID corresponding to the given HGNC ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.hgnc_client.get_uniprot_id">
+<code class="descclassname">indra.databases.hgnc_client.</code><code class="descname">get_uniprot_id</code><span class="sig-paren">(</span><em>hgnc_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/hgnc_client.html#get_uniprot_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.hgnc_client.get_uniprot_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the UniProt ID corresponding to the given HGNC ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hgnc_id</strong> (<em>str</em>) &#8211; The HGNC ID to be converted. Note that the HGNC ID is a number that is
+passed as a string. It is not the same as the HGNC gene symbol.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>uniprot_id</strong> &#8211; The UniProt ID corresponding to the given HGNC ID.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-indra.databases.uniprot_client">
+<span id="uniprot-client-indra-databases-uniprot-client"></span><h2>Uniprot client (<a class="reference internal" href="#module-indra.databases.uniprot_client" title="indra.databases.uniprot_client"><code class="xref py py-mod docutils literal"><span class="pre">indra.databases.uniprot_client</span></code></a>)<a class="headerlink" href="#module-indra.databases.uniprot_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_family_members">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_family_members</code><span class="sig-paren">(</span><em>family_name</em>, <em>human_only=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_family_members"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_family_members" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the HGNC gene symbols which are the members of a given family.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>family_name</strong> (<em>str</em>) &#8211; Family name to be queried.</li>
+<li><strong>human_only</strong> (<em>bool</em>) &#8211; If True, only human proteins in the family will be returned.
+Default: True</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>gene_names</strong> &#8211; The HGNC gene symbols corresponding to the given family.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_gene_name">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_gene_name</code><span class="sig-paren">(</span><em>protein_id</em>, <em>web_fallback=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_gene_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_gene_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the gene name for the given UniProt ID.</p>
+<p>This is an alternative to get_hgnc_name and is useful when
+HGNC name is not availabe (for instance, when the organism
+is not homo sapiens).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID to be mapped.</li>
+<li><strong>web_fallback</strong> (<em>Optional[bool]</em>) &#8211; If True and the offline lookup fails, the UniProt web service
+is used to do the query.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>gene_name</strong> &#8211; The gene name corresponding to the given Uniprot ID.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_id_from_mgi">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_id_from_mgi</code><span class="sig-paren">(</span><em>mgi_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_id_from_mgi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_id_from_mgi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the UniProt ID given the MGI ID of a mouse protein.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mgi_id</strong> (<em>str</em>) &#8211; The MGI ID of the mouse protein.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>up_id</strong> &#8211; The UniProt ID of the mouse protein.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_id_from_mnemonic">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_id_from_mnemonic</code><span class="sig-paren">(</span><em>uniprot_mnemonic</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_id_from_mnemonic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_id_from_mnemonic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the UniProt ID for the given UniProt mnemonic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>uniprot_mnemonic</strong> (<em>str</em>) &#8211; UniProt mnemonic to be mapped.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>uniprot_id</strong> &#8211; The UniProt ID corresponding to the given Uniprot mnemonic.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_id_from_rgd">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_id_from_rgd</code><span class="sig-paren">(</span><em>rgd_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_id_from_rgd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_id_from_rgd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the UniProt ID given the RGD ID of a rat protein.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rgd_id</strong> (<em>str</em>) &#8211; The RGD ID of the rat protein.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>up_id</strong> &#8211; The UniProt ID of the rat protein.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_mgi_id">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_mgi_id</code><span class="sig-paren">(</span><em>protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_mgi_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_mgi_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the MGI ID given the protein id of a mouse protein.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID of the mouse protein</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>mgi_id</strong> &#8211; MGI ID of the mouse protein</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_mnemonic">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_mnemonic</code><span class="sig-paren">(</span><em>protein_id</em>, <em>web_fallback=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_mnemonic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_mnemonic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the UniProt mnemonic for the given UniProt ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID to be mapped.</li>
+<li><strong>web_fallback</strong> (<em>Optional[bool]</em>) &#8211; If True and the offline lookup fails, the UniProt web service
+is used to do the query.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mnemonic</strong> &#8211; The UniProt mnemonic corresponding to the given Uniprot ID.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_mouse_id">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_mouse_id</code><span class="sig-paren">(</span><em>human_protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_mouse_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_mouse_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mouse UniProt ID given a human UniProt ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>human_protein_id</strong> (<em>str</em>) &#8211; The UniProt ID of a human protein.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>mouse_protein_id</strong> &#8211; The UniProt ID of a mouse protein orthologous to the given human protein</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_primary_id">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_primary_id</code><span class="sig-paren">(</span><em>protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_primary_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_primary_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a primary entry corresponding to the UniProt ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protein_id</strong> (<em>str</em>) &#8211; The UniProt ID to map to primary.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>primary_id</strong> &#8211; If the given ID is primary, it is returned as is. Othwewise the primary
+IDs are looked up. If there are multiple primary IDs then the first
+human one is returned. If there are no human primary IDs then the
+first primary found is returned.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_rat_id">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_rat_id</code><span class="sig-paren">(</span><em>human_protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_rat_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_rat_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the rat UniProt ID given a human UniProt ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>human_protein_id</strong> (<em>str</em>) &#8211; The UniProt ID of a human protein.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>rat_protein_id</strong> &#8211; The UniProt ID of a rat protein orthologous to the given human protein</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.get_rgd_id">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">get_rgd_id</code><span class="sig-paren">(</span><em>protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#get_rgd_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.get_rgd_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the RGD ID given the protein id of a rat protein.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID of the rat protein</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>rgd_id</strong> &#8211; RGD ID of the rat protein</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.is_human">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">is_human</code><span class="sig-paren">(</span><em>protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#is_human"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.is_human" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the given protein id corresponds to a human protein.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID of the protein</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">True if the protein_id corresponds to a human protein, otherwise False.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.is_mouse">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">is_mouse</code><span class="sig-paren">(</span><em>protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#is_mouse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.is_mouse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the given protein id corresponds to a mouse protein.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID of the protein</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">True if the protein_id corresponds to a mouse protein, otherwise False.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.is_rat">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">is_rat</code><span class="sig-paren">(</span><em>protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#is_rat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.is_rat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the given protein id corresponds to a rat protein.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID of the protein</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">True if the protein_id corresponds to a rat protein, otherwise False.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.is_secondary">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">is_secondary</code><span class="sig-paren">(</span><em>protein_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#is_secondary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.is_secondary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the UniProt ID corresponds to a secondary accession.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protein_id</strong> (<em>str</em>) &#8211; The UniProt ID to check.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">True if it is a secondary accessing entry, False otherwise.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.verify_location">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">verify_location</code><span class="sig-paren">(</span><em>protein_id</em>, <em>residue</em>, <em>location</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#verify_location"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.verify_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the residue is at the given location in the UP sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID of the protein whose sequence is used as reference.</li>
+<li><strong>residue</strong> (<em>str</em>) &#8211; A single character amino acid symbol (Y, S, T, V, etc.)</li>
+<li><strong>location</strong> (<em>str</em>) &#8211; The location on the protein sequence (starting at 1) at which the
+residue should be checked against the reference sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><em>True if the given residue is at the given position in the sequence</em></li>
+<li><em>corresponding to the given UniProt ID, otherwise False.</em></li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.uniprot_client.verify_modification">
+<code class="descclassname">indra.databases.uniprot_client.</code><code class="descname">verify_modification</code><span class="sig-paren">(</span><em>protein_id</em>, <em>residue</em>, <em>location=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/uniprot_client.html#verify_modification"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.uniprot_client.verify_modification" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the residue at the given location has a known modifiation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>protein_id</strong> (<em>str</em>) &#8211; UniProt ID of the protein whose sequence is used as reference.</li>
+<li><strong>residue</strong> (<em>str</em>) &#8211; A single character amino acid symbol (Y, S, T, V, etc.)</li>
+<li><strong>location</strong> (<em>Optional[str]</em>) &#8211; The location on the protein sequence (starting at 1) at which the
+modification is checked.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><em>True if the given residue is reported to be modified at the given position</em></li>
+<li><em>in the sequence corresponding to the given UniProt ID, otherwise False.</em></li>
+<li><em>If location is not given, we only check if there is any residue of the</em></li>
+<li><em>given type that is modified.</em></li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-indra.databases.chebi_client">
+<span id="chebi-client-indra-databases-chebi-client"></span><h2>ChEBI client (<a class="reference internal" href="#module-indra.databases.chebi_client" title="indra.databases.chebi_client"><code class="xref py py-mod docutils literal"><span class="pre">indra.databases.chebi_client</span></code></a>)<a class="headerlink" href="#module-indra.databases.chebi_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.chebi_client.get_chebi_id_from_pubchem">
+<code class="descclassname">indra.databases.chebi_client.</code><code class="descname">get_chebi_id_from_pubchem</code><span class="sig-paren">(</span><em>pubchem_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/chebi_client.html#get_chebi_id_from_pubchem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.chebi_client.get_chebi_id_from_pubchem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the ChEBI ID corresponding to a given Pubchem ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pubchem_id</strong> (<em>str</em>) &#8211; Pubchem ID to be converted.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>chebi_id</strong> &#8211; ChEBI ID corresponding to the given Pubchem ID. If the lookup fails,
+None is returned.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.chebi_client.get_pubchem_id">
+<code class="descclassname">indra.databases.chebi_client.</code><code class="descname">get_pubchem_id</code><span class="sig-paren">(</span><em>chebi_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/chebi_client.html#get_pubchem_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.chebi_client.get_pubchem_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the PubChem ID corresponding to a given ChEBI ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chebi_id</strong> (<em>str</em>) &#8211; ChEBI ID to be converted.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pubchem_id</strong> &#8211; PubChem ID corresponding to the given ChEBI ID. If the lookup fails,
+None is returned.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-indra.databases.biogrid_client">
+<span id="biogrid-client-indra-databases-biogrid-client"></span><h2>BioGRID client (<a class="reference internal" href="#module-indra.databases.biogrid_client" title="indra.databases.biogrid_client"><code class="xref py py-mod docutils literal"><span class="pre">indra.databases.biogrid_client</span></code></a>)<a class="headerlink" href="#module-indra.databases.biogrid_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.biogrid_client.get_publications">
+<code class="descclassname">indra.databases.biogrid_client.</code><code class="descname">get_publications</code><span class="sig-paren">(</span><em>gene_names</em>, <em>save_json_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/biogrid_client.html#get_publications"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.biogrid_client.get_publications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return evidence publications for interaction between the given genes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gene_names</strong> (<em>list[str]</em>) &#8211; A list of gene names (HGNC symbols) to query interactions between.
+Currently supports exactly two genes only.</li>
+<li><strong>save_json_name</strong> (<em>Optional[str]</em>) &#8211; A file name to save the raw BioGRID web service output in. By default,
+the raw output is not saved.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>publications</strong> &#8211; A list of Publication objects that provide evidence for interactions
+between the given list of genes.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list[Publication]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-indra.databases.context_client">
+<span id="cell-type-context-client-indra-databases-context-client"></span><h2>Cell type context client (<a class="reference internal" href="#module-indra.databases.context_client" title="indra.databases.context_client"><code class="xref py py-mod docutils literal"><span class="pre">indra.databases.context_client</span></code></a>)<a class="headerlink" href="#module-indra.databases.context_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.context_client.get_mutations">
+<code class="descclassname">indra.databases.context_client.</code><code class="descname">get_mutations</code><span class="sig-paren">(</span><em>gene_names</em>, <em>cell_types</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/context_client.html#get_mutations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.context_client.get_mutations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return protein amino acid changes in given genes and cell types.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gene_names</strong> (<em>list</em>) &#8211; HGNC gene symbols for which mutations are queried.</li>
+<li><strong>cell_types</strong> (<em>list</em>) &#8211; <p>List of cell type names in which mutations are queried.
+The cell type names follow the CCLE database conventions.</p>
+<p>Example: LOXIMVI_SKIN, BT20_BREAST</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>res</strong> &#8211; A dictionary keyed by cell line, which contains another dictionary
+that is keyed by gene name, with a list of amino acid substitutions
+as values.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict[dict[list]]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.context_client.get_protein_expression">
+<code class="descclassname">indra.databases.context_client.</code><code class="descname">get_protein_expression</code><span class="sig-paren">(</span><em>gene_names</em>, <em>cell_types</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/context_client.html#get_protein_expression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.context_client.get_protein_expression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the protein expression levels of genes in cell types.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gene_names</strong> (<em>list</em>) &#8211; HGNC gene symbols for which expression levels are queried.</li>
+<li><strong>cell_types</strong> (<em>list</em>) &#8211; <p>List of cell type names in which expression levels are queried.
+The cell type names follow the CCLE database conventions.</p>
+<p>Example: LOXIMVI_SKIN, BT20_BREAST</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>res</strong> &#8211; A dictionary keyed by cell line, which contains another dictionary
+that is keyed by gene name, with estimated protein amounts as values.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict[dict[float]]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-indra.databases.relevance_client">
+<span id="network-relevance-client-indra-databases-relevance-client"></span><h2>Network relevance client (<a class="reference internal" href="#module-indra.databases.relevance_client" title="indra.databases.relevance_client"><code class="xref py py-mod docutils literal"><span class="pre">indra.databases.relevance_client</span></code></a>)<a class="headerlink" href="#module-indra.databases.relevance_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.relevance_client.get_heat_kernel">
+<code class="descclassname">indra.databases.relevance_client.</code><code class="descname">get_heat_kernel</code><span class="sig-paren">(</span><em>network_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/relevance_client.html#get_heat_kernel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.relevance_client.get_heat_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the identifier of a heat kernel calculated for a given network.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>network_id</strong> (<em>str</em>) &#8211; The UUID of the network in NDEx.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>kernel_id</strong> &#8211; The identifier of the heat kernel calculated for the given network.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.relevance_client.get_relevant_nodes">
+<code class="descclassname">indra.databases.relevance_client.</code><code class="descname">get_relevant_nodes</code><span class="sig-paren">(</span><em>network_id</em>, <em>query_nodes</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/relevance_client.html#get_relevant_nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.relevance_client.get_relevant_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of network nodes relevant to a given query set.</p>
+<p>A heat diffusion algorithm is used on a pre-computed heat kernel for the
+given network which starts from the given query nodes. The nodes
+in the network are ranked according to heat score which is a measure
+of relevance with respect to the query nodes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>network_id</strong> (<em>str</em>) &#8211; The UUID of the network in NDEx.</li>
+<li><strong>query_nodes</strong> (<em>list[str]</em>) &#8211; A list of node names with respect to which relevance is queried.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>ranked_entities</strong> &#8211; A list containing pairs of node names and their relevance scores.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list[(str, float)]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-indra.databases.ndex_client">
+<span id="ndex-client-indra-databases-ndex-client"></span><h2>NDEx client (<a class="reference internal" href="#module-indra.databases.ndex_client" title="indra.databases.ndex_client"><code class="xref py py-mod docutils literal"><span class="pre">indra.databases.ndex_client</span></code></a>)<a class="headerlink" href="#module-indra.databases.ndex_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.ndex_client.send_request">
+<code class="descclassname">indra.databases.ndex_client.</code><code class="descname">send_request</code><span class="sig-paren">(</span><em>ndex_service_url</em>, <em>params</em>, <em>is_json=True</em>, <em>use_get=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/ndex_client.html#send_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.ndex_client.send_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a request to the NDEx server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ndex_service_url</strong> (<em>str</em>) &#8211; The URL of the service to use for the request.</li>
+<li><strong>params</strong> (<em>dict</em>) &#8211; A dictionary of parameters to send with the request. Parameter keys
+differ based on the type of request.</li>
+<li><strong>is_json</strong> (<em>bool</em>) &#8211; True if the response is in json format, otherwise it is assumed to be
+text. Default: False</li>
+<li><strong>use_get</strong> (<em>bool</em>) &#8211; True if the request needs to use GET instead of POST.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>res</strong> &#8211; Depending on the type of service and the is_json parameter, this
+function either returns a text string or a json dict.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-indra.databases.cbio_client">
+<span id="cbio-portal-client-indra-databases-cbio-client"></span><h2>cBio portal client (<a class="reference internal" href="#module-indra.databases.cbio_client" title="indra.databases.cbio_client"><code class="xref py py-mod docutils literal"><span class="pre">indra.databases.cbio_client</span></code></a>)<a class="headerlink" href="#module-indra.databases.cbio_client" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_cancer_studies">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_cancer_studies</code><span class="sig-paren">(</span><em>study_filter=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_cancer_studies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_cancer_studies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of cancer study identifiers, optionally filtered.</p>
+<p>There are typically multiple studies for a given type of cancer and
+a filter can be used to constrain the returned list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>study_filter</strong> (<em>Optional[str]</em>) &#8211; A string used to filter the study IDs to return. Example: &#8220;paad&#8221;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>study_ids</strong> &#8211; A list of study IDs.
+For instance &#8220;paad&#8221; as a filter would result in a list
+of study IDs with paad in their name like &#8220;paad_icgc&#8221;, &#8220;paad_tcga&#8221;,
+etc.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list[str]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_cancer_types">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_cancer_types</code><span class="sig-paren">(</span><em>cancer_filter=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_cancer_types"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_cancer_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of cancer types, optionally filtered.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cancer_filter</strong> (<em>Optional[str]</em>) &#8211; A string used to filter cancer types. Its value is the name or
+part of the name of a type of cancer. Example: &#8220;melanoma&#8221;,
+&#8220;pancreatic&#8221;, &#8220;non-small cell lung&#8221;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>type_ids</strong> &#8211; A list of cancer types matching the filter.
+Example: for cancer_filter=&#8221;pancreatic&#8221;, the result includes
+&#8220;panet&#8221; (neuro-endocrine) and &#8220;paad&#8221; (adenocarcinoma)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list[str]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_case_lists">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_case_lists</code><span class="sig-paren">(</span><em>study_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_case_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_case_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the case set ids for a particular study.</p>
+<p>TAKE NOTE the &#8220;case_list_id&#8221; are the same thing as &#8220;case_set_id&#8221;
+Within the data, this string is referred to as a &#8220;case_list_id&#8221;.
+Within API calls it is referred to as a &#8216;case_set_id&#8217;.
+The documentation does not make this explicitly clear.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>study_id</strong> (<em>str</em>) &#8211; The ID of the cBio study.
+Example: &#8216;cellline_ccle_broad&#8217; or &#8216;paad_icgc&#8217;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>case_set_ids</strong> &#8211; A dict keyed to cases containing a dict keyed to genes
+containing int</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict[dict[int]]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_ccle_cna">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_ccle_cna</code><span class="sig-paren">(</span><em>gene_list</em>, <em>cell_lines</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_ccle_cna"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_ccle_cna" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict of CNAs in given genes and cell lines from CCLE.</p>
+<p>This is a specialized call to get_mutations tailored to CCLE cell lines.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gene_list</strong> (<em>list[str]</em>) &#8211; A list of HGNC gene symbols to get mutations in</li>
+<li><strong>cell_lines</strong> (<em>list[str]</em>) &#8211; A list of CCLE cell line names to get mutations for.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>profile_data</strong> &#8211; A dict keyed to cases containing a dict keyed to genes
+containing int</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict[dict[int]]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_ccle_lines_for_mutation">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_ccle_lines_for_mutation</code><span class="sig-paren">(</span><em>gene</em>, <em>amino_acid_change</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_ccle_lines_for_mutation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_ccle_lines_for_mutation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return cell lines with a given point mutation in a given gene.</p>
+<p>Checks which cell lines in CCLE have a particular point mutation
+in a given gene and return their names in a list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gene</strong> (<em>str</em>) &#8211; The HGNC symbol of the mutated gene in whose product the amino
+acid change occurs. Example: &#8220;BRAF&#8221;</li>
+<li><strong>amino_acid_change</strong> (<em>str</em>) &#8211; The amino acid change of interest. Example: &#8220;V600E&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>cell_lines</strong> &#8211; A list of CCLE cell lines in which the given mutation occurs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_ccle_mrna">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_ccle_mrna</code><span class="sig-paren">(</span><em>gene_list</em>, <em>cell_lines</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_ccle_mrna"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_ccle_mrna" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict of mRNA amounts in given genes and cell lines from CCLE.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gene_list</strong> (<em>list[str]</em>) &#8211; A list of HGNC gene symbols to get mRNA amounts for.</li>
+<li><strong>cell_lines</strong> (<em>list[str]</em>) &#8211; A list of CCLE cell line names to get mRNA amounts for.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mrna_amounts</strong> &#8211; A dict keyed to cell lines containing a dict keyed to genes
+containing float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict[dict[float]]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_genetic_profiles">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_genetic_profiles</code><span class="sig-paren">(</span><em>study_id</em>, <em>profile_filter=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_genetic_profiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_genetic_profiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the genetic profiles (data sets) for a given study.</p>
+<p>Genetic profiles are different types of data for a given study. For
+instance the study &#8216;cellline_ccle_broad&#8217; has profiles such as
+&#8216;cellline_ccle_broad_mutations&#8217; for mutations, &#8216;cellline_ccle_broad_CNA&#8217;
+for copy number alterations, etc.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>study_id</strong> (<em>str</em>) &#8211; The ID of the cBio study.
+Example: &#8216;paad_icgc&#8217;</li>
+<li><strong>profile_filter</strong> (<em>Optional[str]</em>) &#8211; A string used to filter the profiles to return.
+Will be one of:
+- MUTATION
+- MUTATION_EXTENDED
+- COPY_NUMBER_ALTERATION
+- MRNA_EXPRESSION
+- METHYLATION
+The genetic profiles can include &#8220;mutation&#8221;, &#8220;CNA&#8221;, &#8220;rppa&#8221;,
+&#8220;methylation&#8221;, etc.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>genetic_profiles</strong> &#8211; A list of genetic profiles available  for the given study.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list[str]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_mutations">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_mutations</code><span class="sig-paren">(</span><em>study_id</em>, <em>gene_list</em>, <em>mutation_type=None</em>, <em>case_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_mutations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_mutations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return mutations as a list of genes and list of amino acid changes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>study_id</strong> (<em>str</em>) &#8211; The ID of the cBio study.
+Example: &#8216;cellline_ccle_broad&#8217; or &#8216;paad_icgc&#8217;</li>
+<li><strong>gene_list</strong> (<em>list[str]</em>) &#8211; A list of genes with their HGNC symbols.
+Example: [&#8216;BRAF&#8217;, &#8216;KRAS&#8217;]</li>
+<li><strong>mutation_type</strong> (<em>Optional[str]</em>) &#8211; The type of mutation to filter to.
+mutation_type can be one of: missense, nonsense, frame_shift_ins,
+frame_shift_del, splice_site</li>
+<li><strong>case_id</strong> (<em>Optional[str]</em>) &#8211; The case ID within the study to filter to.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mutations</strong> &#8211; A tuple of two lists, the first one containing a list of genes, and
+the second one a list of amino acid changes in those genes.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple[list]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_mutations_ccle">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_mutations_ccle</code><span class="sig-paren">(</span><em>gene_list</em>, <em>cell_lines</em>, <em>mutation_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_mutations_ccle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_mutations_ccle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict of mutations in given genes and cell lines from CCLE.</p>
+<p>This is a specialized call to get_mutations tailored to CCLE cell lines.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gene_list</strong> (<em>list[str]</em>) &#8211; A list of HGNC gene symbols to get mutations in</li>
+<li><strong>cell_lines</strong> (<em>list[str]</em>) &#8211; A list of CCLE cell line names to get mutations for.</li>
+<li><strong>mutation_type</strong> (<em>Optional[str]</em>) &#8211; The type of mutation to filter to.
+mutation_type can be one of: missense, nonsense, frame_shift_ins,
+frame_shift_del, splice_site</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>mutations</strong> &#8211; The result from cBioPortal as a dict in the format
+{cell_line : {gene : [mutation1, mutation2, ...] }}</p>
+<p>Example:
+{&#8216;LOXIMVI_SKIN&#8217;: {&#8216;BRAF&#8217;: [&#8216;V600E&#8217;, &#8216;I208V&#8217;]},
+&#8216;SKMEL30_SKIN&#8217;: {&#8216;BRAF&#8217;: [&#8216;D287H&#8217;, &#8216;E275K&#8217;]}}</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_num_sequenced">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_num_sequenced</code><span class="sig-paren">(</span><em>study_id</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_num_sequenced"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_num_sequenced" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return number of sequenced tumors for given study.</p>
+<p>This is useful for calculating mutation statistics in terms of the
+prevalence of certain mutations within a type of cancer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>study_id</strong> (<em>str</em>) &#8211; The ID of the cBio study.
+Example: &#8216;paad_icgc&#8217;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>num_case</strong> &#8211; The number of sequenced tumors in the given study</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="indra.databases.cbio_client.get_profile_data">
+<code class="descclassname">indra.databases.cbio_client.</code><code class="descname">get_profile_data</code><span class="sig-paren">(</span><em>study_id</em>, <em>gene_list</em>, <em>profile_filter</em>, <em>case_set_filter=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/indra/databases/cbio_client.html#get_profile_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#indra.databases.cbio_client.get_profile_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return dict of cases and genes and their respective values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>study_id</strong> (<em>str</em>) &#8211; The ID of the cBio study.
+Example: &#8216;cellline_ccle_broad&#8217; or &#8216;paad_icgc&#8217;</li>
+<li><strong>gene_list</strong> (<em>list[str]</em>) &#8211; A list of genes with their HGNC symbols.
+Example: [&#8216;BRAF&#8217;, &#8216;KRAS&#8217;]</li>
+<li><strong>profile_filter</strong> (<em>str</em>) &#8211; A string used to filter the profiles to return. Will be one of:
+- MUTATION
+- MUTATION_EXTENDED
+- COPY_NUMBER_ALTERATION
+- MRNA_EXPRESSION
+- METHYLATION</li>
+<li><strong>case_set_filter</strong> (<em>Optional[str]</em>) &#8211; A string that specifices which case_set_id to use, based on a complete
+or partial match. If not provided, will look for study_id + &#8216;_all&#8217;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>profile_data</strong> &#8211; A dict keyed to cases containing a dict keyed to genes
+containing int</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict[dict[int]]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../literature/index.html" class="btn btn-neutral float-right" title="Literature clients (indra.literature)" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../sources/ndex_cx/index.html" class="btn btn-neutral" title="NDEx CX API (indra.sources.ndex_cx_api)" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, B. M. Gyori, J. A. Bachman.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

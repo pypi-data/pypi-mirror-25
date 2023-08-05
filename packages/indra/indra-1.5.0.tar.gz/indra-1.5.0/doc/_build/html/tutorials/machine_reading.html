@@ -1,0 +1,536 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Large-Scale Machine Reading with Starcluster &mdash; INDRA 1.5.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="INDRA 1.5.0 documentation" href="../index.html"/>
+        <link rel="up" title="Tutorials" href="index.html"/>
+        <link rel="next" title="Large-Scale Machine Reading with Amazon Batch" href="machine_reading_aws.html"/>
+        <link rel="prev" title="Using natural language to build models" href="nl_modeling.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../index.html" class="icon icon-home"> INDRA
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#installing-python">Installing Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#installing-indra">Installing INDRA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#installing-via-github">Installing via Github</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#cloning-the-source-code-from-github">Cloning the source code from Github</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#installing-releases-with-pip">Installing releases with pip</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#indra-dependencies">INDRA dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#pysb-and-bionetgen">PySB and BioNetGen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#pyjnius">Pyjnius</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#graphviz">Graphviz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#matplotlib">Matplotlib</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../installation.html#optional-additional-dependencies">Optional additional dependencies</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting started with INDRA</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started.html#importing-indra-and-its-modules">Importing INDRA and its modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started.html#basic-usage-examples">Basic usage examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started.html#reading-a-sentence-with-trips">Reading a sentence with TRIPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started.html#reading-a-pubmed-central-article-with-reach">Reading a PubMed Central article with REACH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started.html#getting-the-neighborhood-of-proteins-from-the-bel-large-corpus">Getting the neighborhood of proteins from the BEL Large Corpus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started.html#getting-paths-between-two-proteins-from-pathwaycommons-biopax">Getting paths between two proteins from PathwayCommons (BioPAX)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started.html#constructing-indra-statements-manually">Constructing INDRA Statements manually</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../getting_started.html#assembling-a-pysb-model-and-exporting-to-sbml">Assembling a PySB model and exporting to SBML</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules/index.html">INDRA modules reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../modules/statements.html">INDRA Statements (<code class="docutils literal"><span class="pre">indra.statements</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/sources/index.html">Processors for model input (<code class="docutils literal"><span class="pre">indra.sources</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../modules/sources/bel/index.html">BEL (<code class="docutils literal"><span class="pre">indra.sources.bel</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/bel/index.html#module-indra.sources.bel.bel_api">BEL API (<code class="docutils literal"><span class="pre">indra.sources.bel.bel_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/bel/index.html#module-indra.sources.bel.processor">BEL Processor (<code class="docutils literal"><span class="pre">indra.sources.bel.processor</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/sources/biopax/index.html">Biopax (<code class="docutils literal"><span class="pre">indra.sources.biopax</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/biopax/index.html#module-indra.sources.biopax.biopax_api">Biopax API (<code class="docutils literal"><span class="pre">indra.sources.biopax.biopax_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/biopax/index.html#module-indra.sources.biopax.processor">Biopax Processor (<code class="docutils literal"><span class="pre">indra.sources.biopax.processor</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/biopax/index.html#module-indra.sources.biopax.pathway_commons_client">Pathway Commons Client (<code class="docutils literal"><span class="pre">indra.sources.biopax.pathway_commons_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/sources/reach/index.html">REACH (<code class="docutils literal"><span class="pre">indra.sources.reach</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/reach/index.html#module-indra.sources.reach.reach_api">REACH API (<code class="docutils literal"><span class="pre">indra.sources.reach.reach_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/reach/index.html#module-indra.sources.reach.processor">REACH Processor (<code class="docutils literal"><span class="pre">indra.sources.reach.processor</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/reach/index.html#module-indra.sources.reach.reach_reader">REACH reader (<code class="docutils literal"><span class="pre">indra.sources.reach.reach_reader</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/sources/trips/index.html">TRIPS (<code class="docutils literal"><span class="pre">indra.sources.trips</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/trips/index.html#module-indra.sources.trips.trips_api">TRIPS API (<code class="docutils literal"><span class="pre">indra.sources.trips.trips_api</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/trips/index.html#module-indra.sources.trips.processor">TRIPS Processor (<code class="docutils literal"><span class="pre">indra.sources.trips.processor</span></code>)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/trips/index.html#module-indra.sources.trips.trips_client">TRIPS Client (<code class="docutils literal"><span class="pre">indra.sources.trips.trips_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/sources/ndex_cx/index.html">NDEx CX API (<code class="docutils literal"><span class="pre">indra.sources.ndex_cx_api</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../modules/sources/ndex_cx/index.html#ndex-cx-processor-indra-sources-ndex-cx-processor">NDEx CX Processor (<code class="docutils literal"><span class="pre">indra.sources.ndex_cx.processor</span></code>)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/databases/index.html">Database clients (<code class="docutils literal"><span class="pre">indra.databases</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.hgnc_client">HGNC client (<code class="docutils literal"><span class="pre">indra.hgnc_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.uniprot_client">Uniprot client (<code class="docutils literal"><span class="pre">indra.databases.uniprot_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.chebi_client">ChEBI client (<code class="docutils literal"><span class="pre">indra.databases.chebi_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.biogrid_client">BioGRID client (<code class="docutils literal"><span class="pre">indra.databases.biogrid_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.context_client">Cell type context client (<code class="docutils literal"><span class="pre">indra.databases.context_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.relevance_client">Network relevance client (<code class="docutils literal"><span class="pre">indra.databases.relevance_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.ndex_client">NDEx client (<code class="docutils literal"><span class="pre">indra.databases.ndex_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/databases/index.html#module-indra.databases.cbio_client">cBio portal client (<code class="docutils literal"><span class="pre">indra.databases.cbio_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/literature/index.html">Literature clients (<code class="docutils literal"><span class="pre">indra.literature</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../modules/literature/index.html#module-indra.literature.pubmed_client">Pubmed client (<code class="docutils literal"><span class="pre">indra.literature.pubmed_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/literature/index.html#module-indra.literature.pmc_client">Pubmed Central client (<code class="docutils literal"><span class="pre">indra.literature.pmc_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/literature/index.html#module-indra.literature.crossref_client">CrossRef client (<code class="docutils literal"><span class="pre">indra.literature.crossref_client</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/literature/index.html#module-indra.literature.elsevier_client">Elsevier client (<code class="docutils literal"><span class="pre">indra.literature.elsevier_client</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/preassembler/index.html">Preassembly (<code class="docutils literal"><span class="pre">indra.preassembler</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../modules/preassembler/index.html#module-indra.preassembler">Preassembler (<code class="docutils literal"><span class="pre">indra.preassembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/preassembler/index.html#module-indra.preassembler.grounding_mapper">Entity grounding curation and mapping (<code class="docutils literal"><span class="pre">indra.preassembler.grounding_mapper</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/preassembler/index.html#module-indra.preassembler.sitemapper">Site curation and mapping (<code class="docutils literal"><span class="pre">indra.preassembler.sitemapper</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/preassembler/index.html#module-indra.preassembler.hierarchy_manager">Hierarchy manager (<code class="docutils literal"><span class="pre">indra.preassembler.hierarchy_manager</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/belief/index.html">Belief Engine (<code class="docutils literal"><span class="pre">indra.belief</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/mechlinker/index.html">Mechanism Linker (<code class="docutils literal"><span class="pre">indra.mechlinker</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/assemblers/index.html">Assemblers of model output (<code class="docutils literal"><span class="pre">indra.assemblers</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../modules/assemblers/pysb_assembler.html">Executable PySB models (<code class="docutils literal"><span class="pre">indra.assemblers.pysb_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/assemblers/cx_assembler.html">Cytoscape networks (<code class="docutils literal"><span class="pre">indra.assemblers.cx_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/assemblers/english_assembler.html">Natural language (<code class="docutils literal"><span class="pre">indra.assemblers.english_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/assemblers/graph_assembler.html">Node-edge graphs (<code class="docutils literal"><span class="pre">indra.assemblers.graph_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/assemblers/sif_assembler.html">SIF / Boolean networks (<code class="docutils literal"><span class="pre">indra.assemblers.sif_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/assemblers/index_card_assembler.html">MITRE &#8220;index cards&#8221; (<code class="docutils literal"><span class="pre">indra.assemblers.index_card_assembler</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/assemblers/sbgn_assembler.html">SBGN output (<code class="docutils literal"><span class="pre">indra.assemblers.sbgn_assembler</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/explanation/index.html">Explanation (<code class="docutils literal"><span class="pre">indra.explanation</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../modules/explanation/index.html#module-indra.explanation.model_checker">Check whether a rule-based model satisfies a property (<code class="docutils literal"><span class="pre">indra.explanation.model_checker</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules/tools/index.html">Tools (<code class="docutils literal"><span class="pre">indra.tools</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../modules/tools/index.html#module-indra.tools.assemble_corpus">Run assembly components in a pipeline (<code class="docutils literal"><span class="pre">indra.tools.assemble_corpus</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/tools/index.html#module-indra.tools.gene_network">Build a network from a gene list (<code class="docutils literal"><span class="pre">indra.tools.gene_network</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/tools/index.html#module-indra.tools.executable_subnetwork">Build an executable model from a fragment of a large network (<code class="docutils literal"><span class="pre">indra.tools.executable_subnetwork</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../modules/tools/index.html#module-indra.tools.incremental_model">Build a model incrementally over time (<code class="docutils literal"><span class="pre">indra.tools.incremental_model</span></code>)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="nl_modeling.html">Using natural language to build models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="nl_modeling.html#read-indra-statements-from-a-natural-language-string">Read INDRA Statements from a natural language string</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nl_modeling.html#assemble-the-indra-statements-into-a-rule-based-executable-model">Assemble the INDRA Statements into a rule-based executable model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nl_modeling.html#exporting-the-model-into-other-common-formats">Exporting the model into other common formats</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Large-Scale Machine Reading with Starcluster</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-reach">Install REACH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-amazon-s3-support">Install Amazon S3 support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-other-dependencies">Install other dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#assemble-a-corpus-of-pmids">Assemble a Corpus of PMIDs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#process-the-papers-with-reach">Process the papers with REACH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extract-indra-statements-from-the-reach-output-on-s3">Extract INDRA Statements from the REACH output on S3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-whole-pipeline-with-one-script">Running the whole pipeline with one script</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="machine_reading_aws.html">Large-Scale Machine Reading with Amazon Batch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="machine_reading_aws.html#how-it-works">How it Works</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gene_network.html">Assembling everything known about a particular gene</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gene_network.html#collect-mechanisms-from-pathwaycommons-and-the-bel-large-corpus">Collect mechanisms from PathwayCommons and the BEL Large Corpus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gene_network.html#collect-a-list-of-publications-that-discuss-the-gene-of-interest">Collect a list of publications that discuss the gene of interest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gene_network.html#get-the-full-text-or-abstract-corresponding-to-the-publications">Get the full text or abstract corresponding to the publications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gene_network.html#read-the-content-of-the-publications">Read the content of the publications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gene_network.html#combine-all-statements-and-run-pre-assembly">Combine all statements and run pre-assembly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gene_network.html#assemble-the-statements-into-a-network-model">Assemble the statements into a network model</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../rest_api.html">REST API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../rest_api.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rest_api.html#launching-the-rest-service">Launching the REST service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rest_api.html#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">INDRA</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="index.html">Tutorials</a> &raquo;</li>
+      
+    <li>Large-Scale Machine Reading with Starcluster</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/tutorials/machine_reading.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="large-scale-machine-reading-with-starcluster">
+<h1>Large-Scale Machine Reading with Starcluster<a class="headerlink" href="#large-scale-machine-reading-with-starcluster" title="Permalink to this headline">¶</a></h1>
+<p>The following doc describes the steps involved in reading a large numbers of
+papers in parallel on Amazon EC2 using REACH, caching the JSON output on Amazon
+S3, then processing the REACH output into INDRA Statements. Prerequisites for
+doing the following are:</p>
+<ul class="simple">
+<li>A cluster of Amazon EC2 nodes configured using Starcluster, with INDRA
+installed and in the PYTHONPATH</li>
+<li>An Amazon S3 bucket containing full text contents for papers, keyed by
+Pubmed ID (creation of this S3 repository will be described in another
+tutorial).</li>
+</ul>
+<p>This tutorial goes through the individual steps involved before describing how
+all of them can be run through the use of a single submission script,
+submit_reading_pipeline.py.</p>
+<p>Note also that the prerequisite installation steps can be streamlined by
+putting them in a setup script that can be re-run upon instantiating a new
+Amazon cluster or by using them to configure a custom Amazon EC2 AMI.</p>
+<div class="section" id="install-reach">
+<h2>Install REACH<a class="headerlink" href="#install-reach" title="Permalink to this headline">¶</a></h2>
+<p>Install SBT. On an EC2 Linux machine, run the following lines (drawn from
+<a class="reference external" href="http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Linux.html">http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Linux.html</a>):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="s2">&quot;deb https://dl.bintray.com/sbt/debian /&quot;</span> <span class="o">|</span> <span class="n">sudo</span> <span class="n">tee</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">apt</span><span class="o">/</span><span class="n">sources</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">sbt</span><span class="o">.</span><span class="n">list</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">key</span> <span class="n">adv</span> <span class="o">--</span><span class="n">keyserver</span> <span class="n">hkp</span><span class="p">:</span><span class="o">//</span><span class="n">keyserver</span><span class="o">.</span><span class="n">ubuntu</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="mi">80</span> <span class="o">--</span><span class="n">recv</span> <span class="mi">642</span><span class="n">AC823</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">sbt</span>
+</pre></div>
+</div>
+<p>Clone REACH from <a class="reference external" href="https://github.com/clulab/reach">https://github.com/clulab/reach</a>.</p>
+<p>Add the following line to reach/build.sbt:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mainClass</span> <span class="ow">in</span> <span class="n">assembly</span> <span class="p">:</span><span class="o">=</span> <span class="n">Some</span><span class="p">(</span><span class="s2">&quot;org.clulab.reach.ReachCLI&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This assigns ReachCLI as the main class.</p>
+<p>Compile and assemble REACH. Note that the path to the .ivy2 directory must be
+given. Use the assembly task to assemble a fat JAR containing all of the
+dependencies with the correct main class. Run the following from the directory
+containing the REACH build.sbt file (e.g., /pmc/reach).:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sbt</span> <span class="o">-</span><span class="n">Dsbt</span><span class="o">.</span><span class="n">ivy</span><span class="o">.</span><span class="n">home</span><span class="o">=/</span><span class="n">pmc</span><span class="o">/</span><span class="n">reach</span><span class="o">/.</span><span class="n">ivy2</span> <span class="nb">compile</span>
+<span class="n">sbt</span> <span class="o">-</span><span class="n">Dsbt</span><span class="o">.</span><span class="n">ivy</span><span class="o">.</span><span class="n">home</span><span class="o">=/</span><span class="n">pmc</span><span class="o">/</span><span class="n">reach</span><span class="o">/.</span><span class="n">ivy2</span> <span class="n">assembly</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-amazon-s3-support">
+<h2>Install Amazon S3 support<a class="headerlink" href="#install-amazon-s3-support" title="Permalink to this headline">¶</a></h2>
+<p>Install boto3:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">boto3</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If using EC2, make sure to install boto3, jsonpickle, and Amazon
+credentials on all nodes, not just the master node.</p>
+</div>
+<p>Add Amazon credentials to access the S3 bucket. First create the .aws directory
+on the EC2 instance:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">sgeadmin</span><span class="o">/.</span><span class="n">aws</span>
+</pre></div>
+</div>
+<p>Then set up Amazon credentials, for example by copying from your local machine
+using StarCluster:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">starcluster</span> <span class="n">put</span> <span class="n">mycluster</span> <span class="o">~/.</span><span class="n">aws</span><span class="o">/</span><span class="n">credentials</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">sgeadmin</span><span class="o">/.</span><span class="n">aws</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-other-dependencies">
+<h2>Install other dependencies<a class="headerlink" href="#install-other-dependencies" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">jsonpickle</span> <span class="c1"># Necessary to process JSON from S3</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">jnius</span><span class="o">-</span><span class="n">indra</span> <span class="c1"># Necessary for REACH</span>
+<span class="n">export</span> <span class="n">JAVA_HOME</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">jvm</span><span class="o">/</span><span class="n">java</span><span class="o">-</span><span class="mf">1.7</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">openjdk</span><span class="o">-</span><span class="n">amd64</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="assemble-a-corpus-of-pmids">
+<h2>Assemble a Corpus of PMIDs<a class="headerlink" href="#assemble-a-corpus-of-pmids" title="Permalink to this headline">¶</a></h2>
+<p>The first step in large-scale reading is to put together a file containing
+relevant Pubmed IDs. The simplest way to do this is to use the Pubmed search
+API to find papers associated with particular gene names, biological processes,
+or other search terms.</p>
+<p>For example, to assemble a list of papers for SOS2 curated in Entrez Gene
+that are available in the Pubmed Central Open Access subset:</p>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="kn">from</span> <span class="nn">indra.literature</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="go"># Pick an example gene</span>
+<span class="gp">In [2]: </span><span class="n">gene</span> <span class="o">=</span> <span class="s1">&#39;SOS2&#39;</span>
+
+<span class="go"># Get a list of PMIDs for the gene</span>
+<span class="gp">In [3]: </span><span class="n">pmids</span> <span class="o">=</span> <span class="n">pubmed_client</span><span class="o">.</span><span class="n">get_ids_for_gene</span><span class="p">(</span><span class="n">gene</span><span class="p">)</span>
+
+<span class="go"># Get the PMIDs that have XML in PMC</span>
+<span class="gp">In [4]: </span><span class="n">pmids_oa_xml</span> <span class="o">=</span> <span class="n">pmc_client</span><span class="o">.</span><span class="n">filter_pmids</span><span class="p">(</span><span class="n">pmids</span><span class="p">,</span> <span class="s1">&#39;oa_xml&#39;</span><span class="p">)</span>
+
+<span class="go"># Write the results to a file</span>
+<span class="gp">In [5]: </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_pmids.txt&#39;</span> <span class="o">%</span> <span class="n">gene</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">   ...: </span>    <span class="k">for</span> <span class="n">pmid</span> <span class="ow">in</span> <span class="n">pmids_oa_xml</span><span class="p">:</span>
+<span class="gp">   ...: </span>        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">pmid</span><span class="p">)</span>
+<span class="gp">   ...: </span>
+</pre></div>
+</div>
+<p>This creates a file, SOS2_pmids.txt, containing the PMIDs that we will read
+with REACH.</p>
+</div>
+<div class="section" id="process-the-papers-with-reach">
+<h2>Process the papers with REACH<a class="headerlink" href="#process-the-papers-with-reach" title="Permalink to this headline">¶</a></h2>
+<p>The next step is to read the content of the papers with REACH in a
+parallelizable, high-throughput way. To do this, run the script
+indra/tools/reading/run_reach_on_pmids.py. If necessary update the lines at the
+top of the script with the REACH settings, e.g.:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cleanup</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">path_to_reach</span> <span class="o">=</span> <span class="s1">&#39;/pmc/reach/target/scala-2.11/reach-assembly-1.3.2-SNAPSHOT.jar&#39;</span>
+<span class="n">reach_version</span> <span class="o">=</span> <span class="s1">&#39;1.3.2&#39;</span>
+<span class="n">source_text</span> <span class="o">=</span> <span class="s1">&#39;pmc_oa_xml&#39;</span>
+<span class="n">force_read</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+<p>The reach_version is important because it is used to determine whether the
+paper has already been read with this version of REACH (in which case it will
+be skipped), or if the REACH output needs to be updated. Alternatively, if you
+want to read all the papers regardless of whether they&#8217;ve been read before with
+the given version of REACH, set the force_read variable to True.</p>
+<p>Next, create a top-level temporary directory to use during reading. This will
+be used to store the input files and the JSON output:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="n">my_temp_dir</span>
+</pre></div>
+</div>
+<p>Run run_reach_on_pmids.py, passing arguments for the PMID list file, the temp
+directory, the number of cores to use on the machine, the PMID start index (in
+the PMID list file) and the end index. The start and end indices are used to
+subdivide the job into parallelizable chunks. If the end index is greater than
+the total number of PMIDs, it will process up to the last one in the list. For
+example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">run_reach_on_pmids</span><span class="o">.</span><span class="n">py</span> <span class="n">SOS2_pmids</span><span class="o">.</span><span class="n">txt</span> <span class="n">my_temp_dir</span> <span class="mi">8</span> <span class="mi">0</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>This uses 8 cores to process the first ten papers listed in the file
+SOS2_pmids.txt. REACH will run, output the JSON files in the temporary
+directory, e.g. in my_temp_dir/read_0_to_10_MSP6YI/output, assemble the JSON
+files together, and upload the results to S3. If you attempt to process the
+files again with the same version of REACH, the script will detect that the
+JSON output from that version is already on S3 and skip those papers.</p>
+<p>This can be submitted to run offline using the job scheduler on EC2 with, e.g.:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">qsub</span> <span class="o">-</span><span class="n">b</span> <span class="n">y</span> <span class="o">-</span><span class="n">cwd</span> <span class="o">-</span><span class="n">V</span> <span class="o">-</span><span class="n">pe</span> <span class="n">orte</span> <span class="mi">8</span> <span class="n">python</span> <span class="n">run_reach_on_pmids</span><span class="o">.</span><span class="n">py</span> <span class="n">SOS2_pmids</span><span class="o">.</span><span class="n">txt</span> <span class="n">my_temp_dir</span> <span class="mi">8</span> <span class="mi">0</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The number of cores requested in the qsub call (&#8216;-pe orte 8&#8217;) should match
+the number of cores passed to the run_reach_on_pmids.py script, which
+determines the number of threads that REACH will attempt to use (the
+third-to-last argument above). This should also match the total number of
+nodes on the Amazon EC2 node (e.g., 8 cores for c3.2xlarge). This way the
+job scheduler will schedule the job to run on all the cores of a single EC2
+node, and REACH will use them all.</p>
+</div>
+</div>
+<div class="section" id="extract-indra-statements-from-the-reach-output-on-s3">
+<h2>Extract INDRA Statements from the REACH output on S3<a class="headerlink" href="#extract-indra-statements-from-the-reach-output-on-s3" title="Permalink to this headline">¶</a></h2>
+<p>The script indra/tools/reading/process_reach_from_s3.py is used to extract
+INDRA Statements from the REACH output uploaded to S3 in the previous step.
+This process can also be parallelized by submitting chunks of papers to be
+processed by different cores. The INDRA statements for each chunk of papers are
+pickled and can be assembled into a single pickle file in a subsequent step.</p>
+<p>Following the example above, run the following to process the REACH output
+for the SOS2 papers into INDRA statements. We&#8217;ll do this in two chunks to
+show how the process can be parallelized and the statements assembled from
+multiple files:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">process_reach_from_s3</span><span class="o">.</span><span class="n">py</span> <span class="n">SOS2_pmids</span><span class="o">.</span><span class="n">txt</span> <span class="mi">0</span> <span class="mi">5</span>
+<span class="n">python</span> <span class="n">process_reach_from_s3</span><span class="o">.</span><span class="n">py</span> <span class="n">SOS2_pmids</span><span class="o">.</span><span class="n">txt</span> <span class="mi">5</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>The two runs create two different files for the results from the seven papers,
+reach_stmts_0_5.pkl (with statements from the first five papers) and
+reach_stmts_5_7.pkl (with statements from the last two). Note that the results
+are pickled as a dict (rather than a list), with PMIDs as keys and lists of
+Statements as values.</p>
+<p>Of course, what we really want is a single file containing all of the
+statements for the entire corpus. To get this, run:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">assemble_reach_stmts</span><span class="o">.</span><span class="n">py</span> <span class="n">reach_stmts_</span><span class="o">*.</span><span class="n">pkl</span>
+</pre></div>
+</div>
+<p>The results will be stored in reach_stmts.pkl.</p>
+</div>
+<div class="section" id="running-the-whole-pipeline-with-one-script">
+<h2>Running the whole pipeline with one script<a class="headerlink" href="#running-the-whole-pipeline-with-one-script" title="Permalink to this headline">¶</a></h2>
+<p>If you want to run the whole pipeline in one go, you can run the script
+submit_reading_pipeline.py (in indra/tools/reading) on a cluster of Amazon
+EC2 nodes. The script divides up the jobs evenly among the nodes and cores.
+Usage:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">submit_reading_pipeline</span><span class="o">.</span><span class="n">py</span> <span class="n">pmid_list</span> <span class="n">tmp_dir</span> <span class="n">num_nodes</span> <span class="n">num_cores_per_node</span>
+</pre></div>
+</div>
+<p>For example if you have a cluster with 8 c3.8xlarge nodes with 32 VCPUs each,
+you would call it with:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">submit_reading_pipeline</span><span class="o">.</span><span class="n">py</span> <span class="n">SOS2_pmids</span><span class="o">.</span><span class="n">txt</span> <span class="n">my_tmp_dir</span> <span class="mi">8</span> <span class="mi">32</span>
+</pre></div>
+</div>
+<p>The script submits the jobs to the scheduler with appropriate dependencies
+such that the REACH reading step completes first, then the INDRA processing
+step, and then the final assembly into a single pickle file.</p>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="machine_reading_aws.html" class="btn btn-neutral float-right" title="Large-Scale Machine Reading with Amazon Batch" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="nl_modeling.html" class="btn btn-neutral" title="Using natural language to build models" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, B. M. Gyori, J. A. Bachman.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
