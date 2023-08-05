@@ -1,0 +1,7 @@
+class TooManyRequestsException(Exception):
+    status_code = 429
+
+    def __init__(self, message):
+        Exception.__init__(self)
+        self.message = message
+
