@@ -1,0 +1,385 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "PQSHELL" "1" "Sep 07, 2017" "0.9" "PyMailq"
+.SH NAME
+pqshell \- A shell-like to interact with a Postfix mails queue
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH DESCRIPTION
+.sp
+pqshell is a shell\-like to interact with Postfix mails queue. It provide simple
+means to view the queue content, filter mails on criterias like \fISender\fP or
+\fIdelivery errors\fP and lead administrative operations.
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+pqshell [OPTION]...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH FEATURES
+.INDENT 0.0
+.IP \(bu 2
+Asynchronous interactions with Postfix mails queue.
+.IP \(bu 2
+Mails filtering on various criterias.
+.IP \(bu 2
+Administrative operations on mails queue
+.IP \(bu 2
+History and autocomplete via readline, if installed.
+.UNINDENT
+.SH OPTIONS
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.B \-h\fP,\fB  \-\-help
+show help message and exit
+.TP
+.B \-\-version
+show shell version and exit
+.TP
+.B \-\-debug
+activate shell debug and timing info
+.TP
+.BI \-\-config \ CFG_FILE
+specify a configuration file for PyMailq
+.TP
+.B \-\-summary
+show mails queue summary and exit
+.TP
+.B \-\-no\-auto\-load
+deactivate store auto load at shell startup
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH SHELL COMMANDS
+.sp
+An inside help is available with the help command. Each provided command takes
+subcommands and command’s help can be obtained while running it without
+argument.
+.SS store
+.INDENT 0.0
+.INDENT 3.5
+Control of Postfix queue content storage
+.sp
+\fBSubcommands\fP:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+\fBstatus\fP
+Show store status.
+.TP
+\fBload\fP
+Load Postfix queue content.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBExample\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+PyMailq (sel:0)> store status
+store is not loaded
+PyMailq (sel:0)> store load
+590 mails loaded from queue
+PyMailq (sel:590)> store status
+store loaded with 590 mails at 2014\-05\-05 13:43:22.592767
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS select
+.INDENT 0.0
+.INDENT 3.5
+Select mails from Postfix queue content. Filters are cumulatives and
+designed to simply implement advanced filtering with simple syntax. The
+default prompt will show how many mails are currently selected by all
+applied filters. Order of filters application is also important.
+.sp
+\fBSubcommands\fP:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+\fBqids\fP
+Select mails by queue IDs.
+.sp
+Usage: \fBselect qids <qid> [qid] ...\fP
+.TP
+\fBdate\fP
+Select mails by date.
+.sp
+Usage: \fBselect date <DATESPEC>\fP
+.sp
+Where \fI<DATESPEC>\fP can be:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+YYYY\-MM\-DD (exact date)
+YYYY\-MM\-DD..YYYY\-MM\-DD (within a date range (included))
++YYYY\-MM\-DD (after a date (included))
+\-YYYY\-MM\-DD (before a date (included))
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.TP
+\fBerror\fP
+Select mails by error message. Specified error message can be
+partial and will be check against the whole error message.
+.sp
+Usage: \fBselect error <error_msg>\fP
+.TP
+\fBreplay\fP
+Reset content of selector with store content and replay filters.
+.TP
+\fBreset\fP
+Reset content of selector with store content, remove filters.
+.TP
+\fBrmfilter\fP
+Remove filter previously applied. Filters ids are used to specify
+filter to remove.
+.sp
+Usage: \fBselect rmfilter <filterid>\fP
+.TP
+\fBsender\fP
+Select mails from sender.
+.sp
+Usage: \fBselect sender <sender> [exact]\fP
+.TP
+\fBrecipient\fP
+Select mails to recipient.
+.sp
+Usage: \fBselect recipient <recipient> [exact]\fP
+.TP
+\fBsize\fP
+Select mails by size in Bytes. Signs \- and + are supported, if not
+specified, search for exact size. Size range is allowed by
+using \fB\-\fP (lesser than) and \fB+\fP (greater than).
+.sp
+Usage: \fBselect size <\-n|n|+n> [\-n]\fP
+.TP
+\fBstatus\fP
+Select mails with specific postfix status.
+.sp
+Usage: \fBselect status <status>\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBFiltering Example\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+PyMailq (sel:608)> select size \-5000
+PyMailq (sel:437)> select sender MAILER\-DAEMON
+PyMailq (sel:316)> select status active
+PyMailq (sel:0)>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBFilters management\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+PyMailq (sel:608)> select size \-5000
+PyMailq (sel:437)> select sender MAILER\-DAEMON
+PyMailq (sel:316)> show filters
+0: select size:
+    smax: 5000
+    smin: 0
+1: select sender:
+    partial: True
+    sender: MAILER\-DAEMON
+PyMailq (sel:316)> select rmfilter 1
+PyMailq (sel:437)> select sender greedy\-sender@domain.com
+PyMailq (sel:25)> select reset
+Selector resetted with store content (608 mails)
+PyMailq (sel:608)>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS inspect
+.INDENT 0.0
+.INDENT 3.5
+Display mails content.
+.sp
+\fBSubcommands:\fP
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+\fBmails:\fP
+Show mails most common fields content including by not limited to
+\fIFrom\fP, \fITo\fP, \fISubject\fP, \fIReceived\fP, … This command parses mails
+content and requires specific privileges or the use of \fIsudo\fP in
+configuration.
+.sp
+Usage: \fBinspect mails <qid> [qid] ...\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS show
+.INDENT 0.0
+.INDENT 3.5
+Display the content of current mails selection or specific mail IDs.
+Modifiers have been implemented to allow quick output manipulation. These
+allow you to sort, limit or even output a ranking by specific field. By
+default, output is sorted by \fBdate of acceptance\fP in queue.
+.INDENT 0.0
+.TP
+\fBOptionnal modifiers\fP can be provided to alter output:
+.INDENT 7.0
+.TP
+.B \fBlimit <n>\fP
+Display the first n entries.
+.TP
+.B \fBsortby <field> [asc|desc]\fP
+Sort output by field asc or desc. Default sorting is made
+descending.
+.TP
+.B \fBrankby <field>\fP
+Produce mails ranking by field.
+.UNINDENT
+.UNINDENT
+.sp
+\fBKnown fields:\fP
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+\fBqid\fP – Postqueue mail ID.
+.IP \(bu 2
+\fBdate\fP – Mail date.
+.IP \(bu 2
+\fBsender\fP – Mail sender.
+.IP \(bu 2
+\fBrecipients\fP – Mail recipients (list, no sort).
+.IP \(bu 2
+\fBsize\fP – Mail size.
+.IP \(bu 2
+\fBerrors\fP – Postqueue deferred error messages (list, no sort).
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBOutput formatting:\fP
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+\fBbrief\fP – Default single line output to display selection
+.IP \(bu 2
+\fBlong\fP – Long format to also display errors and recipients
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBSubcommands:\fP
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+\fBfilters\fP
+Show filters applied on current mails selection.
+.sp
+Usage: \fBshow filters\fP
+.TP
+\fBselected\fP
+Show selected mails.
+.sp
+Usage: \fBshow selected [modifiers]\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBExample\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+PyMailq (sel:608)> show selected limit 5
+2014\-05\-05 20:54:24 699C11831669 [active] jjj@dom1.com (14375B)
+2014\-05\-05 20:43:39 8D60C13C14C6 [deferred] bbb@dom9.com (39549B)
+2014\-05\-05 20:35:08 B0077198BC31 [deferred] rrr@dom2.com (4809B)
+2014\-05\-05 20:30:09 014E21AB4B78 [deferred] aaa@dom7.com (2450B)
+2014\-05\-05 20:25:04 CF1BE127A8D3 [deferred] xxx@dom2.com (4778B)
+\&...Preview of first 5 (603 more)...
+PyMailq (sel:608)> show selected sortby sender limit 5 asc
+2014\-05\-02 11:36:16 40AA9149A9D7 [deferred] aaa@dom1.com (8262B)
+2014\-05\-01 05:30:23 5E0B2162BE63 [deferred] bbb@dom4.com (3052B)
+2014\-05\-02 05:30:20 653471AC5F76 [deferred] ccc@dom5.com (3052B)
+2014\-05\-02 09:49:01 A00D3159AEE [deferred] ddd@dom1.com (3837B)
+2014\-05\-05 18:18:59 98E9A790749 [deferred] ddd@dom2.com (1551B)
+\&...Preview of first 5 (603 more)...
+PyMailq (sel:608)> show selected rankby sender limit 5
+sender                                    count
+================================================
+jjj@dom8.com                              334
+xxx@dom4.com                              43
+nnn@dom1.com                              32
+ccc@dom3.com                              14
+sss@dom5.com                              13
+\&...Preview of first 5 (64 more)...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH AUTHOR
+Denis Pompilio (jawa) <denis.pompilio@gmail.com>
+.SH COPYRIGHT
+2014, Denis 'jawa' Pompilio
+.\" Generated by docutils manpage writer.
+.
