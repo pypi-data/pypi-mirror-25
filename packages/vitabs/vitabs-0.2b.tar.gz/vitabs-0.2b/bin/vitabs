@@ -1,0 +1,70 @@
+#!/usr/bin/python2
+
+# Copyright (C) 2011  Pawel Stiasny
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import traceback
+import os.path
+import curses
+
+from vitabs.editor import Editor
+import vitabs.commands
+
+def terminate_curses():
+    curses.nocbreak()
+    stdscr.keypad(0)
+    curses.echo()
+    curses.endwin()
+
+stdscr = curses.initscr()
+curses.noecho()
+curses.cbreak()
+stdscr.keypad(1)
+
+try:
+    ed = Editor(stdscr)
+
+    ed.register_handlers(vitabs.commands)
+    
+    # modify this for os-specifig config path
+    sys.path.append(os.path.expanduser('~/.config/vitabs/plugins'))
+    user_config_path = os.path.expanduser('~/.config/vitabs/config.py')
+    if os.path.isfile(user_config_path):
+        execfile(user_config_path)
+    
+    if len(sys.argv) > 1:
+        ed.load_tablature(sys.argv[1])
+
+    ed.init_screen()
+    ed.normal_mode()
+except:
+    terminate_curses()
+    print "\033[91mSomething terrible happened\033[0m"
+    print traceback.format_exc()
+    try:
+        if ed.file_name:
+            fn = ed.file_name + '~'
+        else:
+            fn = 'vitabs-bak'
+        ed.save_tablature(fn)
+        print "\033[91mBackup saved in", fn, "\033[0m"
+    except:
+        print "Backup save failed"
+else:
+    terminate_curses()
+
+#curses.wrapper(ncmain)
+
