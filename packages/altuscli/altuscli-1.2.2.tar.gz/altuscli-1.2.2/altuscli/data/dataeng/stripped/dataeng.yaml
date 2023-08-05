@@ -1,0 +1,1186 @@
+swagger: '2.0'
+x-interface-model: cluster
+x-endpoint-name: dataeng
+info:
+  version: 0.1-SNAPSHOT
+  title: Cloudera Altus Data Engineering
+  license:
+    name: Apache 2.0
+  description: Cloudera Altus Data Engineering is a web service that makes it easy to process large amounts of data efficiently.
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /dataeng/createAWSCluster:
+    post:
+      summary: Creates a new AWS cluster.
+      description: Creates a new AWS cluster.
+      operationId: createAWSCluster
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateAWSClusterRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/CreateAWSClusterResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /dataeng/deleteCluster:
+    post:
+      summary: Deletes a cluster.
+      description: Deletes a cluster.
+      operationId: deleteCluster
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DeleteClusterRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/DeleteClusterResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /dataeng/listClusters:
+    post:
+      summary: Lists clusters.
+      description: Lists clusters. If no cluster names are specified, the call lists all clusters.
+      operationId: listClusters
+      x-right: dataeng/listClusters
+      x-paginates: true
+      x-paging-default-max-items: 100
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ListClustersRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/ListClustersResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /dataeng/describeCluster:
+    post:
+      summary: Describe a cluster.
+      description: Describe a cluster.
+      operationId: describeCluster
+      x-right: dataeng/listClusters
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DescribeClusterRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/DescribeClusterResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /dataeng/submitJobs:
+    post:
+      summary: Submit new jobs.
+      description: Submits new jobs.
+      operationId: submitJobs
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmitJobsRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/SubmitJobsResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /dataeng/terminateJob:
+    post:
+      summary: Terminate a job.
+      description: Terminate a job.
+      operationId: terminateJob
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/TerminateJobRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/TerminateJobResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /dataeng/listJobs:
+    post:
+      summary: Lists jobs.
+      description: Lists jobs. When listing jobs by cluster, jobs are ordered by job queue position. When listing jobs without a cluster filter, jobs are ordered by creation date. The order parameter controls whether the newest or oldest jobs are listed first.
+      operationId: listJobs
+      x-paginates: true
+      x-paging-default-max-items: 250
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ListJobsRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/ListJobsResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /dataeng/describeJob:
+    post:
+      summary: Describe a job.
+      description: Describe a job.
+      operationId: describeJob
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DescribeJobRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/DescribeJobResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Error:
+    type: object
+    description: An object returned on an error.
+    properties:
+      code:
+        type: string
+        description: The error code.
+      message:
+        type: string
+        description: The error message.
+  EnvironmentType:
+    type: string
+    description: The type of environment.
+    enum:
+      - AWS
+      - AZURE
+  ClusterSummary:
+    type: object
+    description: Information about a cluster.
+    required:
+      - clusterName
+      - crn
+      - creationDate
+      - cdhVersion
+      - instanceType
+      - workersGroupSize
+      - serviceType
+      - status
+      - environmentType
+      - environmentCrn
+    properties:
+      clusterName:
+        type: string
+        description: The name of the cluster.
+      crn:
+        type: string
+        description: The CRN of the cluster.
+      creationDate:
+        type: string
+        format: date-time
+        description: The date when the cluster was created.
+      status:
+        $ref: '#/definitions/ClusterStatus'
+        description: The status of the cluster.
+      cdhVersion:
+        type: string
+        description: The CDH version for the cluster.
+      instanceType:
+        type: string
+        description: The instance type for the worker instances.
+      workersGroupSize:
+        type: integer
+        format: int32
+        description: The worker group size.
+      serviceType:
+        type: string
+        description: The service type for the cluster.
+      environmentType:
+        $ref: '#/definitions/EnvironmentType'
+        description: The type of the environment.
+      environmentCrn:
+        type: string
+        description: The CRN of the environment.
+  Instance:
+    type: object
+    description: Information about cluster instances
+    properties:
+      privateIpAddress:
+        type: string
+        description: The private IP address of the instance
+      publicIpAddress:
+        type: string
+        description: The public IP address of the instance
+      instanceType:
+        type: string
+        description: The instance type
+      instanceId:
+        type: string
+        description: The instance ID
+      role:
+        type: string
+        description: The instance role
+  Cluster:
+    type: object
+    description: Information about a cluster.
+    required:
+      - clusterName
+      - crn
+      - creationDate
+      - cdhVersion
+      - instanceType
+      - workersGroupSize
+      - serviceType
+      - status
+      - environmentType
+      - environmentCrn
+      - automaticTerminationCondition
+      - hasInstanceBootstrapScript
+    x-limits:
+      - scope: account
+        value: 20
+        doc: The maximum number of clusters that can be created in an account.
+    properties:
+      clusterName:
+        type: string
+        description: The name of the cluster.
+      crn:
+        type: string
+        description: The CRN of the cluster.
+      creationDate:
+        type: string
+        format: date-time
+        description: The date when the cluster was created.
+      status:
+        $ref: '#/definitions/ClusterStatus'
+        description: The status of the cluster.
+      cdhVersion:
+        type: string
+        description: The CDH version for the cluster.
+      instanceType:
+        type: string
+        description: The instance type for the worker instances.
+      hasInstanceBootstrapScript:
+        type: boolean
+        description: A flag indicating if a bootstrap script was provided or not during the cluster create request. The script content is not returned because it may be sensitive.
+      workersGroupSize:
+        type: integer
+        format: int32
+        description: The worker group size.
+      serviceType:
+        type: string
+        description: The service type for the cluster.
+      environmentType:
+        $ref: '#/definitions/EnvironmentType'
+        description: The type of the environment.
+      environmentCrn:
+        type: string
+        description: The CRN of the environment.
+      automaticTerminationCondition:
+        type: string
+        description: The condition under which a cluster should be automatically terminated.
+        enum:
+          - NONE
+          - EMPTY_JOB_QUEUE
+      failureCodes:
+        type: array
+        items:
+          type: string
+        description: If the cluster's status is FAILED, this will be set with related failure codes.
+      failureReason:
+        type: string
+        description: If the cluster's status is FAILED, this will be set with a message explaining the reason.
+      logArchiveLocation:
+        type: string
+        description: The S3 location where cluster and job logs will be placed.
+      clouderaManagerEndpoint:
+        $ref: '#/definitions/Endpoint'
+        description: The connection endpoint of the cluster's Cloudera Manager.
+      computeWorkersConfiguration:
+        type: object
+        description: Compute workers group configuration.
+        required:
+          - groupSize
+        properties:
+          groupSize:
+            type: integer
+            format: int32
+            description: The compute workers group size.
+          awsDetails:
+            description: AWS-specific instance configuration.
+            $ref: '#/definitions/AWSInstanceConfiguration'
+      workersConfiguration:
+        type: object
+        description: Workers group configuration.
+        properties:
+          awsDetails:
+            description: AWS-specific instance configuration.
+            $ref: '#/definitions/AWSInstanceConfiguration'
+      workloadAnalyticsEnabled:
+        type: boolean
+        description: Whether this cluster was configured to send data to Altus Workload Analytics.
+      navigatorConfiguration:
+        type: object
+        description: Navigator integration configuration.
+        properties:
+          clouderaNavigatorIntegrationEnabled:
+            type: boolean
+            description: Whether this cluster was configured to be integrated with Cloudera Navigator.
+          awsDetails:
+            type: object
+            description: AWS-specific Cloudera Navigator integration configuration.
+            properties:
+              navigatorDataBucket:
+                type: string
+                description: The S3 bucket where metadata and lineage information used by Cloudera Navigator is stored.
+  Endpoint:
+    type: object
+    description: A network endpoint that has both a public and a private IP address.
+    required:
+      - privateIpAddress
+      - publicIpAddress
+      - port
+    properties:
+      privateIpAddress:
+        type: string
+        description: A private IP address. This is only accessible from within the local network.
+      publicIpAddress:
+        type: string
+        description: A public IP address. This is internet routable.
+      port:
+        type: integer
+        format: int32
+        description: A port.
+  ClusterStatus:
+    type: string
+    description: The status of a cluster.
+    enum:
+      - CREATING
+      - CREATED
+      - TERMINATING
+      - FAILED
+  AWSInstanceConfiguration:
+    type: object
+    description: AWS-specific instance configuration.
+    properties:
+      useSpot:
+        type: boolean
+        description: Use AWS spot instances for this group (bidUSDPerHr becomes mandatory).
+      bidUSDPerHr:
+        type: number
+        format: float
+        description: Bid price for AWS Spot instances in USD / hour.
+      ebsConfiguration:
+        $ref: '#/definitions/EbsConfiguration'
+        description: The per-instance EBS configuration.
+  EbsConfiguration:
+    type: object
+    description: An EBS configuration for an instance. Any EBS disks configured are added in addition to the root volume.
+    required:
+      - sizeInGiB
+      - volumeType
+      - volumesPerInstance
+    properties:
+      sizeInGiB:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 16384
+        description: Size for each volume in GiB.
+      volumeType:
+        type: string
+        description: The volume type.
+        x-supported-options:
+          - gp2
+          - st1
+          - sc1
+      volumesPerInstance:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 15
+        description: Number of volumes per instance. The default value is 1. Setting this to 0 will not attach any additional EBS volume.
+  EbsConfigurationRequest:
+    type: object
+    description: Object used to describe EBS configuration request. Any EBS disks configured here are added in addition to the root volume.
+    required:
+      - sizeInGiB
+      - volumeType
+    properties:
+      sizeInGiB:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 16384
+        description: Size for each volume in GiB.
+      volumeType:
+        type: string
+        description: The volume type.
+        x-supported-options:
+          - gp2
+          - st1
+          - sc1
+      volumesPerInstance:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 15
+        description: Number of volumes per instance. The default value is 1. Setting this to 0 will not attach any additional EBS volume.
+  DiskConfiguration:
+    type: object
+    description: A Disk storage configuration for an instance. Any disks configured are added in addition to the root volume.
+    required:
+      - sizeGB
+      - storageAccountType
+      - dataDisksPerInstance
+    properties:
+      sizeGB:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 16384
+        description: Size of each data disk in GB.
+      dataDisksPerInstance:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 15
+        description: Number of data disks per instance. The default is 1. Setting this to 0 will not attach any additional disks.
+      storageAccountType:
+        type: string
+        description: The storage account type.
+        x-supported-options:
+          - PremiumLRS
+          - StandardLRS
+  DiskConfigurationRequest:
+    type: object
+    description: Object used to describe Disk storage configuration request. Any disks configured here are added in addition to the root volume.
+    required:
+      - sizeGB
+      - dataDisksPerInstance
+    properties:
+      sizeGB:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 16384
+        description: Size of each data disk in GB.
+      dataDisksPerInstance:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 15
+        description: Number of data disks per instance. The default is 1. Setting this to 0 will not attach any additional disks.
+      storageAccountType:
+        type: string
+        description: The storage account type.
+        x-supported-options:
+          - PremiumLRS
+          - StandardLRS
+  JobSummary:
+    type: object
+    description: Information about a job.
+    required:
+      - jobId
+      - jobName
+      - crn
+      - creationDate
+      - timeLine
+      - clusterCrn
+      - submitterCrn
+      - status
+      - jobType
+      - failureAction
+      - jobSubmissionGroupId
+      - jobSubmissionGroupName
+      - jobSubmissionGroupIndex
+      - jobSubmissionGroupSize
+    properties:
+      jobId:
+        type: string
+        description: The ID of the job.
+      jobName:
+        type: string
+        description: The name of the job.
+      crn:
+        type: string
+        description: The CRN of the job.
+      creationDate:
+        type: string
+        format: date-time
+        description: The date when the job was created.
+      status:
+        $ref: '#/definitions/JobStatus'
+        description: The status of a job.
+      clusterCrn:
+        type: string
+        description: The CRN of the cluster.
+      submitterCrn:
+        type: string
+        description: The CRN of the job submitter.
+      jobType:
+        type: string
+        description: The type of job.
+        x-supported-options:
+          - HIVE
+          - SPARK
+          - MR2
+      failureAction:
+        $ref: '#/definitions/JobFailureAction'
+        description: The action taken on failure if an error is encountered processing the job.
+      jobSubmissionGroupId:
+        type: string
+        description: An ID assigned to the job shared by all jobs submitted in the same submit-jobs or create-cluster request.
+      jobSubmissionGroupName:
+        type: string
+        description: A name assigned to the job shared by all jobs submitted in the same submit-jobs or create-cluster request.
+      jobSubmissionGroupIndex:
+        type: integer
+        format: int32
+        description: The index of this job in the job list in its submit-jobs or create-cluster request.
+      jobSubmissionGroupSize:
+        type: integer
+        format: int32
+        description: The total number of jobs submitted in its submit-jobs or create-cluster request.
+      environmentCrn:
+        type: string
+        description: The CRN of the environment.
+  Job:
+    type: object
+    description: Information about a job.
+    required:
+      - jobId
+      - jobName
+      - crn
+      - creationDate
+      - timeLine
+      - clusterCrn
+      - submitterCrn
+      - status
+      - jobType
+      - failureAction
+      - jobSubmissionGroupId
+      - jobSubmissionGroupName
+      - jobSubmissionGroupIndex
+      - jobSubmissionGroupSize
+    x-limits:
+      - scope: cluster
+        value: 1000
+        doc: The maximum number of jobs that can be active for a cluster.
+    properties:
+      jobId:
+        type: string
+        description: The ID of the job.
+      jobName:
+        type: string
+        description: The name of the job.
+      crn:
+        type: string
+        description: The CRN of the job.
+      creationDate:
+        type: string
+        format: date-time
+        description: The date when the job was created.
+      status:
+        $ref: '#/definitions/JobStatus'
+        description: The status of a job.
+      clusterCrn:
+        type: string
+        description: The CRN of the cluster.
+      submitterCrn:
+        type: string
+        description: The CRN of the job submitter.
+      jobType:
+        type: string
+        description: The type of job.
+        x-supported-options:
+          - HIVE
+          - SPARK
+          - MR2
+      failureAction:
+        $ref: '#/definitions/JobFailureAction'
+        description: The action taken on failure if an error is encountered processing the job.
+      jobSubmissionGroupId:
+        type: string
+        description: An ID assigned to the job shared by all jobs submitted in the same submit-jobs or create-cluster request.
+      jobSubmissionGroupName:
+        type: string
+        description: A name assigned to the job shared by all jobs submitted in the same submit-jobs or create-cluster request.
+      jobSubmissionGroupIndex:
+        type: integer
+        format: int32
+        description: The index of this job in the job list in its submit-jobs or create-cluster request.
+      jobSubmissionGroupSize:
+        type: integer
+        format: int32
+        description: The total number of jobs submitted in its submit-jobs or create-cluster request.
+      workloadAnalyticsEnabled:
+        type: boolean
+        description: Whether this job was run against a cluster configured to send data to Altus Workload Analytics.
+      environmentCrn:
+        type: string
+        description: The CRN of the environment.
+      hiveJobDetails:
+        type: object
+        description: Hive specific job information. This is only ever present for HIVE jobs.
+        required:
+          - script
+        properties:
+          script:
+            type: string
+            description: The actual content of the Hive script to execute. This script can be templatized with variables of the form ${VARIABLE} that will be provided as params.
+          params:
+            type: array
+            items:
+              type: string
+            description: 'Parameters to be passed to the Hive script. For example: InputDir=/home/input-data or OutputDir=/output.'
+          jobXml:
+            type: string
+            description: XML document containing configuration for Beeline.
+      sparkJobDetails:
+        type: object
+        description: Spark specific job information. This is only ever present for SPARK jobs.
+        required:
+          - jars
+        properties:
+          jars:
+            type: array
+            items:
+              type: string
+            description: A list of jars to be added to the classpath (e.g. s3a://bucket-name/app.jar). If your code depends on other projects, you will need to package them alongside your application in order to distribute the code to a Spark cluster. Our recommendation is to create an assembly jar (or uber jar) containing your code and its dependencies. Both sbt and Maven have assembly plugins. When creating assembly jars, list Spark and Hadoop as provided dependencies; these need not be bundled since they are provided by the cluster manager at runtime.
+          mainClass:
+            type: string
+            description: Spark application main class. The entry point for your application (e.g. org.apache.spark.examples.SparkPi). This is not required if the jar has a main declaration in its manifest.
+          applicationArguments:
+            type: array
+            items:
+              type: string
+            description: Arguments for the Spark application. They will be passed to the main method of the main class.
+          sparkArguments:
+            type: string
+            description: Arguments for Spark itself respresented by a string (e.g. --executor-memory 4G --num-executors 50 --conf spark.app.name=MyApp).
+      mr2JobDetails:
+        type: object
+        description: MR2 specific details of job. This will be set if the jobType is MR2.
+        required:
+          - mainClass
+        properties:
+          mainClass:
+            type: string
+            description: MR2 application main class.
+          jars:
+            type: array
+            items:
+              type: string
+            description: A list of jar files.
+          arguments:
+            type: array
+            items:
+              type: string
+            description: Arguments for the MR2 application.
+          javaOpts:
+            type: string
+            description: A list of Java JVM options.
+          jobXml:
+            type: string
+            description: XML document containing configuration for MR2.
+  JobStatus:
+    type: string
+    description: The status of a job.
+    enum:
+      - QUEUED
+      - SUBMITTING
+      - RUNNING
+      - COMPLETED
+      - TERMINATING
+      - TERMINATED
+      - FAILED
+      - INTERRUPTED
+  JobOrder:
+    type: string
+    description: The job ordering.
+    enum:
+      - OLDEST_TO_NEWEST
+      - NEWEST_TO_OLDEST
+  JobFailureAction:
+    type: string
+    description: The action to take if an error is encountered processing a job.
+    enum:
+      - NONE
+      - INTERRUPT_JOB_QUEUE
+  CreateAWSClusterRequest:
+    type: object
+    description: Request object for a create AWS cluster request.
+    required:
+      - clusterName
+      - cdhVersion
+      - sshPrivateKey
+      - workersGroupSize
+      - serviceType
+      - instanceType
+      - environmentName
+    properties:
+      clusterName:
+        type: string
+        description: The name of the cluster. This name must be unique, must have a maximum of 128 characters, and must contain only alphanumeric characters and hyphens. Names are case-sensitive.
+      cdhVersion:
+        type: string
+        description: The CDH version.
+      sshPrivateKey:
+        type: string
+        description: The ssh private key.
+        x-sensitive: true
+      instanceType:
+        type: string
+        description: The EC2 instance type for the worker nodes.
+        x-supported-options:
+          - c4.xlarge
+          - c4.2xlarge
+          - c4.4xlarge
+          - c4.8xlarge
+          - m4.large
+          - m4.xlarge
+          - m4.2xlarge
+          - m4.4xlarge
+          - m4.10xlarge
+          - m4.16xlarge
+          - r4.large
+          - r4.xlarge
+          - r4.2xlarge
+          - r4.4xlarge
+          - r4.8xlarge
+          - r4.16xlarge
+      serviceType:
+        type: string
+        description: The service type.
+        x-supported-options:
+          - HIVE
+          - HIVE_ON_SPARK
+          - SPARK
+          - SPARK_16
+          - MR2
+      environmentName:
+        type: string
+        description: Name or CRN of the environment to use when creating the the cluster. The environment must be an AWS environment.
+      workersGroupSize:
+        type: integer
+        format: int32
+        description: The worker nodes group size.
+      instanceBootstrapScript:
+        type: string
+        description: Instance bootstrap script that is executed on all the cluster instances immediately after startup before any services are configured and started. You can use it to install additional OS packages or application dependencies. This is not intended to be a mechanism for cluster configuration.
+        x-sensitive: true
+      computeWorkersConfiguration:
+        type: object
+        description: Defines compute workers group configuration, such as, size, bidding price and custom volume configurations.
+        required:
+          - groupSize
+        properties:
+          groupSize:
+            type: integer
+            format: int32
+            minimum: 0
+            description: The compute workers group size.
+          useSpot:
+            type: boolean
+            description: Use AWS spot instances for this group (bidUSDPerHr becomes mandatory).
+          bidUSDPerHr:
+            type: number
+            format: float
+            description: Bid price for AWS Spot instances in USD per hour.
+          ebsConfiguration:
+            description: Defines an EBS configuration. Any EBS disks configured here are added in addition to the root volume.
+            $ref: '#/definitions/EbsConfigurationRequest'
+      workersConfiguration:
+        type: object
+        description: Defines workers group configuration, such as, custom volume configurations.
+        properties:
+          ebsConfiguration:
+            description: Defines an EBS configuration. Any EBS disks configured here are added in addition to the root volume.
+            $ref: '#/definitions/EbsConfigurationRequest'
+      clouderaManagerUsername:
+        type: string
+        description: The username to login to cluster's Cloudera Manager as readonly user. The default is 'guest'.
+      clouderaManagerPassword:
+        type: string
+        description: The password to login to cluster's Cloudera Manager as readonly user. The default is autogenerated random UUID.
+        x-sensitive: true
+      automaticTerminationCondition:
+        type: string
+        description: The condition under which a cluster should be automatically terminated. If not specified, NONE will be used. If EMPTY_JOB_QUEUE is specified, then a list of jobs must also be specified as part of the cluster creation request.
+        enum:
+          - NONE
+          - EMPTY_JOB_QUEUE
+      jobSubmissionGroupName:
+        type: string
+        description: A name for the group of submitted jobs. If not specified and this is a request to submit a single, named job, the job submission group name will match the job name. Otherwise, the job submission group name will match the generated job submission group ID. This name must have a maximum of 128 characters, and must contain only alphanumeric characters, spaces, colons, hyphens and underscores. Names are case-sensitive.
+      jobs:
+        type: array
+        items:
+          $ref: '#/definitions/JobRequest'
+        description: A list of jobs to submit to the cluster. Each job in the list should specify only one of hiveJob, sparkJob or mr2Job.
+        minLength: 1
+        maxLength: 1000
+  CreateAWSClusterResponse:
+    type: object
+    description: Response object for a create AWS cluster request.
+    required:
+      - cluster
+      - clouderaManagerUsername
+      - clouderaManagerPassword
+    properties:
+      cluster:
+        $ref: '#/definitions/Cluster'
+        description: The cluster that was created.
+      clouderaManagerUsername:
+        type: string
+        description: The username that was created to login to cluster's Cloudera Manager as a readonly user. This value cannot be retrieved later.
+      clouderaManagerPassword:
+        type: string
+        description: The password that was created to login to cluster's Cloudera Manager as a readonly user. This value cannot be retrieved later.
+        x-sensitive: true
+  DeleteClusterRequest:
+    type: object
+    description: Request object for a delete cluster request.
+    required:
+      - clusterName
+    properties:
+      clusterName:
+        type: string
+        description: The name or CRN of the cluster.
+  DeleteClusterResponse:
+    type: object
+    description: Response object for a delete cluster request.
+  ListClustersRequest:
+    type: object
+    description: Request object for a list clusters request.
+    properties:
+      clusterNames:
+        type: array
+        items:
+          type: string
+        description: The names or CRNs of the clusters.
+      pageSize:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        x-paging-page-size: true
+        description: The size of each page.
+      startingToken:
+        type: string
+        x-paging-input-token: true
+        description: A token to specify where to start paginating. This is the nextToken from a previously truncated response.
+  ListClustersResponse:
+    type: object
+    description: Response object for a list clusters request.
+    required:
+      - clusters
+    properties:
+      clusters:
+        type: array
+        items:
+          $ref: '#/definitions/ClusterSummary'
+        x-paging-result: true
+        description: The clusters.
+      nextToken:
+        type: string
+        x-paging-output-token: true
+        description: The token to use when requesting the next set of results. If not present, there are no additional results.
+  DescribeClusterRequest:
+    type: object
+    description: Request object for a describe cluster request.
+    required:
+      - clusterName
+    properties:
+      clusterName:
+        type: string
+        description: The name or CRN of the cluster.
+  DescribeClusterResponse:
+    type: object
+    description: Response object for a describe cluster request.
+    required:
+      - cluster
+    properties:
+      cluster:
+        $ref: '#/definitions/Cluster'
+        description: The cluster.
+  SparkJobRequest:
+    type: object
+    description: Object used to submit a Spark job.
+    required:
+      - jars
+    properties:
+      jars:
+        type: array
+        items:
+          type: string
+          x-no-paramfile: true
+        description: A list of jars to be added to the classpath (e.g. s3a://bucket-name/app.jar). If your code depends on other projects, you will need to package them alongside your application in order to distribute the code to a Spark cluster. Our recommendation is to create an assembly jar (or uber jar) containing your code and its dependencies. Both sbt and Maven have assembly plugins. When creating assembly jars, list Spark and Hadoop as provided dependencies; these need not be bundled since they are provided by the cluster manager at runtime.
+      mainClass:
+        type: string
+        description: Spark application main class. The entry point for your application (e.g. org.apache.spark.examples.SparkPi). This is not required if the jar has a main declaration in its manifest.
+      applicationArguments:
+        type: array
+        items:
+          type: string
+        description: Arguments for the Spark application. They will be passed to the main method of the main class.
+      sparkArguments:
+        type: string
+        description: Arguments for Spark itself respresented by a string (e.g. --executor-memory 4G --num-executors 50 --conf spark.app.name=MyApp).
+  MR2JobRequest:
+    type: object
+    description: Object used to submit a MR2 job.
+    required:
+      - mainClass
+      - jars
+    properties:
+      mainClass:
+        type: string
+        description: MR2 application main class. The entry point for your application.
+      jars:
+        type: array
+        items:
+          type: string
+          x-no-paramfile: true
+        description: A list of jars to be added to the classpath (e.g. s3a://bucket-name/wordcount.jar).
+      arguments:
+        type: array
+        items:
+          type: string
+        description: Arguments for the MR2 application. They will be passed to the main method of the main class.
+      javaOpts:
+        type: string
+        description: A list of Java options for the JVM.
+      jobXml:
+        type: string
+        description: An optional XML document containing client configurations for MR2 or a local path when using the CLI (e.g. file:///absolute/path/to/job1.xml).
+  HiveJobRequest:
+    type: object
+    description: Object used to submit a HIVE job.
+    required:
+      - script
+    properties:
+      script:
+        type: string
+        description: The actual content of the Hive script to execute. This script can be templatized with variables of the form ${VARIABLE} that will be provided as params. When using the CLI this can be a local path (e.g. file:///absolute/path/to/script.hql).
+      params:
+        type: array
+        items:
+          type: string
+        description: 'Parameters to be passed to the Hive script. For example: InputDir=/home/input-data or OutputDir=/output.'
+      jobXml:
+        type: string
+        description: An optional XML document containing client configurations for Beeline or local path when using the CLI (e.g. file:///absolute/path/to/job1.xml). These are the same configurations that usually go into hive-site.xml to drive Beeline as a client of Hive Server 2. An example can be downloaded from Cloudera Manager (navigate to Hive service, click "Actions" and then "Download Client Configuration").
+  JobRequest:
+    type: object
+    description: Object used to submit a job of any type.
+    properties:
+      name:
+        type: string
+        description: A name for the job. If not specified, the job name depends on whether the job was submitted individually or in a list of jobs. If submitted individually the job name will be the job ID. If submitted in a list of jobs, the job will be named after the job submission group and the job's index in the list. This name must have a maximum of 128 characters, and must contain only alphanumeric characters, spaces, colons, hyphens and underscores. Names are case-sensitive.
+      failureAction:
+        $ref: '#/definitions/JobFailureAction'
+        description: The action taken on failure if an error is encountered processing the job. If not specified, INTERRUPT_JOB_QUEUE will be used for the job.
+      hiveJob:
+        $ref: '#/definitions/HiveJobRequest'
+        description: The Hive specific portion of the job request. This must be set for a Hive job and must not be set for other job types.
+      sparkJob:
+        $ref: '#/definitions/SparkJobRequest'
+        description: The Spark specific portion of the job request. This must be set for a Spark job and must not be set for other job types.
+      mr2Job:
+        $ref: '#/definitions/MR2JobRequest'
+        description: The MR2 specific portion of the job request. This must be set for an MR2 job and must not be set for other job types.
+  SubmitJobsRequest:
+    type: object
+    description: Request object for a submit jobs request.
+    required:
+      - clusterName
+      - jobs
+    properties:
+      clusterName:
+        type: string
+        description: The name or CRN cluster on which to run the job.
+      jobs:
+        type: array
+        items:
+          $ref: '#/definitions/JobRequest'
+        description: The jobs to submit. Each job in the list should specify only one of hiveJob, sparkJob or mr2Job.
+      jobSubmissionGroupName:
+        type: string
+        description: A name for the group of submitted jobs. If not specified and this is a request to submit a single, named job, the job submission group name will match the job name. Otherwise, the job submission group name will match the generated job submission group ID. This name must have a maximum of 128 characters, and must contain only alphanumeric characters, spaces, colons, hyphens and underscores. Names are case-sensitive.
+  SubmitJobsResponse:
+    type: object
+    description: Response object for a submit jobs request.
+    required:
+      - jobs
+    properties:
+      jobs:
+        type: array
+        items:
+          $ref: '#/definitions/Job'
+        description: The submitted jobs.
+        minLength: 1
+        maxLength: 1000
+  ListJobsRequest:
+    type: object
+    description: Request object for a list jobs request. One or more filters can be applied. If multiple filters are specified, all of them will be applied.
+    properties:
+      jobIds:
+        type: array
+        items:
+          type: string
+        description: The IDs of the jobs.
+      environmentCrn:
+        type: string
+        description: Filters the job list to the jobs with this environment.
+      clusterCrn:
+        type: string
+        description: Filters the job list to the jobs with this cluster.
+      submitterCrn:
+        type: string
+        description: Filters the job list to the jobs with this submitter.
+      jobTypes:
+        type: array
+        items:
+          type: string
+          description: The type of job.
+          x-supported-options:
+            - HIVE
+            - SPARK
+            - MR2
+        description: Filters the job list to the jobs with these job types.
+      jobStatuses:
+        type: array
+        items:
+          $ref: '#/definitions/JobStatus'
+        description: Filters the job list to the jobs with these statuses.
+      creationDateAfter:
+        type: string
+        format: date-time
+        description: Filters the job list to jobs with creation dates at or after this value.
+      creationDateBefore:
+        type: string
+        format: date-time
+        description: Filters the job list to jobs with creation dates at or before this value.
+      order:
+        $ref: '#/definitions/JobOrder'
+        description: Controls the order in which jobs are returned. The default is NEWEST_TO_OLDEST.
+      pageSize:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        x-paging-page-size: true
+        description: The size of each page.
+      startingToken:
+        type: string
+        x-paging-input-token: true
+        description: A token to specify where to start paginating. This is the nextToken from a previously truncated response.
+  ListJobsResponse:
+    type: object
+    description: Response object for a list jobs request.
+    required:
+      - jobs
+    properties:
+      jobs:
+        type: array
+        items:
+          $ref: '#/definitions/JobSummary'
+        x-paging-result: true
+        description: The jobs.
+      nextToken:
+        type: string
+        x-paging-output-token: true
+        description: The token to use when requesting the next set of results. If not present, there are no additional results.
+  DescribeJobRequest:
+    type: object
+    description: Request object for a describe job request.
+    required:
+      - jobId
+    properties:
+      jobId:
+        type: string
+        description: The ID or CRN of the job.
+  DescribeJobResponse:
+    type: object
+    description: Response object for a describe job request.
+    required:
+      - job
+    properties:
+      job:
+        $ref: '#/definitions/Job'
+        description: The job.
+  TerminateJobRequest:
+    type: object
+    description: Request object for a terminate job request.
+    required:
+      - jobId
+    properties:
+      jobId:
+        type: string
+        description: The ID or CRN of the job to terminate.
+  TerminateJobResponse:
+    type: object
+    description: Response object for a terminate job request.
+  JobTimeLine:
+    type: object
+    description: Timeline informaton for a Job.
+    required:
+      - creationDate
+    properties:
+      creationDate:
+        type: string
+        format: date-time
+        description: The date the job was created.
+      startDate:
+        type: string
+        format: date-time
+        description: The date the job started executing on the cluster.
+      endDate:
+        type: string
+        format: date-time
+        description: The date when the job was completed, terminated, or interrupted.

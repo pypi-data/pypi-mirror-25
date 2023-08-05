@@ -1,0 +1,748 @@
+swagger: '2.0'
+x-endpoint-name: environments
+info:
+  version: 0.1-SNAPSHOT
+  title: Cloudera Environments Service
+  license:
+    name: Apache 2.0
+  description: Cloudera Altus Environments Service is a web service that manages cloud provider access.
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /environments/createAWSEnvironment:
+    post:
+      summary: Creates a new AWS environment.
+      description: Creates a new AWS environment.
+      operationId: createAWSEnvironment
+      x-right: environments/createAWSEnvironment
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateAWSEnvironmentRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/CreateAWSEnvironmentResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /environments/createAzureEnvironment:
+    post:
+      summary: Creates a new Azure environment.
+      description: Creates a new Azure environment.
+      operationId: createAzureEnvironment
+      x-right: environments/createAzureEnvironment
+      x-hidden: true
+      x-no-compatibility-guarantee: true
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateAzureEnvironmentRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/CreateAzureEnvironmentResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /environments/deleteEnvironment:
+    post:
+      summary: Deletes an environment.
+      description: Deletes an environment.
+      operationId: deleteEnvironment
+      x-right: environments/deleteEnvironment
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DeleteEnvironmentRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/DeleteEnvironmentResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /environments/listEnvironments:
+    post:
+      summary: Lists environments.
+      description: Lists environments. If no environment names are specified, the call lists all environments.
+      operationId: listEnvironments
+      x-right: environments/listEnvironments
+      x-paginates: true
+      x-paging-default-max-items: 100
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ListEnvironmentsRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/ListEnvironmentsResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /environments/describeEnvironment:
+    post:
+      summary: Describe environment.
+      description: Describes environment.
+      operationId: describeEnvironment
+      x-right: environments/describeEnvironment
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DescribeEnvironmentRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/DescribeEnvironmentResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /environments/getInfoForAWSCrossAccountAccess:
+    post:
+      summary: Retrieves the information required to set up an AWS cross-account access role.
+      description: Retrieves the information required to set up an AWS cross-account access role.
+      operationId: getInfoForAWSCrossAccountAccess
+      x-right: environments/getInfoForAWSCrossAccountAccess
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/GetInfoForAWSCrossAccountAccessRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/GetInfoForAWSCrossAccountAccessResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /environments/getInfoForAzureCrossAccountAccess:
+    post:
+      summary: Retrieves the information required to perform the Azure consent workflow.
+      description: Retrieves the information required to perform the Azure consent workflow.
+      operationId: getInfoForAzureCrossAccountAccess
+      x-right: environments/getInfoForAzureCrossAccountAccess
+      x-hidden: true
+      x-no-compatibility-guarantee: true
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/GetInfoForAzureCrossAccountAccessRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/GetInfoForAzureCrossAccountAccessResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+  /environments/getClientAccountSetupCloudFormationTemplate:
+    post:
+      summary: Retrieves the CloudFormation template that creates all necessary resources in client's account.
+      description: Retrieves the CloudFormation template that creates all necessary resources in client's account.
+      operationId: getClientAccountSetupCloudFormationTemplate
+      x-right: environments/getClientAccountSetupCloudFormationTemplate
+      parameters:
+        - name: input
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/GetClientAccountSetupCloudFormationTemplateRequest'
+      responses:
+        200:
+          description: Expected response to a valid request.
+          schema:
+            $ref: '#/definitions/GetClientAccountSetupCloudFormationTemplateResponse'
+        default:
+          description: The default response on an error.
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Error:
+    type: object
+    description: An object returned on an error.
+    properties:
+      code:
+        type: string
+        description: The error code.
+      message:
+        type: string
+        description: The error message.
+  InfoForAWSCrossAccountAccess:
+    type: object
+    description: Container for information required to set up an AWS cross-account access role.
+    required:
+      - clouderaRoleARN
+      - clouderaAccountId
+      - externalIdForAWSDelegatedAccess
+    properties:
+      clouderaRoleARN:
+        type: string
+        description: The AWS IAM role that will be used by Cloudera when assuming the customer provided cross-account access role when accessing the cusotmer's AWS account.
+      clouderaAccountId:
+        type: string
+        description: The role that will be used by Cloudera to assume the cross-account access role in the customer AWS account.
+      externalIdForAWSDelegatedAccess:
+        type: string
+        description: The external ID that will be used by Cloudera when assuming the customer provided cross-account access role when accessing the customer's AWS account.
+  InfoForAzureCrossAccountAccess:
+    type: object
+    description: Container for information required to set up an Azure cross-account access role.
+    x-hidden: true
+    x-no-compatibility-guarantee: true
+    required:
+      - applicationId
+    properties:
+      applicationId:
+        type: string
+        description: The application ID that will be used by Cloudera to access resources in the customer Azure subscription.
+  S3GuardConfigurationRequest:
+    type: object
+    description: Defines configurations required to enable S3 consistent view (S3Guard).
+    required:
+      - enable
+    properties:
+      enable:
+        type: boolean
+        description: Enable S3Guard for operations in the environment. Only applies to clusters using CDH 5.11 and higher. Note that S3Guard tracks S3 metadata using an AWS DynamoDB database, so you will incur AWS charges for using that database.
+      tableName:
+        type: string
+        description: The name of the DynamoDB table that stores the S3Guard Metadata (default s3guard-metadata).
+      readCapacity:
+        type: integer
+        format: int32
+        description: Provisioned throughput requirements, in capacity units, for read operations from the DynamoDB table used for the S3Guard Metadata. This value is only used when creating a new DynamoDB table. After the table is created, you can manually provision the throughput by increasing or decreasing read capacity as needed for existing tables (default 500).
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+      writeCapacity:
+        type: integer
+        format: int32
+        description: Provisioned throughput requirements, in capacity units, for write operations to the DynamoDB table used for the S3Guard Metadata. This value is only used when creating a new DynamoDB table. After the table is created, you can manually provision the throughput by increasing or decreasing the write capacity as needed for existing tables (default 100).
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+      pruneAgeMs:
+        type: integer
+        format: int32
+        description: Maximum age for S3Guard Metadata. Whenever the Prune command runs, entries in the S3Guard Metadata Cache older than this age will be deleted (default 24 hours).
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+  S3GuardConfiguration:
+    type: object
+    description: The S3 consistent view (S3Guard) configuration.
+    required:
+      - enable
+    properties:
+      enable:
+        type: boolean
+        description: Whether S3Guard is enabled.
+      tableName:
+        type: string
+        description: The name of the DynamoDB table that stores the S3Guard Metadata.
+  WorkloadAnalyticsConfigurationRequest:
+    type: object
+    description: The configuration for integration with Altus Workload Analytics.
+    required:
+      - enable
+    properties:
+      enable:
+        type: boolean
+        description: Whether to enable Altus Workload Analytics integration.
+  WorkloadAnalyticsConfiguration:
+    type: object
+    description: The configuration for integration with Altus Workload Analytics.
+    required:
+      - enable
+    properties:
+      enable:
+        type: boolean
+        description: Whether Altus Workload Analytics integration is enabled.
+  AwsNavigatorConfigurationRequest:
+    type: object
+    description: Defines configurations required to enable Cloudera Navigator integration in an AWS environment
+    required:
+      - enable
+    properties:
+      enable:
+        type: boolean
+        description: Whether Cloudera Navigator integration is enabled.
+      navigatorDataBucket:
+        type: string
+        description: The S3 bucket where metadata and lineage information used by Cloudera Navigator is stored.
+  NavigatorConfiguration:
+    type: object
+    description: Defines configurations required to enable Cloudera Navigator integration in an AWS environment.
+    required:
+      - enable
+    properties:
+      enable:
+        type: boolean
+        description: Whether Cloudera Navigator integration is enabled.
+      awsDetails:
+        type: object
+        description: AWS-specific Cloudera Navigator configuration information.
+        properties:
+          navigatorDataBucket:
+            type: string
+            description: The S3 bucket where metadata and lineage information used by Cloudera Navigator is stored.
+  ValidationStatus:
+    type: object
+    description: Result of a validate environment action.
+    required:
+      - status
+    properties:
+      status:
+        type: string
+        description: Validation status of the environment.
+        enum:
+          - OK
+          - DELEGATION_ERROR
+          - DELEGATED_PERMISSION_DENIED
+          - VALIDATION_NOT_SUPPORTED
+      message:
+        type: string
+        description: Message that describes the details of the validation result.
+  Environment:
+    type: object
+    description: Container for the environment access data.
+    required:
+      - environmentName
+      - crn
+      - creationDate
+      - type
+    x-limits:
+      - scope: account
+        value: 10
+        doc: The maximum number of environments that can be created in an account.
+    properties:
+      environmentName:
+        type: string
+        description: The name of the environment.
+      crn:
+        type: string
+        description: The CRN of the environment.
+      creationDate:
+        type: string
+        format: date-time
+        description: The date when the cloud account was created.
+      type:
+        type: string
+        description: The type of the environment.
+        x-supported-options:
+          - AWS
+      name:
+        type: string
+        description: Name of the environment.
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+      environmentId:
+        type: string
+        description: ID of the environment.
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+      accountId:
+        type: string
+        description: Associated account ID.
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+      workloadAnalyticsConfiguration:
+        $ref: '#/definitions/WorkloadAnalyticsConfiguration'
+        description: Configurations for integration with Altus Workload Analytics.
+      azureDetails:
+        type: object
+        description: Azure-specific environment information.
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+        required:
+          - subscriptionId
+          - region
+          - vnetResourceGroup
+          - vnetName
+          - subnetName
+          - networkSecurityGroupResourceGroup
+          - networkSecurityGroupName
+          - clusterNodeResourceGroup
+          - aadGroupName
+        properties:
+          subscriptionId:
+            type: string
+            description: The subscription ID.
+          region:
+            type: string
+            description: The network region.
+          vnetResourceGroup:
+            type: string
+            description: The resource group where the virtual network is located.
+          vnetName:
+            type: string
+            description: The virtual network name.
+          subnetName:
+            type: string
+            description: The subnet name.
+          networkSecurityGroupResourceGroup:
+            type: string
+            description: The resource group where the network security group is located.
+          networkSecurityGroupName:
+            type: string
+            description: The network security group name.
+          clusterNodeResourceGroup:
+            type: string
+            description: The resource group where the cluster nodes are located.
+          aadGroupName:
+            type: string
+            description: The Azure AD group with access to the Azure Data Lake Store.
+      awsDetails:
+        type: object
+        description: AWS-specific environment information.
+        required:
+          - delegatedRoleArn
+          - instanceProfileName
+          - subnets
+          - securityGroups
+          - region
+        properties:
+          delegatedRoleArn:
+            type: string
+            description: The ARN of the delegated role.
+          instanceProfileName:
+            type: string
+            description: The name of the IAM instance profile.
+          subnets:
+            type: array
+            items:
+              type: string
+            description: The network subnets.
+          securityGroups:
+            type: array
+            items:
+              type: string
+            description: The security groups.
+          region:
+            type: string
+            description: The network region.
+          logArchiveBucketName:
+            type: string
+            description: The name of S3 log archive bucket in which cluster logs will be stored after cluster termination.
+          autoRegisterClusterSshKeys:
+            type: boolean
+            description: The flag to allow auto registration of SSH keys provided during cluster creation. Key pairs will be imported with name \'CLOUDERA-\' followed by the corresponding private key fingerprint.
+          s3GuardConfiguration:
+            $ref: '#/definitions/S3GuardConfiguration'
+            description: The configurations required to enable S3 consistent view (S3Guard).
+      navigatorConfiguration:
+        $ref: '#/definitions/NavigatorConfiguration'
+        description: The configurations for Cloudera Navigator integration.
+      validationStatus:
+        type: object
+        description: Validation status of the environment.
+        x-hidden: true
+        x-no-compatibility-guarantee: true
+        required:
+          - results
+        properties:
+          results:
+            type: array
+            description: Validate environment results.
+            items:
+              $ref: '#/definitions/ValidationStatus'
+  CreateAWSEnvironmentRequest:
+    type: object
+    description: Request object for a CreateAWSEnvironment request.
+    required:
+      - name
+      - delegatedRoleArn
+      - subnets
+      - securityGroups
+      - region
+      - instanceProfileName
+    properties:
+      name:
+        type: string
+        description: The name of the environment. This name must be unique, must have a maximum of 128 characters, and must contain only alphanumeric characters and hyphens. Names are case-sensitive.
+      delegatedRoleArn:
+        type: string
+        description: The ARN of the delegated role.
+      instanceProfileName:
+        type: string
+        description: The name of the IAM instance profile.
+      subnets:
+        type: array
+        items:
+          type: string
+        description: The network subnets.
+      securityGroups:
+        type: array
+        items:
+          type: string
+        description: The security groups.
+      region:
+        type: string
+        description: The network region.
+        x-supported-options:
+          - ap-northeast-1
+          - ap-northeast-2
+          - ap-south-1
+          - ap-southeast-1
+          - ap-southeast-2
+          - ca-central-1
+          - eu-central-1
+          - eu-west-1
+          - eu-west-2
+          - sa-east-1
+          - us-east-1
+          - us-east-2
+          - us-west-1
+          - us-west-2
+      logArchiveBucketName:
+        type: string
+        description: The name of S3 log archive bucket in which cluster logs will be stored after cluster termination.
+      autoRegisterClusterSshKeys:
+        type: boolean
+        description: The flag to allow auto registration of SSH keys provided during cluster creation. Key pairs will be imported with name \'CLOUDERA-\' followed by the corresponding private key fingerprint.
+      s3GuardConfiguration:
+        $ref: '#/definitions/S3GuardConfigurationRequest'
+        description: The configurations for S3Guard (S3 consistent view layer).
+      workloadAnalyticsConfiguration:
+        $ref: '#/definitions/WorkloadAnalyticsConfigurationRequest'
+        description: Configuration for integration with Altus Workload Analytics.
+      navigatorConfiguration:
+        $ref: '#/definitions/AwsNavigatorConfigurationRequest'
+        description: The configurations for Cloudera Navigator integration.
+  CreateAWSEnvironmentResponse:
+    type: object
+    description: Response object for a CreateAWSEnvironment request.
+    required:
+      - environment
+    properties:
+      environment:
+        $ref: '#/definitions/Environment'
+        description: Created environment object.
+  CreateAzureEnvironmentRequest:
+    type: object
+    description: Request object for a CreateAzureEnvironment request.
+    x-hidden: true
+    x-no-compatibility-guarantee: true
+    required:
+      - name
+      - subscriptionId
+      - region
+      - vnetResourceGroup
+      - vnetName
+      - subnetName
+      - networkSecurityGroupResourceGroup
+      - networkSecurityGroupName
+      - clusterNodeResourceGroup
+      - aadGroupName
+    properties:
+      name:
+        type: string
+        description: The name of the environment. This name must be unique, must have a maximum of 128 characters, and must contain only alphanumeric characters and hyphens. Names are case-sensitive.
+      subscriptionId:
+        type: string
+        description: The subscription ID.
+      region:
+        type: string
+        description: The region.
+        x-supported-options:
+          - australiaeast
+          - australiasoutheast
+          - brazilsouth
+          - canadacentral
+          - canadaeast
+          - centralindia
+          - centralus
+          - eastasia
+          - eastus
+          - eastus2
+          - japaneast
+          - japanwest
+          - northcentralus
+          - northeurope
+          - southcentralus
+          - southeastasia
+          - southindia
+          - uksouth
+          - ukwest
+          - westcentralus
+          - westeurope
+          - westus
+          - westus2
+      vnetResourceGroup:
+        type: string
+        description: The resource group where the virtual network is located.
+      vnetName:
+        type: string
+        description: The virtual network name.
+      subnetName:
+        type: string
+        description: The subnet name.
+      networkSecurityGroupResourceGroup:
+        type: string
+        description: The resource group where the network security group is located.
+      networkSecurityGroupName:
+        type: string
+        description: The network security group name.
+      clusterNodeResourceGroup:
+        type: string
+        description: The resource group where the cluster nodes are located.
+      aadGroupName:
+        type: string
+        description: The Azure AD group with access to the Azure Data Lake Store.
+  CreateAzureEnvironmentResponse:
+    type: object
+    description: Response object for a CreateAzureEnvironment request.
+    x-hidden: true
+    x-no-compatibility-guarantee: true
+    required:
+      - environment
+    properties:
+      environment:
+        $ref: '#/definitions/Environment'
+        description: Created environment object.
+  DeleteEnvironmentRequest:
+    type: object
+    description: Request object for a DeleteEnvironment request.
+    required:
+      - environmentName
+    properties:
+      environmentName:
+        type: string
+        description: The name or CRN of the environment.
+  DeleteEnvironmentResponse:
+    type: object
+    description: Response object for a DeleteEnvironment request.
+  ListEnvironmentsRequest:
+    type: object
+    description: Request object for a ListEnvironment request.
+    properties:
+      environmentNames:
+        type: array
+        items:
+          type: string
+        description: The names or CRNs of the environments.
+      pageSize:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        x-paging-page-size: true
+        description: The size of each page.
+      startingToken:
+        type: string
+        x-paging-input-token: true
+        description: A token to specify where to start paginating. This is the nextToken from a previously truncated response.
+  ListEnvironmentsResponse:
+    type: object
+    description: Response object for a ListEnvironments request.
+    required:
+      - environments
+    properties:
+      environments:
+        type: array
+        items:
+          $ref: '#/definitions/Environment'
+        x-paging-result: true
+        description: The environments.
+      nextToken:
+        type: string
+        x-paging-output-token: true
+        description: The token to use when requesting the next set of results. If not present, there are no additional results.
+  DescribeEnvironmentRequest:
+    type: object
+    description: Request object for a DescribeEnvironment request.
+    x-hidden: true
+    x-no-compatibility-guarantee: true
+    required:
+      - environmentName
+    properties:
+      environmentName:
+        type: string
+        description: The names or CRN of the environment.
+  DescribeEnvironmentResponse:
+    type: object
+    description: Response object for a DescribeEnvironment request.
+    x-hidden: true
+    x-no-compatibility-guarantee: true
+    required:
+      - environment
+    properties:
+      environment:
+        $ref: '#/definitions/Environment'
+        description: The environment.
+  GetInfoForAWSCrossAccountAccessRequest:
+    type: object
+    description: Request object for a GetInfoForAWSCrossAccountAccess request.
+  GetInfoForAWSCrossAccountAccessResponse:
+    type: object
+    description: Response object for a GetInfoForAWSCrossAccountAccess request.
+    required:
+      - infoForAWSCrossAccountAccess
+    properties:
+      infoForAWSCrossAccountAccess:
+        $ref: '#/definitions/InfoForAWSCrossAccountAccess'
+        description: The information required for setting up an AWS cross-account access.
+  GetInfoForAzureCrossAccountAccessRequest:
+    type: object
+    description: Request object for a GetInfoForAzureCrossAccountAccess request.
+  GetInfoForAzureCrossAccountAccessResponse:
+    type: object
+    description: Response object for a GetInfoForAzureCrossAccountAccess request.
+    required:
+      - infoForAzureCrossAccountAccess
+    properties:
+      infoForAzureCrossAccountAccess:
+        $ref: '#/definitions/InfoForAzureCrossAccountAccess'
+        description: The information required for performing the Azure consent workflow.
+  ClientAccountSetupCloudFormationTemplateType:
+    type: string
+    description: The type of a client account setup template
+    enum:
+      - COMBINED
+      - DELEGATED_ACCESS
+      - INSTANCE_SETTINGS
+      - NETWORK_SETTINGS
+  GetClientAccountSetupCloudFormationTemplateRequest:
+    type: object
+    description: Request object for a GetClientAccountSetupCloudFormationTemplate request.
+    properties:
+      templateType:
+        $ref: '#/definitions/ClientAccountSetupCloudFormationTemplateType'
+        description: The type of a client account setup template, COMBINED by default.
+  GetClientAccountSetupCloudFormationTemplateResponse:
+    type: object
+    description: Response object for a GetClientAccountSetupCloudFormationTemplate request.
+    required:
+      - template
+    properties:
+      template:
+        type: string
+        description: The CloudFormation template that creates resources necessary to create clusters.
