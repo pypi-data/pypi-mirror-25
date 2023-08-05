@@ -1,0 +1,121 @@
+{% extends 'index_signed_in.html' %}
+
+{% block title %}Inventory / Sales{% endblock %}
+
+{% block end_of_head %}
+    <meta id="customers_json_url" href="{{ url_for('customers_json') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li><a href="{{ url_for('index') }}">Inventory</a></li>
+    <li class="active">Sales</li>
+{% endblock %}
+
+{% block content %}
+    <div class="row bump-top-padding">
+        <div class="col-md-12">
+            <h1>Sales</h1>
+            <p><a href="{{ url_for('index') }}">&larr; back to inventory</a></p>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-md-12">
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modal-new-sale">
+                <span class="glyphicon glyphicon-plus"></span> New sale
+            </button>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding hidden-xs">
+        <div class="col-md-12">
+            <table class="table datatable">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Quantity</th>
+                    <th>Items</th>
+                    <th>Paid</th>
+                    <th>Delivered</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for sale in c.sales %}
+                    <tr class="{% if not sale.sale_paid %}bg-danger{% elif not sale.sale_delivered %}bg-warning{% endif %}">
+                        <td><a href="{{ url_for('sale_detail', sale_id=sale.sale_id) }}">{{ sale.sale_created_at.date() }}</a></td>
+                        <td>{{ sale.sale_customer }}</td>
+                        <td>{{ sale.num_items }}</td>
+                        <td>
+                        {% for item in sale.sale_items if item.name %}
+                            <span class="label label-default">{{ item.name }} ({{ item.quantity }})</span>
+                        {% endfor %}
+                        </td>
+                        <td>{{ '✔' if sale.sale_paid }}</td>
+                        <td>{{ '✔' if sale.sale_delivered }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding visible-xs-block">
+        <div class="col-xs-12">
+            <div class="list-group">
+            {% for sale in c.sales %}
+                <a class="list-group-item" href="{{ url_for('sale_detail', sale_id=sale.sale_id) }}">
+                    <h4 class="list-group-item-heading">
+                        {{ sale.sale_created_at.date() }}
+                        {% if sale.sale_customer %}<small>for {{ sale.sale_customer }}</small>{% endif %}
+                    </h4>
+                    <p>
+                    {% if sale.sale_paid %}<span class="label label-success">✔ paid</span>{% else %}<span class="label label-danger">✘ not paid</span>{% endif %}
+                    {% if sale.sale_delivered %}<span class="label label-success">✔ delivered</span>{% else %}<span class="label label-danger">✘ not delivered</span>{% endif %}
+                    </p>
+                    <p class="list-group-item-text">
+                        <strong>{{ sale.num_items }} item{{ 's' if sale.num_items != 1 }}{{ ':' if sale.num_items > 0 }}</strong>
+                        {% for item in sale.sale_items if item.name %}
+                            <span class="label label-default label-in-list">{{ item.name }} ({{ item.quantity }})</span>
+                        {% endfor %}
+                    </p>
+                </a>
+            {% else %}
+                <a class="list-group-item">No sales</a>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" id="modal-new-sale">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>New sale</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="form-new-sale" action="{{ url_for('sales_new') }}" method="post">
+                        <div class="form-group">
+                            <label for="sale_created_at">Sale date</label>
+                            <input type="date" class="form-control" id="sale_created_at" name="sale_created_at" value="{{ c.today }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sale_customer">Customer</label>
+                            <input type="text" class="form-control modal-autofocus" id="sale_customer" name="sale_customer">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="form-new-sale">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    <script src="{{ url_for('static', filename='js/typeahead.bundle.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/customer_typeahead.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modal_autofocus.js') }}"></script>
+{% endblock %}

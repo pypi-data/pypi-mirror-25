@@ -1,0 +1,220 @@
+{% extends 'index_signed_in.html' %}
+
+{% block title %}Inventory / Order detail{% endblock %}
+
+{% block end_of_head %}
+    <meta id="inventory_json_url" href="{{ url_for('inventory_json') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li><a href="{{ url_for('index') }}">Inventory</a></li>
+    <li><a href="{{ url_for('orders') }}">Orders</a></li>
+    <li class="active">Order detail</li>
+{% endblock %}
+
+{% block content %}
+    <div class="row bump-top-padding">
+        <div class="col-md-12">
+            <h1>{{ c.order.order_created_at.date() }} <small>{{ c.order.num_items }} item{{ 's' if c.order.num_items != 1 }}</small></h1>
+            {% if c.order.order_note %}<h4>{{ c.order.order_note }}</h4>{% endif %}
+            <p><a href="{{ url_for('orders') }}">&larr; back to all orders</a></p>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-md-12">
+            <form action="{{ url_for('orders_set_lock') }}" method="post">
+                <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                {% if c.order.order_locked %}
+                    <input type="hidden" name="lock_status" value="unlocked">
+                    <button type="submit" class="btn btn-default">
+                        <span class="glyphicon glyphicon-lock"></span> Unlock<span class="hidden-xs"> order</span>
+                    </button>
+                {% else %}
+                    <input type="hidden" name="lock_status" value="locked">
+                    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#modal-edit-order-details">
+                        <span class="glyphicon glyphicon-edit"></span> Edit<span class="hidden-xs"> order details</span>
+                    </button>
+                    <button type="submit" class="btn btn-default">
+                        <span class="glyphicon glyphicon-lock"></span> Lock<span class="hidden-xs"> order</span>
+                    </button>
+                    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#modal-delete-order">
+                        <span class="glyphicon glyphicon-remove"></span> Delete<span class="hidden-xs"> order</span>
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding hidden-xs">
+        <div class="col-md-12">
+            <table class="table datatable">
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th></th>
+                    {% if not c.order.order_locked %}<th></th>{% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for i in c.order.order_items %}
+                    <tr>
+                        <td>{{ i.item_name }}</td>
+                        <td>{{ i.item_category }}</td>
+                        <td>{{ i.quantity }}</td>
+                        <td>
+                            {% if i.status == 'ordered' %}
+                                <form action="{{ url_for('orders_set_item_status') }}" method="post">
+                                    <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                                    <input type="hidden" name="item_id" value="{{ i.item_id }}">
+                                    <button class="btn btn-xs btn-success" name="status" value="received">Receive</button>
+                                    <button class="btn btn-xs btn-default" name="status" value="cancelled">Cancel</button>
+                                </form>
+                            {% elif i.status == 'received' %}
+                                <span class="label label-success">Received</span>
+                            {% else %}
+                                <span class="label label-default">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        {% if not c.order.order_locked %}
+                            <td>
+                                <form action="{{ url_for('orders_delete_item') }}" method="post">
+                                    <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                                    <input type="hidden" name="item_id" value="{{ i.item_id }}">
+                                    <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                                </form>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+                {% if not c.order.order_locked %}
+                <tfoot>
+                    <tr>
+                        <td>
+                            <form id="form-add-order-item" method="post" action="{{ url_for('orders_add_item') }}">
+                                <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                                <input type="text" class="form-control item-name-typeahead" id="item_name" name="item_name" placeholder="Item name" required autofocus>
+                            </form>
+                        </td>
+                        <td>
+                            <input type="text" form="form-add-order-item" class="form-control item-category-typeahead" id="item_category" name="item_category" placeholder="Category" required>
+                        </td>
+                        <td>
+                            <input type="number" form="form-add-order-item" class="form-control" name="quantity" min="1" step="1" title="Quantity" required>
+                        </td>
+                        <td>
+                            <button type="submit" form="form-add-order-item" class="btn btn-primary">Add item</button>
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding visible-xs-block">
+        <div class="col-xs-12">
+            <ul class="list-group">
+            {% for i in c.order.order_items %}
+                <li class="list-group-item">
+                    {% if not c.order.order_locked %}
+                        <form action="{{ url_for('orders_delete_item') }}" method="post">
+                            <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                            <input type="hidden" name="item_id" value="{{ i.item_id }}">
+                            <button type="submit" class="close">&times;</button>
+                        </form>
+                    {% endif %}
+                    <h4 class="list-group-item-heading"><span class="text-muted">{{ i.quantity }}</span> {{ i.item_name }} <small>{{ i.item_category }}</small></h4>
+                    {% if i.status == 'ordered' %}
+                        <form action="{{ url_for('orders_set_item_status') }}" method="post">
+                            <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                            <input type="hidden" name="item_id" value="{{ i.item_id }}">
+                            <button type="submit" class="btn btn-success" name="status" value="received">Receive</button>
+                            <button type="submit" class="btn btn-default" name="status" value="cancelled">Cancel</button>
+                        </form>
+                    {% elif i.status == 'received' %}
+                        <p class="list-group-item-text"><span class="label label-success">✔ received</span></p>
+                    {% else %}
+                        <p class="list-group-item-text"><span class="label label-default">✘ cancelled</span></p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+            {% if not c.order.order_locked %}
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <form action="{{ url_for('orders_add_item') }}" method="post">
+                        <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                        <div class="form-group">
+                            <label for="item_name_xs">Item</label>
+                            <input type="text" class="form-control item-name-typeahead" id="item_name_xs" name="item_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="item_category_xs">Category</label>
+                            <input type="text" class="form-control item-category-typeahead" id="item_category_xs" name="item_category" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity_xs">Quantity</label>
+                            <input type="number" class="form-control" id="quantity_xs" name="quantity" min="1" step="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add item</button>
+                    </form>
+                </li>
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" id="modal-edit-order-details">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>Order details</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="form-edit-order-details" action="{{ url_for('orders_set_details') }}" method="post">
+                        <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                        <div class="form-group">
+                            <label for="order_created_at">Date</label>
+                            <input type="date" class="form-control" id="order_created_at" name="order_created_at" value="{{ c.order.order_created_at.date() }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="order_note">Note</label>
+                            <input type="text" class="form-control" id="order_note" name="order_note" value="{{ c.order.order_note }}">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Discard changes</button>
+                    <button type="submit" form="form-edit-order-details" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" id="modal-delete-order">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this order?</p>
+                </div>
+                <div class="modal-footer">
+                    <form action="{{ url_for('orders_delete') }}" method="post">
+                        <input type="hidden" name="order_id" value="{{ c.order.order_id }}">
+                        <button class="btn btn-default" data-dismiss="modal">Keep order</button>
+                        <button type="submit" class="btn btn-danger">Delete order</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    <script src="{{ url_for('static', filename='js/typeahead.bundle.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/item_typeahead.js') }}"></script>
+{% endblock %}
