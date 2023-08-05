@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<configuration>
+  <property>
+    <description>CLASSPATH for YARN applications. A comma-separated list of CLASSPATH entries</description>
+    <name>yarn.application.classpath</name>
+    <value>
+      {{ hadoop_install_path }}/etc/hadoop,
+      {{ hadoop_install_path }}/share/hadoop/common/*,
+      {{ hadoop_install_path }}/share/hadoop/common/lib/*,
+      {{ hadoop_install_path }}/share/hadoop/hdfs/*,
+      {{ hadoop_install_path }}/share/hadoop/hdfs/lib/*,
+      {{ hadoop_install_path }}/share/hadoop/mapreduce/*,
+      {{ hadoop_install_path }}/share/hadoop/mapreduce/lib/*,
+      {{ hadoop_install_path }}/share/hadoop/yarn/*,
+      {{ hadoop_install_path }}/share/hadoop/yarn/lib/*,
+      {{ hadoop_install_path }}/share/hadoop/tools/lib/*
+    </value>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>{{ master_ip }}:8032</value>
+    <description>the host is the hostname of the ResourceManager and the port is the port on
+    which the clients can talk to the Resource Manager. </description>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.resource-tracker.address</name>
+    <value>{{ master_ip }}:8025</value>
+    <description>host is the hostname of the resource manager and 
+    port is the port on which the NodeManagers contact the Resource Manager.
+    </description>
+  </property>
+
+  <property>
+    <name>yarn.resourcemanager.scheduler.address</name>
+    <value>{{ master_ip }}:8030</value>
+    <description>host is the hostname of the resourcemanager and port is the port
+    on which the Applications in the cluster talk to the Resource Manager.
+    </description>
+  </property>
+
+  <!--   <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+    <description>shuffle service that needs to be set for Map Reduce to run </description>
+  </property> -->
+
+  <property>
+    <name>yarn.nodemanager.address</name>
+    <value>0.0.0.0:28091</value>
+    <description>the nodemanagers bind to this port</description>
+  </property>
+
+  <property>
+    <description>Whether virtual memory limits will be enforced for containers.
+    </description>
+    <name>yarn.nodemanager.vmem-check-enabled</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.container-executor.class</name>
+    <value>{{ container_executor }}</value>
+  </property>
+
+  <property>
+      <name>yarn.nodemanager.linux-container-executor.resources-handler.class</name>
+      <value>org.apache.hadoop.yarn.server.nodemanager.util.CgroupsLCEResourcesHandler</value>
+  </property>
+  
+  <property>
+      <name>yarn.nodemanager.linux-container-executor.cgroups.mount</name>
+      <value>{{ cgroups_mount_enable }}</value>
+  </property>
+  
+  <property>
+      <name>yarn.nodemanager.linux-container-executor.cgroups.mount-path</name>
+      <value>{{ cgroups_mount_dir }}</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.linux-container-executor.group</name>
+    <value>{{ hadoop_group }}</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.linux-container-executor.nonsecure-mode.limit-users</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.resource.memory-mb</name>
+    <value>{{ node_mem_mb }}</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.resource.cpu-vcores</name>
+    <value>{{ node_vcores }}</value>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.minimum-allocation-mb</name>
+    <value>{{ driver_mem_mb }}</value>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.maximum-allocation-mb</name>
+    <value>{{ [(1024 * (COORDINATOR_MEM_GB | float)) | int, (1024 * (WORKER_MEM_GB | float)) | int] | max }}</value>
+  </property>
+
+  <property>
+    <name>yarn.scheduler.maximum-allocation-vcores</name>
+    <value>{{ [COORDINATOR_VCORES | int, WORKER_VCORES | int] | max }}</value>
+  </property>
+
+  <property>
+    <name>yarn.log-aggregation-enable</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>yarn.log.server.url</name>
+    <value>{{ master_ip }}:19888/jobhistory/logs/</value>
+  </property>
+
+  <property>
+   <name>yarn.nodemanager.local-dirs</name>
+   <value>{{ yarn_nm_dir }}</value>
+  </property>
+</configuration>

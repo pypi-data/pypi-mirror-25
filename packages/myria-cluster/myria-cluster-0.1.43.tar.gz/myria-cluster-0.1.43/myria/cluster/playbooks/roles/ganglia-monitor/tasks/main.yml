@@ -1,0 +1,27 @@
+---
+- name: install Ganglia Monitor and required packages via apt
+  apt: name={{ item }}
+  with_items:
+    - sysstat
+    - php5-cli
+    - ganglia-monitor
+    - hddtemp
+  tags:
+    - provision
+
+- name: configure gmond.conf in {{ ganglia_conf_dir }}
+  template: src=gmond.conf.j2 dest="{{ ganglia_conf_dir }}/gmond.conf" owner=root group=root mode=0644
+  tags:
+    - configure
+  notify:
+    - restart ganglia-monitor
+
+- name: install the device-metrics script at /usr/local/sbin
+  template: src=device-metrics.php dest=/usr/local/sbin/device-metrics.php owner=root group=root mode=0644
+  tags:
+    - provision
+
+- name: install the device-metrics crontab at /etc/cron.d/device-metrics
+  template: src=device-metrics.cron.d dest=/etc/cron.d/device-metrics owner=root group=root mode=644
+  tags:
+    - provision

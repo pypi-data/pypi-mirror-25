@@ -1,0 +1,106 @@
+---
+- name: Gathering facts
+  setup:
+  tags:
+    - always
+
+- name: Unmount first data volume if it is pre-mounted (and remove fstab entries via state=absent rather than state=unmounted)
+  mount: name="{{ legacy_mount_point }}" src="{{ ALL_VOLUMES[0].device_name }}" fstype={{ data_vol_fs_type }} state=absent
+  tags:
+    - configure
+
+# tolerate failures because volume is already mounted
+- name: Format all data volumes
+  filesystem: fstype={{ data_vol_fs_type }} dev={{ item.device_name }} force=yes
+  register: result
+  failed_when: "(result | failed) and ('is mounted' not in result.err)"
+  with_items: "{{ ALL_VOLUMES }}"
+  tags:
+    - configure
+
+- name: Mount all EBS volumes
+  mount: name="{{ebs_mount_point_prefix}}{{ item.0+1 }}" src="{{ item.1.device_name }}" fstype={{ data_vol_fs_type }} opts=rw,noatime state=mounted
+  with_indexed_items: "{{ EBS_VOLUMES }}"
+  tags:
+    - configure
+
+- name: Mount all ephemeral volumes
+  mount: name="{{ephemeral_mount_point_prefix}}{{ item.0+1 }}" src="{{ item.1.device_name }}" fstype={{ data_vol_fs_type }} opts=rw,noatime state=mounted
+  with_indexed_items: "{{ EPHEMERAL_VOLUMES }}"
+  tags:
+    - configure
+
+- name: Create default data directory symlink
+  file: src="{{default_data_vol_mount_dir}}" dest="{{default_data_dir}}" state=link force=yes mode=0755
+  tags:
+    - configure
+
+- name: Add Java8 PPA
+  apt_repository: repo='ppa:webupd8team/java'
+  tags:
+    - provision
+
+- name: Automatically select the Oracle license for Java
+  debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+  tags:
+    - provision
+
+# The Oracle download site is very flaky and there are no mirrors,
+# so we copy the Java SDK tarball to /var/cache/oracle-jdk8-installer/
+# before installing the oracle-java8-installer package.
+
+- name: Create oracle-java8-installer package cache directory since it doesn't exist yet
+  file: path='/var/cache/oracle-jdk8-installer' state=directory mode=0755 owner='root' group='root'
+  tags:
+    - provision
+
+- name: Cache JDK8 tarball to avoid Oracle download
+  get_url: url='{{ jdk8_url }}' dest='{{ jdk8_file }}' mode=0644 validate_certs=no timeout=300
+  tags:
+    - provision
+
+- name: Installing packages
+  apt: name="{{item}}" state=latest update_cache=yes
+  with_items:
+    - git
+    - zip
+    - unzip
+    - oracle-java8-installer
+    - oracle-java8-set-default
+    - libxml2-dev
+    - libxslt1-dev
+    - python-dev
+  tags:
+    - provision
+
+- name: Create group for all Hadoop services
+  group: name={{ hadoop_group }} state=present
+  tags:
+    - provision
+
+- name: Create user for all Hadoop services
+  user: name={{ hadoop_user }} group={{ hadoop_group }} password={{ hadoop_password }}
+  tags:
+    - provision
+
+- name: Create group for all Myria-related services
+  group: name={{ myria_group }} state=present
+  tags:
+    - provision
+
+- name: Create user for all Myria-related services
+  user: name={{ myria_user }} group={{ myria_group }}
+  tags:
+    - provision
+
+- name: Give remote user access to Myria files
+  user: name={{ remote_user }} groups={{ myria_group }},{{ hadoop_group }} append=yes
+  tags:
+    - provision
+
+- name: Disable SSH login message
+  shell: "chmod -x /etc/update-motd.d/*"
+  tags:
+    - provision
+    # TODO: remove `configure` tag after creating new AMIs
+    - configure

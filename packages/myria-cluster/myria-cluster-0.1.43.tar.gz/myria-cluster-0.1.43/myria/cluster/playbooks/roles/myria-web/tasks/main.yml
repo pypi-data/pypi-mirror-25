@@ -1,0 +1,44 @@
+---
+##
+## tasks for installing  myria python
+##
+
+- name: Installing packages
+  apt: name="{{item}}" update_cache=yes
+  with_items:
+    - git
+  tags:
+    - provision
+
+- name: Create repo directory
+  file: path={{myria_web_path}} state=directory owner={{myria_user}} group={{myria_group}} mode=0775
+  tags:
+    - provision
+
+- name: Clone myria-web repository
+  git: repo="{{myria_web_repository_url}}" dest="{{myria_web_path}}" version="{{myria_web_branch}}" recursive=yes update=yes force=yes
+  become: yes
+  become_user: "{{myria_user}}"
+  tags:
+    - provision
+    - update
+
+- name: Overwrite symlinks to RACO and myria-python submodules with links to install source dirs
+  file: src="{{item.src}}" dest="{{item.dest}}" state=link owner={{myria_user}} group={{myria_group}} force=yes mode=0755
+  with_items:
+   - { src: '{{raco_repository_path}}/raco', dest: '{{myria_web_path}}/appengine/raco' }
+   - { src: '{{myria_python_path}}/myria', dest: '{{myria_web_path}}/appengine/myria' }
+  tags:
+    - provision
+
+- name: Install myria-web service
+  template: src=service.conf.j2 dest=/etc/init/myria-web.conf backup=yes mode=0644
+  notify: restart myria-web
+  tags:
+    - configure
+
+- name: Bounce myria-web service on update
+  command: /bin/true
+  notify: restart myria-web
+  tags:
+    - update
