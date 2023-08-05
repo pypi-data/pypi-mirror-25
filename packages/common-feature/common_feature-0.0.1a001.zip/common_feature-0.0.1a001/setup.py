@@ -1,0 +1,38 @@
+from setuptools import find_packages, setup
+
+setup(
+    name='common_feature',
+    version='0.0.1a001',
+    packages=find_packages(),
+    description='Common Library',
+    long_description=open('README.rst').read(),
+    author='weitao',
+    author_email='gbywt@hotmail.com',
+    url='https://github.com/gbywt/common_feature',
+    #download_url='',
+    license='MIT',
+    install_requires=[
+        'Django>=1.10',
+        'openpyxl',
+    ],
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Web Environment',
+        'Framework :: Django',
+        'Framework :: Django :: 1.8',
+        'Framework :: Django :: 1.10',
+        'Framework :: Django :: 1.11',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Topic :: Security',
+        'Topic :: System :: Systems Administration :: Authentication/Directory',
+    ],
+)
