@@ -1,0 +1,234 @@
+# 6TiSCH testing tool
+
+
+## Architecture overview
+
+
+                                                          +-----------------------+
+           F-interop side                                 |                       |
+                                                          |   Users               |
+                                                          |                       |
+                                                          +--------^-----+--------+
+                                                                   |     |
+                                                                   |     |
+                                                                   |     |
+       +--------------------+    +-------------------+    +--------+-----v--------+
+       |                    |    |                   |    |                       |
+       | Tests              |    |    Manager        |    |      GUI              |
+       | (Background tasks) |    |                   |    |                       |
+       |                    |    +-----+----+--------+    +-----+---+-------------+
+       +-------+---+--------+          |    ^                   ^   |
+               ^   |                   |    |                   |   |
+               |   |                   |    |                   |   |
+               |   |            +------v----+-------------------+---v-+
+               |   +------------>                                     |
+               |                |           Message broker            |
+               +----------------+             (RabbitMQ)              |
+                                +--------------+-----^----------------+
+                                               |     |
+                                               |     |
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|XXXXX|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+                                               |     |
+                                               |     |
+                                               |     |
+                                            +--v-----+--+
+       User side                            |           |
+                                            |   Agent   |
+                                            |  Sniffer  |
+                                            |           |
+                                            +-----------+
+                         +--------------+   +--------------+   +--------------+
+                         |              |   |              |   |              |
+                         | 6TiSCH node  |   | 6TiSCH node  |   | 6TiSCH node  |
+                         +--------------+   +--------------+   +--------------+
+
+
+- Agent sniffer => In charge of sniffing
+- A message broker (RabbitMQ) which is in charge of passing messages between different components.
+- A tshark based dissector (AMQP for communication)
+- A manager which is in charge of driving the whole testing tool by receiving messages and launching the tests.
+- Tests => In charge of asserting whether or not the messages observed from the 6TiSCH nodes are compliant to the standard.
+
+## Installation
+
+You need to have:
+
+- tshark that correctly support 6TiSCH and IEEE802.15.4e dissection (TODO: Insert git-hash of the correct revision)
+- All python libraries listed on the requirements.txt file
+
+## How to launch?
+
+Run the following command:
+
+    supervisord -n --conf supervisord.conf.ini
+
+This command will launch all the required components and will restart them if they crash.
+
+## In the F-interop context, where does this testing tool run?
+
+At the moment, the testing is launched from iMinds server (http://orchestrator.f-interop.eu/).
+
+## How does test session isolation happen?
+
+It is managed by the F-Interop orchestrator.
+When a session is provisioned by the orchestrator a virtual host is created on the broker and a virtual instance of the testing tool is spawn.
+Therefore two different sessions launched by the orchestrator don't interact with each others.
+
+## Configuration
+
+- The dissector will consult a routing key and an exchange name given as an environment variable.
+  After started, the dissector will send a json containing the dissected packets information.
+
+## Architecture
+
+## Tests
+
+This tool aims to have code reuse between:
+    - **local execution** where the a developer is working locally
+    - **remote execution** where the test is run on a remote machine.
+
+Tests can be organized arbitrarily but the recommended way of organizing tests is the following
+
+### How does a test work?
+
+The goal of a test is to expose failure inside an implementation.
+If your test returns it means that everything went fine.
+In any other case an exception will be raised (Most likely an AssertionError),
+and you will get all the context to debug it.
+
+Your goal as a test implementer is to put as many relevant assert
+as possible in your tests to test a maximum of assumptions that you
+got about your network packets.
+
+What you want is having a step that is a series of assertion on a context.
+
+### What is the difference between online verdicts and local verdicts?
+
+In local, you don't get an AMQP message. Basically, if pytest returns no errors were detected.
+In online, you get at the end of all task a test that basically check that all steps went fine and
+send an AMQP message.
+
+### Why do you require to have a tshark installed on the client side? Are the dissection happening client side?
+
+We use tshark on the client side for two main reasons:
+
+- We want to use eBPF filter to be sure to gather only the relevant packet.
+  You don't want to send us packets that are not related to the test. That's fine, we don't want them either.
+  We provides good default (we sniff only the interface you want us to and only with the filter wpan).
+  If you want to provides additional filter, for privacy issues or any other reason feel free to do so.
+
+- We want to have production-ready, cross-platform sniffing.
+  Sniffing is a solved problem, the wireshark suite provides it for free.
+  We prefer invest our time in developing tests and improving dissectors
+  rather than work on a solved problem and reinventing the wheel.
+
+No dissection is happening on client side. Ever. You want to be sure to have the latest dissector.
+F-Interop provides it for you.
+
+### How can I run all existing tests locally?
+
+    python3 -m pytest -s tests
+
+### Which tests are supported?
+
+- We aim to reproduce interoperability results that happened during ETSI 6TiSCH plugfest in Prague between [Contiki](http://contiki-os.org) and [OpenWSN](http://openwsn.atlassian.net).
+
+### I want to test something new. How could I get started?
+
+- First be sure that all the field you are going to use in your test are supported by tshark.
+  If they are not, add support in Wireshark to dissect this field.
+  You can get started quickly by going through this [tutorial](https://www.wireshark.org/docs/wsdg_html_chunked/ChDissectAdd.html).
+
+- Second, be sure you have easy access to those fields by using well named filter.
+  You can easily test that by loading your PCAP files into Wireshark and look for the display filter
+  used for the relevant field.
+
+- Third you can get started by looking at the JSON output of tshark and start to assert property
+  on the JSON document using your favorite language and tools.
+
+        tshark -r my_capture.pcapng -T json
+
+
+### How is the context of a test is saved? How can I alter it?
+
+Simply modify the object.
+All changes are kept between steps.
+When you are working in offline mode, context is an object that all steps refers to.
+If you are working in online mode, context is saved at the end of each step and restore at the beginning of a new step.
+You access packets by accessing attributes of the context no matter if it's an online or offline test.
+
+### How can I know in which state my test is?
+
+Simply consult the status property of the context object:
+
+    context.status
+
+### How can I make a test block waiting for a given condition to be performed?
+
+You can put for instance a while loop with a time.sleep() waiting for a condition to be filled.
+
+### What is the format of a report?
+
+It's a JSON document.
+TODO: put here the report.
+
+### How can I produce a verdict result in online/offline mode?
+
+TODO
+
+### What is the format of an error? How can I tell if an error happen?
+
+TODO
+
+### What should I do if an error happen?
+
+In case where you are in offline mode, you can simply fix code and try again.
+In case you are in online mode, the task will finish and a new one matching the step you are at will be started.
+
+### How can I replay a network trace locally?
+
+Use iterator:
+
+	for packet in context.dissected_packets:
+        if validator.validate(packet):
+            normalize_my_packet(packet)
+            assert my_property(packet) == my_expected_value
+
+The context variable is assigned by pytest automatically.
+
+### How can I replay a network trace locally while mimicking arrival time from the PCAP?
+
+TODO
+
+### How does a JSON is modified through the test?
+
+We suggest that you normalize the results of the dissection.
+There is several improvements that come out of this:
+ - JSON payload are smaller and easier to parse
+ - Situation specific encapsulation can be removed at this step
+
+### How can I efficiently filter and extract relevant information from the JSON?
+
+[Cerberus](http://docs.python-cerberus.org/en/stable/) is a validation library that can help you validate whether a JSON is correct or not.
+This library can also help you to normalize the JSON document you have.
+
+Once you have a correct JSON document, you can create extractor functions that can fetch any properties inside your document.
+
+## How can I distinguish between a code that failed to pass a test and a code that made the testing tool crash?
+
+TODO
+
+### When should I send debug messages?
+
+When you have a failed assertion feel free to use as much debug as possible.
+By default we send a report once an AssertionError is raised in a step.
+Knowing about the context helps you understand at which step you are in the test case.
+It also helps you see how many packets are available.
+
+### How can I send a verdict?
+
+    import hammerhead
+
+    hammerhead.Verdict(context, {"my_verdict"})
+
+
