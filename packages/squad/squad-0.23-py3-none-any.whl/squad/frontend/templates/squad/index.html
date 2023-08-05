@@ -1,0 +1,42 @@
+{% extends "squad/base.html" %}
+{% load humanize %}
+{% load squad %}
+
+
+{% block content %}
+<table class='table table-striped'>
+    <tr>
+        <th>Project</th>
+        <th>Last update</th>
+        <th>Tests</th>
+        <th>Metrics</th>
+    </tr>
+    {% for project in projects %}
+    {% with status=project.status %}
+    <tr>
+        <td>
+            <a href="{% group_url project.group %}">{{project.group.slug}}</a>/<a href="{% project_url project %}">{{project.slug}}</a>
+        </td>
+        <td>
+            {{status.last_updated}}
+            <em>{{status.last_updated|naturaltime}}</em>
+        </td>
+        <td>
+            {% if status.has_tests %}
+            <div class="progress" title="Pass: {{status.pass_percentage|stringformat:"d"}}%">
+                <div class="progress-bar progress-bar-success" style="width: {{status.pass_percentage}}%">
+                    <span class="sr-only">Pass: {{status.pass_percentage}}% </span>
+                </div>
+                <div class="progress-bar progress-bar-danger" style="width: {{status.non_pass_percentage}}%">
+                </div>
+            </div>
+            {% endif %}
+        </td>
+        <td>
+            {{status.metrics_summary}}
+        </td>
+        {% endwith %}
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
