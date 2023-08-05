@@ -1,0 +1,308 @@
+#!/usr/bin/python3
+"""
+Canadian Ham Exam - practice test for the Canadian Amateur Radio exam
+
+Canadian Ham Exam uses the official question bank from Industry Canada
+and allows aspiring hams to practice the section of their choice as
+they are learning the material for the exam.
+
+It requires a copy of the question bank, which can be downloaded
+free of charge from the Industry Canada website:
+
+  http://www.ic.gc.ca/eic/site/025.nsf/eng/h_00004.html
+
+Copyright (C) 2017  Francois Marier <francois@fmarier.org>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import argparse
+import codecs
+import os
+import random
+import sys
+
+VERSION = '0.1.0'
+
+SECTION_NAMES = {
+    'en': {
+        # RIC-3 (http://www.ic.gc.ca/eic/site/smt-gst.nsf/eng/sf01008.html)
+        1: "Regulations and Policies",
+        2: "Operating and Procedures",
+        3: "Station Assembly, Practice and Safety",
+        4: "Circuit Components",
+        5: "Basic Electronics and Theory",
+        6: "Feedlines and Antenna Systems",
+        7: "Radio Wave Propagation",
+        8: "Interference and Suppression"
+    },
+    'fr': {
+        # RIC-3 (http://www.ic.gc.ca/eic/site/smt-gst.nsf/fra/sf01008.html)
+        1: "Règlements et politiques",
+        2: "Exploitation et procédures",
+        3: "Montage d'une station, pratique et sécurité",
+        4: "Composants des circuits",
+        5: "Éléments et théorie de l'électronique",
+        6: "Descentes d'antenne et systèmes d'antenne",
+        7: "Propagation des ondes radioélectriques",
+        8: "Brouillage et suppression"
+    }
+}
+
+questions = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+    6: [],
+    7: [],
+    8: []
+}
+
+score = {
+    'correct': 0,
+    'incorrect': 0,
+    'total': 0
+}
+
+
+def parse_id(out, question_id):
+    out['id'] = question_id.strip()
+    fields = out['id'].split('-')
+    out['section'] = int(fields[1])
+
+
+def parse_answers(out, lang, correct, incorrect):
+    out['answers'][lang] = [
+        correct.strip(),
+        incorrect[0].strip(),
+        incorrect[1].strip(),
+        incorrect[2].strip()
+    ]
+
+
+def parse_question(line):
+    fields = line.split(';')
+    question = {
+        'section': None,
+        'id': None,
+        'question': {
+            'en': fields[1].strip(),
+            'fr': fields[6].strip()
+        },
+        'answers': {
+            'en': None,
+            'fr': None
+        }
+    }
+    try:
+        parse_id(question, fields[0])
+    except ValueError:
+        return False
+    parse_answers(question, 'en', fields[2],
+                  (fields[3], fields[4], fields[5]))
+    parse_answers(question, 'fr', fields[7],
+                  (fields[8], fields[9], fields[10]))
+
+    questions[question['section']].append(question)
+    return True
+
+
+def parse_questions(file):
+    with codecs.open(file, 'r', 'ISO-8859-1') as fh:
+        first_line = True
+        for line in fh:
+            if first_line:
+                first_line = False
+                continue
+            if not parse_question(line):
+                return False
+    return True
+
+
+def random_question(sections):
+    section = random.sample(sections, 1)[0]
+    return random.sample(questions[section], 1)[0]
+
+
+def prompt_user():
+    s = input('Answer (s to skip, q to quit): ')
+    if s == 'q':
+        return None
+    if s == 's':
+        return 's'
+
+    answer = None
+    try:
+        answer = int(s)
+    except ValueError:
+        pass  # ignore errors and return None
+    return answer
+
+
+def print_question(question, lang):
+    print(question['question'][lang])
+    print()
+
+    answers = list(range(4))
+    random.shuffle(answers)
+
+    j = 1
+    correct_answer = None
+    for i in answers:
+        print(" (%s) %s" % (j, question["answers"][lang][i]))
+        if i == 0:
+            correct_answer = j
+        j += 1
+
+    print()
+    user_answer = prompt_user()
+    if not user_answer:
+        return False
+
+    print()
+    if user_answer == correct_answer:
+        score['correct'] += 1
+        print("Correct!")
+    else:
+        score['incorrect'] += 1
+        if user_answer != 's':
+            print('The correct answer was (%s) %s' %
+                  (correct_answer, question["answers"][lang][0]))
+    score['total'] += 1
+
+    return True
+
+
+def print_score():
+    grade = 0
+    if score['total'] > 0:
+        grade = round((score['correct'] / score['total']) * 100)
+    print("Final score: %s%% (%s / %s)"
+          % (grade, score['correct'], score['total']))
+
+
+def print_header(lang, question, question_number, total):
+    section_name = SECTION_NAMES[lang][question['section']]
+    print("[%s/%s] %s (%s)"
+          % (question_number, total, section_name, question['id']))
+    print()
+
+
+def run_quiz(lang, number, sections):
+    for i in range(number):
+        question = random_question(sections)
+        print_header(lang, question, i+1, number)
+        if not print_question(question, lang):
+            print()
+            break
+        print()
+
+    print_score()
+
+
+def parse_sections_param(param):
+    # pylint: disable=too-many-return-statements
+    if param.find('-') != -1:
+        try:
+            (start, end) = param.split('-')
+        except ValueError:
+            print("%s is not a valid range" % param, file=sys.stderr)
+            return None
+
+        for i in (start, end):
+            try:
+                i = int(i)
+            except ValueError:
+                print("%s is not a valid number" % i, file=sys.stderr)
+                return None
+        start = int(start)
+        end = int(end)
+
+        if start not in range(1, 9):
+            print("%s is not a valid section number (1-8)"
+                  % start, file=sys.stderr)
+            return None
+        if end not in range(1, 9):
+            print("%s is not a valid section number (1-8)"
+                  % end, file=sys.stderr)
+            return None
+        if end < start:
+            print("The range must be in ascending order", file=sys.stderr)
+            return None
+
+        return list(range(start, end + 1))
+    else:
+        sections = []
+        for section in param.split(','):
+            try:
+                i = int(section)
+            except ValueError:
+                print("%s is not a valid number" % section, file=sys.stderr)
+                return None
+
+            if i not in range(1, 9):
+                print("%s is not a valid section number (1-8)"
+                      % section, file=sys.stderr)
+                return None
+            sections.append(i)
+
+        return sections
+
+
+def default_env_lang():
+    lang = 'en'
+    if 'LANG' in os.environ:
+        s = os.environ['LANG']
+        if s[0:2] == 'fr':
+            lang = 'fr'
+    return lang
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Practice test for the Canadian Amateur Radio exam')
+    parser.add_argument('questionfile', type=str, nargs='?',
+                        default='amat_basic_quest_delim.txt',
+                        help='the question file to parse')
+    parser.add_argument('-l', '--language', dest='lang', type=str,
+                        choices=('en', 'fr'), default=default_env_lang(),
+                        help='language to use for the question and answers')
+    parser.add_argument('-n', '--number', dest='number',
+                        type=int, default=100,
+                        help='number of questions to display')
+    parser.add_argument('-s', '--sections', dest='sections',
+                        type=str, default="1-8",
+                        help='sections to pull the questions from'
+                        ' (e.g. "1,2,4" or "3-8")')
+    parser.add_argument('-V', '--version', action='version',
+                        version='canadian-ham-exam %s' % VERSION)
+    args = parser.parse_args()
+
+    # Validate the parameters
+    if not os.path.isfile(args.questionfile):
+        print("Error: '%s' not found" % args.questionfile, file=sys.stderr)
+        return 1
+    if not parse_questions(args.questionfile):
+        return 2
+    sections = parse_sections_param(args.sections)
+    if not sections:
+        return 3
+
+    run_quiz(args.lang, args.number, sections)
+    return 0
+
+
+exit(main())
