@@ -1,0 +1,90 @@
+[usb1208fs README]
+==================
+Author: Weiyang Wang <wew168@ucsd.edu>
+Date: Sept 8, 2017
+
+[DESCRIPTION]
+=============
+This module is a python wrapper of Warren Jaspers' C driver for MCC USB1208FS
+DAQ on linux, completed in cython. To use this module, the original C-driver 
+along with all it's requirements must be already installed on the computer.
+See "https://github.com/wjasper/Linux_Drivers" for more details.
+The author checked Guillaume Lepert's python wrapper for USB26xx series 
+before developing this module. Thanks to all the previous works.
+
+In addition to wrapping the driver, this module provides objected-oriented 
+syntax and python list support to achieve a more user-friendly interface. 
+
+The module was developed under python2.7 and cython0.26.1 on Linux4.12 kernel.
+
+[COMPILE/INSTALL]
+=================
+Assuming the original C driver is already installed, run
+    pip install usb1208fs
+to install this module.
+
+[USAGE]
+=======
+This module provides an objected-oriented syntax for using the USB1208FS DAQ:
+>>> import usb1208fs
+>>> daq = usb1208fs()
+
+The wrapper then wraps all functions exported in usb-1208fs.h of the original
+driver; most functions will have the same arguments, except for analog scans
+which utilized output parameters to export data read by the DAQ in the C-driver.
+In the python module, the result will be returned as a python list of the raw 
+8bit integers. The conversion functions that converts the raw reading to volts 
+are also provided in the module.
+
+Analog/Digital IO:
+
+>>> aInResult = daq.ain(1, usb1208fs.SE_10_00V) # read analog input on channel 1
+                                                # as single ended input
+>>> aInVolts  = usb1208fs.toVoltsSE(aInResult)  # Convert the result to volts
+>>> daq.dConfigPort(usb1208fs.DIO_PORTA, usb1208fs.DIO_DIR_OUT).\
+        dout(usb1208fs.DIO_PORTA, 0xFF)         # set Port A as output and 
+                                                # output 0xFF (chaining)
+
+Analog Scan:
+
+>>> aInScanRes = ainScanSE(0, 1, 2048, 4096, \
+        usb1208fs.AIN_EXECUTION | usb1208fs.AIN_GAIN_QUEUE)
+                                                # single ended scan on channel
+                                                # 0 and 1, at 4096HZ, 
+                                                # for 2048 times.
+>>> aInScanResVolts = [usb1208fs.toVoltsSE(i) for i in aInScanRes]
+                                                # convert to volts
+
+For more detailed usage information, please see the function headers and the 
+original .h file:
+https://github.com/Flasew/pyusb1208fs/blob/master/usb1208fs/usb1208fs.pyx
+https://github.com/wjasper/Linux_Drivers/blob/master/USB/mcc-libusb/usb-1208FS.h
+
+[ERROR CONDITIONS]
+==================
+The python module catches all the error that will be returned by the original 
+driver and raises exceptions. However, since the original driver only uses 
+perror() but does not return to indicate exceptions in some cases, not all 
+errors will be cached but the error message will be printed. 
+One thing to notice that if a daq had been initialized and is initialized for a 
+second time, calling the constructor will show the following message:
+    "init_USB1208FS: error detaching kernel: No data available"
+However on the author's computer the program could still continue to run and all
+the functionalities remains normal. 
+
+[COPYRIGHT & LICENSE]
+=====================
+This module belongs to UCSD's Center of Astrophysics and Space Science Center.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
