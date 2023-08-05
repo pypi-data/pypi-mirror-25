@@ -1,0 +1,203 @@
+{% extends 'enterprise/base.html' %}
+
+{% load staticfiles enterprise %}
+
+{% block extrastyles %}
+  <link rel="stylesheet" href="{% static 'enterprise/enterprise_course_enrollment_page.css' %}" />
+{% endblock %}
+
+{% block extrahead %}
+  <script type="text/javascript" src="{% static 'common/js/vendor/jquery.js' %}"></script>
+  <script type="text/javascript" src="{% static 'enterprise/enterprise_course_enrollment_page.js' %}"></script>
+{% endblock %}
+
+{% block contents %}
+  <header class="logo-container" aria-label="{{ page_title }}">
+    <h1>
+      <img src="{% static 'images/logo.png' %}" alt="{{ platform_name }}"/>
+    </h1>
+  </header>
+  <hr class="pinstripe"/>
+
+  <div class="enterprise-container">
+    <div class="row">
+      <div class="col-3">
+        <img class="enterprise-logo" src="{{ enterprise_customer.branding_configuration.logo.url }}" alt="{{ enterprise_customer.name }}"/>
+        <p class="partnered-text">{{ welcome_text }}</p>
+        <p class="partnered-text">
+          {% autoescape off %}{{ enterprise_welcome_text }}{% endautoescape %}
+        </p>
+      </div>
+      <div class="col-7 border-left">
+
+        {# Display success, error, warning or info messages #}
+        {% alert_messages messages %}
+
+        <h2 class="course-confirmation-title">{{ confirmation_text }}</h2>
+        <div class="media">
+          <div class="thumbnail">
+            <img class="course-image" src="{{ course_image_uri }}" alt="{{ course_title }}"/>
+          </div>
+          <div class="media-content">
+            <div class="course-title">{{ course_title }}</div>
+          </div>
+        </div>
+        <div class="course-detail">
+          <div class="course-org">
+            {{ organization_name }}
+          </div>
+          <div class="course-info">
+            <i class="fa fa-clock-o" aria-hidden="true"></i>
+            <span>{{ starts_at_text }} {{ course_start_date }} &nbsp;| &nbsp; {{ course_pacing }}</span>
+          </div>
+          {{ course_short_description }}
+          <a id="view-course-details-link" class="text-underline" href="#!">{{ view_course_details_text }}</a>
+        </div>
+        <form method="POST">
+          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+          {% if course_modes|length > 1 %}<div class="caption">{{ select_mode_text }}</div>{% endif %}
+          {% for course_mode in course_modes %}
+          <div class="radio-block">
+            <div class=" {% if course_modes|length > 1 %}radio{% endif %}">
+              {% if course_modes|length > 1 %}
+                <input type="radio" name="course_mode" id="radio{{ forloop.counter0 }}"{% if forloop.first %} checked="checked"{% endif %} value="{{ course_mode.mode }}" />
+              {% else %}
+                <input type="hidden" name="course_mode" id="radio{{ forloop.counter0 }}" value="{{ course_mode.mode }}" />
+              {% endif %}
+            </div>
+
+            <label for="radio{{ forloop.counter0 }}">
+              <strong class="title">{{ course_mode.title }}</strong>
+              <span class="price">
+                {{ price_text }}:
+                {% if course_mode.final_price and course_mode.original_price != course_mode.final_price %}
+                  <strike>{{ course_mode.original_price }}</strike> {{ course_mode.final_price }}
+                  <div>{{discount_text|safe }}</div>
+                {% else %}
+                  {{ course_mode.original_price }}
+                {% endif %}
+              </span>
+              <span class="description">{{ course_mode.description }}</span>
+            </label>
+          </div>
+          {% endfor %}
+          <button class="btn-continue">{{ continue_link_text }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div id="course-details-modal" class="modal" aria-hidden="true">
+    <div id="course-details-modal-content" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-header-text">
+      <button class="fa fa-times-circle modal-close-button" id="modal-close-button" aria-label="{{ close_modal_button_text }}"></button>
+      <div class="course-detail-modal-scrollable">
+
+        <header class="wrapper modal-header">
+          <div class="modal-header-wrapper">
+            <div class="image">
+              <img src="{{ course_image_uri }}" alt="{{ course_title }}"/>
+            </div>
+            <div class="details">
+              <h1 id="modal-header-text">{{ course_title }}</h1>
+              <p class="short-description">{{ course_short_description }}</p>
+              {% if organization_logo and organization_name %}
+                <div class="organization">
+                  <img src="{{ organization_logo }}" alt="{{ organization_name }}" />
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </header>
+        <div class="body">
+          <div class="details">
+            <ol>
+              {% if premium_modes|length > 0 %}
+                {% with course_mode=premium_modes.0 %}
+                  {% if course_mode.original_price %}
+                    <li>
+                      <div class="detail-container">
+                        <div class="detail-title-container">
+                          <span class="icon fa fa-tag" aria-hidden="true"></span>
+                          <span class="title">{{ price_text }}</span>
+                        </div>
+                        <div class="detail-value-container">
+                          <span class="text">
+                            {% if course_mode.final_price and course_mode.original_price != course_mode.final_price %}
+                              <strike>{{ course_mode.original_price }}</strike>
+                              <span class="discount">{{ course_mode.final_price }}</span>
+                            {% else %}
+                              {{ course_mode.original_price }}
+                            {% endif %}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
+              {% if course_level_type %}
+                <li>
+                  <div class="detail-container">
+                    <div class="detail-title-container">
+                      <span class="icon fa fa-certificate" aria-hidden="true"></span>
+                      <span class="title">{{ level_text }}</span>
+                    </div>
+                    <div class="detail-value-container">
+                      <span class="text">{{ course_level_type }}</span>
+                    </div>
+                  </div>
+                </li>
+              {% endif %}
+              {% if course_effort %}
+                <li>
+                  <div class="detail-container">
+                    <div class="detail-title-container">
+                      <span class="icon fa fa-tachometer" aria-hidden="true"></span>
+                      <span class="title">{{ effort_text }}</span>
+                    </div>
+                    <div class="detail-value-container">
+                      <span class="text">{{ course_effort }}</span>
+                    </div>
+                  </div>
+                </li>
+              {% endif %}
+            </ol>
+          </div>
+          <div class="overview">
+            {% if course_full_description %}
+              <h2>{{ course_full_description_text }}</h2>
+              <div>{% autoescape off %}{{ course_full_description }}{% endautoescape %}</div>
+            {% endif %}
+            {% if expected_learning_items %}
+              <h2>{{ expected_learning_items_text }}</h2>
+              <ul>
+              {% for item in expected_learning_items %}
+                <li>{{ item }}</li>
+              {% endfor %}
+              </ul>
+            {% endif %}
+            {% if staff %}
+              <h2>{{ staff_text }}</h2>
+              <div class="staff-container">
+                {% for person in staff %}
+                  <div class="row">
+                    <div class="col-3">
+                      <img src="{{ person.profile_image_url }}" alt="{{ person.given_name }} {{ person.family_name }}" />
+                    </div>
+                    <div class="col-7">
+                      <h2>{{ person.given_name }} {{ person.family_name }}</h2>
+                      {% if person.position %}
+                        <p>{{ person.position.title }} at {{ person.position.organization_name }}</p>
+                      {% endif %}
+                      <p>{{ person.bio }}</p>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+{% endblock %}
