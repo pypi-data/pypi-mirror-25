@@ -1,0 +1,83 @@
+import glob
+import os
+import json
+
+from sequana import pacbio
+import pylab
+from sequana import snaketools as sm
+
+
+configfile: "config.yaml"
+
+manager = sm.PipelineManager("pacbio_qc", config,  fastq=False)
+
+
+sm.message("Number of samples: %d" % len(manager.samples))
+
+samples = manager.samples
+input_data = manager.getrawdata()
+
+
+# Convert the BAM into a FastA file
+__bam_to_fasta__input_bam = input_data
+__bam_to_fasta__output_fasta = "{sample}.fasta"
+include: sm.modules["bam_to_fasta"]
+
+
+# Analysis the input BAM , create pictures and summary file
+__pacbio_quality__input = input_data
+__pacbio_quality__output_summary = "summary_{sample}.json"
+include: sm.modules["pacbio_quality"]
+
+
+rule all:
+    input:
+        expand("report_{sample}.html", sample=samples),
+        expand("{sample}/kraken/kraken.html", sample=samples)
+
+
+rule html_report:
+    input:  "summary_{sample}.json", "{sample}/kraken/kraken.html"
+    output: "report_{sample}.html"
+    params: dir="{sample}/kraken"
+    run:
+        from sequana.modules_report.pacbio_input_bam import PacbioInputBAMModule as Module
+        m = Module(input[0])
+
+        from sequana.modules_report.kraken import KrakenModule
+        kr = KrakenModule(params.dir)
+        html = kr._get_summary_section()
+        toreplace = "./kraken/kraken.html"
+        target = params.dir + "/kraken.html"
+        html = html.replace(toreplace, target)
+        m.sections.append({
+          "name": "Taxonomic content",
+          "anchor": "kraken",
+          "content": html
+        })
+        m.create_html(output[0])
+
+
+rule kraken:
+    input: "{sample}.fasta"
+    output: "{sample}/kraken/kraken.html"
+    params:
+        databases=config['kraken']
+    run:
+        cmd = "sequana_taxonomy --file1 {input} --output-directory {wildcards.sample} --thread 4"
+        cmd += " --databases "
+        for dbname, value in params.databases.items():
+            if value:
+                cmd += " %s " % value
+        shell(cmd)
+
+
+"""__multiqc__input = "summary_{sample}.json"
+__multiqc__logs = "logs/multiqc.log"
+__multiqc__output = "multiqc_data"
+config['multiqc'] = {"excluded": "", "output-directory"}
+"""
+
+onsuccess:
+    shell("multiqc . -m sequana_pacbio_qc  -f")
+

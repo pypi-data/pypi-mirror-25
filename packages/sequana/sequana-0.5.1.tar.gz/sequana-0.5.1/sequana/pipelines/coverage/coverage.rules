@@ -1,0 +1,74 @@
+# coding: utf-8
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016 - Sequana Development Team
+#
+#  File author(s):
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
+#          <d.desvillechabrol@gmail.com>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
+"""
+Author: Thomas Cokelaer
+Affiliation: Institut Pasteur
+Aim: coverage of BAM of BED files
+Data: BED of BAM 
+Run: snakemake -s coverage.rules
+"""
+import os
+
+import sequana
+from sequana import snaketools as sm
+from sequana.snaketools import SequanaConfig
+
+sm.init("coverage.rules", globals())
+
+
+# This must be defined before the include
+configfile: "config.yaml"
+manager = sm.PipelineManager("coverage", config, "*bed")
+
+
+# Clean template and replace None with empty string
+config = manager.config
+__snakefile__ = srcdir(__snakefile__)
+__rawdata__input = manager.getrawdata()
+__report_dir__ = 'report_coverage_{0}'.format(manager.sample)
+
+# Coverage analysis
+#
+##############################################################################
+
+# Sequana_coverage analysis
+#
+__sequana_coverage__bed = __rawdata__input
+__sequana_coverage__fasta = config['sequana_coverage']['reference']
+__sequana_coverage__gbk = config['sequana_coverage']['genbank']
+
+__sequana_coverage__csv = manager.getname("sequana_coverage", ".csv")
+__sequana_coverage__report_dir = __report_dir__
+__sequana_coverage__html = os.sep.join([
+__report_dir__, 'sequana_coverage.html'
+include: sm.modules["sequana_coverage"]
+
+expected_output.append(expand(__sequana_coverage__csv, sample=manager.samples))
+
+
+
+# these rules don't need to be submit on a node.
+# snpeff_download_database needs an internet connection
+localrules: conda, rulegraph
+
+rule pipeline_variant:
+    input:
+        expected_output
+
+onsuccess:
+    pass
