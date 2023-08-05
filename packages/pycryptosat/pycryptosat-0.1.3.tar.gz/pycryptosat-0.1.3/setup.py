@@ -1,0 +1,202 @@
+# -*- coding: utf-8 -*-
+#
+# CryptoMiniSat
+#
+# Original work Copyright (c) 2009-2014, Mate Soos. All rights reserved.
+# Modified work Copyright (c) 2017, Pierre Vignet
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+#from distutils.core import setup, Extension
+from setuptools import setup, Extension
+from setuptools.command.test import test as TestCommand
+from distutils import sysconfig
+
+__PACKAGE_VERSION__ = "0.1.3"
+__LIBRARY_VERSION__ = "5.0.1"
+
+
+################################################################################
+
+# Delete unwanted flags for C compilation
+# Distutils has the lovely feature of providing all the same flags that
+# Python was compiled with. The result is that adding extra flags is easy,
+# but removing them is a total pain. Doing so involves subclassing the
+# compiler class, catching the arguments and manually removing the offending
+# flag from the argument list used by the compile function.
+# That's the theory anyway, the docs are too poor to actually guide you
+# through what you have to do to make that happen.
+
+def _init_posix(init):
+    def wrapper():
+        init()
+        config_vars = sysconfig.get_config_vars()  # by reference
+
+        if config_vars["MACHDEP"].startswith("sun"):
+            # Sun needs forced gcc/g++ compilation
+            config_vars['CC'] = 'gcc'
+            config_vars['CXX'] = 'g++'
+
+        if config_vars["MACHDEP"].startswith("linux"):
+            # Remove GDB specific debug informations
+            # Remove -Wstrict-prototypes which is valid for C but not for C++
+            for k, v in config_vars.items():
+                for unwanted in (' -g ', '-Wstrict-prototypes',):
+                    if str(v).find(unwanted) != -1:
+                        v = config_vars[k] = str(v).replace(unwanted, ' ')
+
+    return wrapper
+
+sysconfig._init_posix = _init_posix(sysconfig._init_posix)
+
+################################################################################
+
+class Test(TestCommand):
+    """Call tests with the custom 'python setup.py test' command."""
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = []
+
+    def run_tests(self):
+        import tests as tp
+        tp.run()
+
+################################################################################
+
+# Source files
+cryptoms_lib_files = [
+    "cnf.cpp",
+    "propengine.cpp",
+    "varreplacer.cpp",
+    "clausecleaner.cpp",
+    "clauseusagestats.cpp",
+    "prober.cpp",
+    "occsimplifier.cpp",
+    "subsumestrengthen.cpp",
+    "clauseallocator.cpp",
+    "sccfinder.cpp",
+    "solverconf.cpp",
+    "distillerallwithall.cpp",
+    "distillerlongwithimpl.cpp",
+    "str_impl_w_impl_stamp.cpp",
+    "solutionextender.cpp",
+    "completedetachreattacher.cpp",
+    "searcher.cpp",
+    "solver.cpp",
+    "sqlstats.cpp",
+    "implcache.cpp",
+    "stamp.cpp",
+    "compfinder.cpp",
+    "comphandler.cpp",
+    "hyperengine.cpp",
+    "subsumeimplicit.cpp",
+    "datasync.cpp",
+    "reducedb.cpp",
+    "clausedumper.cpp",
+    "bva.cpp",
+    "intree.cpp",
+    "features_calc.cpp",
+    "features_to_reconf.cpp",
+    "solvefeatures.cpp",
+    "searchstats.cpp",
+    "xorfinder.cpp",
+    "cryptominisat_c.cpp",
+    "GitSHA1.cpp",
+    "cryptominisat.cpp",
+
+]
+
+modules = [
+    Extension(
+        "pycryptosat",
+        ["src/pycryptosat.cpp"] + ['src/' + fd for fd in cryptoms_lib_files],
+        language = "c++",
+        include_dirs=['src', '.'],
+        define_macros=[
+            ('LIBRARY_VERSION', '"' + __LIBRARY_VERSION__ + '"')
+        ],
+        extra_compile_args=[
+            "-pthread",
+            "-DUSE_PTHREADS",
+            "-flto",
+            "-std=c++11",
+            "-Wno-unused-variable",
+            "-Wno-unused-but-set-variable",
+
+            # Assume that signed arithmetic overflow of addition, subtraction
+            # and multiplication wraps around using twos-complement
+            # representation
+            "-fwrapv",
+
+            # Buffer Overflow protection (use both)
+            #"-D_FORTIFY_SOURCE=2",
+            #"-fstack-protector-strong",
+
+            # Allows GCC to generate code that may not run
+            # at all on processors other than the one indicated
+            # -march=cpu-type implies -mtune=cpu-type.
+            # See CPU type with:
+            # gcc -march=native -Q --help=target | grep march
+            "-march=native",
+            # Produce code optimized by enabling all
+            # instruction subsets supported by the local machine
+            # See CPU type with:
+            # gcc -mtune=native -Q --help=target | grep march
+            "-mtune=native",
+
+            # Release/Debug flags
+            "-Ofast",
+            #"-O3",
+            # "-g", # Not define NDEBUG macro => Debug build
+            "-DNDEBUG", # Force release build
+            #"-Wall",
+        ],
+        extra_link_args=[
+            "-Ofast",
+            "-flto",
+        ]
+    ),
+]
+
+setup(
+    name = "pycryptosat",
+    version = __PACKAGE_VERSION__,
+    author = "Mate Soos",
+    author_email = "soos.mate@gmail.com",
+    url = "https://github.com/msoos/cryptominisat",
+    license = "MIT",
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Operating System :: OS Independent",
+        "Programming Language :: C++",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "License :: OSI Approved :: MIT License",
+        "Topic :: Utilities",
+    ],
+    ext_modules = modules,
+    description = "Bindings to CryptoMiniSat {} (a SAT solver)".\
+        format(__LIBRARY_VERSION__),
+    long_description = open('README.rst').read(),
+    cmdclass={'test': Test}
+)
