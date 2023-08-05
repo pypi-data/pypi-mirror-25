@@ -1,0 +1,374 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: html-postamble:nil
+#+TITLE: cf-boot
+
+*cf-boot* is a utility to automate the bootstrap process of cloudfoundry
+products. It allows users to specificy a product's dependencies
+declaratively, and provides a consistent,
+reproducible, automated way to bootstrap or update an environment.
+
+
+* Quick Start
+** Installation
+   #+BEGIN_SRC sh
+   $ pip install --user cf-boot
+   $ cf-boot -h
+    usage: cf-boot [-h] [-i INPUT] [-o OUTPUT] [-f] [-p PATH]
+                   [-g DEPENDENCY_GRAPH_PDF] [-v VERBOSE] [-s]
+                   project-spec
+    ...
+   #+END_SRC
+** Install specific version
+   #+BEGIN_SRC sh
+   $ pip install --user cf-boot==1.6.0 --force-reinstall
+   #+END_SRC
+
+   Or from the source tree (not recommended):
+   #+BEGIN_SRC sh
+   $ git clone https://github.build.ge.com/hubs/cf-boot
+   $ cd cf-boot
+   $ sudo python setup.py install
+   #+END_SRC
+
+
+** Usage
+    #+BEGIN_SRC sh
+    $ cf-boot ui-app-hub-boot.json -i envs/hubs-poc.json -o hubs-poc-results.json
+    #+END_SRC
+   - Obtain or [[project-spec][create]] the project spec: [[file:doc/examples/event-hub/event-hub-boot.json][event-hub-boot.json]]
+   - Determine the free variables for the project spec
+     #+BEGIN_SRC sh
+     cf-boot event-hub-boot.json --free-vars
+     [
+        "CF_ORG",
+        "CF_PASSWORD",
+        "CF_SPACE",
+        "CF_SPACE_UAA",
+        "CF_TARGET",
+        "CF_USER",
+        "event-hub-instance-name",
+        "event_hub_publish_client_id",
+        "event_hub_publish_client_secret",
+        "event_hub_subscribe_client_id",
+        "event_hub_subscribe_client_secret",
+        "uaa_admin_secret",
+        "uaa_instance_name"
+     ]
+     #+END_SRC
+   - Create a file: ~envs/hubs-poc.json~ initializing all free variables
+     #+BEGIN_SRC js
+     {
+         "CF_TARGET": "https://api.system.asv-pr.ice.predix.io",
+         "CF_USER": "ernesto.alfonsogonzalez@ge.com",
+         "CF_PASSWORD": "***REMOVED***",
+         "CF_ORG": "HUBS",
+         "CF_SPACE": "poc",
+         "CF_SPACE_UAA": "sandbox",
+
+         "event-hub-instance-name": "event-hub-audit-poc",
+         "uaa_instance_name": "event-hub-audit-uaa-poc",
+         "uaa_admin_secret": "ernesto",
+
+         "event_hub_subscribe_client_id": "eh-subscribe",
+         "event_hub_subscribe_client_secret": "eh-subscribe-secret",
+
+         "event_hub_publish_client_id": "eh-publish",
+         "event_hub_publish_client_secret": "eh-publish-secret"
+      }
+
+     #+END_SRC
+   - Run jobs to bootstrap the environment.
+    #+BEGIN_SRC sh
+    $ cf-boot event-hub-boot.json --input envs/hubs-poc.json --output envs/hubs-poc-results.json
+    ...
+    RUNNING CHILD 3/5: 'service' with input:
+    {
+      "service": "predix-uaa",
+      "instance_name": "event-hub-audit-uaa-poc",
+      "cf_home": "/tmp/cf-homes/fafe452c36298bad655f458cdd96a149",
+      "plan": "Tiered",
+      "credential_paths": {
+        "issuerId": [
+          "issuerId"
+        ],
+        "uri": [
+          "uri"
+        ],
+        "zoneId": [
+          "zone",
+          "http-header-value"
+        ]
+      },
+      "payload": {
+        "adminClientSecret": "mysecret"
+      }
+    }
+
+    ...
+
+    {
+      "issuerId": "https://fe5540ee-d75d-4d9a-8898-9ba9f6de29f5.predix-uaa.run.asv-pr.ice.predix.io/oauth/token",
+      "zoneId": "fe5540ee-d75d-4d9a-8898-9ba9f6de29f5",
+      "uri": "https://fe5540ee-d75d-4d9a-8898-9ba9f6de29f5.predix-uaa.run.asv-pr.ice.predix.io",
+      "SERVICE_GUID": "fe5540ee-d75d-4d9a-8898-9ba9f6de29f5"
+    }
+
+    ...
+
+    #+END_SRC
+   - View bootstrap results: ~cat envs/hubs-poc-results.json~
+     #+BEGIN_SRC js
+     {
+      "CF_HOME": "/tmp/cf-homes/1479497b751ec97462bb89660c4962a8",
+      "CF_HOME_UAA": "/tmp/cf-homes/fafe452c36298bad655f458cdd96a149",
+      "CF_ORG": "HUBS",
+      "CF_PASSWORD": "***REMOVED***",
+      "CF_SPACE": "poc",
+      "CF_SPACE_UAA": "sandbox",
+      "CF_TARGET": "https://api.system.asv-pr.ice.predix.io",
+      "CF_USER": "ernesto.alfonsogonzalez@ge.com",
+      "event-hub-instance-name": "event-hub-audit-poc",
+      "event_hub_instance_guid": "a06b5b4c-981a-4f86-84e8-c08f4d2d05e0",
+      "event_hub_publish_client_id": "eh-publish",
+      "event_hub_publish_client_secret": "***REMOVED***",
+      "event_hub_scope_publish_grpc": "predix-event-hub.zones.a06b5b4c-981a-4f86-84e8-c08f4d2d05e0.grpc.publish",
+      "event_hub_scope_publish_wss": "predix-event-hub.zones.a06b5b4c-981a-4f86-84e8-c08f4d2d05e0.wss.publish",
+      "event_hub_scope_subscribe_grpc": "predix-event-hub.zones.a06b5b4c-981a-4f86-84e8-c08f4d2d05e0.grpc.subscribe",
+      "event_hub_scope_user": "predix-event-hub.zones.a06b5b4c-981a-4f86-84e8-c08f4d2d05e0.user",
+      "event_hub_subscribe_client_id": "eh-subscribe",
+      "event_hub_subscribe_client_secret": "***REMOVED***",
+      "uaa_admin_secret": "***REMOVED***",
+      "uaa_instance_guid": "fe5540ee-d75d-4d9a-8898-9ba9f6de29f5",
+      "uaa_instance_name": "event-hub-audit-uaa-poc",
+      "uaa_issuer_id": "https://fe5540ee-d75d-4d9a-8898-9ba9f6de29f5.predix-uaa.run.asv-pr.ice.predix.io/oauth/token",
+      "uaa_uri": "https://fe5540ee-d75d-4d9a-8898-9ba9f6de29f5.predix-uaa.run.asv-pr.ice.predix.io",
+      "uaa_zone_id": "fe5540ee-d75d-4d9a-8898-9ba9f6de29f5"
+    }
+
+   #+END_SRC
+* Overview
+** cf-boot components
+   - *project spec* (~what~)
+     - User-provided specification of the bootstrap requirements:
+       A JSON DSL specifying a set of ~jobs~,
+       each of which specifies
+       - the script to execute it
+       - the inputs to the script
+       - the outputs to capture from the script
+       Outputs from one job can be passed as inputs to another job
+     - *free variables* (~what~)
+       - environment-specific values or sensitive values such as passwords
+         or other credentials, which are decoupled from the project spec
+   - *subscripts* (~how~)
+     - Executable, reusable scripts that are invoked
+       by the master script to carry out a job
+       specified in the user's project spec.
+   - *master script* (~what~ + ~how~)
+     - project-spec parsing and execution engine, organizing jobs by dependency,
+       piping job inputs and outputs, producing final JSON key-value map\\
+       The master script links the ~what~ and the ~how~
+
+** Architecture diagram
+   #+CAPTION: Architecture diagram
+   #+NAME:   fig:SED-HR4049
+   #+attr_html:  :width 1000px
+     [[file:cfboot/master/hubs-bootstrapper-architecture.png]]
+
+** Benefits
+   - Decoupling of ~how~ and ~what~ allows users to bootstrap
+     their products declaratively instead of writting code
+   - Arbitrary chaining of jobs and the data they produce
+   - Automatic dependency management based on inputs/outputs
+   - Decoupling of environment-specific values, credentials, passwords from the
+     project spec
+     - Allows project spec to be published and serve as bootstrap documentation
+     - Allows project spec to remain stable across environments
+   - Flexibility to allow user to provide custom subscripts
+     to meet highly product-specific bootstrap needs
+   - Idempotence as a way to cleanly address the need to update,
+   - Idempotence as a way to handle or clean up undefined or undesirable state
+
+
+
+
+* <<project-spec>> Project Spec specification
+  The project spec is a JSON document
+** Jobs
+   A job is a JSON map with 3 required fields, *script*, *input*, *output*, and optionally a *description*
+   #+ATTR_HTML: :border 2 :rules all :frame border
+   | *field name* | *field type*            | *field description*                                                                                                                            | *example*                                                                                     |
+   | script       | string                  | the name of the sub-script to carry out the job                                                                                                | "create-uaa-service"                                                                          |
+   | output       | map of string -> string | keys much match sub-script output names. values are the names that other jobs may refer to.                                                    | {"service_guid":"uaa_service_guid", "client_secret":"uaa_client_secret", "uaa_uri":"uaa_uri"} |
+   | input        | map of string -> JSON   | keys must match sub-script input names. values may be any JSON object. nested strings starting with ~$~ are substituted with their known value | {"uaa_uri":"$uaa_uri", "uaa_client_secret":"$uaa_client_secret", "acs_zone":"$acs_zone"}      |
+   | description  | string                  | optional description of the job                                                                                                                | "uaa service for config manager"                                                              |
+** Spec file
+   A spec file is a JSON mapping "jobs" to a list of jobs:
+   #+BEGIN_SRC js
+    {
+       "jobs": [
+    ...
+          {
+             "script": "create-unique-cf-home",
+             "description": "unique cf login for all sub-scripts that must use cf commands",
+             "input": {
+                "CF_TARGET": "$CF_TARGET",
+                "CF_USER": "$CF_USER",
+                "CF_PASSWORD": "$CF_PASSWORD",
+                "CF_ORG": "$CF_ORG",
+                "CF_SPACE": "$CF_SPACE"
+             },
+             "output": {
+                "CF_HOME": "CF_HOME"
+             }
+          },
+          {
+            "script": "service",
+	    "description": "create event hub uaa",
+            "input": {
+		"instance_name": "$uaa_instance_name",
+		"service": "predix-uaa",
+		"plan": "Tiered",
+		"cf_home": "$CF_HOME",
+		"payload": {"adminClientSecret": "$uaa_admin_secret"},
+		"credential_paths": {"uri" : ["uri"],
+				     "issuerId": ["issuerId"],
+				     "zoneId": ["zone", "http-header-value"]}
+            },
+            "output": {
+		"SERVICE_GUID": "uaa_instance_guid",
+		"uri": "uaa_uri",
+		"issuerId":  "uaa_issuer_id",
+		"zoneId": "uaa_zone_id"
+            }
+	},
+	{
+            "script": "service",
+	    "description": "create event hub instance",
+
+            "input": {
+		"instance_name": "$event-hub-instance-name",
+		"service": "predix-event-hub",
+		"plan": "Beta",
+		"cf_home": "$CF_HOME",
+		"payload": {"trustedIssuerIds": ["$uaa_issuer_id"]},
+		"credential_paths": {"event_hub_scope_user":
+				     ["publish", "protocol_details", 0, "zone-token-scope", 0],
+
+				     "event_hub_scope_publish_grpc":
+				     ["publish", "protocol_details", 0, "zone-token-scope", 1],
+
+				     "event_hub_scope_publish_wss":
+				     ["publish", "protocol_details", 1, "zone-token-scope", 1],
+
+				     "event_hub_scope_subscribe_grpc":
+				     ["subscribe", "protocol_details", 0, "zone-token-scope", 1]
+				    }
+            },
+            "output": {
+		"SERVICE_GUID": "event_hub_instance_guid",
+		"event_hub_scope_user": "event_hub_scope_user",
+		"event_hub_scope_publish_grpc": "event_hub_scope_publish_grpc",
+		"event_hub_scope_publish_wss": "event_hub_scope_publish_wss",
+		"event_hub_scope_subscribe_grpc": "event_hub_scope_subscribe_grpc"
+            }
+	}
+
+          ...
+        ]
+    }
+   #+END_SRC
+   - In the first job
+     - ~$CF_TARGET~, ~$CF_USER~, ~$CF_PASSWORD~, ~$CF_ORG~, ~$CF_SPACE~ are free variables since they are not produced by any other job.
+     - ~create-unique-cf-home~ script outputs a variable ~CF_HOME~, which we capture internally as ~CF_HOME~
+   - The second job
+     - refers to the ~$CF_HOME~ produced by the first job
+     - Its script outputs a variable ~SERVICE_GUID~,
+       which we capture internally as ~uaa_instance_guid~
+   - The third job uses ~uaa_instance_guid~ from the second job, as
+     well as ~CF_HOME~ from the first job, and produces ~event_hub_instance_guid~
+
+   A project spec is malformed if it contains two jobs which output the same
+   variable
+
+** Job execution order
+   The master script automatically determines job order based on variable dependencies. If
+   - Job *A* outputs *X* and
+   - Job *B* refers to *$X*, then
+   - Job *A* must run before Job *B*
+
+   This implies no job can depend on a job that produces no outputs.
+   For such cases, a job may produce a dummy indicator variable that can be refered by any dependent jobs.\\
+
+   A project spec is malformed if it contains cyclic job dependencies
+* Subscripts
+** Built-in subscripts
+   The following subscripts are provided by default as basic cf bootstrapping
+   building blocks:
+
+   - [[file:cfboot/scripts/create-unique-cf-home][create-unique-cf-home]]
+     - Allows other subscripts to call cf commands against a
+       particular environment safely
+     - Allow jobs to target different environments simultaneously without
+       conflict
+   - [[file:cfboot/scripts/create-service][service]],
+     - create or update a service, and optionally extract some of its binding
+      credentials by specifying each credential's JSON path
+   - [[file:cfboot/scripts/cf-cups][cf-cups]]
+     - create or update a user-provided service service
+   - [[file:cfboot/scripts/cf-push-app][cf-push-app]]
+     - push an app based on a git url. optionally specify services to bind,
+       environment variables, route domain name, buildpack, etc
+   - [[file:cfboot/scripts/create-uaa-clients][create-uaa-clients]]
+     - create or update clients, users, groups on a uaa server
+   - [[file:cfboot/scripts/create-acs-policy][create-acs-policy]]
+     - create or update an acs policy
+
+** Creating a new sub-script
+   A subscript is any executable file NAME.EXT that conforms to the following requirements:
+    - Is executable
+    - Lives under ~NAME/NAME.EXT~ somewhere on the subscripts *path*
+    - Read all its input from stdin JSON
+    - Output all data as a JSON key-value pairs
+      - May display progress/debug logs to stderr
+    - Must be idempotent. Running the script multiple times should be equivalent to running it once
+      - Most of the cf api, as well as cf commands already have this property
+
+   Sub-scripts should also observe the following guidelines
+    - Have small and clearly defined scope and meaningful name
+    - Be self-contained and not interfere with OS user or other processes
+      - Any scripts running CF commands must explicitly set the CF_HOME environment variable
+      - Should not use uaac until CF_HOME-like support is added
+
+   Pull requests are welcome for subscripts which meet the above guidelines
+   and provide functionality not already covered
+** Adding custom subscripts to the cf-boot path
+   Use the ~--path~ flag to specify the custom subscript's directory:
+   #+BEGIN_SRC sh
+   $ cf-boot -h
+   ...
+  -p PATH, --path PATH  colon-delimited path where to find additional
+                         subscripts
+   $ cf-boot ui-app-hub-bootstrap.json --path /path/to/my/own/subscripts --input envs/hubs-poc.json
+   ...
+   #+END_SRC
+** Subscript environment variables, proxies
+   The master script's environment variables are passed onto its children subscripts, including https_proxy.\\
+   It is up to the subscripts to either use or override these variables.
+* FAQ
+*** What happens if a cf-boot invocation fails with jobs left to run?
+    Every subscript is designed to be idempotent, making it safe to re-run the bootstrap.
+    If a job fails and bootstrap doesn't complete successfully, resolve the problem and re-run the
+    bootstrap from start until it is successful.
+*** Is it possible to run a partial set of jobs? Is it possible to "undo" a job?
+    No. The correct way to resolve an incomplete bootstrap is to fix all problems and re-run from start.
+*** What if I'm behind a proxy?
+    Standard proxy environment variables are passed on to cf-boot's subprocesses (subscripts),
+    which usually know how to interpret them. All the standard subscripts are known to work behind proxy.
+*** Can I bootstrap several environments at the same time?
+    By design, the standard subscripts do not persist state, nor do they interfere with concurrent
+    invocations. Additionally most subscripts rely on a unique, disposable, stateless CF_HOME login,
+    on REST calls, etc.
+    So it should be possible to run the same project spec on the same machine, with different free-vars
+    inputs.
+* Bugs, features
+  Submit bug reports or feature requests to cf-boot-devel@ge.com

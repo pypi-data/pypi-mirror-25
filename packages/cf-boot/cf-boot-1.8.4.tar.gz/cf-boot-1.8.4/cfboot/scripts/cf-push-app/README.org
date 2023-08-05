@@ -1,0 +1,64 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: toc:nil
+#+OPTIONS: html-postamble:nil
+#+OPTIONS: num:nil
+#+TITLE: cf-push-app
+
+* Required Inputs
+  | *arg name* | *JSON type* | *example*             | *description*                       |
+  | app_name   | string      | ref-app               | name of the app                     |
+  | cf_home    | string      | "/tmp/cf-home-240964" | CF_HOME where login has been issued |
+* Optional inputs
+  | *arg name* | *JSON type*          | *example*                                                              | *description*                   |
+  | git_url    | string               | "https://github.com/cloudfoundry-community/kibana-me-logs.git"         | github url                      |
+  | services   | list of string       | [ "logstash-space-wide" ]                                              | services to bind                |
+  | envs       | map (string->string) | { "KIBANA_USERNAME": "kibana_user", "KIBANA_PASSWORD": "***REMOVED***" } | environment variables to values |
+  | stack      | string               | "cflinuxfs2"                                                           | option                          |
+  | buildpack  | string               | "https://github.com/heroku/heroku-buildpack-go.git"                    | buildpack                       |
+** Examples:
+   - push a basic-auth-protected kibana
+   #+BEGIN_SRC js
+   {
+     "app_name": "kibana-space-wide",
+     "buildpack": "https://github.com/heroku/heroku-buildpack-go.git",
+     "envs": {
+       "KIBANA_USERNAME": "kibana_user",
+       "KIBANA_PASSWORD": "***REMOVED***"
+     },
+     "cf_home": "/tmp/cf-home-600396",
+     "git_url": "https://github.com/cloudfoundry-community/kibana-me-logs.git",
+     "services": [
+       "logstash-space-wide"
+     ],
+     "stack": "cflinuxfs2"
+   }
+   #+END_SRC
+   - create an app for binding services and extracting credentials only.
+     no push required
+   #+BEGIN_SRC js
+   {
+      "app_name": "ref-app",
+      "cf_home": "$CF_HOME"
+   }
+   #+END_SRC
+
+* Output
+  | *output name* | *JSON type* | *example*                                             | *description*                                      |
+  | app_guid      | string      | "f9e82e7f-5f15-4ea9-b499-9ceab30d9660"                | app guid                                           |
+  | app_url       | string      | "https://kibana-me-logs-poc.run.asv-pr.ice.predix.io" | app url (first mapped route, space/org uniquified) |
+  
+** Example:
+
+   #+BEGIN_SRC js
+   {
+    "app_url": "https://kibana-me-logs-poc.run.asv-pr.ice.predix.io",
+    "app_guid": "f9e82e7f-5f15-4ea9-b499-9ceab30d9660"
+   }
+   #+END_SRC
+
+* Idempotence
+  The script may be called any number of times. The app will be pushed again if it exists
+* Notes
+  - Push hostname is an name, org-space uniquified app name
+  - The intent of this script is to deploy utility apps like kibana, phpadmin,
+  and throwaway apps for binding services and extracting credentials, not to compete with CI/CD.

@@ -1,0 +1,66 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: toc:nil
+#+OPTIONS: html-postamble:nil
+#+OPTIONS: num:nil
+#+TITLE: create-service
+* Input
+  | *arg name*    | *JSON type* | *example*                    | *description*                           | *required?* |
+  | instance_name | string      | app-hub-redis-service        | name of the instance                    | y           |
+  | service       | string      | redis                        | service label                           | y           |
+  | plan          | string      | shared-vm                    | plan                                    | y           |
+  | cf_home       | string      | "/tmp/cf-home-240964"        | CF_HOME where login has been issued     | y           |
+  | *if_exists    | string      | "ignore", "update", "delete" | what to do when service instance exists |             |
+  | payload       | arbitrary   |                              | payload to create-service               |             |
+** if_exists options
+   | *option* | *description*                                                   |
+   | "ignore" | do nothing (default)                                            |
+   | "update" | update the service instance with a new payload or service plan  |
+   | "delete" | delete the old service instance, including its service bindings |
+
+
+** Examples:
+   - create a redis instance
+   #+BEGIN_SRC js
+   {
+     "instance_name": "app-hub-redis-service",
+     "cf_home": "/tmp/cf-home-240964",
+     "plan": "shared-vm",
+     "service": "redis"
+   }
+   #+END_SRC
+   - create a uaa service with admin secret payload
+
+   #+BEGIN_SRC js
+   {
+    "instance_name": "hubs-config-manager-uaa",
+    "service": "predix-uaa",
+    "plan": "Tiered",
+    "cf_home": "/Users/212556701",
+    "payload": {"admin_secret" : "***REMOVED***"}
+   }
+   #+END_SRC
+
+   - create an acs service with a payload
+
+   #+BEGIN_SRC js
+   {
+    "instance_name": "hub-acs-dev-configservice",
+    "service": "predix-acs",
+    "plan": "Tiered",
+    "cf_home": "/tmp/cf-home-240964",
+    "payload" : {"trustedIssuerIds" : "https://908485db-10b7-4bc2-acfc-740f1bc540e7.predix-uaa.run.asv-pr.ice.predix.io"}
+   }
+   #+END_SRC
+
+* Output
+  | output name    | JSON type | example                                | description          |
+  | "SERVICE_GUID" | string    | "c41f5741-97f6-43a9-82dc-b32f00588819" | guid of the instance |
+** Example:
+
+   #+BEGIN_SRC js
+   {"SERVICE_GUID": "c41f5741-97f6-43a9-82dc-b32f00588819"}
+   #+END_SRC
+
+
+* Idempotence
+  The script may be called any number of times. If the instance does not exist, it is created.

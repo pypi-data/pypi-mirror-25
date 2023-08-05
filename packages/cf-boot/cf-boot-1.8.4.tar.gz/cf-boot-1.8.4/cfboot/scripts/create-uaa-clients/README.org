@@ -1,0 +1,131 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: toc:nil
+#+OPTIONS: html-postamble:nil
+#+OPTIONS: num:nil
+#+TITLE: create-uaa-clients
+
+* Inputs
+  | *arg name*        | *JSON type* | *example*                                                                          | *description*           |
+  | uaa_uri           | string      | "https://079e5b8e-3d78-4140-b27c-ba038918ffea.predix-uaa.run.asv-pr.ice.predix.io" | uaa url                 |
+  | uaa_client_secret | string      | "***REMOVED***"                                                                    | uaa admin secret        |
+  | client_payloads   | list        | client payloads as per the UAA API                                                 | list of client payloads |
+  | user_payloads     | list        | user payloads as per the UAA API                                                   | list of user payloads   |
+  | group_payloads    | list        | group payloads as per the UAA API                                                  | list of group payloads  |
+  | group_mems        | list        | (see example below)                                                                | group membership spec   |
+
+
+For reference on the client, user, group payloads, consult the uaa REST api: https://docs.cloudfoundry.org/api/uaa/
+
+** Examples:
+   - create uaa clients for ui-app-hub's config manager
+   #+BEGIN_SRC js
+	{
+	   "uaa_uri": "https://079e5b8e-3d78-4140-b27c-ba038918ffea.predix-uaa.run.asv-pr.ice.predix.io",
+	   "uaa_client_secret": "***REMOVED***",
+	   "client_payloads" : [{
+	      "client_id": "cm_client_id",
+	      "client_secret": "***REMOVED***",
+	      "authorized_grant_types": ["client_credentials"],
+	      "autoapprove": ["openid"],
+	      "scope": ["uaa.none", "openid", "hub.config.read", "hub.config.write", "hub.config.admin"],
+	      "authorities": ["openid", "hub.config.read", "hub.config.write", "hub.config.admin"],
+	   }, {
+	      "client_id": "sb_client_id",
+	      "client_secret": "***REMOVED***",
+	      "authorized_grant_types": ["client_credentials"],
+	      "autoapprove": ["openid"],
+	      "scope": ["uaa.none", "openid", "hub.config.write"],
+	      "authorities": ["openid", "hub.config.write"],
+	   }, {
+	      "client_id": "***REMOVED***_client_id",
+	      "client_secret": "***REMOVED***",
+	      "authorized_grant_types": ["client_credentials"],
+	      "autoapprove": ["openid"],
+	      "scope": ["uaa.none", "openid", "hub.config.read"],
+	      "authorities": ["openid", "hub.config.read"],
+	   }, {
+	      "client_id": "acs_client_id",
+	      "client_secret": "acs_client_secret",
+	      "authorized_grant_types": ["client_credentials"],
+	      "autoapprove": ["openid"],
+	      "scope": ["uaa.none", "openid", "acs.policies.read", "acs.policies.write", "acs.attributes.read", "acs.attributes.write", "acs_zone"],
+	      "authorities": ["openid", "acs.policies.read", "acs.policies.write", "acs.attributes.read", "acs.attributes.write", "uaa.resource", "uaa.none", "acs_oauth_scope"],
+	   }]
+	}
+   #+END_SRC
+   - create a uaa with a sample test user, a sample group, and add the test user to the test group
+   #+BEGIN_SRC js
+     {
+       "uaa_uri": "https://651b3f38-9af3-4784-8622-304cb9219164.predix-uaa.run.aws-usw02-pr.ice.predix.io",
+       "user_payloads": [
+         {
+           "userName": "ernesto@ge.com",
+           "password": "**REMOVED***",
+           "name": {
+             "givenName": "Ernesto",
+             "familyName": "Ernesto"
+           },
+           "emails": [
+             {
+               "primary": true,
+               "value": "ernesto@ge.com"
+             }
+           ]
+         }
+       ],
+
+       "client_payloads": [
+         {
+           "authorized_grant_types": [
+             "client_credentials",
+             "authorization_code"
+           ],
+           "autoapprove": [
+             "openid"
+           ],
+           "client_id": "framework-client",
+           "scope": [
+             "openid",
+             "uaa.user",
+             "uaa.none",
+             "analytics.zones.74734c7a-bd0f-4e12-95d6-ca51526a8aff.user"
+           ],
+           "authorities": [
+             "openid",
+             "uaa.user",
+             "uaa.none",
+             "analytics.zones.74734c7a-bd0f-4e12-95d6-ca51526a8aff.user"
+           ],
+           "client_secret": "ernesto"
+         }
+       ],
+       "uaa_client_secret": "ernesto",
+       "group_payloads": [
+         {
+           "displayName": "analytics.zones.74734c7a-bd0f-4e12-95d6-ca51526a8aff.user"
+         }
+       ],
+       "group_mems": [
+         {
+           "group": {
+             "displayName": "analytics.zones.74734c7a-bd0f-4e12-95d6-ca51526a8aff.user"
+           },
+           "users": [
+             {
+               "userName": "ernesto@ge.com",
+               "email": "ernesto@ge.com"
+             }
+           ]
+         }
+       ]
+     }
+   #+END_SRC
+
+
+* Output
+  #+BEGIN_SRC js
+  {}
+  #+END_SRC
+
+* Idempotence
+  The script may be called any number of times. If a client/user/group exists, it is deleted and re-created, to ensure it has the specified payload.

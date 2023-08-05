@@ -1,0 +1,57 @@
+{
+    "jobs": [
+	{
+            "script": "service",
+	    "description": "create a test postgres",
+            "input": {
+		"cf_home": "/tmp/cf-homes/f81c012cede168f92048ed58f12f46cc",
+		"instance_name": "$uaa-instance-name",
+		"service": "predix-uaa",
+		"plan": "Free",
+		"if_exists_delete": true,
+		"payload": {"adminClientSecret": "$uaa-admin-secret"},
+		"credential_paths": {"uri" : ["uri"],
+				     "issuerId": ["issuerId"],
+				     "zoneId": ["zone", "http-header-value"]
+				    }
+            },
+	    "output": {
+		"SERVICE_GUID": "uaa_guid",
+		"uri": "uaa_uri",
+		"issuerId":  "uaa_issuer_id",
+		"zoneId": "uaa_zone_id"
+            }
+	},
+	{
+            "script": "service",
+	    "description": "create event hub instance",
+            "input": {
+		"cf_home": "/tmp/cf-homes/f81c012cede168f92048ed58f12f46cc",
+		"instance_name": "$event-hub-instance-name",
+		"service": "predix-event-hub",
+		"plan": "Beta",
+		"payload": {"trustedIssuerIds": ["$uaa_issuer_id"]},
+		"credential_paths": {
+		    "event_hub_scope_user":
+		    ["publish", "protocol_details", 0, "zone-token-scope", 0],
+
+		    "event_hub_scope_publish_grpc":
+		    ["publish", "protocol_details", 0, "zone-token-scope", 1],
+
+		    "event_hub_scope_publish_wss":
+		    ["publish", "protocol_details", 1, "zone-token-scope", 1],
+
+		    "event_hub_scope_subscribe_grpc":
+		    ["subscribe", "protocol_details", 0, "zone-token-scope", 1]
+		}
+            },
+            "output": {
+		"SERVICE_GUID": "event_hub_instance_guid",
+		"event_hub_scope_user": "event_hub_scope_user",
+		"event_hub_scope_publish_grpc": "event_hub_scope_publish_grpc",
+		"event_hub_scope_publish_wss": "event_hub_scope_publish_wss",
+		"event_hub_scope_subscribe_grpc": "event_hub_scope_subscribe_grpc"
+            }
+	}
+    ]
+}

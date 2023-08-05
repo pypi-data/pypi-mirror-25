@@ -1,0 +1,131 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: toc:nil
+#+OPTIONS: html-postamble:nil
+#+OPTIONS: num:nil
+#+TITLE: extract-service-credentials
+
+* Inputs
+  | *arg name*              | *JSON type*                  | *example*                                                       | *description*                                            |
+  | ref_app_guid            | string                       | "f9e82e7f-5f15-4ea9-b499-9ceab30d9660"                          | guid of a sample app                                     |
+  | service_instance_guid   | string                       | "845f80d1-14ec-4144-82fd-d6417bedb7b7"                          | guid of the service instance                             |
+  | credential_paths        | map (string->list of string) | {"acs_zone": ["zone", "http-header-value"], "acs_uri": ["uri"]} | A map {"OUTPUT_KEY_NAME" : ["json", "path", "to", "credential"] }  |
+  | cf_home                 | string                       | "/User/12345"                                                     | CF_HOME where login has been issued                      |
+** credential path
+   A credential path specifies the list of accessors used to "walk down" from the root credentials map to the desired credential.
+   - Example credentials map:
+   #+BEGIN_SRC js
+   "credentials": {
+          "uri": "https://predix-acs.run.asv-pr.ice.predix.io",
+          "zone": {
+            "http-header-value": "d5eaf878-f6ba-4da3-83c1-9ebccd5aeda0",
+            "oauth-scope": "predix-acs.zones.d5eaf878-f6ba-4da3-83c1-9ebccd5aeda0.user",
+            "http-header-name": "Predix-Zone-Id"
+          }
+        }
+   #+END_SRC
+   - Example "credential_paths" input
+   #+BEGIN_SRC js
+     {"acs_zone": ["zone", "http-header-value"],
+      "acs_uri": ["uri"]}
+   #+END_SRC
+
+
+  For convenience on the common case where the credential one level from the root, it is possible to pass a string instead of a singleton. The above is equivalent to:
+   #+BEGIN_SRC js
+     {"acs_zone": ["zone", "http-header-value"],
+      "acs_uri": "uri"}
+   #+END_SRC
+** Examples:
+   - extract uaa uri
+     - input
+     #+BEGIN_SRC js
+     {
+      "service_instance_guid": "908485db-10b7-4bc2-acfc-740f1bc540e7",
+      "app_guid": "f9e82e7f-5f15-4ea9-b499-9ceab30d9660",
+      "cf_home": "/tmp/cf-home-480147",
+      "credential_paths": {"uaa_uri": ["uri"]}
+     }
+     #+END_SRC
+     - output
+     #+BEGIN_SRC js
+     {
+      "uaa_uri": "https://908485db-10b7-4bc2-acfc-740f1bc540e7.predix-uaa.run.asv-pr.ice.predix.io",
+     }
+     #+END_SRC
+   - extract acs zone, uri
+
+     #+BEGIN_SRC js
+     {
+      "app_guid": "f9e82e7f-5f15-4ea9-b499-9ceab30d9660",
+      "cf_home": "/tmp/cf-home-480147",
+      "service_instance_guid": "845f80d1-14ec-4144-82fd-d6417bedb7b7",
+      "credential_paths": {"acs_zone": ["zone", "http-header-value"],
+  				 "acs_uri": ["uri"]}
+      }
+     #+END_SRC
+     - output
+     #+BEGIN_SRC js
+     {
+      "acs_zone": "d5eaf878-f6ba-4da3-83c1-9ebccd5aeda0",
+      "acs_uri": "https://predix-acs.run.asv-pr.ice.predix.io"
+     }
+   #+END_SRC
+
+* Outputs
+  A json mapping each credential name to its value. See examples above
+
+* Idempotence
+  The script may be called any number of times. Whenever the binding does not exist, it is created.
+* Implementation details: How it works
+  1. Bind the app to the service instance.
+     Since we're given the app and instance *guids* instead of names, it's inconvenient to use ~cf create-servce~.
+     We use the [[http://apidocs.cloudfoundry.org][cf api]] (via cf curl) to directly [[http://apidocs.cloudfoundry.org/237/service_bindings/create_a_service_binding.html][POST a service binding]]
+  2. The request may "fail" with error code "CF-ServiceBindingAppServiceTaken". This is OK, and to preserve idempotence, we need to explicitly ignore this error.
+  3. We use the cf api to obtain the service binding payload (which includes credentials).
+     - We use the [[http://apidocs.cloudfoundry.org/237/service_bindings/list_all_service_bindings.html]["/v2/service_bindings?q=service_instance_guid:{}&q=app_guid:{}"]] endpoint\\
+       (List all service bindings filtering by both service instance and app guid)
+
+     - Example response
+     #+BEGIN_SRC js
+     {
+  "total_results": 1,
+  "next_url": null,
+  "total_pages": 1,
+  "prev_url": null,
+  "resources": [
+    {
+      "metadata": {
+        "url": "/v2/service_bindings/06a55a45-4e02-42df-8d99-34fa346bf1d4",
+        "created_at": "2016-08-05T14:44:55Z",
+        "guid": "06a55a45-4e02-42df-8d99-34fa346bf1d4",
+        "updated_at": null
+      },
+      "entity": {
+        "app_url": "/v2/apps/ec9c28c9-c27a-4cb5-95f2-546fc2d5e45f",
+        "binding_options": {},
+        "gateway_name": "",
+        "gateway_data": null,
+        "syslog_drain_url": null,
+        "credentials": {
+          "uri": "https://predix-acs.run.asv-pr.ice.predix.io",
+          "zone": {
+            "http-header-value": "d5eaf878-f6ba-4da3-83c1-9ebccd5aeda0",
+            "oauth-scope": "predix-acs.zones.d5eaf878-f6ba-4da3-83c1-9ebccd5aeda0.user",
+            "http-header-name": "Predix-Zone-Id"
+          }
+        },
+        "service_instance_guid": "d5eaf878-f6ba-4da3-83c1-9ebccd5aeda0",
+        "app_guid": "ec9c28c9-c27a-4cb5-95f2-546fc2d5e45f",
+        "volume_mounts": [],
+        "service_instance_url": "/v2/service_instances/d5eaf878-f6ba-4da3-83c1-9ebccd5aeda0"
+      }
+    }
+  ]
+}
+#+END_SRC
+
+  4. There can only be one service binding for an (app, service-instance) pair.
+     We make sure this is the case
+  5. Extract the credentials map from the service binding.
+     Go through each (credential-name, credential-path),  from user input to construct an output map.
+

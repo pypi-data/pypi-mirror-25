@@ -1,0 +1,76 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: toc:nil
+#+OPTIONS: html-postamble:nil
+#+OPTIONS: num:nil
+#+TITLE: service
+
+Create a service instance, and possibly extract service binding credentials.
+
+This is a more declarative version of cf-create-service, which takes care of low-level plumbing to extract service credentials.
+It is a wrapper built on top of cf-create-service, cf-delete-service, cf-push-app, extract-service-credentials.
+
+
+* Input
+  (required*)
+  | *arg name*       | *JSON type*                  | *example*                                                       | *description*                                                              |
+  | instance_name*   | string                       | app-hub-redis-service                                           | name of the instance                                                       |
+  | service*         | string                       | redis                                                           | service label                                                              |
+  | plan*            | string                       | shared-vm                                                       | plan                                                                       |
+  | cf_home*         | string                       | "/tmp/cf-home-240964"                                           | CF_HOME where login has been issued                                        |
+  | payload          | arbitrary                    |                                                                 | payload to create-service                                                  |
+  | credential_paths | map (string->list of string) | {"acs_zone": ["zone", "http-header-value"], "acs_uri": ["uri"]} | A map {"<CUSTOM_CREDENTIAL_NAME>" : ["json", "path", "to", "credential"] } |
+  | *if_exists       | string                       | "ignore", "update", "delete"                                    | what to do when service instance exists                                    |
+*** if_exists options
+    | *option*       | *description*                                                         |
+    | "ignore"       | do nothing (default)                                                  |
+    | "update"       | update the service instance with a new payload or service plan        |
+    | "delete"       | delete the old service instance, including its service bindings       |
+
+
+** Examples:
+   - create an event hub instance and extract the publish and subscribe uaa scopes
+   #+BEGIN_SRC js
+   {
+	"cf_home": "/home/me",
+	"instance_name": "cf-boot-service-test-ehub",
+	"service": "predix-event-hub",
+	"plan": "Beta",
+	"payload": {"trustedIssuerIds": ["https://908485db-10b7-4bc2-acfc-740f1bc540e7.predix-uaa.run.asv-pr.ice.predix.io/oauth/token"]},
+	"credential_paths": {
+	    "event_hub_scope_user":
+	    ["publish", "protocol_details", 0, "zone-token-scope", 0],
+
+	    "event_hub_scope_publish_grpc":
+	    ["publish", "protocol_details", 0, "zone-token-scope", 1],
+
+	    "event_hub_scope_publish_wss":
+	    ["publish", "protocol_details", 1, "zone-token-scope", 1],
+
+	    "event_hub_scope_subscribe_grpc":
+	    ["subscribe", "protocol_details", 0, "zone-token-scope", 1]
+	}
+   }
+   #+END_SRC
+
+
+* Output
+  | output name           | JSON type | example                                                                                                      | description             |
+  | "SERVICE_GUID"        | string    | "c41f5741-97f6-43a9-82dc-b32f00588819"                                                                       | guid of the instance    |
+  | "<CREDENTIAL_NAME_A>" | any       | "predix-event-hub.zones.e7df08b1-256c-42d9-aeeb-bf94b9c92921.grpc.publish"  | custom credential value |
+  | "<CREDENTIAL_NAME_B>" | any       | "predix-event-hub.zones.e7df08b1-256c-42d9-aeeb-bf94b9c92921.grpc.subscribe" | custom credential value |
+  | ...                   | any       |                                                                                                              | custom credential value |
+
+** Example:
+   #+BEGIN_SRC js
+   {
+     "event_hub_scope_subscribe_grpc": "predix-event-hub.zones.e7df08b1-256c-42d9-aeeb-bf94b9c92921.grpc.subscribe",
+     "event_hub_scope_publish_grpc": "predix-event-hub.zones.e7df08b1-256c-42d9-aeeb-bf94b9c92921.grpc.publish",
+     "event_hub_scope_user": "predix-event-hub.zones.e7df08b1-256c-42d9-aeeb-bf94b9c92921.user",
+     "event_hub_scope_publish_wss": "predix-event-hub.zones.e7df08b1-256c-42d9-aeeb-bf94b9c92921.wss.publish",
+     "SERVICE_GUID": "e7df08b1-256c-42d9-aeeb-bf94b9c92921"
+   }
+   #+END_SRC
+
+
+* Idempotence
+  The script may be called any number of times. If the instance does not exist, it is created.

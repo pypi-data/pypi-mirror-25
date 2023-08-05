@@ -1,0 +1,59 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: toc:nil
+#+OPTIONS: html-postamble:nil
+#+OPTIONS: num:nil
+#+TITLE: create-acs-policy
+
+* Inputs
+  | *arg name*             | *JSON type* | *example*                                                                           | *description*           |
+  | "uaa_uri"              | string      | "https://908485db-10b7-4bc2-acfc-740f1bc540e7.predix-uaa.run.asv-pr.ice.predix.io", | uaa uri                 |
+  | "acs_client_id"        | string      | "acs-client",                                                                       | acs client id           |
+  | "acs_client_secret"    | string      | "***REMOVED***",                                                                       | acs client secret       |
+  | "acs_http_header_name" | string      | "Predix-Zone-Id",                                                                   | acs zone header key     |
+  | "acs_zone"             | string      | "https://predix-acs.run.asv-pr.ice.predix.io",                                      | acs zone header value   |
+  | "acs_uri"              | string      | "https://predix-acs.run.asv-pr.ice.predix.io",                                      | acs client uri          |
+  | "acs_policy_payload"   | map         | (see below)                                                                         | list of client payloads |
+
+** Examples:
+   - create acs policy for ui-app-hub's config manager
+
+   #+BEGIN_SRC js
+	{
+	   "acs_client_id": "acs-client",
+	   "uaa_uri": "https://908485db-10b7-4bc2-acfc-740f1bc540e7.predix-uaa.run.asv-pr.ice.predix.io",
+	   "acs_zone": "https://predix-acs.run.asv-pr.ice.predix.io",
+	   "acs_uri": "https://predix-acs.run.asv-pr.ice.predix.io",
+	   "acs_client_secret": "***REMOVED***",
+	   "acs_http_header_name": "Predix-Zone-Id",
+	   "acs_policy_payload": {
+	      "policies": [{
+		 "name" : "disable-allconfig",
+		 "target" : {
+		    "name" : "",
+		    "action":"GET",
+		    "resource" : {
+		       "name" : "get-all-config",
+		       "uriTemplate" : "/apphubs/v1/appHubsConfigExt/config"
+		    }
+		 },
+		 "effect" : "DENY"
+	      },
+			   {
+			      "name": "catch-all-PERMIT-policy",
+			      "target": null,
+			      "conditions": [],
+			      "effect": "PERMIT"
+			   }
+			  ],
+	      "name": "apphub-configservice-policy-set1"
+	   }
+	}
+   #+END_SRC
+
+* Output
+  #+BEGIN_SRC js
+  {}
+  #+END_SRC
+
+* Idempotence
+  The script may be called any number of times. If policy exists it is updated.
