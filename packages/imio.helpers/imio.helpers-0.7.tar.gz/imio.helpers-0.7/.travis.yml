@@ -1,0 +1,42 @@
+language: python
+
+sudo: required
+dist: trusty
+
+cache:
+  directories:
+    - buildout-cache
+
+python:
+  - 2.7
+
+before_install:
+  - sudo apt-get install libpng12-dev cmake libqt4-dev libqt5widgets5 qttools5-dev
+  - sudo wget https://10gbps-io.dl.sourceforge.net/project/zint/zint/2.6.0/zint_2.6.0_amd64.deb
+  - sudo dpkg -i zint_2.6.0_amd64.deb
+
+install:
+  - mkdir -p buildout-cache/{eggs,downloads}
+  - python bootstrap.py --version=2.5.3 -c travis.cfg
+  - bin/buildout -c travis.cfg -N annotate
+  - bin/buildout -c travis.cfg -Nqt 5
+
+script:
+  - bin/test
+
+after_success:
+  - bin/coverage run bin/test
+  - pip install -q coveralls==0.5
+  - coveralls
+
+notifications:
+  email:
+    recipients:
+      - devs@imio.be
+    on_success: change
+    on_failure: change
+  irc:
+    channels:
+      - "irc.freenode.org#imio"
+    on_success: change
+    on_failure: always
