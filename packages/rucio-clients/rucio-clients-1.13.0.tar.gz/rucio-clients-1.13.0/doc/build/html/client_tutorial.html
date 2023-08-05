@@ -1,0 +1,393 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Rucio CLI tutorial &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Acronyms and Abbreviations" href="Acronyms_and_Abbreviations.html" />
+    <link rel="prev" title="Rucio Admin CLI Examples" href="cli_admin_examples.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Acronyms_and_Abbreviations.html" title="Acronyms and Abbreviations"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cli_admin_examples.html" title="Rucio Admin CLI Examples"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="rucio-cli-tutorial">
+<h1>Rucio CLI tutorial<a class="headerlink" href="#rucio-cli-tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="configuration-check-with-rucio-ping">
+<h2><code class="docutils literal"><span class="pre">Configuration</span> <span class="pre">check</span> <span class="pre">with</span> <span class="pre">'rucio</span> <span class="pre">ping'</span></code><a class="headerlink" href="#configuration-check-with-rucio-ping" title="Permalink to this headline">¶</a></h2>
+<p>This command connect to server to get the version running on the server. Actually, if there is a configuration problem, this command will fail. In order to everything else in this tutorial works, this command should run smoothly.:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio ping
+0.1.33
+</pre></div>
+</div>
+<p>You will probably need to check your etc/rucio.cfg file if the output is more like this:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio ping
+Traceback (most recent call last):
+  File &quot;/usr/local/bin/rucio&quot;, line 1568, in &lt;module&gt;
+    result = command(args)
+  File &quot;/usr/local/bin/rucio&quot;, line 108, in ping
+    ca_cert=args.ca_certificate, timeout=args.timeout)
+  File &quot;/usr/local/lib/python2.7/dist-packages/rucio/client/pingclient.py&quot;, line 24, in __init__
+    super(PingClient, self).__init__(rucio_host, auth_host, account, ca_cert, auth_type, creds, timeout)
+  File &quot;/usr/local/lib/python2.7/dist-packages/rucio/client/baseclient.py&quot;, line 157, in __init__
+    self.__authenticate()
+  File &quot;/usr/local/lib/python2.7/dist-packages/rucio/client/baseclient.py&quot;, line 484, in __authenticate
+    self.__get_token()
+  File &quot;/usr/local/lib/python2.7/dist-packages/rucio/client/baseclient.py&quot;, line 394, in __get_token
+    if not self.__get_token_x509():
+  File &quot;/usr/local/lib/python2.7/dist-packages/rucio/client/baseclient.py&quot;, line 341, in __get_token_x509
+    raise exc_cls(exc_msg)
+rucio.common.exception.CannotAuthenticate: Cannot authenticate.
+Details: Cannot authenticate to account testuser with given credentials
+</pre></div>
+</div>
+</div>
+<div class="section" id="list-available-rses">
+<h2><code class="docutils literal"><span class="pre">List</span> <span class="pre">available</span> <span class="pre">RSEs</span></code><a class="headerlink" href="#list-available-rses" title="Permalink to this headline">¶</a></h2>
+<p>Whenever you need to locate, upload, download or delete a replica, often you will need the name of the endpoint affected. To get the list of all the available RSEs, you can try:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio list-rses
+AGLT2_CALIBDISK
+AGLT2_DATADISK
+AGLT2_LOCALGROUPDISK
+AGLT2_PERF-MUONS
+AGLT2_PHYS-HIGGS
+... output omited ...
+ZA-UJ_PRODDISK
+ZA-UJ_SCRATCHDISK
+ZA-WITS-CORE_LOCALGROUPDISK
+ZA-WITS-CORE_PRODDISK
+ZA-WITS-CORE_SCRATCHDISK
+</pre></div>
+</div>
+<p>You can filter the type of the endpoint just greping the output. For example, to the see all the available scratch disks, this should work:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio list-rses | grep SCRATCHDISK
+AGLT2_SCRATCHDISK
+AM-04-YERPHI_SCRATCHDISK
+ANLASC_SCRATCHDISK
+AUSTRALIA-ATLAS_SCRATCHDISK
+... output omited ...
+WEIZMANN-LCG2_SCRATCHDISK
+WUPPERTALPROD_SCRATCHDISK
+ZA-UJ_SCRATCHDISK
+ZA-WITS-CORE_SCRATCHDISK
+</pre></div>
+</div>
+</div>
+<div class="section" id="add-a-replica-for-a-file">
+<h2><code class="docutils literal"><span class="pre">Add</span> <span class="pre">a</span> <span class="pre">replica</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">file</span></code><a class="headerlink" href="#add-a-replica-for-a-file" title="Permalink to this headline">¶</a></h2>
+<p>To upload a replica for a file, you will need the name of the endpoint (RSE name) and the scope (usually, user.&lt;your_login_name&gt;) and the local name of the file.:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio upload --files halpha-spectre.dat --rse PRAGUELCG2-RUCIOTEST_SCRATCHDISK --scope user.jbogadog
+2014-09-10 15:40:29,714 DEBUG [Looping over the files]
+2014-09-10 15:40:29,716 DEBUG [Extracting filesize (27562) and checksum (73cc55fe) for file user.jbogadog:halpha-spectre.dat]
+2014-09-10 15:40:29,955 DEBUG [Using account jbogadog]
+2014-09-10 15:40:29,956 INFO [Adding replicas in Rucio catalog]
+2014-09-10 15:40:30,090 INFO [Replicas successfully added]
+2014-09-10 15:40:30,090 INFO [Adding replication rule on RSE PRAGUELCG2-RUCIOTEST_SCRATCHDISK for the list of file]
+2014-09-10 15:40:54,257 INFO [Upload operation for [{&#39;adler32&#39;: &#39;73cc55fe&#39;, &#39;scope&#39;: &#39;user.jbogadog&#39;, &#39;state&#39;: &#39;C&#39;, &#39;bytes&#39;: 27562, &#39;name&#39;: &#39;halpha-spectre.dat&#39;}] done]
+2014-09-10 15:40:57,509 INFO [Will update the file replicas states]
+2014-09-10 15:40:59,523 INFO [File replicas states successfully updated]
+2014-09-10 15:40:59,523 INFO [Upload successfull]
+</pre></div>
+</div>
+<p>The scope:name pair is called DID. This is a unique identifier for every file or dataset in Rucio Catalog.</p>
+</div>
+<div class="section" id="download-a-replica">
+<h2><code class="docutils literal"><span class="pre">Download</span> <span class="pre">a</span> <span class="pre">replica</span></code><a class="headerlink" href="#download-a-replica" title="Permalink to this headline">¶</a></h2>
+<p>To download a replica, you will need the scope and the name of the replica.:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ rucio download user.jbogadog:halpha-spectre.dat
+File downloaded. Will be validated
+File validated
+download operation for user.jbogadog:halpha-spectre.dat done
+</pre></div>
+</div>
+<p>The downloaded file will be in $RUCIO_HOME/&lt;your_scope&gt;. In the example, <em>$RUCIO_HOME/user.jbogadog/halpha-spectre.dat</em></p>
+</div>
+<div class="section" id="create-a-dataset-and-add-files-to-it">
+<h2><code class="docutils literal"><span class="pre">Create</span> <span class="pre">a</span> <span class="pre">dataset</span> <span class="pre">and</span> <span class="pre">add</span> <span class="pre">files</span> <span class="pre">to</span> <span class="pre">it</span></code><a class="headerlink" href="#create-a-dataset-and-add-files-to-it" title="Permalink to this headline">¶</a></h2>
+<p>In Rucio, you can create, upload and download Datasets. A Dataset is a container for several files. You can create a Dataset with the following command.:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio add-dataset user.jbogadog:mydataset
+Added user.jbogadog:mydataset
+</pre></div>
+</div>
+<p>Note that you always need to refer to the Dataset by scope:name, where ‘scope’ usually is user.&lt;your_login_name&gt; and ‘name’ is the name of the Dataset. The previous command creates an open empty Dataset in the Rucio Catalog. You now can add files to it in the following way:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio add-files-to-dataset --to user.jbogadog:mydataset user.jbogadog:hbeta-spectre.dat user.jbogadog:na-spectre.dat user.jbogadog:halpha-spectre.dat
+</pre></div>
+</div>
+<p>All the files you want to add to a dataset must be previously uploaded to Rucio Catalog.</p>
+<p>Now you can see the content of a dataset with the command:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio list-dids user.jbogadog:mydataset
+user.jbogadog:halpha-spectre.dat [FILE]
+user.jbogadog:hbeta-spectre.dat [FILE]
+user.jbogadog:na-spectre.dat [FILE]
+</pre></div>
+</div>
+</div>
+<div class="section" id="list-files-belonging-to-a-scope-and-it-s-properties">
+<h2><code class="docutils literal"><span class="pre">List</span> <span class="pre">files</span> <span class="pre">belonging</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">scope</span> <span class="pre">and</span> <span class="pre">it's</span> <span class="pre">properties</span></code><a class="headerlink" href="#list-files-belonging-to-a-scope-and-it-s-properties" title="Permalink to this headline">¶</a></h2>
+<p>You can see all the files that belongs to your scope, invoking the command list-dids:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio list-dids
+user.jbogadog:halpha-spectre.dat [FILE]
+user.jbogadog:hbeta-spectre.dat [FILE]
+user.jbogadog:na-spectre.dat [FILE]
+user.jbogadog:mydataset [DATASET]
+</pre></div>
+</div>
+<p>Also, you can see the properties of a files using get-metadata command:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio get-metadata user.jbogadog:halpha-spectre.dat
+campaign: None
+is_new: None
+is_open: None
+guid: None
+availability: None
+deleted_at: None
+panda_id: None
+version: None
+scope: user.jbogadog
+hidden: False
+md5: None
+events: None
+adler32: 73cc55fe
+complete: None
+monotonic: False
+updated_at: 2014-09-10 13:40:34
+obsolete: False
+did_type: FILE
+suppressed: False
+expired_at: None
+stream_name: None
+account: jbogadog
+run_number: None
+name: halpha-spectre.dat
+task_id: None
+datatype: None
+created_at: 2014-09-10 13:40:30
+bytes: 27562
+project: None
+length: None
+prod_step: None
+</pre></div>
+</div>
+</div>
+<div class="section" id="adding-rules-for-replication">
+<h2><code class="docutils literal"><span class="pre">Adding</span> <span class="pre">rules</span> <span class="pre">for</span> <span class="pre">replication</span></code><a class="headerlink" href="#adding-rules-for-replication" title="Permalink to this headline">¶</a></h2>
+<p>In Rucio, you can add rules to automatically replicate files and datasets. In order to create a new rule for a file or dataset, you can try this:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio add-rule user.jbogadog:halpha-spectre.dat 2 &#39;spacetoken=ATLASSCRATCHDISK&#39;
+</pre></div>
+</div>
+<p>This will add a rule that makes 2 copies of the file ‘user.jbogadog:halpha-spectre.dat’. The expression between quotes is a boolean one, that returns a list of possible RSEs in which the files or datasets can be copied. Rucio will automatically select the best option that satisfy the criterion. Other possible expressions are <em>‘tier=3’</em>, <em>‘cloud=DE’</em>, <em>‘country=Argentina’</em>, etc. To see what properties can you use to filter an endpoint, you can run:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio-admin rse get-attribute &#39;PRAGUELCG2-RUCIOTEST_SCRATCHDISK&#39;
+DETIER2S: True
+ALL: True
+DETIER2DS: True
+physgroup: None
+country: Czech Republic
+spacetoken: ATLASSCRATCHDISK
+site: praguelcg2
+PRAGUELCG2-RUCIOTEST_SCRATCHDISK: True
+cloud: DE
+TIER2DS: True
+tier: 2
+FZKSITES: True
+stresstestweight: 1.0
+istape: False
+</pre></div>
+</div>
+<p>For more information on rules and how to combine it, you can read the <a class="reference external" href="./replication_rules_examples.html">Replication Rules Syntax</a> section.</p>
+<p>You can also see all the rules for your files with:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio list-rules --account jbogadog
+ID (account) SCOPE:NAME: STATE [LOCKS_OK/REPLICATING/STUCK], RSE_EXPRESSION, COPIES
+===================================================================================
+2d6472897cb4414786f66c80b7b857d5 (jbogadog) user.jbogadog:halpha-spectre.dat: REPLICATING[0/2/0], &quot;tier=3&quot;, 2
+980fcfae20244f3ca147b0d368d800e5 (jbogadog) user.jbogadog:hbeta-spectre.dat: REPLICATING[0/1/0], &quot;PRAGUELCG2-RUCIOTEST_SCRATCHDISK&quot;, 1
+a86be72f7b5c4cfeb9bd700e7a7462cc (jbogadog) user.jbogadog:na-spectre.dat: REPLICATING[0/1/0], &quot;PRAGUELCG2-RUCIOTEST_SCRATCHDISK&quot;, 1
+530e46584b5048b093b97f1d3007fc6b (jbogadog) user.jbogadog:halpha-spectre.dat: REPLICATING[0/1/0], &quot;PRAGUELCG2-RUCIOTEST_SCRATCHDISK&quot;, 1
+c356af4fec964f9582ec2c3d6360eded (jbogadog) user.jbogadog:halpha-spectre.dat: REPLICATING[1/1/0], &quot;spacetoken=ATLASSCRATCHDISK&quot;, 2
+</pre></div>
+</div>
+<p>And you can see information about the rule status with:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio rule-info c356af4fec964f9582ec2c3d6360eded
+Id:                         c356af4fec964f9582ec2c3d6360eded
+Account:                    jbogadog
+Scope:                      user.jbogadog
+Name:                       halpha-spectre.dat
+RSE Expression:             spacetoken=ATLASSCRATCHDISK
+Copies:                     2
+State:                      REPLICATING
+Locks OK/REPLICATING/STUCK: 1/1/0
+Grouping:                   DATASET
+Expires at:                 None
+Locked:                     False
+Weight:                     None
+Created at:                 2014-09-15 11:06:21
+Updated at:                 2014-09-15 11:06:21
+Error:                      None
+Subscription Id:            None
+</pre></div>
+</div>
+<p>Whenever you delete a rule, if is the only rule over a file, the file is marked to be deleted and eventually will. However, until the file is effectively deleted, will no longer appear in the list-rules nor in the list-dids outputs.:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio delete-rule 980fcfae20244f3ca147b0d368d800e5
+Removed Rule
+$&gt; rucio list-rules --account jbogadog
+ID (account) SCOPE:NAME: STATE [LOCKS_OK/REPLICATING/STUCK], RSE_EXPRESSION, COPIES
+===================================================================================
+2d6472897cb4414786f66c80b7b857d5 (jbogadog) user.jbogadog:halpha-spectre.dat: REPLICATING[0/2/0], &quot;tier=3&quot;, 2
+a86be72f7b5c4cfeb9bd700e7a7462cc (jbogadog) user.jbogadog:na-spectre.dat: REPLICATING[0/1/0], &quot;PRAGUELCG2-RUCIOTEST_SCRATCHDISK&quot;, 1
+530e46584b5048b093b97f1d3007fc6b (jbogadog) user.jbogadog:halpha-spectre.dat: REPLICATING[0/1/0], &quot;PRAGUELCG2-RUCIOTEST_SCRATCHDISK&quot;, 1
+</pre></div>
+</div>
+<p>If there are other rules over a file, then only the rule is deleted but not the file itself, as you can see in the following example:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rucio delete-rule 530e46584b5048b093b97f1d3007fc6b
+Removed Rule
+$&gt; rucio list-rules --account jbogadog
+ID (account) SCOPE:NAME: STATE [LOCKS_OK/REPLICATING/STUCK], RSE_EXPRESSION, COPIES
+===================================================================================
+2d6472897cb4414786f66c80b7b857d5 (jbogadog) user.jbogadog:halpha-spectre.dat: REPLICATING[0/2/0], &quot;tier=3&quot;, 2
+a86be72f7b5c4cfeb9bd700e7a7462cc (jbogadog) user.jbogadog:na-spectre.dat: REPLICATING[0/1/0], &quot;PRAGUELCG2-RUCIOTEST_SCRATCHDISK&quot;, 1
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Rucio CLI tutorial</a><ul>
+<li><a class="reference internal" href="#configuration-check-with-rucio-ping"><code class="docutils literal"><span class="pre">Configuration</span> <span class="pre">check</span> <span class="pre">with</span> <span class="pre">'rucio</span> <span class="pre">ping'</span></code></a></li>
+<li><a class="reference internal" href="#list-available-rses"><code class="docutils literal"><span class="pre">List</span> <span class="pre">available</span> <span class="pre">RSEs</span></code></a></li>
+<li><a class="reference internal" href="#add-a-replica-for-a-file"><code class="docutils literal"><span class="pre">Add</span> <span class="pre">a</span> <span class="pre">replica</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">file</span></code></a></li>
+<li><a class="reference internal" href="#download-a-replica"><code class="docutils literal"><span class="pre">Download</span> <span class="pre">a</span> <span class="pre">replica</span></code></a></li>
+<li><a class="reference internal" href="#create-a-dataset-and-add-files-to-it"><code class="docutils literal"><span class="pre">Create</span> <span class="pre">a</span> <span class="pre">dataset</span> <span class="pre">and</span> <span class="pre">add</span> <span class="pre">files</span> <span class="pre">to</span> <span class="pre">it</span></code></a></li>
+<li><a class="reference internal" href="#list-files-belonging-to-a-scope-and-it-s-properties"><code class="docutils literal"><span class="pre">List</span> <span class="pre">files</span> <span class="pre">belonging</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">scope</span> <span class="pre">and</span> <span class="pre">it's</span> <span class="pre">properties</span></code></a></li>
+<li><a class="reference internal" href="#adding-rules-for-replication"><code class="docutils literal"><span class="pre">Adding</span> <span class="pre">rules</span> <span class="pre">for</span> <span class="pre">replication</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cli_admin_examples.html"
+                        title="previous chapter">Rucio Admin CLI Examples</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Acronyms_and_Abbreviations.html"
+                        title="next chapter">Acronyms and Abbreviations</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/client_tutorial.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Acronyms_and_Abbreviations.html" title="Acronyms and Abbreviations"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cli_admin_examples.html" title="Rucio Admin CLI Examples"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>

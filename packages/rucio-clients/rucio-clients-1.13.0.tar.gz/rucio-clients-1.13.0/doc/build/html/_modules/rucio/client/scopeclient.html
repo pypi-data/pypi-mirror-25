@@ -1,0 +1,205 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>rucio.client.scopeclient &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for rucio.client.scopeclient</h1><div class="highlight"><pre>
+<span class="c"># Copyright European Organization for Nuclear Research (CERN)</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># You may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Authors:</span>
+<span class="c"># - Thomas Beermann, &lt;thomas.beermann@cern.ch&gt;, 2012</span>
+<span class="c"># - Vincent Garonne, &lt;vincent.garonne@cern.ch&gt;, 2012-2015</span>
+<span class="c"># - Cedric Serfon, &lt;cedric.serfon@cern.ch&gt;, 2014</span>
+<span class="c"># - Ralph Vigne, &lt;ralph.vigne@cern.ch&gt;, 2015</span>
+
+<span class="kn">from</span> <span class="nn">json</span> <span class="k">import</span> <span class="n">loads</span>
+<span class="kn">from</span> <span class="nn">requests.status_codes</span> <span class="k">import</span> <span class="n">codes</span>
+
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">BaseClient</span>
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">choice</span>
+<span class="kn">from</span> <span class="nn">rucio.common.utils</span> <span class="k">import</span> <span class="n">build_url</span>
+
+
+<div class="viewcode-block" id="ScopeClient"><a class="viewcode-back" href="../../../scope.html#rucio.client.scopeclient.ScopeClient">[docs]</a><span class="k">class</span> <span class="nc">ScopeClient</span><span class="p">(</span><span class="n">BaseClient</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Scope client class for working with rucio scopes&quot;&quot;&quot;</span>
+
+    <span class="n">SCOPE_BASEURL</span> <span class="o">=</span> <span class="s">&#39;accounts&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rucio_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ca_cert</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">creds</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s">&#39;rucio-clients&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ScopeClient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">rucio_host</span><span class="p">,</span> <span class="n">auth_host</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">ca_cert</span><span class="p">,</span> <span class="n">auth_type</span><span class="p">,</span> <span class="n">creds</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">user_agent</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ScopeClient.add_scope"><a class="viewcode-back" href="../../../scope.html#rucio.client.scopeclient.ScopeClient.add_scope">[docs]</a>    <span class="k">def</span> <span class="nf">add_scope</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">scope</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to add a new scope.</span>
+
+<span class="sd">        :param account: the name of the account to add the scope to.</span>
+<span class="sd">        :param scope: the name of the new scope.</span>
+<span class="sd">        :return: True if scope was created successfully.</span>
+<span class="sd">        :raises Duplicate: if scope already exists.</span>
+<span class="sd">        :raises AccountNotFound: if account doesn&#39;t exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">SCOPE_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;scopes&#39;</span><span class="p">,</span> <span class="n">scope</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ScopeClient.list_scopes"><a class="viewcode-back" href="../../../scope.html#rucio.client.scopeclient.ScopeClient.list_scopes">[docs]</a>    <span class="k">def</span> <span class="nf">list_scopes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to list all scopes.</span>
+
+<span class="sd">        :return: a list containing the names of all scopes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;scopes/&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">scopes</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">scopes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ScopeClient.list_scopes_for_account"><a class="viewcode-back" href="../../../scope.html#rucio.client.scopeclient.ScopeClient.list_scopes_for_account">[docs]</a>    <span class="k">def</span> <span class="nf">list_scopes_for_account</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the request to list all scopes for a rucio account.</span>
+
+<span class="sd">        :param account: the rucio account to list scopes for.</span>
+<span class="sd">        :return: a list containing the names of all scopes for a rucio account.</span>
+<span class="sd">        :raises AccountNotFound: if account doesn&#39;t exist.</span>
+<span class="sd">        :raises ScopeNotFound: if no scopes exist for account.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">SCOPE_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="s">&#39;scopes/&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">scopes</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">scopes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="../../../_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
