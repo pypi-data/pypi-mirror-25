@@ -1,0 +1,87 @@
+Metadata-Version: 1.1
+Name: Flask-RESTive-Identifiers
+Version: 0.0.3
+Summary: Flask-RESTive extension to work with identifiers.
+Home-page: https://github.com/left-join/flask-restive-identifiers
+Author: left-join
+Author-email: left-join@riseup.net
+License: MIT
+Download-URL: https://github.com/left-join/flask-restive-identifiers.git
+Description-Content-Type: UNKNOWN
+Description: # flask-restive-identifiers
+        Flask-RESTive extension to work with identifiers.
+        
+        [![Build Status](https://travis-ci.org/left-join/flask-restive-identifiers.svg?branch=master)](https://travis-ci.org/left-join/flask-restive-identifiers)
+        [![Coverage Status](https://coveralls.io/repos/github/left-join/flask-restive-identifiers/badge.svg?branch=master)](https://coveralls.io/github/left-join/flask-restive-identifiers?branch=master)
+        [![Code Health](https://landscape.io/github/left-join/flask-restive-identifiers/master/landscape.svg?style=flat)](https://landscape.io/github/left-join/flask-restive-identifiers/master)
+        [![PyPI Version](https://img.shields.io/pypi/v/Flask-RESTive-Identifiers.svg)](https://pypi.python.org/pypi/Flask-RESTive-Identifiers)
+        
+        
+        ## Installation
+        ```bash
+        pip install flask-restive-identifiers
+        ```
+        
+        ## How to use
+        
+        The library based on postgresql sequences, so you should to configure your
+        application to use postgresql first:
+        ```python
+        from flask import Flask
+        
+        app = Flask(__name__)
+        
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://user:password@localhost:5432/database'
+        ```
+        
+        The library provides function generate_id that can be used as is:
+        ```python
+        >>> from flask_restive_identifiers import generate_id
+        
+        >>> generate_id(namespace='test')
+        >>> 1
+        >>> generate_id(namespace='test')
+        >>> 2
+        >>> generate_id(namespace='test')
+        >>> 3
+        >>> generate_id(namespace='new_space')
+        >>> 1
+        ```
+        
+        The library provides schema that automatically generates auto-increment id.
+        
+        The sequence name can be changed with meta attribute identifier_namespace:
+        ```python
+        from flask_restive import fields
+        from flask_restive_identifiers import IntegerIDSchema
+        
+        
+        class ScientistSchema(IntegerIDSchema):
+            first_name = fields.String(required=True)
+            last_name = fields.String(required=True)
+        
+            class Meta(IntegerIDSchema.Meta):
+                identifier_namespace = 'scientists'
+        
+        ```
+        
+        Each loading without id generates new auto-increment id:
+        ```python
+        >>> schema = ScientistSchema()
+        >>> data, errors = schema.load({'first_name': 'Albert', 'last_name': 'Einstein'})
+        >>> data.id
+        1
+        >>> data, errors = schema.load({'first_name': 'Nicolaus', 'last_name': 'Copernicus'})
+        >>> data.id
+        2
+        ```
+        
+Keywords: Flask-RESTive,generate,id
+Platform: any
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
