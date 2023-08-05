@@ -1,0 +1,176 @@
+<html xmlns='http://www.w3.org/1999/xhtml'
+    xml:lang='en'
+    lang='en'
+    xmlns:tal='http://xml.zope.org/namespaces/tal'
+    xmlns:metal='http://xml.zope.org/namespaces/metal'
+    xmlns:i18n='http://xml.zope.org/namespaces/i18n'
+    metal:use-macro='context/main_template/macros/master'
+    i18n:domain='eke.site'>
+    <head>
+        <title>Site Folder</title>
+    </head>
+    <body>
+        <metal:main fill-slot='content-core'>
+            <tal:main-macro metal:define-macro='content-core'
+                tal:define='
+                    bdls            view/biomarkerDevelopmentalLaboratories;
+                    brls            view/biomarkerReferenceLaboratories;
+                    cvcs            view/clinicalValidationCenters;
+                    dmccSites       view/dmccSites;
+                    icSites         view/icSites;
+                    nciSites        view/nciSites;
+                    typeASites      view/typeASites;
+                    typeBSites      view/typeBSites;
+                    typeCSites      view/typeCSites;
+                    sporeSites      view/sporeSites;
+                    nonEDRNSites    view/otherSites;
+                    subfolders      view/subfolders;
+                    kssClassesView  context/@@kss_field_decorator_view;
+                    getKssClasses   nocall:kssClassesView/getKssClassesInlineEditable;
+                    templateId      template/getId;
+                '>
+                <div metal:use-macro='context/@@standardRDFAttribute/macros/rdfDataSource'>Standard RDF</div>
+				<div tal:define='isManager python:checkPermission("Manage portal", context);'>
+				    <div tal:condition='isManager'>
+				        <label for='parent-fieldname-peopleDataSource' i18n:translate='label_peopleDataSource'>
+							People Data Source:
+						</label>
+				        <metal:field use-macro='python:context.widget("peopleDataSource", mode="view")'>http://x/</metal:field>
+				    </div>
+				</div>
+                <div tal:condition='subfolders' tal:omit-tag=''>
+                    <h3 i18n:translate='siteFolder_subfolders'>Subfolders in this Folder</h3>
+                    <ul>
+                       <li tal:repeat='subfolder subfolders'>
+                            <a href='#' title='Scintilating sub-sites exposed!' tal:content='subfolder/title'
+                                tal:attributes='href subfolder/url; title subfolder/description'>
+                                Sub-Site Action Folder
+                            </a>
+                       </li> 
+                    </ul>
+                </div>
+
+                <ul>
+                    <li><a href='#bdls' i18n:translate='hBDL'>Biomarker Developmental Laboratories</a></li>
+                    <li><a href='#brls' i18n:translate='hBRL'>Biomarker Reference Laboratories</a></li>
+                    <li><a href='#cvcs' i18n:translate='hCVC'>Clinical Validation Centers</a></li>
+                    <li><a href='#dmcc' i18n:translate='hDMCC'>Data Management and Coordinating Center</a></li>
+                    <li><a href='#ic' i18n:translate='hIC'>Informatics Center</a></li>
+                    <li><a href='#nci' i18n:translate='hNCI'>National Cancer Institute</a></li>
+                    <li><a href='#assoc' i18n:translate='hAssoc'>Associate Members</a></li>
+                    <li><a href='#spore' i18n:translate='hSPORE'>SPOREs</a></li>
+                    <li><a href='#nonEDRN' i18n:translate='hNonEDRN'>Non-EDRN Sites</a></li>
+                </ul>
+
+                <h2 i18n:translate='hBDL'><a name='bdls'>Biomarker Developmental Laboratories</a></h2>
+                <div metal:use-macro='context/@@siteByTypeSection/macros/bdlSection'>
+                    Biomarker Developmental Laboratories.
+                </div>
+
+                <h2 i18n:translate='hBRL'><a name='brls'>Biomarker Reference Laboratories</a></h2>
+                <p class='discreet' tal:condition='not:brls' i18n:translate='noSitesOfThisType'>There are no sites of this type.</p>
+                <div tal:omit-tag='' tal:condition='brls' tal:define='sitesInThisSection brls; showOrgans python:True'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+
+                <h2 i18n:translate='hCVC'><a name='cvcs'>Clinical Validation Centers</a></h2>
+                <p class='discreet' tal:condition='not:cvcs' i18n:translate='noSitesOfThisType'>There are no sites of this type.</p>
+                <div tal:omit-tag='' tal:condition='cvcs' tal:define='sitesInThisSection cvcs; showOrgans python:True'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+
+                <h2 i18n:translate='hDMCC'><a name='dmcc'>Data Management and Coordinating Center</a></h2>
+                <p class='discreet' tal:condition='not:dmccSites' i18n:translate='noSitesOfThisType'>
+                    There are no sites of this type.
+                </p>
+                <div tal:omit-tag='' tal:condition='dmccSites' tal:define='sitesInThisSection dmccSites; showOrgans python:False'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+
+                <h2 i18n:translate='hIC'><a name='ic'>Informatics Center</a></h2>
+                <p class='discreet' tal:condition='not:icSites' i18n:translate='noSitesOfThisType'>
+                    There are no sites of this type.
+                </p>
+                <div tal:omit-tag='' tal:condition='icSites' tal:define='sitesInThisSection icSites; showOrgans python:False'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+
+                <h2 i18n:translate='hNCI'><a name='nci'>National Cancer Institute</a></h2>
+                <p class='discreet' tal:condition='not:nciSites' i18n:translate='noSitesOfThisType'>
+                    There are no sites of this type.
+                </p>
+                <div tal:omit-tag='' tal:condition='nciSites' tal:define='sitesInThisSection nciSites; showOrgans python:False'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+
+                <h2 i18n:translate='hAssoc'><a name='assoc'>Associate Members</a></h2>
+                <p i18n:translate='pNoAssociateMembers' class='discreet'
+                    tal:condition='python:not typeASites and not typeBSites and not typeCSites'>
+                    There are no associate members.
+                </p>
+                <p i18n:translate='pAssociateMembers'
+                    tal:condition='python:typeASites or typeBSites or typeCSites'>
+                    This section lists associate EDRN members.
+                </p>
+                <h3 i18n:translate='hAssociatesTypeA' tal:condition='typeASites'>Associate Member A &#x2014; EDRN Funded</h3>
+                <div tal:omit-tag='' tal:condition='typeASites' tal:define='sitesInThisSection typeASites; showOrgans python:False'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+                <h3 i18n:translate='hAssociatesTypeB' tal:condition='typeBSites'>Associate Member B</h3>
+                <div tal:omit-tag='' tal:condition='typeBSites' tal:define='sitesInThisSection typeBSites; showOrgans python:False'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+                <h3 i18n:translate='hAssociatesTypeC' tal:condition='typeCSites'>Associate Member C</h3>
+                <div tal:omit-tag='' tal:condition='typeCSites' tal:define='sitesInThisSection typeCSites; showOrgans python:False'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+                
+                <h2 i18n:translate='hSPORE'><a name='spore'>SPOREs</a></h2>
+                <p class='discreet' tal:condition='not:sporeSites' i18n:translate='noSitesOfThisType'>
+                    There are no sites of this type.
+                </p>
+                <div tal:omit-tag='' tal:condition='sporeSites' tal:define='sitesInThisSection sporeSites; showOrgans python:False'>
+                    <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                        Sites in this section.
+                    </div>
+                </div>
+
+                <h2 i18n:translate='hNonEDRN'><a name='nonEDRN'>Non-EDRN Sites</a></h2>
+                <p class='discreet' tal:condition='not:nonEDRNSites' i18n:translate='noSitesOfThisType'>
+                    There are no sites of this type.
+                </p>
+                <div tal:condition='nonEDRNSites'>
+                    <p i18n:translate='pNonEDRNSitesIntro'>
+                        This section lists non-EDRN sites.
+                    </p>
+                    <tal:repeat repeat='grouping nonEDRNSites'>
+                        <div tal:define='memberType grouping/memberType; sitesInThisSection grouping/sites;
+                            showOrgans python:False;'>
+                            <h3 tal:content='memberType'>Some Insular Aloof Sites</h3>
+                            <div metal:use-macro='context/@@siteByTypeSection/macros/siteByTypeSection'>
+                                Non-EDRN sites of this particular type here.
+                            </div>
+                        </div>
+                    </tal:repeat>
+                </div>
+
+            </tal:main-macro>
+        </metal:main>
+    </body>
+</html>

@@ -1,0 +1,235 @@
+<html xmlns='http://www.w3.org/1999/xhtml'
+    xml:lang='en'
+    lang='en'
+    xmlns:tal='http://xml.zope.org/namespaces/tal'
+    xmlns:metal='http://xml.zope.org/namespaces/metal'
+    xmlns:i18n='http://xml.zope.org/namespaces/i18n'
+    metal:use-macro='context/main_template/macros/master'
+    i18n:domain='eke.people'>
+    <head>
+        <title>Person</title>
+    </head>
+    <body>
+        <metal:main fill-slot='main'>
+            <tal:main-macro metal:define-macro='main' tal:define='
+                protocols view/protocols;
+                publications view/publications;
+                onProtocols python:protocols[0];
+                offProtocols python:protocols[1];
+            '>
+                <div tal:replace='structure provider:plone.abovecontenttitle' />
+                <h1 tal:define='degrees context/degrees' class='documentFirstHeading'>
+                    <span tal:omit-tag='' tal:content='context/title'>Blow, Joe</span>
+                    <span tal:condition='degrees' tal:omit-tag=''>(<span tal:replace='python:u", ".join(degrees)'>BS, MS, PhD</span>)</span>
+                </h1>
+
+                <div tal:replace='structure provider:plone.belowcontenttitle' />
+                <p>
+                    <metal:field use-macro='python:context.widget("description", mode="view")'>Description.</metal:field>
+                </p>
+                <div tal:replace='structure provider:plone.abovecontentbody' />
+				<div class='investigatorPhoto' tal:condition='context/image_mini|nothing'
+				    tal:define='here_url context/@@plone_context_state/object_url;'>
+					<a href='#' tal:attributes='href string:$here_url/image/image_view_fullscreen'>
+						<img tal:replace='structure python:context.tag(scale="mini", css_class="newsImage")'
+							src='#' alt='Photo'/>
+					</a>
+				</div>
+		<h4>Contact Information</h4>
+		<table class="contact-info" tal:define='mbox context/mbox'>
+            <tr tal:condition='mbox'>
+                <th>Email:</th>
+                <td>
+                    <a href='#' tal:attributes='href mbox' tal:content='mbox'>mailto:joe@blow</a>
+                </td>
+            </tr>
+		  <tr>
+		    <th>Fax:</th>
+		    <td>
+			<span tal:replace='context/fax'>+1 555 555 1212</span>
+		    </td>
+		  </tr>
+		</table>	
+		<div>
+		    <label for='parent-fieldname-edrnTitle' i18n:translate='label_edrnTitle'>EDRN Title:</label>
+		    <metal:field use-macro='python:context.widget("edrnTitle", mode="view")'>Grand Poobah</metal:field>
+		</div>
+		<div>
+		    <label for='parent-fieldname-specialty' i18n:translate='label_specialty'>Specialty:</label>
+		    <metal:field use-macro='python:context.widget("specialty", mode="view")'>Poobahing.</metal:field>
+		</div>
+        <p style='margin-top: 1em;' class='discreet'>To update contact information, please visit the
+            <a href='https://www.compass.fhcrc.org/enterEDRN'>Data Management and Coordinating Center</a>.
+        </p>
+
+        <h2 i18n:translate='bespokeActiveProtocols'>Open Protocols</h2>
+
+        <p class='discreet' tal:condition='not:onProtocols' i18n:translate='bespokeNoProtocols'>
+            None Available.
+        </p>
+
+        <table class='listing' tal:condition='onProtocols'>
+            <thead>
+                <tr>
+                    <th i18n:translate='bespokeProtocolName'>Protocol Name</th>
+                    <th i18n:translate='bespokeProtocolBiomarkers'>Biomarkers</th>
+                    <th i18n:translate='bespokeProtocolDatasets'>Datasets</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tal:repeat repeat='protocol onProtocols'>
+                    <tr tal:define='oddRow repeat/protocol/odd' class='odd'
+                        tal:attributes='class python:"odd" if oddRow else "even"'>
+                        <td>
+                            <a href='#' title='Yeah, really nice protocol.' tal:content='protocol/title'
+                                tal:attributes='
+                                href protocol/absolute_url;
+                                title protocol/description;
+                            '>
+                                A Methylation Protocol Again
+                            </a>
+                        </td>
+                        <td style='text-align: right;' tal:define='numBio python:len(protocol.biomarkers)'>
+                            <span tal:condition='not:numBio' tal:omit-tag=''>0</span>
+                            <a href='#' tal:condition='numBio' tal:content='numBio'
+                                tal:attributes='href string:${protocol/absolute_url}#biomarkers'>
+                                123
+                            </a>
+                        </td>
+                        <td style='text-align: right;' tal:define='numData python:len(protocol.datasets)'>
+                            <span tal:condition='not:numData' ta:omit-tag=''>0</span>
+                            <a href='#' tal:condition='numData' tal:content='numData'
+                                tal:attributes='href string:${protocol/absolute_url}#datasets'>
+                                456
+                            </a>
+                        </td>
+                    </tr>
+                </tal:repeat>
+            </tbody>
+        </table>
+
+        <h2 i18n:translate='bespokeInactiveProtocols'>Closed Protocols</h2>
+        <p class='discreet' tal:condition='not:offProtocols' i18n:translate='bespokeNoInactiveProtocols'>
+            No closed protocols.
+        </p>
+
+        <table class='listing' tal:condition='offProtocols'>
+            <thead>
+                <tr>
+                    <th i18n:translate='bespokeProtocolName'>Protocol Name</th>
+                    <th i18n:translate='bespokeProtocolBiomarkers'>Biomarkers</th>
+                    <th i18n:translate='bespokeProtocolDatasets'>Datasets</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tal:repeat repeat='protocol offProtocols'>
+                    <tr tal:define='oddRow repeat/protocol/odd' class='odd'
+                        tal:attributes='class python:"odd" if oddRow else "even"'>
+                        <td>
+                            <a href='#' title='Yeah, really nice protocol.' tal:content='protocol/title'
+                                tal:attributes='
+                                href protocol/absolute_url;
+                                title protocol/description;
+                            '>
+                                A Methylation Protocol Again
+                            </a>
+                        </td>
+                        <td style='text-align: right;' tal:define='numBio python:len(protocol.biomarkers)'>
+                            <span tal:condition='not:numBio' tal:omit-tag=''>0</span>
+                            <a href='#' tal:condition='numBio' tal:content='numBio'
+                                tal:attributes='href string:${protocol/absolute_url}#biomarkers'>
+                                123
+                            </a>
+                        </td>
+                        <td style='text-align: right;' tal:define='numData python:len(protocol.datasets)'>
+                            <span tal:condition='not:numData' ta:omit-tag=''>0</span>
+                            <a href='#' tal:condition='numData' tal:content='numData'
+                                tal:attributes='href string:${protocol/absolute_url}#datasets'>
+                                456
+                            </a>
+                        </td>
+                    </tr>
+                </tal:repeat>
+            </tbody>
+        </table>
+
+        <h2 i18n:translate='bespokeInactivePublications'>Publications</h2>
+        <p class='discreet' tal:condition='not:publications' i18n:translate='bespokeNoInactivePublications'>
+            No publications found.
+        </p>
+        <table class='listing' tal:condition='publications'>
+            <thead>
+                <tr>
+                    <th i18n:translate='bespokePublicationName'>Publication Name</th>
+                    <th i18n:translate='bespokePublicationPubmedid'>PubMed ID</th>
+                    <th i18n:translate='bespokePublicationJournal'>Journal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tal:repeat repeat='publication publications'>
+                    <tr tal:define='oddRow repeat/publication/odd' class='odd'
+                        tal:attributes='class python:"odd" if oddRow else "even"'>
+                        <td>
+                            <a href='#' title='Super awesome publication.' tal:content='publication/title'
+                                tal:attributes='
+                                href publication/absolute_url;
+                                title publication/abstract;
+                            '>
+                                A Methylation Publication
+                            </a>
+                        </td>
+                        <td style='text-align: right;'>
+                            <span tal:condition='not:publication/pubMedID' ta:omit-tag=''>None</span>
+                            <a href='#' tal:condition='publication/pubMedID' tal:content='publication/pubMedID'
+                                tal:attributes='href publication/pubURL'>
+                                Link to pubmed
+                            </a>
+                        </td>
+                        <td style='text-align: right;'>
+                            <span tal:condition='not:publication/journal' ta:omit-tag=''>None</span>
+                            <span tal:condition='publication/journal' ta:omit-tag='' tal:content='publication/journal'>Nature</span>
+                        </td>
+                    </tr>
+                </tal:repeat>
+            </tbody>
+        </table>
+
+        <p class='discreet'>To update protocols, publications, biomarkers, or science data, please contact the
+            <a href='mailto:ic-portal@jpl.nasa.gvo'>Informatics Center</a>.
+        </p>
+
+        <h3 i18n:translate='heading_addresses'>Addresses</h3>
+        <div>
+            <label for='parent-fieldname-mailingAddress' i18n:translate='label_mailingAddress'>
+                Mailing Address:
+            </label>
+            <metal:field use-macro='python:context.widget("mailingAddress", mode="view")'>
+                PO Box 837
+                Runaway Bay, Jamaica
+            </metal:field>
+        </div>
+        <div>
+            <label for='parent-fieldname-physicalAddress' i18n:translate='label_physicalAddress'>
+                Physical Address:
+            </label>
+            <metal:field use-macro='python:context.widget("physicalAddress", mode="view")'>
+                Somewhere over there
+            </metal:field>
+        </div>
+        <div>
+            <label for='parent-fieldname-shippingAddress' i18n:translate='label_shippingAddress'>
+                Shipping Address:
+            </label>
+            <metal:field use-macro='python:context.widget("shippingAddress", mode="view")'>
+                Just toss it over the wall.
+            </metal:field>
+        </div>
+        <p style='margin-top: 1em;' class='discreet'>To update addresses, please visit the
+            <a href='https://www.compass.fhcrc.org/enterEDRN'>Data Management and Coordinating Center</a>.
+        </p>
+
+                <div tal:replace='structure provider:plone.belowcontentbody' />
+            </tal:main-macro>
+        </metal:main>
+    </body>
+</html>
