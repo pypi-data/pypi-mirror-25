@@ -1,0 +1,1 @@
+version_info={'rev': 'b7a431be398800bf954c2cae0b80d09dbd68b132', 'date': 'Fri Sep 22 16:46:14 2017 -0400', 'tag': '0.5.4'}

@@ -1,0 +1,67 @@
+"""Default checks."""
+
+# Please keep the imports and plugins sorted.
+from pkgcheck import (
+    cleanup, codingstyle, deprecated, dropped_keywords, feeds, glsa_scan,
+    imlate, metadata_checks, metadata_xml, pkgdir_checks, repo_metadata,
+    reporters, stale_unstable, unstable_only, visibility, whitespace,
+)
+
+pkgcore_plugins = {
+    'check': [
+        cleanup.RedundantVersionReport,
+        codingstyle.AbsoluteSymlinkCheck,
+        codingstyle.BadInsIntoCheck,
+        codingstyle.HttpsAvailableCheck,
+        codingstyle.PortageInternalsCheck,
+        deprecated.DeprecatedEAPIReport,
+        deprecated.DeprecatedEclassReport,
+        dropped_keywords.DroppedKeywordsReport,
+        glsa_scan.TreeVulnerabilitiesReport,
+        imlate.ImlateReport,
+        metadata_checks.DependencyReport,
+        metadata_checks.DescriptionReport,
+        metadata_checks.IUSEMetadataReport,
+        metadata_checks.RequiredUSEMetadataReport,
+        metadata_checks.KeywordsReport,
+        metadata_checks.LicenseMetadataReport,
+        metadata_checks.MissingSlotDepReport,
+        metadata_checks.RestrictsReport,
+        metadata_checks.SrcUriReport,
+        metadata_checks.UnusedLocalFlagsReport,
+        metadata_xml.CategoryMetadataXmlCheck,
+        metadata_xml.PackageMetadataXmlCheck,
+        pkgdir_checks.PkgDirReport,
+        repo_metadata.PackageUpdatesCheck,
+        repo_metadata.LicenseGroupsCheck,
+        repo_metadata.ManifestReport,
+        repo_metadata.UnusedGlobalFlagsCheck,
+        repo_metadata.UnusedEclassesCheck,
+        repo_metadata.UnusedLicensesCheck,
+        repo_metadata.UnusedMirrorsCheck,
+        repo_metadata.ProfilesCheck,
+        repo_metadata.RepoProfilesReport,
+        stale_unstable.StaleUnstableReport,
+        unstable_only.UnstableOnlyReport,
+        visibility.VisibilityReport,
+        whitespace.WhitespaceCheck,
+        ],
+    'transform': [
+        feeds.CategoryToRepo,
+        feeds.EbuildToVersion,
+        feeds.PackageToCategory,
+        feeds.PackageToRepo,
+        feeds.VersionToCategory,
+        feeds.VersionToEbuild,
+        feeds.VersionToPackage,
+        ],
+    'reporter': [
+        reporters.BinaryPickleStream,
+        reporters.PickleStream,
+        reporters.FancyReporter,
+        reporters.NullReporter,
+        reporters.StrReporter,
+        reporters.JsonReporter,
+        reporters.XmlReporter,
+        ]
+    }
