@@ -1,0 +1,35 @@
+==========
+ESPER TOOL
+==========
+
+Overview
+--------
+A command line utility for accessing a device running the ESPER web service.
+
+The tool allows for the reading and writing of ESPER variables via the command line.
+There are three main commands available: ``read``, ``write``, and ``upload``. 
+
+The syntax of each command follows the general flow of:
+
+``esper_tool <command> <command options> <url> <mid> <vid>`` 
+
+Command: May be 'read', 'write', or 'upload'
+
+Command Options: Dependent upon command used. 
+
+URL: Location of ESPER web service given in standard format. If the port is excluded, it defaults to 80. Valid URLs: 'localhost', 'http://localhost', 'http://127.0.0.1:8080'
+
+MID: Module ID of the variable being requested. May be given as an ASCII string that matches the module key, or a numerical value that matches the module id in ESPER. Ie: To access the system module, 'system' or '0' may be used.
+
+VID: Variable ID of the variable being requested. May be given as an ASCII string that matches the variable key, or a numerical value that matches the variables id in ESPER. Ie: To acess the uptime variable located in the system module 'uptime' or '1' may be used. Warning: The value '1' is not guaranteed to be the 'uptime' variable!
+
+Examples
+--------
+Request the uptime variable from the system from an ESPER web service running at 192.168.1.1 on port 8080
+(mid=system, vid=uptime)
+
+``> esper_tool read system uptime http://192.168.1.1:8080`` 
+
+Request the 3rd variable from the first module (mid=0, vid=2)
+
+``> esper_tool read 0 2 http://192.168.1.1:8080`` 
