@@ -1,0 +1,100 @@
+{% extends 'servicedirectory/content_base.html' %}
+{% load staticfiles %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'servicedirectory/sd-base.css' %}"/>
+{% endblock %}
+
+{% block inner_content %}
+    {% if message %}
+    <div class="service-directory__feedback-message">
+        {{ message }}
+    </div>
+    {% endif %}
+
+    <h1 class="heading heading--service-dir-organisation">{{ organisation.name }}</h1>
+    <h2 class="service-directory__title">Services</h2>
+    <ul class="service-list">
+    {% for category in organisation.categories %}
+        <li class="service-list__item">
+            {{ category.name }}
+        </li>
+    {% endfor %}
+    </ul>
+    
+    {% if organisation.telephone or organisation.email or organisation.web %}
+        <h3 class="service-directory__title">Contact</h3>
+        <h6 class="service-directory__contact">
+            {% if organisation.telephone %}
+            <span class="tel">
+                <a href="tel:{{ organisation.telephone }}">{{ organisation.telephone }}</a>
+            </span><br/>
+            {% endif %}
+            {% if organisation.emergency_telephone %}
+            <span class="tel">
+                <a href="tel:{{ organisation.emergency_telephone }}" target="_blank">{{ organisation.emergency_telephone }}</a>
+            </span><br/>
+            {% endif %}
+            {% if organisation.email %}
+            <span class="email">
+                <a href="mailto:{{ organisation.email }}">{{ organisation.email }}</a>
+            </span><br/>
+            {% endif %}
+            {% if organisation.web %}
+            <span class="web">
+                <a href="{{ organisation.web }}" target="_blank">{{ organisation.web }}</a>
+            </span>
+            {% endif %}
+        </h6>
+    {% endif %}
+
+    {% if organisation.address %}
+    <h3 class="service-directory__title">Address</h3>
+    <ul class="service-list">
+        <li class="service-list__item">
+            {{ organisation.address }}
+        </li>
+    </ul>
+    {% endif %}
+
+    {% if organisation.availability_hours %}
+    <h3 class="service-directory__title">Trading Hours</h3>
+    <ul class="service-list">
+        <li class="service-list__item">
+            {{ organisation.availability_hours }}
+        </li>
+    </ul>
+    {% endif %}
+
+    {% if organisation.age_range_min and organisation.age_range_max %}
+    <ul class="service-list">
+        <li class="service-list__item">
+            {{ organisation.age_range_min }}-{{ organisation.age_range_max }} years
+        </li>
+    </ul>
+    {% endif %}
+
+    <a class="call-to-action__nav-item call-to-action__nav-item--report" href="{% url 'molo.servicedirectory:organisation-report' organisation.id %}?org_name={{ organisation.name | urlencode }}">Report incorrect info</a>
+
+    <a class="call-to-action__nav-item" href="{% url 'molo.servicedirectory:organisation-sms' organisation.id %}" class="sd-sms-button primary">Send Service to Someone</a>
+
+    <a class="call-to-action__nav-item" href="{% url 'molo.servicedirectory:organisation-sms-self' organisation.id %}" class="sd-sms-button secondary">Send This Service to Yourself</a>
+
+    <hr/>
+    <form method="post" action="{% url 'molo.servicedirectory:organisation-rate' organisation.id %}" class="service-directory__form">
+    {% csrf_token %}
+    <label class="service-directory__title">How helpful was this?</label>
+        <fieldset>
+            <button type="submit" name="rating" value="good" class="smiley happy"></button>
+            <label>Very helpful</label>
+        </fieldset>
+        <fieldset>
+            <button type="submit" name="rating" value="average" class="smiley neutral"></button>
+            <label>I'm neutral</label>
+        </fieldset>
+        <fieldset>
+            <button type="submit" name="rating" value="poor" class="smiley sad"></button>
+            <label>Not helpful</label>
+        </fieldset>
+    </form>
+{% endblock %}
