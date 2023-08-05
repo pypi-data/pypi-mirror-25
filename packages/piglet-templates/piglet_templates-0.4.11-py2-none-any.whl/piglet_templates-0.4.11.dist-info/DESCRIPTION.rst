@@ -1,0 +1,382 @@
+Piglet Template Engine
+======================
+
+Piglet is a text and HTML template engine in the kid/genshi/kajiki templates
+family.
+
+The Piglet template engine offers:
+
+- Template inhertitance through py:extends/py:block (similar to Jinja2)
+- Compiles templates to fast python byte code.
+- HTML aware templating: output is well formed and content is
+  escaped, preventing XSS attacks.
+- Reusable template functions, deep nesting of template inheritance,
+  flexible translations and embedded python expressions
+
+`Documentation <https://ollycope.com/software/piglet/>`_
+\| `Bitbucket repository <https://bitbucket.org/ollyc/piglet>`_
+
+This is what a piglet template looks like:
+
+.. code:: html
+
+    <py:extends href="layout.html">
+
+        <py:block name="content">
+            <h1>This is the content block.</h1>
+            <p>
+                Hello $user.firstnames $user.lastname!
+            </p>
+
+            <!--!
+              The following paragraph is marked for translation.
+
+              The i18n:name attribute substitues the python code interpolation
+              with a simple placeholder, so translators see this message:
+
+                'Today is ${day}'
+            -->
+            <p i18n:message="">
+              Today is <span i18n:name="day">${date.strftime('%a')}</span>.
+            </p>
+
+            <p py:choose="today.weekday()">
+                <py:when test="0">
+                    I don't like Mondays
+                </py:when>
+                <py:when test="day == 4">
+                    I never could get the hang of Thursdays
+                </py:when>
+                <py:otherwise>Is it the weekend yet?</py:otherwise>
+            </p>
+
+            <p py:for="verse in in poem">
+                <py:for each="line in verse">$line<br/></py:for>
+            </p>
+
+        </py:block>
+
+
+There's a text templating mode too:
+
+.. code::
+
+    Hello $user.firstnames $user.lastname!
+
+    {% trans %}
+    Today is {% transname "day" %}${date.strftime('%a')}{% end %}
+    {% end %}.
+
+    {% for verse in poem %}
+        {% for line in verse %}$line
+        {% end %}
+    {% end %}
+
+
+Installation
+------------
+
+To install the latest release using pip (recommended):
+
+.. code:: sh
+
+    pip install piglet
+
+
+To install the latest source:
+
+.. code:: sh
+
+    hg clone https://bitbucket.org/ollyc/piglet
+    cd piglet
+    python setup.py install
+
+
+
+Rendering templates from the Python API
+---------------------------------------
+
+A simple example of rendering a template from python code:
+
+.. code:: python
+
+    from piglet import HTMLTemplate
+
+    template = HTMLTemplate('<p>$greeting</p)')
+    print(template.render({'greeting': 'Bonjour!'}))
+
+
+Loading templates from disk:
+
+.. code:: python
+
+    from piglet import TemplateLoader
+
+    loader = TemplateLoader(['./templates/'])
+    template = loader.load('mytemplate.html')
+    print(template.render({'greeting': 'Hello!'})
+
+
+A fully loaded example:
+
+.. code:: python
+
+    from piglet import TemplateLoader
+    import gettext
+
+    loader = TemplateLoader(
+        # List of directories to search for template files
+        ['./templates/'],
+
+        # Auto reload templates when files are modified? Defaults to False,
+        # use True for development
+        auto_reload=True,
+
+        # The template class to use - either HTMLTemplate or TextTemplate
+        template_cls=HTMLTemplate,
+
+        # File encoding to use by default
+        default_encoding='UTF-8',
+
+        # A persistent on disk cache for piglet templates
+        cache_dir='.cache/piglet'
+
+        # A factory function returning a gettext Translations instance
+        # or compatible object. For example Django users could plug in
+        # `lambda: django.utils.translation`. If your app isn't translated
+        # omit this argument.
+        translations_factory=lambda: gettext.translation(...),
+
+    )
+    template = loader.load('mytemplate.html', encoding='UTF-8')
+
+Templates can also be rendered as a stream. This might be useful for generating
+long documents that you don't want to hold in memory all at once:
+
+.. code:: python
+
+    template = loader.load('huge.html', encoding='UTF-8')
+    for s in template({'data': load_massive_dataset()}):
+        sys.stdout.write(s)
+
+
+
+Inheritance
+-----------
+
+The layout template should be marked up with `<py:block>` tags
+to indicate customization points:
+
+.. code:: html
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title py:block="title">Default title</title>
+    </head>
+    <body>
+        <py:block name="content">
+        Content goes here
+        </py:block>
+    </body>
+    </html>
+
+
+Child templates then use ``<py:extends href="...">`` to pull in the parent's
+layout.
+
+
+You can also define template functions:
+
+.. code:: html
+
+    <!--! File: widgets.html
+    -->
+    <py:def function="modal(content, title='hello')">
+        <div class="modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" data-dismiss="modal">X</button>
+                        <h4 class="modal-title">$title</h4>
+                    </div>
+                    <div class="modal-body">
+                        ${content() if callable(content) else content}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button">Close</button>
+                        <button type="button">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </py:def>
+
+
+Template functions can be imported into other templates:
+
+.. code:: html
+
+    <py:import href="widgets.html" alias="widgets"/>
+    <p>
+        ${widgets.modal(content="Hello world!")}
+    </p>
+
+
+Did you notice the ``${content() if callable content else content}``
+interpolation in the function body? That's to support ``py:call``, which can
+pass chunks of template code as keyword arguments:
+
+.. code:: html
+
+        <py:call function="widgets.modal(fullpage=True)">
+            <py:keyword name="content">
+                This is the modal content. You can include
+                <a href="#">markup here</a> too!
+            </py:keyword>
+        </py:call>
+
+
+License
+-------
+
+Piglet is licensed under the Apache license version 2.0.
+
+Piglet is developed by
+`Olly Cope <https://ollycope.com/>`_
+and was created for `skot.be <https://skot.be/>`_
+
+
+0.4.11 (released 2017-09-21)
+----------------------------
+
+- Bugfix: <py:include> now works from within a <py:def> function block
+
+0.4.10 (released 2017-09-21)
+----------------------------
+
+- Bugfix: fixed parse error when encountering numeric entities in HTML
+  templates
+
+0.4.9 (released 2017-09-15)
+---------------------------
+
+- Added <py:filter> directive
+
+0.4.8 (released 2017-07-22)
+---------------------------
+
+- More robust handling of exceptions arising from template code
+- Added <py:tag> directive to allow HTML tag names to be dynamically generated
+
+0.4.7 (released 2017-04-20)
+---------------------------
+
+- Bugfix: unicode characters in unescaped interpolations no longer raise
+  an exception in python 2.
+
+0.4.6 (released 2017-04-19)
+---------------------------
+
+- Added ``{% import path/to/template.txt as foo %}`` text template directive
+- Bugfix: fixed parsing error with quoted values in expressions contained
+  within template directives.
+- Bugfix: calling template functions from unescaped interpolations
+  (eg ``$!{myfunc()}`` no longer raises an exception.
+
+0.4.5 (released 2017-03-13)
+---------------------------
+
+- Rename project to piglet-templates
+- Fix error with nested <py:call> directives
+
+0.4.4 (released 2017-01-08)
+---------------------------
+
+- py:extends: allow the 'href' attribute to contain interpolations, eg
+  ``<py:extends href="${template}.html>"``
+- i18n: added a babel extractor plugin for text templates
+- Bugfix: whitespace in translated strings is now correctly normalized
+- Bugfix: fixed crash in text templates when using
+  ``{% if %}...{% else %}...{% end %}`` blocks
+
+0.4.3 (released 2016-11-29)
+---------------------------
+
+- Loader: an ``extension_map`` argument can be given, mapping file extensions
+  to template classes. By default ``.txt`` is mapped to
+  `piglet.template.TextTemplate` and ``.html`` to
+  `piglet.template.HTMLTemplate`.
+- Bugfix: unicode symbols no longer cause an exception when used in template
+  expressions in Python 2.
+- Bugfix: fixed multiple scoping issue with variable names used in
+  the argument lists of ``<py:def>`` template function directives.
+
+0.4.2 (released 2016-11-08)
+---------------------------
+
+- Added <py:comment> directive
+- Exceptions are now reraised, ensuring the originating traceback is shown.
+- ``<py:call>`` Now passes its inner HTML as a positional argument, unless it
+  is whitespace.
+- ``<py:call>`` is now an inner directive, meaning that
+  ``<p py:call="foo()"></p>``
+  will now fill the ``<p>`` element rather than replacing it.
+- The loader cache directory may be specified via the ``PIGLET_CACHE``
+  environment variable.
+- Added i18n:comment directive
+
+0.4.1 (released 2016-10-17)
+---------------------------
+
+- Added ``{% def %}`` and ``{% for %}`` text template directives
+- Added ``allow_absolute_paths`` option to TemplateLoader
+
+0.4 (released 2016-10-16)
+-------------------------
+
+- Bugfix: ensure ``<py:else>`` directives are always attached to the correct
+  ``<py:if>``
+- Added ``i18n:trans`` as an alias for i18n:translate
+- ``i18n:name`` directives now have a shorter alias
+  (``i18n:s``, for substitution) and can take an optional expr attribute,
+  eg ``<i18n:s name="foo" expr="calculate_foo()"/>``
+- Interpolations in translated strings are now extracted using the
+  interpolation text as a placeholder in the absence of a
+  ``i18n:name`` directive
+- ``py:whitespace="strip"`` no longer strips whitespace between tags
+  on the same line.
+- Text template directives now include ``{% with %}``,
+  ``{% extends %}`` and ``{% block %}``
+- <py:extend> can now be used to load a template of the same name elsewhere
+  on the template search path.
+- The search algorithm used by TemplateLoader is improved
+- Bugfix: fix for duplicate rendering when super() is used in the middle of the
+  inheritance chain
+- Generated code uses ``yield from`` where it supported by the python version.
+- The caching code has been simplified, caching .py files to disk containing
+  the compiled python source.
+- Bugfix: ``py:attrs`` no longer raises an exception
+- Bugfix: interpolations can now contain entity references
+
+
+0.3 (released 2016-10-03)
+-------------------------
+
+- The translation code now normalizes whitespace in i18n:messages
+- Bugfix: fixed extraction of translations within ``<py:else>`` blocks
+- Added translation support in text templates
+
+0.2 (released 2016-10-02)
+-------------------------
+
+- Bugfix: ensure that grammar files are included in binary distributions
+- Bugfix: fix for undefined variable error when using py:with to reassign
+  a variable
+
+0.1 (released 2016-10-01)
+-------------------------
+
+- initial release
+
+
