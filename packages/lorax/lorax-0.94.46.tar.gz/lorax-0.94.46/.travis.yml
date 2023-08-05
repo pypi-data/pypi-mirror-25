@@ -1,0 +1,49 @@
+language: python
+python:
+   - "3.5"
+before_install:
+   - curl -L -o lorax_tool https://raw.githubusercontent.com/LegumeFederation/lorax/master/build_scripts/lorax_tool
+   - chmod 755 lorax_tool
+   - ./lorax_tool create_scripts
+   - ./lorax_tool init
+   - export root_dir=`python -c 'import sys;print(sys.prefix)'`
+   - ./lorax_tool config root_dir $root_dir
+   - ./lorax_tool config var_dir ${root_dir}/var
+   - ./lorax_tool config tmp_dir ${root_dir}/var/tmp
+   - ./lorax_tool config log_dir ${root_dir}/var/log
+   - ./lorax_tool config python system
+   - ./lorax_tool config raxml system
+   - ./lorax_tool config redis system
+   - ./lorax_tool config all
+   - ./lorax_tool make_dirs
+   - ./lorax_tool install
+install:
+   - pip install -U setuptools
+   - pip install -e 'git+https://github.com/LegumeFederation/supervisor.git@4.0.0#egg=supervisor==4.0.0'
+   - pip install -e .
+   - pip install codecov
+before_script:
+   - lorax_env lorax create_instance
+   - ln -s ${root_dir}/etc/coverage.conf ~/.coveragerc
+   - export COVERAGE_PROCESS_START="${root_dir}/etc/coverage.conf"
+   - lorax_env lorax config secret_key
+   - lorax_env lorax config secret_key blah
+   - lorax_env lorax config coverage True
+   - lorax_env lorax config
+   - lorax_env lorax create_instance --force
+   - lorax_env lorax create_test_files
+   - lorax_env lorax set_htpasswd
+   - lorax_env lorax test_logging
+script:
+   - lorax_env supervisord
+   - while lorax_env supervisorctl status | grep STARTING >/dev/null; do sleep 5; done
+   - lorax_env supervisorctl status
+   - lorax_env lorax rq info
+   - cat ${root_dir}/var/log/lorax_server.log
+   - ./test_targets.sh
+   - lorax_env supervisorctl stop lorax
+   - lorax_env supervisorctl shutdown
+after_success:
+   - ls -l ${root_dir}/var/run
+   - cat ~/.coveragerc
+   - codecov
