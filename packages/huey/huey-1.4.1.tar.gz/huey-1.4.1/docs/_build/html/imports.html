@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Understanding how tasks are imported &#8212; huey 1.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Troubleshooting and Common Pitfalls" href="troubleshooting.html" />
+    <link rel="prev" title="Consumer Events" href="events.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="troubleshooting.html" title="Troubleshooting and Common Pitfalls"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="events.html" title="Consumer Events"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">huey 1.3.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="understanding-how-tasks-are-imported">
+<span id="imports"></span><h1>Understanding how tasks are imported<a class="headerlink" href="#understanding-how-tasks-are-imported" title="Permalink to this headline">¶</a></h1>
+<p>Behind-the-scenes when you decorate a function with <a class="reference internal" href="api.html#Huey.task" title="Huey.task"><code class="xref py py-meth docutils literal"><span class="pre">task()</span></code></a> or
+<a class="reference internal" href="api.html#Huey.periodic_task" title="Huey.periodic_task"><code class="xref py py-meth docutils literal"><span class="pre">periodic_task()</span></code></a>, the function registers itself with a centralized
+in-memory registry.  When that function is called, a reference is put into the
+queue (along with the arguments the function was called with, etc), and when
+that message is consumed, the function is then looked-up in the consumer&#8217;s
+registry.  Because of the way this works, it is strongly recommended
+that <strong>all decorated functions be imported when the consumer starts up</strong>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If a task is not recognized, the consumer will throw a <code class="xref py py-class docutils literal"><span class="pre">QueueException</span></code></p>
+</div>
+<p>The consumer is executed with a single required parameter &#8211; the import path to
+a <a class="reference internal" href="api.html#Huey" title="Huey"><code class="xref py py-class docutils literal"><span class="pre">Huey</span></code></a> object.  It will import the object along with anything
+else in the module &#8211; thus you must be sure <strong>imports of your tasks
+should also occur with the import of the Huey object</strong>.</p>
+<div class="section" id="suggested-organization-of-code">
+<h2>Suggested organization of code<a class="headerlink" href="#suggested-organization-of-code" title="Permalink to this headline">¶</a></h2>
+<p>Generally, I structure things like this, which makes it very easy to avoid
+circular imports.  If it looks familiar, that&#8217;s because it is exactly the way
+the project is laid out in the <a class="reference internal" href="getting-started.html#getting-started"><span class="std std-ref">getting started</span></a> guide.</p>
+<ul>
+<li><p class="first"><code class="docutils literal"><span class="pre">config.py</span></code>, the module containing the <a class="reference internal" href="api.html#Huey" title="Huey"><code class="xref py py-class docutils literal"><span class="pre">Huey</span></code></a> object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># config.py</span>
+<span class="kn">from</span> <span class="nn">huey</span> <span class="kn">import</span> <span class="n">RedisHuey</span>
+
+<span class="n">huey</span> <span class="o">=</span> <span class="n">RedisHuey</span><span class="p">(</span><span class="s1">&#39;testing&#39;</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">tasks.py</span></code>, the module containing any decorated functions.  Imports the
+<code class="docutils literal"><span class="pre">huey</span></code> object from the <code class="docutils literal"><span class="pre">config.py</span></code> module:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># tasks.py</span>
+<span class="kn">from</span> <span class="nn">config</span> <span class="kn">import</span> <span class="n">huey</span>
+
+<span class="nd">@huey.task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">count_beans</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Counted </span><span class="si">%s</span><span class="s1"> beans&#39;</span> <span class="o">%</span> <span class="n">num</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">main.py</span></code> / <code class="docutils literal"><span class="pre">app.py</span></code>, the &#8220;main&#8221; module.  Imports both the <code class="docutils literal"><span class="pre">config.py</span></code>
+module <strong>and</strong> the <code class="docutils literal"><span class="pre">tasks.py</span></code> module.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># main.py</span>
+<span class="kn">from</span> <span class="nn">config</span> <span class="kn">import</span> <span class="n">huey</span>  <span class="c1"># import the &quot;huey&quot; object.</span>
+<span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">count_beans</span>  <span class="c1"># import any tasks / decorated functions</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">beans</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s1">&#39;How many beans? &#39;</span><span class="p">)</span>
+    <span class="n">count_beans</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">beans</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Enqueued job to count </span><span class="si">%s</span><span class="s1"> beans&#39;</span> <span class="o">%</span> <span class="n">beans</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>To run the consumer, point it at <code class="docutils literal"><span class="pre">main.huey</span></code>, in this way, both the <code class="docutils literal"><span class="pre">huey</span></code>
+instance <strong>and</strong> the task functions are imported in a centralized location.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="gp">$</span> huey_consumer.py main.huey
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Understanding how tasks are imported</a><ul>
+<li><a class="reference internal" href="#suggested-organization-of-code">Suggested organization of code</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="events.html"
+                        title="previous chapter">Consumer Events</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="troubleshooting.html"
+                        title="next chapter">Troubleshooting and Common Pitfalls</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/imports.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="troubleshooting.html" title="Troubleshooting and Common Pitfalls"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="events.html" title="Consumer Events"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">huey 1.3.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013, charles leifer.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.5.
+    </div>
+  </body>
+</html>
