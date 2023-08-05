@@ -1,0 +1,62 @@
+# example mission box5.flo
+# refactored box mission with load
+# uses exit context to increment counter
+
+house box5
+
+init max.depth with 50.0
+
+init boxer.heading with 0.0
+init boxer.turn with 90.0
+init boxer.leg with 0.0
+init boxer.nlegs with 4.0
+
+framer vehiclesim be active first vehicle_run
+
+frame vehicle_run
+   do simulator motion uuv
+
+framer mission be active first leg
+
+frame depthmax
+   go abort if state.depth >= .max.depth
+
+frame leg in depthmax
+   set elapsed with 20.0
+   set goal.heading from boxer.heading
+   set goal.depth with 5.0
+   set goal.speed with 2.5
+   go gpsfix if elapsed >= goal
+   go mission_stop if .boxer.leg >= .boxer.nlegs
+
+frame gpsfix
+   aux gps
+   go leg if gps is done
+   exit
+      inc boxer.heading from boxer.turn
+      inc boxer.leg with 1.0
+
+frame abort
+   set goal.depth with 0.0
+   set goal.speed with 2.5
+   go mission_stop if state.depth == 0.0 +- 0.25
+
+frame mission_stop
+   bid stop all
+
+framer autopilot be active first autopilot_run
+
+frame autopilot_run
+   do controller pid speed
+   do controller pid heading
+   do controller pid depth
+   do controller pid pitch
+
+logger logger to /tmp/log/ioflo/  # /tmp deleted on reboot but /var/tmp not
+  log state on update
+    loggee state.position state.heading state.depth state.speed
+
+  log goal on update
+     loggee goal.heading goal.depth goal.speed
+
+load gps.flo
