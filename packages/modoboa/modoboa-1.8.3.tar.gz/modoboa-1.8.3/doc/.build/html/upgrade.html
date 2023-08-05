@@ -1,0 +1,868 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Upgrade &mdash; Modoboa 1.7.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.7.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Modoboa 1.7.4 documentation" href="index.html" />
+    <link rel="next" title="Configuration" href="configuration.html" />
+    <link rel="prev" title="Postfix" href="manual_installation/postfix.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="configuration.html" title="Configuration"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="manual_installation/postfix.html" title="Postfix"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Modoboa 1.7.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="upgrade">
+<h1>Upgrade<a class="headerlink" href="#upgrade" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="modoboa">
+<h2>Modoboa<a class="headerlink" href="#modoboa" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The new version you are going to install may need to modify your
+database. Before you start, make sure to backup everything!</p>
+</div>
+<p>Most of the time, upgrading your installation to a newer Modoboa
+version only requires a few actions. In every case, you will need to
+apply the general procedure first and then check if the version you
+are installing requires specific actions.</p>
+<p>In case you use a dedicated user and/or a virtualenv, do not forget to
+use them:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; sudo -u &lt;modoboa_user&gt; -i
+&gt; <span class="nb">source</span> &lt;virtuenv_path&gt;/bin/activate
+</pre></div>
+</div>
+<p>Then, run the following commands:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; pip install <span class="nv">modoboa</span><span class="o">==</span>&lt;VERSION&gt;
+&gt; <span class="nb">cd</span> &lt;modoboa_instance_dir&gt;
+&gt; python manage.py migrate
+&gt; python manage.py collectstatic
+</pre></div>
+</div>
+<p>Once done, check if the version you are installing requires
+<a class="reference internal" href="#specific-upgrade-instructions"><em>Specific instructions</em></a>.</p>
+<p>Finally, restart your web server.</p>
+<p>Sometimes, you might need to upgrade postfix map files too. To do so,
+just run the <tt class="docutils literal"><span class="pre">generate_postfix_maps</span></tt> command on the same directory
+than the one used for installation (<tt class="file docutils literal"><span class="pre">/etc/postfix</span></tt> by default).</p>
+<p>Make sure to use root privileges and run the following command:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; python manage.py generate_postfix_maps --destdir &lt;directory&gt;
+</pre></div>
+</div>
+<p>Then, reload postfix.</p>
+</div>
+<div class="section" id="extensions">
+<h2>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h2>
+<p>If a new version is available for an extension you&#8217;re using, it is
+recommanded to install it. Upgrading an extensions is pretty and the
+procedure is almost the same than the one used for Modoboa.</p>
+<p>In case you use a dedicated user and/or a virtualenv, do not forget to
+use them:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; sudo -i &lt;modoboa_user&gt;
+&gt; <span class="nb">source</span> &lt;virtuenv_path&gt;/bin/activate
+</pre></div>
+</div>
+<p>Then, run the following commands:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; pip install &lt;EXTENSION&gt;<span class="o">==</span>&lt;VERSION&gt;
+&gt; <span class="nb">cd</span> &lt;modoboa_instance_dir&gt;
+&gt; python manage.py migrate
+&gt; python manage.py collectstatic
+</pre></div>
+</div>
+<p>Finally, restart your web server.</p>
+<p>It is a generic upgrade procedure which will be enough most of the
+time but it is generally a good idea to check the associated
+documentation.</p>
+</div>
+<div class="section" id="specific-instructions">
+<span id="specific-upgrade-instructions"></span><h2>Specific instructions<a class="headerlink" href="#specific-instructions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>1.7.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>API documentation has evolved (because of the upgrade to Django Rest
+Framework 3.6) and CKeditor is now embedded by default (thanks to the
+<tt class="docutils literal"><span class="pre">django-ckeditor</span></tt> package). Some configuration changes are
+required.</p>
+<p>Edit your <tt class="file docutils literal"><span class="pre">settings.py</span></tt> file and apply the following modifications:</p>
+<ul class="simple">
+<li>Update the <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt> variable as follows:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;django.contrib.auth&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.contenttypes&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.sessions&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.messages&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.sites&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.staticfiles&#39;</span><span class="p">,</span>
+    <span class="s">&#39;reversion&#39;</span><span class="p">,</span>
+    <span class="s">&#39;ckeditor&#39;</span><span class="p">,</span>
+    <span class="s">&#39;ckeditor_uploader&#39;</span><span class="p">,</span>
+    <span class="s">&#39;rest_framework&#39;</span><span class="p">,</span>
+    <span class="s">&#39;rest_framework.authtoken&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Update the <tt class="docutils literal"><span class="pre">REST_FRAMEWORK</span></tt> variable as follows:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;DEFAULT_AUTHENTICATION_CLASSES&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">&#39;rest_framework.authentication.TokenAuthentication&#39;</span><span class="p">,</span>
+        <span class="s">&#39;rest_framework.authentication.SessionAuthentication&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Remove the <tt class="docutils literal"><span class="pre">SWAGGER_SETTINGS</span></tt> variable</li>
+<li>Add the following content</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># CKeditor</span>
+
+<span class="n">CKEDITOR_UPLOAD_PATH</span> <span class="o">=</span> <span class="s">&quot;uploads/&quot;</span>
+
+<span class="n">CKEDITOR_IMAGE_BACKEND</span> <span class="o">=</span> <span class="s">&quot;pillow&quot;</span>
+
+<span class="n">CKEDITOR_RESTRICT_BY_USER</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">CKEDITOR_BROWSE_SHOW_DIRS</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">CKEDITOR_ALLOW_NONIMAGE_FILES</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="n">CKEDITOR_CONFIGS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&#39;allowedContent&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+        <span class="s">&#39;toolbar&#39;</span><span class="p">:</span> <span class="s">&#39;Modoboa&#39;</span><span class="p">,</span>
+        <span class="s">&#39;width&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+        <span class="s">&#39;toolbar_Modoboa&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="s">&#39;Bold&#39;</span><span class="p">,</span> <span class="s">&#39;Italic&#39;</span><span class="p">,</span> <span class="s">&#39;Underline&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;JustifyLeft&#39;</span><span class="p">,</span> <span class="s">&#39;JustifyCenter&#39;</span><span class="p">,</span> <span class="s">&#39;JustifyRight&#39;</span><span class="p">,</span> <span class="s">&#39;JustifyBlock&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;BidiLtr&#39;</span><span class="p">,</span> <span class="s">&#39;BidiRtl&#39;</span><span class="p">,</span> <span class="s">&#39;Language&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;NumberedList&#39;</span><span class="p">,</span> <span class="s">&#39;BulletedList&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="s">&#39;Outdent&#39;</span><span class="p">,</span> <span class="s">&#39;Indent&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;Undo&#39;</span><span class="p">,</span> <span class="s">&#39;Redo&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;Link&#39;</span><span class="p">,</span> <span class="s">&#39;Unlink&#39;</span><span class="p">,</span> <span class="s">&#39;Anchor&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="s">&#39;Smiley&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;TextColor&#39;</span><span class="p">,</span> <span class="s">&#39;BGColor&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="s">&#39;Source&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;Font&#39;</span><span class="p">,</span> <span class="s">&#39;FontSize&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;Image&#39;</span><span class="p">,</span> <span class="p">],</span>
+            <span class="p">[</span><span class="s">&#39;SpellChecker&#39;</span><span class="p">]</span>
+        <span class="p">],</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Don&#8217;t forget to run the following command:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; python manage.py collectstatic
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>1.7.1<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>If you used 1.7.0 for a fresh installation, please run the following commands:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; sudo -u &lt;modoboa_user&gt; -i
+&gt; <span class="nb">source</span> &lt;virtuenv_path&gt;/bin/activate
+&gt; <span class="nb">cd</span> &lt;modoboa_instance_dir&gt;
+&gt; python manage.py load_initial_data
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>1.7.0<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>This version requires Django &gt;= 1.10 so you need to make some
+modifications. It also brings internal API changes which are not
+backward compatible so installed extensions must be upgraded too.</p>
+<p>First of all, deactivate all installed extensions (edit the
+<tt class="file docutils literal"><span class="pre">settings.py</span></tt> file and comment the corresponding lines in
+<tt class="docutils literal"><span class="pre">MODOBOA_APPS</span></tt>).</p>
+<p>Edit the <tt class="file docutils literal"><span class="pre">urls.py</span></tt> file of your local instance and replace its
+content by the following one:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls</span> <span class="kn">import</span> <span class="n">include</span><span class="p">,</span> <span class="n">url</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">url</span><span class="p">(</span><span class="s">r&#39;&#39;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s">&#39;modoboa.urls&#39;</span><span class="p">)),</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Edit the <tt class="file docutils literal"><span class="pre">settings.py</span></tt> and apply the following changes:</p>
+<ul class="simple">
+<li>Add <tt class="docutils literal"><span class="pre">'modoboa.parameters'</span></tt> to <tt class="docutils literal"><span class="pre">MODOBOA_APPS</span></tt>:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">MODOBOA_APPS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;modoboa&#39;</span><span class="p">,</span>
+    <span class="s">&#39;modoboa.core&#39;</span><span class="p">,</span>
+    <span class="s">&#39;modoboa.lib&#39;</span><span class="p">,</span>
+    <span class="s">&#39;modoboa.admin&#39;</span><span class="p">,</span>
+    <span class="s">&#39;modoboa.relaydomains&#39;</span><span class="p">,</span>
+    <span class="s">&#39;modoboa.limits&#39;</span><span class="p">,</span>
+    <span class="s">&#39;modoboa.parameters&#39;</span><span class="p">,</span>
+    <span class="c"># Modoboa extensions here.</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Add <tt class="docutils literal"><span class="pre">'modoboa.core.middleware.LocalConfigMiddleware'</span></tt> to <tt class="docutils literal"><span class="pre">MIDDLEWARE_CLASSES</span></tt>:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre> <span class="n">MIDDLEWARE_CLASSES</span> <span class="o">=</span> <span class="p">(</span>
+     <span class="s">&#39;django.contrib.sessions.middleware.SessionMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;django.middleware.common.CommonMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;django.middleware.csrf.CsrfViewMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;django.contrib.auth.middleware.AuthenticationMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;django.contrib.messages.middleware.MessageMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;django.middleware.locale.LocaleMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;django.middleware.clickjacking.XFrameOptionsMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;modoboa.core.middleware.LocalConfigMiddleware&#39;</span><span class="p">,</span>
+     <span class="s">&#39;modoboa.lib.middleware.AjaxLoginRedirect&#39;</span><span class="p">,</span>
+     <span class="s">&#39;modoboa.lib.middleware.CommonExceptionCatcher&#39;</span><span class="p">,</span>
+     <span class="s">&#39;modoboa.lib.middleware.RequestCatcherMiddleware&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Modoboa used to provide a custom authentication backend
+(<tt class="docutils literal"><span class="pre">modoboa.lib.authbackends.SimpleBackend</span></tt>) but it has been
+removed. Replace it as follows:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="c"># Other backends before...</span>
+    <span class="s">&#39;django.contrib.auth.backends.ModelBackend&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Remove <tt class="docutils literal"><span class="pre">TEMPLATE_CONTEXT_PROCESSORS</span></tt> and replace it by:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">TEMPLATES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">&#39;BACKEND&#39;</span><span class="p">:</span> <span class="s">&#39;django.template.backends.django.DjangoTemplates&#39;</span><span class="p">,</span>
+        <span class="s">&#39;DIRS&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s">&#39;APP_DIRS&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+        <span class="s">&#39;OPTIONS&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&#39;context_processors&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s">&#39;django.template.context_processors.debug&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.template.context_processors.request&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.contrib.auth.context_processors.auth&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.template.context_processors.i18n&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.template.context_processors.media&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.template.context_processors.static&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.template.context_processors.tz&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.contrib.messages.context_processors.messages&#39;</span><span class="p">,</span>
+                <span class="s">&#39;modoboa.core.context_processors.top_notifications&#39;</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="s">&#39;debug&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Run the following commands (load virtualenv if you use one):</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; sudo -u &lt;modoboa_user&gt; -i
+&gt; <span class="nb">source</span> &lt;virtuenv_path&gt;/bin/activate
+&gt; <span class="nb">cd</span> &lt;modoboa_instance_dir&gt;
+&gt; python manage.py migrate
+&gt; python manage.py collectstatic
+</pre></div>
+</div>
+<p>Finally, upgrade your extensions and reactivate them.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Version</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>modoboa-amavis</td>
+<td>1.1.0</td>
+</tr>
+<tr class="row-odd"><td>modoboa-dmarc</td>
+<td>1.0.0</td>
+</tr>
+<tr class="row-even"><td>modoboa-imap-migration</td>
+<td>1.1.0</td>
+</tr>
+<tr class="row-odd"><td>modoboa-pdfcredentials</td>
+<td>1.1.0</td>
+</tr>
+<tr class="row-even"><td>modoboa-postfix-autoreply</td>
+<td>1.2.0</td>
+</tr>
+<tr class="row-odd"><td>modoboa-radicale</td>
+<td>1.1.0</td>
+</tr>
+<tr class="row-even"><td>modoboa-sievefilters</td>
+<td>1.1.0</td>
+</tr>
+<tr class="row-odd"><td>modoboa-stats</td>
+<td>1.1.0</td>
+</tr>
+<tr class="row-even"><td>modoboa-webmail</td>
+<td>1.1.0</td>
+</tr>
+</tbody>
+</table>
+<p>Command line shortcuts:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>pip install modoboa-amavis<span class="o">==</span>1.1.0
+<span class="nv">$ </span>pip install modoboa-dmarc<span class="o">==</span>1.0.0
+<span class="nv">$ </span>pip install modoboa-imap-migration<span class="o">==</span>1.1.0
+<span class="nv">$ </span>pip install modoboa-pdfcredentials<span class="o">==</span>1.1.0
+<span class="nv">$ </span>pip install modoboa-postfix-autoreply<span class="o">==</span>1.2.0
+<span class="nv">$ </span>pip install modoboa-radicale<span class="o">==</span>1.1.0
+<span class="nv">$ </span>pip install modoboa-sievefilters<span class="o">==</span>1.1.0
+<span class="nv">$ </span>pip install modoboa-stats<span class="o">==</span>1.1.0
+<span class="nv">$ </span>pip install modoboa-webmail<span class="o">==</span>1.1.0
+</pre></div>
+</div>
+<p>And please make sure you use the latest version of the
+<tt class="docutils literal"><span class="pre">django-versionfield2</span></tt> package:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>pip install -U django-versionfield2
+</pre></div>
+</div>
+<div class="section" id="notes-about-quota-changes-and-resellers">
+<h4>Notes about quota changes and resellers<a class="headerlink" href="#notes-about-quota-changes-and-resellers" title="Permalink to this headline">¶</a></h4>
+<p>Reseller users now have a quota option in Resources tab. This is the quota
+that a reseller can share between all its domains.</p>
+<p>There are two quotas for a domain in the new version:</p>
+<ol class="arabic simple">
+<li>Quota &amp;</li>
+<li>Default mailbox quota.</li>
+</ol>
+<p>[1]. Quota: quota shared between mailboxes
+This quota is shared between all the mailboxes of this domain. This
+value cannot exceed reseller&#8217;s quota and hence cannot be 0(unlimited)
+if reseller has finite quota.</p>
+<p>[2]. Default mailbox quota: default quota applied to mailboxes
+This quota is the default quota applied to new mailboxes. This value
+cannot exceed Quota[1] and hence cannot be 0(unlimited) if Quota[1] is
+finite.</p>
+</div>
+</div>
+<div class="section" id="id4">
+<h3>1.6.1<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>First of all, update postfix map files as follows:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; python manage.py generate_postfix_maps --destdir &lt;path&gt; --force-overwrite
+</pre></div>
+</div>
+<p>Then, modify postfix&#8217;s configuration as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre>smtpd_sender_login_maps =
+    &lt;driver&gt;:&lt;path&gt;/sql-sender-login-mailboxes.cf
+    &lt;driver&gt;:&lt;path&gt;/sql-sender-login-aliases.cf
+    &lt;driver&gt;:&lt;path&gt;/sql-sender-login-mailboxes-extra.cf
+</pre></div>
+</div>
+<p>Replace <tt class="docutils literal"><span class="pre">&lt;driver&gt;</span></tt> and <tt class="docutils literal"><span class="pre">&lt;path&gt;</span></tt> by your values.</p>
+<p>Finally, reload postfix.</p>
+<p>This release also deprecates some internal functions. As a result,
+several extensions has been updated to maintain the compatibility. If
+you enabled the notification service, you&#8217;ll find the list of
+available updates directly in your Modoboa console.</p>
+<p>For the others, here is the list:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Version</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>modoboa-amavis</td>
+<td>1.0.10</td>
+</tr>
+<tr class="row-odd"><td>modoboa-postfix-autoreply</td>
+<td>1.1.7</td>
+</tr>
+<tr class="row-even"><td>modoboa-radicale</td>
+<td>1.0.5</td>
+</tr>
+<tr class="row-odd"><td>modoboa-stats</td>
+<td>1.0.9</td>
+</tr>
+</tbody>
+</table>
+<p>Command line shortcut:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>pip install modoboa-amavis<span class="o">==</span>1.0.10
+<span class="nv">$ </span>pip install modoboa-postfix-autoreply<span class="o">==</span>1.1.7
+<span class="nv">$ </span>pip install modoboa-radicale<span class="o">==</span>1.0.5
+<span class="nv">$ </span>pip install modoboa-stats<span class="o">==</span>1.0.9
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3>1.6.0<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">You have to upgrade extensions due to <cite>core.User</cite> model attribute change (<cite>user.group</cite> to <cite>user.role</cite>).
+Otherwise, you will have an internal error after upgrade.
+In particular: <a class="reference external" href="https://github.com/modoboa/modoboa-amavis/commit/35df4e48b124e56df930cda8c013af0c1fcaabf3">modoboa-amavisd</a>, <a class="reference external" href="https://github.com/modoboa/modoboa-stats/commit/aa4a39ce65eb306ad6dec30a54eb58945b120274">modoboa-stats</a>, <a class="reference external" href="https://github.com/modoboa/modoboa-postfix-autoreply/commit/20f98c8d1c0c0dbd420f47aefcbb0290022414a4">modoboa-postfix-autoreply</a> are concerned.</p>
+</div>
+<p>An interesting feature brougth by this version is the capability to
+make different checks about MX records. For example, Modoboa can
+query main <a class="reference external" href="https://en.wikipedia.org/wiki/DNSBL">DNSBL</a> providers
+for every defined domain. With this, you will quickly know if one the
+domains you manage is listed or not. To activate it, add the
+following line to your crontab:</p>
+<div class="highlight-python"><div class="highlight"><pre>*/30 * * * * &lt;optional_virtualenv_path/&gt;python &lt;modoboa_instance_dir&gt;/manage.py modo check_mx
+</pre></div>
+</div>
+<p>The communication with Modoboa public API has been reworked. Instead
+of sending direct synchronous queries (for example to check new
+versions), a cron job has been added. To activate it, add the
+following line to your crontab:</p>
+<div class="highlight-python"><div class="highlight"><pre>0 * * * * &lt;optional_virtualenv_path/&gt;python &lt;modoboa_instance_dir&gt;/manage.py communicate_with_public_api
+</pre></div>
+</div>
+<p>Please also note that public API now uses TLS so you must update your
+configuration as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">MODOBOA_API_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.modoboa.org/1/&#39;</span>
+</pre></div>
+</div>
+<p>Finally, it is now possible to declare additional sender addresses on
+a per-account basis. You need to update your postfix configuration in
+order to use this functionality. Just edit the <tt class="file docutils literal"><span class="pre">main.cf</span></tt> file
+and change the following parameter:</p>
+<div class="highlight-python"><div class="highlight"><pre>smtpd_sender_login_maps =
+    &lt;driver&gt;:/etc/postfix/sql-sender-login-mailboxes.cf
+    &lt;driver&gt;:/etc/postfix/sql-sender-login-aliases.cf
+    &lt;driver&gt;:/etc/postfix/sql-sender-login-mailboxes-extra.cf
+</pre></div>
+</div>
+</div>
+<div class="section" id="id6">
+<h3>1.5.0<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>The API has been greatly improved and a documentation is now
+available. To enable it, add <tt class="docutils literal"><span class="pre">'rest_framework_swagger'</span></tt> to the
+<tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt> variable in <tt class="file docutils literal"><span class="pre">settings.py</span></tt> as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;django.contrib.auth&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.contenttypes&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.sessions&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.messages&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.sites&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.staticfiles&#39;</span><span class="p">,</span>
+    <span class="s">&#39;reversion&#39;</span><span class="p">,</span>
+    <span class="s">&#39;rest_framework.authtoken&#39;</span><span class="p">,</span>
+    <span class="s">&#39;rest_framework_swagger&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Then, add the following content into <tt class="file docutils literal"><span class="pre">settings.py</span></tt>, just after
+the <tt class="docutils literal"><span class="pre">REST_FRAMEWORK</span></tt> variable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">SWAGGER_SETTINGS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;is_authenticated&quot;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="s">&quot;api_version&quot;</span><span class="p">:</span> <span class="s">&quot;1.0&quot;</span><span class="p">,</span>
+    <span class="s">&quot;exclude_namespaces&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="s">&quot;info&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;contact&quot;</span><span class="p">:</span> <span class="s">&quot;contact@modoboa.com&quot;</span><span class="p">,</span>
+        <span class="s">&quot;description&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s">&quot;Modoboa API, requires a valid token.&quot;</span><span class="p">),</span>
+        <span class="s">&quot;title&quot;</span><span class="p">:</span> <span class="s">&quot;Modoboa API&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>You&#8217;re done. The documentation is now available at the following address:</p>
+<blockquote>
+<div><a class="reference external" href="http:/">http:/</a>/&lt;your instance address&gt;/docs/api/</div></blockquote>
+<p>Finally, if you find a <tt class="docutils literal"><span class="pre">TEMPLATE_CONTEXT_PROCESSORS</span></tt> variable in
+your <tt class="file docutils literal"><span class="pre">settings.py</span></tt> file, make sure it looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">TEMPLATE_CONTEXT_PROCESSORS</span> <span class="o">=</span> <span class="n">global_settings</span><span class="o">.</span><span class="n">TEMPLATE_CONTEXT_PROCESSORS</span> <span class="o">+</span> <span class="p">[</span>
+    <span class="s">&#39;modoboa.core.context_processors.top_notifications&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id7">
+<h3>1.4.0<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Please make sure to use Modoboa 1.3.5 with an up-to-date database
+before an upgrade to 1.4.0.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Do not follow the regular upgrade procedure for this version.</p>
+</div>
+<p>Some extension have been moved back into the main repository. The main
+reason for that is that using Modoboa without them doesn&#8217;t make sense.</p>
+<p>First of all, you must rename the following applications listed inside
+the <tt class="docutils literal"><span class="pre">MODOBOA_APPS</span></tt> variable:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="57%" />
+<col width="43%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Old name</th>
+<th class="head">New name</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>modoboa_admin</td>
+<td>modoboa.admin</td>
+</tr>
+<tr class="row-odd"><td>modoboa_admin_limits</td>
+<td>modoboa.limits</td>
+</tr>
+<tr class="row-even"><td>modoboa_admin_relaydomains</td>
+<td>modoboa.relaydomains</td>
+</tr>
+</tbody>
+</table>
+<p>Then, apply the following steps:</p>
+<ol class="arabic">
+<li><p class="first">Uninstall old extensions:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip uninstall modoboa-admin modoboa-admin-limits modoboa-admin-relaydomains
+</pre></div>
+</div>
+</li>
+<li><p class="first">Install all extension updates using pip (check the <em>Modoboa &gt; Information</em> page)</p>
+</li>
+<li><p class="first">Manually migrate database:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd &lt;instance_dir&gt;
+$ python manage.py migrate auth
+$ python manage.py migrate admin 0001 --fake
+$ python manage.py migrate admin
+$ python manage.py migrate limits 0001 --fake
+$ python manage.py migrate relaydomains 0001 --fake
+$ python manage.py migrate
+</pre></div>
+</div>
+</li>
+<li><p class="first">Finally, update static files:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python manage.py collectstatic
+</pre></div>
+</div>
+</li>
+</ol>
+<p>This version also introduces a REST API. To enable it:</p>
+<ol class="arabic">
+<li><p class="first">Add <tt class="docutils literal"><span class="pre">'rest_framework.authtoken'</span></tt> to the <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt> variable</p>
+</li>
+<li><p class="first">Add the following configuration inside <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Rest framework settings</span>
+
+<span class="n">REST_FRAMEWORK</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;DEFAULT_AUTHENTICATION_CLASSES&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">&#39;rest_framework.authentication.TokenAuthentication&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s">&#39;DEFAULT_PERMISSION_CLASSES&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s">&#39;rest_framework.permissions.IsAuthenticated&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Run the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python manage.py migrate
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="id8">
+<h3>1.3.5<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<p>To enhance security, Modoboa now checks the <cite>strength of user
+passwords &lt;https://github.com/dstufft/django-passwords&gt;_</cite>.</p>
+<p>To use this feature, add the following configuration into the <tt class="docutils literal"><span class="pre">settings.py</span></tt> file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># django-passwords</span>
+
+<span class="n">PASSWORD_MIN_LENGTH</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="n">PASSWORD_COMPLEXITY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;UPPER&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s">&quot;LOWER&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s">&quot;DIGITS&quot;</span><span class="p">:</span> <span class="mi">1</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id9">
+<h3>1.3.2<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
+<p>Modoboa now uses the <em>atomic requests</em> mode to preserve database
+consistency (<a class="reference external" href="https://docs.djangoproject.com/en/1.7/topics/db/transactions/#tying-transactions-to-http-requests">reference</a>).</p>
+<p>To enable it, update the <tt class="docutils literal"><span class="pre">DATABASES</span></tt> variable in <tt class="docutils literal"><span class="pre">settings.py</span></tt> as
+follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">DATABASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c"># stuff before...</span>
+        <span class="s">&quot;ATOMIC_REQUESTS&quot;</span><span class="p">:</span> <span class="bp">True</span>
+    <span class="p">},</span>
+    <span class="s">&quot;amavis&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c"># stuff before...</span>
+        <span class="s">&quot;ATOMIC_REQUESTS&quot;</span><span class="p">:</span> <span class="bp">True</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id10">
+<h3>1.3.0<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+<p>This release does not bring awesome new features but it is a necessary
+bridge to the future of Modoboa. All extensions now have their own git
+repository and the deploy process has been updated to reflect this
+change.</p>
+<p>Another important update is the use of Django 1.7. Besides its new
+features, the migration system has been reworked and is now more
+robust than before.</p>
+<p>Before we begin with the procedure, here is a table showing old
+extension names and their new name:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="43%" />
+<col width="28%" />
+<col width="28%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Old name</th>
+<th class="head">New package name</th>
+<th class="head">New module name</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>modoboa.extensions.admin</td>
+<td>modoboa-admin</td>
+<td>modoboa_admin</td>
+</tr>
+<tr class="row-odd"><td>modoboa.extensions.limits</td>
+<td>modoboa-admin-limits</td>
+<td>modoboa_admin_limits</td>
+</tr>
+<tr class="row-even"><td>modoboa.extensions.postfix_autoreply</td>
+<td>modoboa-postfix-autoreply</td>
+<td>modoboa_postfix_autoreply</td>
+</tr>
+<tr class="row-odd"><td>modoboa.extensions.postfix_relay_domains</td>
+<td>modoboa-admin-relaydomains</td>
+<td>modoboa_admin_relaydomains</td>
+</tr>
+<tr class="row-even"><td>modoboa.extensions.radicale</td>
+<td>modoboa-radicale</td>
+<td>modoboa_radicale</td>
+</tr>
+<tr class="row-odd"><td>modoboa.extensions.sievefilters</td>
+<td>modoboa-sievefilters</td>
+<td>modoboa_sievefilters</td>
+</tr>
+<tr class="row-even"><td>modoboa.extensions.stats</td>
+<td>modoboa-stats</td>
+<td>modoboa_stats</td>
+</tr>
+<tr class="row-odd"><td>modoboa.extensions.webmail</td>
+<td>modoboa-webmail</td>
+<td>modoboa_webmail</td>
+</tr>
+</tbody>
+</table>
+<p>Here are the required steps:</p>
+<ol class="arabic">
+<li><p class="first">Install the extensions using pip (look at the second column in the table above):</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install &lt;the extensions you want&gt;
+</pre></div>
+</div>
+</li>
+<li><p class="first">Remove <tt class="docutils literal"><span class="pre">south</span></tt> from <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt></p>
+</li>
+<li><p class="first">Rename old extension names inside <tt class="docutils literal"><span class="pre">MODOBOA_APPS</span></tt> (look at the third column in the table above)</p>
+</li>
+<li><p class="first">Remove <tt class="docutils literal"><span class="pre">modoboa.lib.middleware.ExtControlMiddleware</span></tt> from <tt class="docutils literal"><span class="pre">MIDDLEWARE_CLASSES</span></tt></p>
+</li>
+<li><p class="first">Change <tt class="docutils literal"><span class="pre">DATABASE_ROUTERS</span></tt> to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">DATABASE_ROUTERS</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;modoboa_amavis.dbrouter.AmavisRouter&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Run the following commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd &lt;modoboa_instance_dir&gt;
+$ python manage.py migrate
+</pre></div>
+</div>
+</li>
+<li><p class="first">Reply <tt class="docutils literal"><span class="pre">yes</span></tt> to the question</p>
+</li>
+<li><p class="first">Run the following commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python manage.py load_initial_data
+$ python manage.py collectstatic
+</pre></div>
+</div>
+</li>
+<li><p class="first">The cleanup job has been renamed in Django, so you have to modify your crontab entry:</p>
+<div class="highlight-python"><div class="highlight"><pre>- 0 0 * * * &lt;modoboa_site&gt;/manage.py cleanup
++ 0 0 * * * &lt;modoboa_site&gt;/manage.py clearsessions
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="id11">
+<h3>1.2.0<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<p>A new notification service let administrators know about new Modoboa
+versions. To activate it, you need to update the
+<tt class="docutils literal"><span class="pre">TEMPLATE_CONTEXT_PROCESSORS</span></tt> variable like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">global_settings</span>
+
+<span class="n">TEMPLATE_CONTEXT_PROCESSORS</span> <span class="o">=</span> <span class="n">global_settings</span><span class="o">.</span><span class="n">TEMPLATE_CONTEXT_PROCESSORS</span> <span class="o">+</span> <span class="p">(</span>
+  <span class="s">&#39;modoboa.core.context_processors.top_notifications&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>and to define the new <tt class="docutils literal"><span class="pre">MODOBOA_API_URL</span></tt> variable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">MODOBOA_API_URL</span> <span class="o">=</span> <span class="s">&#39;http://api.modoboa.org/1/&#39;</span>
+</pre></div>
+</div>
+<p>The location of external static files has changed. To use them, add a
+new path to the <tt class="docutils literal"><span class="pre">STATICFILES_DIRS</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Additional locations of static files</span>
+<span class="n">STATICFILES_DIRS</span> <span class="o">=</span> <span class="p">(</span>
+  <span class="c"># Put strings here, like &quot;/home/html/static&quot; or &quot;C:/www/django/static&quot;.</span>
+  <span class="c"># Always use forward slashes, even on Windows.</span>
+  <span class="c"># Don&#39;t forget to use absolute paths, not relative paths.</span>
+  <span class="s">&quot;&lt;path/to/modoboa/install/dir&gt;/bower_components&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Run the following commands to define the hostname of your instance:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd &lt;modoboa_instance_dir&gt;
+$ python manage.py set_default_site &lt;hostname&gt;
+</pre></div>
+</div>
+<p>If you plan to use the Radicale extension:</p>
+<ol class="arabic">
+<li><p class="first">Add <tt class="docutils literal"><span class="pre">'modoboa.extensions.radicale'</span></tt> to the <tt class="docutils literal"><span class="pre">MODOBOA_APPS</span></tt> variable</p>
+</li>
+<li><p class="first">Run the following commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd &lt;modoboa_instance_dir&gt;
+$ python manage.py syncdb
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">You also have to note that the <tt class="file docutils literal"><span class="pre">sitestatic</span></tt> directory has moved from
+<tt class="docutils literal"><span class="pre">&lt;path</span> <span class="pre">to</span> <span class="pre">your</span> <span class="pre">site's</span> <span class="pre">dir&gt;</span></tt> to <tt class="docutils literal"><span class="pre">&lt;modoboa's</span> <span class="pre">root</span> <span class="pre">url&gt;</span></tt> (it&#8217;s probably
+the parent directory). You have to adapt your web server configuration
+to reflect this change.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Upgrade</a><ul>
+<li><a class="reference internal" href="#modoboa">Modoboa</a></li>
+<li><a class="reference internal" href="#extensions">Extensions</a></li>
+<li><a class="reference internal" href="#specific-instructions">Specific instructions</a><ul>
+<li><a class="reference internal" href="#id1">1.7.2</a></li>
+<li><a class="reference internal" href="#id2">1.7.1</a></li>
+<li><a class="reference internal" href="#id3">1.7.0</a><ul>
+<li><a class="reference internal" href="#notes-about-quota-changes-and-resellers">Notes about quota changes and resellers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id4">1.6.1</a></li>
+<li><a class="reference internal" href="#id5">1.6.0</a></li>
+<li><a class="reference internal" href="#id6">1.5.0</a></li>
+<li><a class="reference internal" href="#id7">1.4.0</a></li>
+<li><a class="reference internal" href="#id8">1.3.5</a></li>
+<li><a class="reference internal" href="#id9">1.3.2</a></li>
+<li><a class="reference internal" href="#id10">1.3.0</a></li>
+<li><a class="reference internal" href="#id11">1.2.0</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="manual_installation/postfix.html"
+                        title="previous chapter">Postfix</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="configuration.html"
+                        title="next chapter">Configuration</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/upgrade.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="configuration.html" title="Configuration"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="manual_installation/postfix.html" title="Postfix"
+             >previous</a> |</li>
+        <li><a href="index.html">Modoboa 1.7.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2017, Antoine Nguyen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
