@@ -1,0 +1,69 @@
+- name: "DEBUG:: teardown of resource group {{ res_grp }}"
+  debug:
+    msg: "The current server obj is {{ res_grp }}"
+
+- name: "Set cred profile"
+  set_fact:
+    cred_profile: "{{ res_grp['credentials']['profile'] | default('default') }}"
+
+- name: "Get creds from auth driver"
+  auth_driver:
+    filename: "{{ res_grp['credentials']['filename']  }}"
+    cred_type: "aws"
+    cred_path: "{{ creds_path }}"
+    driver: "file"
+  register: auth_var
+  ignore_errors: true
+
+- name: "Set auth_var "
+  set_fact:
+    auth_var: "{{ auth_var['output'][cred_profile] | default('') }}"
+  ignore_errors: true
+
+- name: "Parsing topology output file"
+  output_parser:
+    output_file: "{{ topo_output_file }}"
+  register: topo_output
+
+
+# patch for res_type to type translation
+- name: "Add attribute res_type to res_grp resource_definitions"
+  set_fact:
+    resource_definitions: "{{ res_grp['res_defs'] | default(res_grp['resource_definitions']) | duplicateattr('type', 'res_type') }}"
+
+- name: "teardown of ec2 resource definitions of current group"
+  include: teardown_aws_ec2.yml res_def={{ res_item.0 }} tp_out={{ res_item.1 }} res_grp_name={{ res_item.2 }}
+  when: res_item.0['res_type'] == "aws_ec2"
+  with_nested:
+    - "{{ resource_definitions }}"
+    - "{{ topo_output['output']['content']['aws_ec2_res'] }}"
+    - ["{{ res_grp['resource_group_name']  }}"]
+  loop_control:
+    loop_var: res_item
+
+- name: "teardown of s3 resource def of current group"
+  include: teardown_aws_s3.yml res_def={{ res_item.0 }} res_grp_name={{ res_item.1 }}
+  when: res_item.0['res_type'] == "aws_s3"
+  with_nested:
+    - "{{ resource_definitions }}"
+    - ["{{ res_grp['resource_group_name']  }}"]
+  loop_control:
+    loop_var: res_item
+
+- name: "teardown of aws_ec2_key resource def of current group"
+  include: teardown_aws_ec2_key.yml res_def={{ res_item.0 }} res_grp_name={{ res_item.1 }}
+  when: res_item.0['res_type'] == "aws_ec2_key"
+  with_nested:
+    - "{{ resource_definitions }}"
+    - ["{{ res_grp['resource_group_name']  }}"]
+  loop_control:
+    loop_var: res_item
+
+- name: "teardown cfn stack resource def of current group"
+  include: teardown_aws_cfn.yml res_def={{ res_item.0 }} res_grp_name={{ res_item.1 }}
+  when: res_item.0['res_type'] == "aws_cfn"
+  with_nested:
+    - "{{ resource_definitions }}"
+    - ["{{ res_grp['resource_group_name'] }}"]
+  loop_control:
+    loop_var: res_item
