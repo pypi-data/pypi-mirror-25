@@ -1,0 +1,62 @@
+Changelog
+=========
+
+3.0b1 (2017-09-15)
+------------------
+
+- #4: Ensure our dependencies match our expectations about C extensions.
+
+- Update included `ExtensionClass.h` header file.
+
+3.0a3 (2017-02-02)
+------------------
+
+- Fix isinstance/issubclass for the Python version of PersistentMapping.
+
+3.0a2 (2017-02-02)
+------------------
+
+- #2: Add Python 3 compatibility.
+
+- #1: Resolve meta class conflict for PersistentMapping.
+
+- Update ExtensionClass and persistent headers and minimum versions.
+
+- Drop support for Python 2.6.
+
+3.0a1 (2014-11-02)
+------------------
+
+- Add a Python stub implementation of the Persistent class.
+
+- Tests: Use `__eq__` instead of `__cmp__`.
+
+2.13.2 (2010-06-16)
+-------------------
+
+- LP #587760: Handle tp_basicsize correctly.
+
+2.13.1 (2010-04-30)
+-------------------
+
+- Removed undeclared testing dependency on zope.testing.
+
+2.13.0 (2010-02-23)
+-------------------
+
+- Update to include ExtensionClass 2.13.0.
+
+2.12.0 (2010-02-14)
+-------------------
+
+- Added support for method cache in Persistence. Patch contributed by
+  Yoshinori K. Okuji. See https://bugs.launchpad.net/zope2/+bug/486193.
+
+- Updated C includes to ExtensionClass 2.12.0.
+
+- Updated package metadata and remove old build artifacts.
+
+2.11.1 (2009-02-19)
+-------------------
+
+- First egg release.
