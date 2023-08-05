@@ -1,0 +1,933 @@
+Metadata-Version: 1.0
+Name: sepiida
+Version: 15.14
+Summary: The root library, bringer of common code and goodness
+Home-page: https://bitbucket.org/Authentise/sepiida.git
+Author: Authentise, Inc.
+Author-email: engineering@authentise.com
+License: UNKNOWN
+Description: Sepiida
+        =======
+        
+        The library for creating APIs at Authentise
+        
+        Changelog
+        =========
+        
+        15.14
+        -----
+        Add 'counters' to permission fixture. This will capture the number of requests made to the permission service as an attrdict with POST, DELETE, GET, LIST as the properties depending on the operation performed
+        
+        15.13
+        -----
+        Fix environment variable defaults
+        
+        15.12
+        -----
+        Add the environment module for parsing environment variables
+        
+        15.11
+        -----
+        Fix more about missing session properties
+        
+        15.10
+        -----
+        Fix several minor bugs with session reuse
+        
+        15.9
+        ----
+        Allow for sentry to work in services that don't use user sessions
+        
+        15.8
+        ----
+        Add a new fixture, disable_session_reuse, which can be used to disable reusing of sessions when making requests. This is useful
+        for some projects that have unit tests that "behave badly" when performing session reuse and using httpretty
+        
+        Also, when making requests we now return the Request-ID for all requests back in the headers of the response. This is to aid in debugging
+        
+        15.7
+        ----
+        Add the request.add_request_handler(app) function which shows a log of the total delay time spent doing HTTP requests
+        
+        15.6
+        ----
+        Improve log message from 15.5
+        
+        15.5
+        ----
+        Add logging on slow endpoints
+        
+        15.4
+        ----
+        Lock down the version of idna to 2.5 so that requests and cryptography don't fight
+        
+        15.3
+        ----
+        Require publisher confirms on backend tasks. This will hopefully get rid of our issue with backend tasks that are disappearing on us
+        
+        15.2
+        ----
+        Fix bug with specifying the fields to get on permissions
+        
+        15.1
+        ----
+        Add a script for adding resource names to permissions. It lives at bin/add-resource-name
+        
+        15.0
+        ----
+        First I've removed support for setting up sentry via the log module. It's insufficient. You now *must* set up sentry integration
+        through the sentry module. This now requires that you provide a release version which will be provided to sentry. This is better
+        because it also will increase the context data sentry gets about our user accounts.
+        
+        So, where you had
+        
+        sepiida.log.setup_logging(sentry_dsn)
+        
+        you should now do
+        
+        sepiida.sentry.add_sentry_support(app, sentry_dsn, version)
+        
+        
+        The sentry module also includes a new function, handle_reverse_proxy, which can be used when operating behind an nginx proxy
+        to get the correct origin IP information to sentry. You should add a call to this function to the wsgihandle.py module in your
+        client application if you use nginx as a reverse proxy to something like uwsgi
+        
+        Further, resource_name is now required whenever creating or updating permissions. This has ripple effects through the permission fixture in tests as
+        well as regular code that is just creating permissions. Any time you call permission.create or permission.update you should include a
+        resource_name. This value is only meaningful to the client application - sepiida expects no special meaning and permits any string value
+        
+        Finally, when calling update_filters sepiida will now look at your current filters and start optimizing the request to pao based on those
+        filters. For example, if you are already filtering down to a single uuid, sepiida will now only request from pao whether or not you have access
+        on that specific resource. It also only requests the fields that it needs so it doesn't immediately throw away a bunch of data. This
+        should not effect anything about correctness or the API for update_filters, it should only effect performance, but it's a big change so worth mentioning
+        
+        14.3
+        ----
+        Fix support for ?fields=[...] requests when doing a GET on a collection of resources. Previously we supported this on a GET
+        on an individual resource but we didn't have any tests around a GET on a collection and I found out recently that this support was
+        broken when I wanted to use it and I couldn't. So now it's fixed. Let's say you had a resource foo with a property bar. You can ask for
+        a list of foo resources and include *only* the property bar with
+        
+        GET /foo/?fields=[resources.bar]
+        
+        The reason you include 'resources' in that request is because the collection embeds matching resources in the 'resources' property. This
+        makes it possible to ask for just metadata on a resource collection
+        
+        14.2
+        ----
+        Add a new hook, add_origin_handler() which injects the origin of the request into the uwsgi context so it can be logged
+        
+        14.1
+        ----
+        Add a unique request ID to every request. You have to opt-in to this via the add_request_id_handler() function in sepiida.session. This request ID will then get passed on to
+        downstream services if you use sepiida.request.user_session()
+        
+        14.0
+        ----
+        The major breaking change in this release is that now we require a value for the origin when setting up permissions. So the
+        signature has changed from
+        
+        permissions.configure(pao_root)
+        
+        to
+        
+        permissions.configure(origin, pao_root)
+        
+        The origin value should be something like https://models.authentise.com
+        
+        13.4
+        ----
+        Add fields.Anything type. This is a field that can literally be anything, it does no packaging and no validation
+        
+        13.3
+        ----
+        Fix a bug in the storage fixture which prevented overwriting objects by key
+        
+        13.2
+        ----
+        Set the logging level, unless specifically overridden, based on the ENVIRONMENT environment variable. If it is set to 'prod' you get logging.INFO, otherwise logging.DEBUG
+        
+        This is just to make it so I can easily get differnet logging levels in my different environments without having to add client-specific logic
+        
+        13.1
+        ----
+        Loosen up the requests dependency to allow for different versions (which will still work with sepiida).
+        
+        13.0
+        ----
+        Add support for page[offset] and page[limit] which can be used for paging.
+        
+        The major breaking change in this version is that in a response handler the self.sorts property is no
+        longer a list of strings but instead a list of AttrDicts with a name and ascending property. This is to help keep
+        client code from having to parse the '-' sign itself
+        
+        12.3
+        ----
+        Make celery backend use the same logging format as the frontend
+        
+        12.2
+        ----
+        Stop sharing compressionobj between ZipBuffers. This caused a state error whenever we made successive calls to the ZipBuffer
+        to do any work without stopping the progrm. That's pretty bad.
+        
+        12.1
+        ----
+        Automatically convert content provided to storage.put if necessary. This will happen if you provide bytes directly to the function and request compression.
+        
+        Also fix some unit tests I had broken in 12.0
+        
+        12.0
+        ----
+        Change the calling conventions for sepiida.storage.get() and put(). First, put() now takes a parameter, compress, which will compress the data on the fly and cause the mimetype for the data to be altered to show that it is compressed. In order to make that work, second, put() now takes in a file-like object that must implement read(). This causes the storage layer to no longer require reading the full block of data in to memory but instead allows for streaming it to woodhouse which can in turn stream to disk or to S3, as the situation may require. On the flip side, storage.get() will now return a context manager object (for automatic closing) which streams the data from woodhouse and decompresses it if necessary
+        
+        Pre-12.0 code such as:
+        
+        ```
+        with open('foo', 'rb') as f:
+          content = f.read()
+        sepiida.storage.put(key, bucket, content, 'application/text')
+        ```
+        
+        should now look like
+        
+        ```
+        with open('foo', 'rb') as f:
+          sepiida.storage.put(key, bucket, f, 'application/text')
+        ```
+        
+        and code that looked like
+        
+        ```
+        content = sepiida.storage.get(key)
+        ```
+        
+        should now look like
+        
+        ```
+        with sepiida.storage.get(key) as f:
+          content = f.read()
+        ```
+        
+        
+        11.4
+        ----
+        Fix bug with leaking privileged_sessions. Before this change a privileged session would not
+        properly keep track of the fact that it had exited when an unhandled exception occurred within the privileged session
+        Now it does.
+        
+        11.3
+        ----
+        Allow for storage.put to indicate it is willing to overwrite the data. Normally we raise an exception because we expect data in storage to be stored by UUID and be immutable. Sometimes we want to be able to change it. We just have to opt-in to that behavior with overwrite=True
+        
+        11.2
+        ----
+        Log any permissions queries that take longer than a second. That's not long. It's a good threshold for part of the system that is so critical
+        
+        11.1
+        ----
+        Remove the 'queue' module. It makes us depend on boto because it was designed to work with SQS, but we don't do events with SQS and so it can reduce our dependency count to remove it
+        
+        11.0
+        ----
+        Modify support for timezones to be timezone aware
+        
+        Any datetime going out of an API through a datetime field that does not have timezone data will be assumed to be UTC.
+        Previously we just ignored the data and assumed the application knew what it was doing. Now we forcibly convert it to
+        UTC and indicate in the ISO format that we are expressing the time in UTC.
+        
+        The compliment to this is that we now take in datetime values that express a timezone and properly convert them to
+        UTC before handing them to the response handler functions
+        
+        The major outgrowth of this is that existing code will now go from outputting datetime values such as
+        
+        2017-01-11T18:31:15.133
+        
+        as
+        
+        2017-01-11T18:31:15.133+00:00
+        
+        Which may break your unit tests
+        
+        10.20
+        -----
+        Add support for sorting of sepiida endpoint fields using the 'sort' query argument
+        
+        Any implementing api/platform can now use an endpoint's `sorts` property to see any requested
+        sorting a user made on a list request. The sort query arg supports ascending and descending sort ordering.
+        Ordering is ascending by default, but if a '-' is prefixed to the field name, it will be descending instead.
+        A single field can be provided, or multiple fields using a comma separated list.
+        
+        
+        Examples:
+        ```
+        http://your-site.com/endpoint/?sort=foo
+        http://your-site.com/endpoint/?sort=foo,-bar
+        http://your-site.com/endpoint/?sort=-bar,foo
+        ```
+        
+        Note: The 2nd and 3rd example will provide different results, as ordering of the fields matters.
+        
+        See http://jsonapi.org/format/#fetching-sorting for more details.
+        
+        10.19
+        -----
+        Fix installation on window when git is not present
+        
+        10.18
+        -----
+        Update to cryptography 1.7.1 for use with windows
+        
+        10.17
+        -----
+        Update permission fixture to use '*' as the holder on public permissions rather than None. Passing in None will still work
+        when calling grant(), however, permissions will return '*' when None is provided to the function so you may need to update
+        your tests accordingly
+        
+        10.16
+        -----
+        Change LOGGER type for permissions and memberships. When the response to permissions and memberships fails, we simple have a LOGGER debug the error and an error being raised. This prevents from duplicate errors being raised for the same failure.
+        
+        10.15
+        -----
+        Added memberships helper to create(), delete(), get() and search() for membership resources. It takes privileged session or current user session depending on what is set during the call of the mentioned methods.
+        
+        10.14
+        -----
+        Added support for public objects on permissions fixtures
+        
+        10.13
+        -----
+        Added permission exceptions that are related to the status code returned from the permissions service.
+        
+        10.12
+        -----
+        Filter permissions by holder on GET single permission when using the permission fixture
+        
+        Previously the permission fixture would filter out permissions based on the current user context when doing a GET /permissions/ (LIST). It did *not* do the filter when doing GET /permission/<uuid>/ which was incorrect. That has been rectified in this commit
+        
+        10.11
+        -----
+        Prevent empty PUT requests. This helps users in the case where they don't know the PUT is empty and it's better for efficiency because an empty PUT can't be useful so it just burns time and network bandwidth
+        
+        10.10
+        -----
+        Added 'storage' fixture. This mirrors the behavior of the 'permission' fixture by providing a full, in-memory version of the storage service backend for test runs using httpretty
+        
+        10.9
+        ----
+        Fix a bug in update_filters that failed if we had any permissions using a URI with an ID rather than a UUID
+        
+        10.8
+        ----
+        Fix bug in permissions.has_any that failed to use search correctly
+        
+        10.7
+        ----
+        Fix bug in permission fixture not returning created_by value for a permission grant
+        
+        10.6
+        ----
+        Track created_by in fixtures.permission. Also loosen the filter for permission grants that are returned by the permission fixture search so it includes permissions that were created by the current user as well as those that are held by the current user
+        
+        10.5
+        ----
+        10.4 was a bad tag
+        
+        10.4
+        ----
+        BREAKING CHANGE. I changed the signature of a bunch of sepiida.permission functions so that instead of taking 'resource' or 'resources' as the name they take 'object_' or 'objects'. This is so that 1) we are consistent between the permission fixture and the permissions module and the pao API  and 2) we don't shadow the built-in 'object' definition in Python
+        
+        I also added some logging to the permission fixture so that I can debug some failing tests
+        
+        10.3
+        ----
+        BREAKING CHANGE. I changed the paramters of permission.delete_all to match the new paramters of permission.search. I also fixed
+        a bug where we were correctly deleting some of the permissions from the permission fixture when we capture a call to delete_all
+        
+        10.2
+        ----
+        BREAKING CHANGE. Remove several major functions from sepiida.permissions: set_get, set_delete, set_payload, and set_has_right all get the axe - if you are using them you should convert over to using permission.grant which does the work of all four functions (set_delete is automatically supported)
+        
+        10.1
+        ----
+        Update permission fixture to honor delete requests. Previously we just ignored them
+        
+        10.0
+        ----
+        The breaking change in this release is that permissions.search now takes in lists of paramters (resources, holders, rights)
+        rather than single items (resource, holder, right). This is because it is much more burdensome on a client to have to
+        create the correct input to search for many things at once than it is to create a list of a single item.
+        
+        As part of this the permissions.search function now uses the request body for the content of the search rather than the querystring
+        which allows for a much larger query size by default. In doing so I made it so that the permission fixture also supports querying
+        via the request body
+        
+        9.9
+        ---
+        Fix bug in failure to import sepiida.permissions in sepiida.fixtures that cause permissions fixture to not work
+        
+        9.8
+        ---
+        Add the fixture 'make_session' and switch json_client_session internally to use this new fixture. The fixture can be used to
+        create sessions for different users inside tests to test things like sharing data between two users in a single test. It
+        is used like this:
+        
+        ```
+        with make_session(user_uri) as session:
+          session.get(url)
+        ```
+        
+        9.7
+        ---
+        Add 'rename' property to field types. This causes the field to be renamed when within an Object signature. For example, the following signature expects to get {'foo': '...'} out of GET and LIST requests and to take in {'foo': '...'} on PUT and POST
+        
+        SIGNATURE = sepiida.fields.Object(s={
+          'foo' : sepiida.fields.String(),
+        })
+        
+        but we can change that to expecting {'bar': '...'} out of GET and LIST and taking in {'bar': '...'} from POST and PUT without changing the signature as it is viewed from the outside world
+        
+        SIGNATURE = sepiida.fields.Object(s={
+          'foo' : sepiida.fields.String(rename='bar'),
+        })
+        
+        This can be very useful for creating complex field types which I'll do more of in future releases
+        
+        9.6
+        ---
+        Automatically convert UUIDs provided to sepiida.storage module. This is just a convenience for clients so they don't have to any more
+        
+        9.5
+        ---
+        Update build script to auto deploy new updates to PyPI
+        
+        9.4
+        ---
+        * Add options method to json client for testing options requests.
+        * Make schema serialization automatically convert things to string, if possible, to avoid crashing when we need to do things like make the 'choices' parameter for a signature field an object that doesn't have a defined translation to JSON. Which is nearly everything
+        
+        
+        9.3
+        ---
+        Fix bug where we didn't pass through credentials when doing a retry
+        
+        9.2
+        ---
+        sepiida now automatically propogates credentials through and sepiida.backend.task. Also, we set up a task context so that we can correctly use sepiida.requests.user_session in either the frontend or backend code and still get a session that has the credentials from the user
+        
+        9.1
+        ---
+        sepiida now sends filter in the body when it calls get_files() function, irrespective of the size of the filters.
+        
+        9.0
+        ---
+        sepiida.fields.URI now validates data going out and can convert directly from UUIDS to the URI in question. This makes it lower-friction for common use cases of storing UUIDs in the DB and returning URIs. This is a breaking change in that it means that if you are 1) passing out data through a URI field that is not a valid URI of the endpoint declared in the field your endpoint will now break and 2) you can now pass out UUIDs and they will get converted to URIs.
+        
+        This update also includes the new sepiida.fields.Date() field
+        
+        It also includes better error messages when failing a request handler because it isn't passing out a datetime when it should
+        
+        
+        8.20
+        ----
+        Fix more large storage requests. I missed a couple in 8.18
+        
+        8.19
+        ----
+        Fixed a unit test
+        
+        8.18
+        ----
+        Fix bug in storage.get_files() not working for very large lists of keys
+        
+        8.17
+        ----
+        Make storage.get_files() work with a list of UUIDs instead of just strings
+        
+        8.16
+        ----
+        Allow storage to smartly handle filters by adding it into the GET body if the length of the URL is greater than 2000.
+        
+        8.15
+        ----
+        Allow more permissive HTTPretty. Anything over 0.8.10 is fine. That's to allow for installations of moto
+        
+        8.14
+        ----
+        Add support for sending filter/fields arguments via GET request body. This is non-standard but makes it possible to craft very large and very complex queries without running afoul of the 2048-character limit on URLs that is the de-facto standard on the Internet
+        
+        8.13
+        ----
+        Add simple support for negotiating content to get 'text/csv' as the response. This is a single step towards being able to download CSVs of our data
+        
+        8.12
+        ----
+        Prefer application/json as the response type when the client accepts anything. This will cause browsers to display JSON rather than downloading and saving a form-encoded payload which is hard to read
+        
+        8.11
+        ----
+        Update always_privileged() to work when nested. This means I also needed to change the internals a bit, so if you were reaching in to always_privileged.enabled you should stop doing that and start using is_privileged()
+        
+        8.10
+        ----
+        Bad tag
+        
+        8.9
+        ---
+        fields.URI used to allow anything that is a string through. If the URI was recognized it would provide the parameters in the payload of the resource post handler. If the URI was unrecognized, like 'www.google.com' it would provide an empty dict where the parameters should be. This meant that applications had to do their own validation if they wanted to be strict.
+        
+        That's dumb.
+        
+        We don't have a strong use-case for allowing arbitrary strings through a URI - use the String field for that. So now we do actual validation of the URI and emit errors if we can't parse the provided value as a URI for the endpoint that the URI is set to.
+        
+        Yay being automatic
+        
+        8.8
+        ---
+        Moved to using pytest 3 and making the requirement >= for pytest 3
+        
+        8.7
+        ---
+        Fix a bug with `extract_parameters()` emitting a redirect exception when passed a URL that nearly, but not quite, matches a routing rule
+        
+        8.6
+        ---
+        Fix a unit test that was relying on the ordering of a dict to work and had a 50% chance of failure every time
+        
+        8.5
+        ---
+        Update `permissions.update_filter()` to honor `permissions.always_privileged()`. Without this the `always_privileged()` context manager breaks when dealing with code, such as from chryso, that updates a supplied filter based on the permissions available to the current user. In that situation we still attempt to update the filters even though we should be privileged
+        
+        8.4
+        ---
+        Update Flask to 0.11.1
+        
+        8.3
+        ---
+        Update cryptography dependency to the latest for Ubuntu 16.04 support
+        
+        8.2
+        ---
+        Add sepiida.wsgi.stabilize_werkzeug_iterator(). This function should be called first in wsgihandler modules that use
+        flask to prevent us from getting unhandled exceptions on clients that disonnect before we finish sending the response. This common in bots.
+        
+        8.1
+        ----
+        
+        This extends sepiida.FilterArgument to work with ISO8601 dates. e.g. filter[created]=2015-01-01
+        https://some.service/?filter[id]=1,2&filter[id]=3
+        will result:
+        ```
+        self.filters = {
+            'id' : [
+                FilterArgument(name='id', operation='=', values=[1,2]),
+                FilterArgument(name='id', operation='=', values=[3]),
+            ]
+        }
+        ```
+        
+        8.0
+        ----
+        
+        This introduces a new way for sepiida to handle content types and serialization. We are no longer only doing JSON, but instead support JSON and
+        form-encoded URL data. We do this via content negotiation, so this introduces new error modes for inability to negotiate a type.
+        
+        In support of this the JSONObject and JSONArray classes are renamed to just Object and Array, respectively. Errors that specifically mentioned
+        JSON in some places have been updated to only mention JSON if we are encoding to JSON.
+        
+        7.9
+        ---
+        
+        Fix sepiida.groups.has_any to work with group names, not with group uris
+        
+        7.8
+        ---
+        
+        Bump boto3 version to 1.3.1
+        
+        7.7
+        ---
+        
+        Add a way to check if the current user is in a list of groups. Here is an example call:
+        ```
+        groups = ['Admins', 'partner-Ricoh']
+        sepiida.groups.has_any(groups) # returns True if the user is in any of the two groups else False
+        ```
+        
+        7.6
+        ---
+        
+        Better error message when a user specifies an invalid URI field by pointing at a non-existent endpoint. This comes at a slight penalty to our runtime performance in error cases as we check the list of URLs in the app to build the error message, but it's a cost I'm willing to pay
+        
+        7.5
+        ---
+        
+        Better fix for the bug with the permission fixture. The fix in 7.4 didn't properly handle the threading employed by httpretty when making permissions requests during request handlers. This new code includes our own cookie parser (bad, but much shorter than using the built-in libraries) but uses flask's own session decoder (very good).
+        
+        7.4
+        ---
+        
+        Fix a bug with the permission fixture which was causing intermittent test failure when our session got zlib compressed. This would happen if there was enough redundant data in the session data that zlib compression made the session shorter. This is effectively random, though closely tied with uuid generation. Now instead of attempting to extract the session data myself and not support zlib compression I correctly let flask do the session conversion
+        
+        7.3
+        ---
+        
+        Better support for 'choices' parameters in our RAML schema. Now if 'choices' is specified we include that specification in the 'enum' of the JSON schema and use it to generate the examples
+        
+        7.2
+        ---
+        Add sepiida.permissions.always_privileged. This is for backend processes as a convenience to specify that no matter what, permissions requests should be made with elevated privileges, not user privileges. Use with caution
+        
+        7.1
+        ---
+        Use arrow to parse ISO8601 formatted strings as datetime. Now all datetime objects will include timezone information.
+        
+        7.0
+        ---
+        Change the way that ERRORS on APIEndpoints are done. Previously they were tuples that identified
+        
+        (exception class, status code, error code, error title)
+        
+        Now we use an actual class, sepiida.errors.Specification. The constructor takes the arguments in exactly the same
+        order, which is good, but now offers the ability to *not* specify the title in favor of specifying the docs argument which
+        will avoid overwriting any title provided by an exception and just provide information for the RAML documentation
+        
+        Old versions of the ERRORS specifier using tuples will emit a warning and then silently ignore any specifiers of that type, so be aware. In sepiida version 8 this will be entirely removed for performance reasons
+        
+        Furthermore, the way that filters are parsed has changed. We can now support `filter[foo]>bar` and `filter[foo]<=bar`. This means that all filter field objects now include the operation that was requested as well as the name of the filter and the values filtered. This is still provided as self.filters.
+        
+        6.9
+        ---
+        New tag of 6.8 since I had to fix some unit tests
+        
+        6.8
+        ---
+        Various minor improvements to OPTIONS response and RAML file generation. Also filter now enforces the choices option
+        
+        6.7
+        ---
+        Automatic RAML file generation. Just make an OPTIONS request to the root of the API. You do need to register first with sepiida.options.enable
+        
+        6.6
+        ---
+        Extend types protection to cover NaN and inf and -inf. Now programmers can't accidentally return these special values unintentionally. This was bad because JSON can't deserialize them correctly
+        
+        6.5
+        ---
+        Fix race condition when POSTing to woodhouse in sepiida.storage. Now it properly raises an exception that client code can handle
+        
+        6.4
+        ---
+        Consolidate some error messages so sentry looks more intelligent
+        
+        This means any code that relies on sepiida.permissions.PermissionPayloadError should now expect to get sepiida.permissions.PermissionRequestError
+        
+        6.3
+        ---
+        Fix bug when making an OPTIONS request to an endpoint with non-standard queryargs returning an empty 400
+        
+        6.2
+        ---
+        Bug fixes, getting storage working
+        
+        6.1
+        ---
+        Bug fixes to to configuration fixture
+        
+        6.0
+        ---
+        Update sepiida.storage to use woodhouse instead of s3 directly.  The signature of the various sepiida.storage functions have changed, so be sure to check the source code and tests for exact usage.  In general they are very similar, although a config object is no longer provided to the functions.  Also some of the functions now expect a `bucket` parameter in addition of the name/key.  Instead a `sepiida.storage` config option is expected to be provided as part of the service config.  This config option should be automatically provided by the sepiida pillar, and should point to woodhouses dns location.
+        
+        This also updates the `configuration` fixture to no longer be session scoped.  This most likely will have little to no impact to tests, but could possible break tests which modify the configuration and then rely on those changes presisting to other tests.
+        
+        5.21
+        ---
+        
+        Add an optional method parameter to `sepiida.routing.uri` and add get method to `sepiida.storage.uri`.
+        
+        `sepiida.routing.uri` can now be called with a method parameter, which allows one to build a uri for not only `GET` endpoints.
+        
+        The get method to `sepiida.storage.uri` will allow files to be pulled from the storage layer.  It takes an optional `output_filename` parameter which, if specified, will write the gotten file to a local file.  Otherwise it will come back as an in filelike object, which can be read directly.
+        
+        5.20
+        ---
+        Add ServerSideEncryption and ContentType config options to sepiida.storage
+        
+        These can be used to specify a ContentType and/or ServerSideEncryption for s3 put operations (both getting a link and directly putting). See the boto3 docs for a list of valid values for these options.
+        
+        5.18
+        ---
+        Add some extra test helpers for backend task framework
+        
+        Particulary this should make defining tasks within a test for testing purposes much easier.  Also it adds the `mock_task_factory` fixture, which can be used to create mock tasks which will patch an existing patch.  Using `mock_task.ran`, `mock_task.task_args`, and `mock_task.task_kwargs`, you can ensure a task will be called correctly without actually running it in a test.
+        
+        5.16
+        ---
+        Add backend async task execution frame work
+        
+        Internally this uses Celery, though that shouldn't really matter to the end user of this framework.  It should only really matter when setting up a new backend.
+        
+        The user will decorate thier backend tasks with `@sepiida.backend.task()`, which also allows some arguments for controlling different aspects of the task execution.
+        
+        To run the task in the backend, they will call it using the format `<task_name>.delay(args)`.  The task can also be executed synconusly using its standard calling format, `<task_name>(args)`.
+        
+        This also supports retry logic.  For more details on that, see Celery documentation.
+        
+        `sepiida.backend.create` is used to create the backend application.  Somewhat counterintuitivly, this needs to be created as part of both backend AND frontend startup.  This is because the frontend needs to know about the backend app to be able to delay tasks in the first place.
+        
+        Finally this also includes a test fixture for testing backend tasks.  The `backend_app` fixture should be used to test backend tasks.  It creates a special backend app using the `testing` flag to put the backend into a sycronous mode, where as soon as a `task.delay` method is called, it will be executed imidately, instead of having to have a separate backend processes running.  Examples of task tests can be found in tests/test_backend.py
+        
+        5.14
+        ----
+        Support in `storage.link` for PUT as well as GET. S3 only, of course, since that's all we currently support
+        
+        5.13
+        ----
+        Major changes to permissions fixture. It's now a class instance rather than a class and includes the `grant` function that will quickly create a permission without having to directly manipulate httpretty. It also now captures permissions that are granted and attempts to do a simplified form of filtering when listing permissions for the user so that the user can use a combination of `grant` and `sepiida.permissions.*` to manipulate permissions and the mocking of permissions via httpretty still works. Overall this means the following works correctly:
+        
+        	def test(permission):
+        		permission.grant(...a)
+        		sepiida.permissions.create(...b)
+        		assert permission.created(...a)
+        		assert permission.created(...b)
+        		assert sepiida.permissions.search(...a)
+        		assert sepiida.permissions.search(...b)
+        
+        Which is freaking amazing when you think about it.
+        
+        Also the permission fixture doesn't set up `pao_root` for you any more. Sorry. Set it up yourself like a big boy. It's better than it screwing with your carefully set settings
+        
+        And finally this changes `sepiida.fields.URI` so that it internally uses `sepiida.routing.uri` which has also become a bit more flexible at the cost of no longer requiring the `uuid` parameter
+        
+        5.12
+        ----
+        Fix a bug in OPTIONS against JSONObject without a signature causing a 500
+        
+        5.11
+        ----
+        
+        Make routing.uri return 'https' as the scheme regardless of how the client application is configured. You may see tests fail if you had http hard-coded
+        
+        5.10
+        ----
+        
+        Fix `permission.delete_all` to work with changes in 5.9
+        
+        5.9
+        ---
+        Adjust permission search so expect to be nested inside 'resources'. This is just a fix to how permissions.search behaved to return a list
+        
+        5.8
+        ---
+        Add sepiida.fixtures.permission.created which automatically captures requests to create permissions and stores them for assertions during tests.
+        *This may be dangerous because it automatically registers a URI with HTTPretty when you use the permission fixture*
+        You'll need to make sure your tests work after this upgrade if you have been using the permission fixture
+        
+        5.7
+        ---
+        Add sepiida.routing.uri function for creating URI's out of uuids without using `flask.url_for`
+        Create a way to manage permissions via sepiida.permissions with elevated privileges. This is useful for creating new permissions. Just include 'privileged=True'. Defaults to False
+        
+        5.6
+        ---
+        *API change*
+        If you were calling sepiida.config.get(...) you need to now call sepiida.config.load(...). Same arguments, new name. config.get() is now a way to load the global config file. On top of that we now auto-use the configuration fixture for easier test writing
+        
+        5.2-5.5
+        -------
+        Various improvements to permissions fixtures
+        
+        5.1
+        ---
+        Update version of HTTPretty, slightly better exception handling of permissions module and update mothermayi version
+        
+        5.0
+        ---
+        Lots of changes in this one
+        - Removed all database functions, including DB Engine, queryadapter and db-related fixtures. Use chryso
+        - Renamed config fixture to configuration to avoid collision with pytest-flask
+        - Made sentry support not require a flask context to set up
+        
+        4.3
+        ---
+        Added missing PyYAML requirement
+        
+        4.2
+        ---
+        - Add the config module for sepiida. This module is for a standardized way of reading and validating config files
+        - Add the permission module for sepiida. This is a standardized way of communicating with PAO
+        - Create an error message when clients attempt to access a method, like delete, on a collection rather than a single resource when it is not supported on a collection
+        - Remove support for `public_endpoint` as a decorator. Any functions you have that are using the decorator should be moved to using the whitelist that can be passed in with `register_session_handler`
+        
+        4.1
+        ---
+        Add a convenience function, `sepiida.queryadapter.map_and_filter` which can be used in place of separately calling `map_column_names` and `apply_filter`
+        
+        4.0
+        ---
+        This version gets a new major revision because it represents a breaking API change. After this change the filters that are provided to API endpoints will be cast based on the type of the field they are filtering. So, for example, if you request a filter on a property that is an Integer the filter value will be [1] instead of ['1']. This in general isn't huge for that type, however for URI types it makes a big difference because a value of ['https://foo.service/thing/1/'] will become [1], the ID of the resource, which can then be easily used by the platform layer to do SQL query filters in the database.
+        
+        Along with this change is a pretty massive rewrite to how filters and fields queryargs are parsed
+        
+        3.41
+        ----
+        Add an optional parameter to `setup_log` which will setup sentry integration with python's logging system. If you include this your log messages will go to sentry based on the sentry DSN passed in. This is useful for backend tasks that can't rely on flask's integration to do everything for them
+        
+        3.40
+        ----
+        Bad tag, nothing happened
+        
+        3.39
+        ----
+        Add timeout on JWT requests for information about an issuer. The timeout went from 60 seconds to 5 seconds.
+        
+        3.38
+        ----
+        Make AWS credentials optional when creating a Queue. This reorders the parameters which you might need to deal with if you didn't use named parameters
+        
+        3.37
+        ----
+        Fix log message when sending None out through a URL field. We were getting prod spam
+        
+        3.36
+        ----
+        Allow None to be sent out of a URL field
+        
+        3.35
+        ----
+        Add URL field which automatically strips out username/password.
+        
+        3.34
+        ----
+        Allow for specifying a particular key when using `jwt.encode()`. Previously we always pulled this from the config option `SEPIIDA_JWT_KEY`. Now a client can pass in a particular key and override pulling the key from the app config. This is useful in testing to pretend to be either side of a JWT conversation without having to manipulate the config
+        
+        3.33
+        ----
+        When an Endpoint has an `authenticate()` hook so that it uses custom authentication logic sepiida will now respond with the value returned by `authenticate()` when a client calls `session.current_user()`. This makes it possible for clients of `sepiida` to transparently use their custom `authenticate()` hook and interpret the data they store in their own way without having to know any internals for how sepiida might interpret that data or request information from `pao` when calling `current_user()`.
+        
+        In other words, this change does this:
+        
+        ```
+        class MyEndpoint(Endpoint):
+        	def authenticate():
+        		return {'foo': 'bar'}
+        	def get():
+        		assert sepiida.session.current_user() == {'foo': 'bar'}
+        ```
+        
+        and in doing so avoids a round-trip to `pao`
+        
+        3.32
+        ----
+        Add a function for getting a signed URL from durable storage. Right now it only supports being backed by S3, but that should grow over time.
+        
+        3.31
+        ----
+        Add function for putting data into durable storage. Right now it only supports being backed by S3, but that should grow over time.
+        
+        3.30
+        ----
+        Change WWW-Authenticate response header from 'Basic realm=Authentise' to 'Custom realm=Authentise'.
+        This will prevent browsers from showing the 'Authentication Required' modal and expecting
+        users to input their username and password themselves
+        
+        3.29
+        ----
+        Add simple functions for interacting with SQS queues so that we can start to
+        standardize our logic for communicating with queues. Sepiida is likely not the best
+        project for this, but I'll live with it for now
+        
+        3.28
+        ----
+        Change user URI in user fixture to use X.service domain instead of example.com.
+        This was necessary because of the new privileged domain logic in 3.27
+        
+        3.27
+        ----
+        Only allow privileged session to make requests to know internal domains. Previously
+        privileged session would allow requests to any domain which could leak sensitive information
+        about how to internally authenticate in our services. Now we create a list of trusted domains
+        via SEPIIDA_INTERNAL_DOMAINS and if the domain of a requested URL doesn't match an error is
+        raised
+        
+        3.26
+        ----
+        Turn more JWT-based 500 errors into 400-level errors
+        
+        3.25
+        ----
+        Allow clients to override the secrets in the register_jwt_handlers function
+        
+        3.24
+        ----
+        Turn a 500 error during authentication into a 400-level error during authentication
+        
+        3.23
+        ----
+        Allow datetime claims when not verifying JWT. This avoids an exception when using but not verifying JWTs
+        
+        
+        3.22
+        ----
+        Add configurable caching headers to APIEndpoint. By default GET requests will have a max-age of 10 seconds. You'll want to manually specify caching headers for any endpoints that do polling faster than that to allow browsers to actually make the request. You can specify the caching header with
+        
+        ```
+        class Endoint(sepiida.endpoints.APIEndpoint):
+            CACHING = {'GET': 'some value for cache-control'}
+        ```
+        
+        Also add the ability to add raven integration to a project through sepiida which will set the user context based on the user's session information
+        
+        Also add default expose headers for CORS that expose Location and X-Sentry-ID. These can be overridden in the register_cors_handlers function by adding a list of headers to expose for a particular service
+        
+        Also fix a security issue related to opening up LIST methods on accident when opening GET methods.
+        
+        3.21
+        ----
+        Useability improvements for the JWT portions of sepiida. Adds some fixtures around JWT and some automatic testing behavior
+        
+        3.20
+        ----
+        Improve URI endpoint field to handle None, is_nullable. Bug fixes
+        
+        3.19
+        ----
+        Add JWT to sepiida. This is in the new jwt module. Only interesting if you need it
+        
+        3.18
+        ----
+        Re-add pytest-mock as a dependency because downstream clients were counting on it
+        
+        3.17
+        ----
+        Add content-type: application/json to POST and PUT response bodies
+        
+        3.16
+        ----
+        
+        Changed `sepiida.fields.Field(put_null)` for `sepiida.fields.Field(nullable)`. You'll need to update any fields that set a value for `put_null` so that they use `nullable` instead
+        
+        3.15
+        ----
+        
+        DELETE for APIEndpoints should be changed so that `uuid` and `_id` as parameters are defaulted to None. This is because now DELETE works on collections of resources as well as single instances. In other words
+        
+            DELETE /foo/
+        
+            DELETE /foo/abc-123/
+        
+        are both valid
+        
+        License
+        =======
+        The MIT License (MIT)
+        
+        Copyright (c) 2016 Authentise Inc.
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+        
+Platform: UNKNOWN
