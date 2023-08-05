@@ -1,0 +1,232 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "AA_ARCH_SPEC" "5" "Sep 22, 2017" "1.4.1" "AutoArchive"
+.SH NAME
+aa_arch_spec \- Archive Specification File
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.sp
+\fB~/.config/aa/archive_specs/*.aa\fP
+.SH DESCRIPTION
+.sp
+Archive specification file contains all information needed for creation of a single archive.
+.SH FILE FORMAT
+.sp
+Options in the \&.aa file are divided into sections.  A section begins with the section name enclosed in square
+brackets.  It contains variables which represents the options.
+.sp
+Variables are written in the \fBoption\-name = value\fP form, one variable per line.  Boolean values are written as
+\fByes\fP and \fBno\fP\&.  For path values, tilde (\fB~\fP) is expanded to the user\(aqs home.  Form \fBoption\-name =\fP can be
+used to specify a variable with undefined value.
+.sp
+Values of \fBinclude\-files\fP and \fBexclude\-files\fP options that contains spaces has to be enclosed in double quotes
+(\fB""\fP).  They may contain standard shell wildcards.
+.sp
+When specifying the value it is possible to refer to other variables from the same file using the form
+\fB%(variable\-name)s\fP or variables from an external file using the form \fB@(external\-name.variable\-name)\fP where
+\fBexternal\-name\fP is reference which has to be defined in \fB[External]\fP section.
+.sp
+Lines beginning with \fB#\fP or \fB;\fP are ignored and may be used for comments.
+.sp
+Three sections are valid: \fB[External\fP, \fB[Archive]\fP (optional) and \fB[Content]\fP\&.
+.SS Section \fB[External]\fP
+.sp
+This section contains definition of external references.  Each reference is put on a single line.  They can be
+specified by two forms: as a single variable or as a \fBvariable = path\fP pair.
+.sp
+If \fBsingle variable\fP is specified it refers to archive specification file of the same name as the variable but
+without the \(aq.aa\(aq extension.  The file is searched in the archive specifications directory\&.
+.sp
+The \fBvariable = path\fP form allows to refer a file from an arbitrary location by specifying its absolute or relative
+path.  Paths are relative to the directory of the original file.  In both cases variable name is used in the reference.
+See \fI\%Examples\fP for the example of the \&.aa file with external references.
+.SS Section \fB[Archive]\fP
+.sp
+This section can contain configuration options which are, when specified, overriding the ones specified in
+configuration files and command line.
+.sp
+\fBOptions valid in the [Archive] section:\fP
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+archiver
+.IP \(bu 2
+compression\-level
+.IP \(bu 2
+dest\-dir
+.IP \(bu 2
+overwrite\-at\-start
+.IP \(bu 2
+incremental
+.IP \(bu 2
+restarting
+.IP \(bu 2
+restart\-after\-level
+.IP \(bu 2
+restart\-after\-age
+.IP \(bu 2
+full\-restart\-after\-count
+.IP \(bu 2
+full\-restart\-after\-age
+.IP \(bu 2
+max\-restart\-level\-size
+.IP \(bu 2
+remove\-obsolete\-backups
+.IP \(bu 2
+keep\-old\-backups
+.IP \(bu 2
+number\-of\-old\-backups
+.IP \(bu 2
+command\-before\-backup
+.IP \(bu 2
+command\-after\-backup
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+See \fIaa\fP(1) for their description.
+.SS Section \fB[Content]\fP
+.sp
+This section contains options specific to an archive.  All options except \fBname\fP are required.
+.sp
+\fBOptions valid in the [Content] section:\fP
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+name
+.sp
+Archive name.  Created backup will be named according value of this variable plus appropriate extension.  It is
+optional; default value is the name of the \&.aa file without the extension.
+.IP \(bu 2
+path
+.sp
+Path to archive root.  All paths and file names specified in the same archive specification file will be relative
+to this path.  It will be also the root of the created archive.
+.IP \(bu 2
+include\-files
+.sp
+List of space separated file or directory names to backup.  Paths here are relative to the path specified in
+\fBpath\fP variable above.  Starting forward slash (\fB/\fP) from absolute paths as well as parent directory tokens
+(\fB\&..\fP) will be ignored.
+.IP \(bu 2
+exclude\-files
+.sp
+List of space separated file or directory names to be excluded from the backup.  Use \fBexclude\-files =\fP to
+specify that no files should be excluded.  Similarly to \fBinclude\-files\fP these paths are relative to \fBpath\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH EXAMPLES
+.sp
+In this example we want to configure archive for "/data" directory backups\&.  There will be two locations
+where backups are stored.  One is a large capacity NAS mounted at "/mnt/nas", the other is a smaller external disk
+mounted at "/mnt/backup_disk".
+.sp
+Below is content of two archive specification files for this use case.  The first one
+configures archive "data\-nas" for NAS storage destination.  Second file configures archive "data\-disk" for
+external disk location.  It is taking all values except \fBdest\-dir\fP from the "data\-nas.aa" file via external
+references.  Additionally it excludes "videos" directory so that backup will fit to disk.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# \-\-\-\-\-\- begin of data\-nas.aa \-\-\-\-\-\-
+[Content]
+path = /
+include\-files = data\-nas
+exclude\-files =
+
+[Archive]
+dest\-dir = /mnt/nas
+# \-\-\-\-\-\- end of data\-nas.aa \-\-\-\-\-\-
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# \-\-\-\-\-\- begin of data\-disk.aa \-\-\-\-\-\-
+[External]
+data\-nas
+
+[Content]
+path = @(data\-nas.path)
+include\-files = @(data\-nas.include\-files)
+exclude\-files = @(data\-nas.exclude\-files) videos
+
+[Archive]
+dest\-dir = /mnt/backup_disk
+# \-\-\-\-\-\- end of data\-disk.aa \-\-\-\-\-\-
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Specifying path to the external file
+.sp
+Would the "data\-nas.aa" file in previous example be in a different directory than archive specifications directory its
+path had to be specified:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# \-\-\-\-\-\- begin of data\-disk.aa \-\-\-\-\-\-
+[External]
+data\-nas = /path/to/data\-nas.aa
+
+[Content]
+# ...
+# \-\-\-\-\-\- end of data\-disk.aa \-\-\-\-\-\-
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH LICENSE
+.sp
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License version 3 as published by the Free Software Foundation.
+.sp
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+.sp
+You should have received a copy of the GNU General Public License along with this program.  If not, see
+<\fI\%http://www.gnu.org/licenses/\fP>.
+.SH SEE ALSO
+.sp
+\fIaa\fP(1), \fIaa.conf\fP(5)
+.SH COPYRIGHT
+2003 - 2017, Robert Cernansky
+.\" Generated by docutils manpage writer.
+.

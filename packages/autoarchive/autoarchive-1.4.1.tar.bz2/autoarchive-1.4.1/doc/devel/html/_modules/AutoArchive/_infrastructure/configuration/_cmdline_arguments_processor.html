@@ -1,0 +1,147 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._infrastructure.configuration._cmdline_arguments_processor &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._infrastructure.configuration._cmdline_arguments_processor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _cmdline_arguments_processor.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_CmdlineArgumentsProcessor` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_CmdlineArgumentsProcessor&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.utils</span> <span class="k">import</span> <span class="n">Utils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">OptionsUtils</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_CmdlineArgumentsProcessor"><a class="viewcode-back" href="../../../../api/infrastructure.configuration.html#AutoArchive._infrastructure.configuration._cmdline_arguments_processor._CmdlineArgumentsProcessor">[docs]</a><span class="k">class</span> <span class="nc">_CmdlineArgumentsProcessor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Processes command-line arguments and populates :class:`.IConfiguration` instance.</span>
+
+<span class="sd">    :param optparseValues: Command-line options and their values.</span>
+<span class="sd">    :type optparseValues: :class:`optparse.Values`&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optparseValues</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__optparseValues</span> <span class="o">=</span> <span class="n">optparseValues</span>
+
+
+
+<div class="viewcode-block" id="_CmdlineArgumentsProcessor.populateConfiguration"><a class="viewcode-back" href="../../../../api/infrastructure.configuration.html#AutoArchive._infrastructure.configuration._cmdline_arguments_processor._CmdlineArgumentsProcessor.populateConfiguration">[docs]</a>    <span class="k">def</span> <span class="nf">populateConfiguration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Populates ``configuration`` with options specified on the command line.</span>
+
+<span class="sd">        .. note:: Options that are not defined in the :class:`.Options` class are skipped; it is assumed that they are</span>
+<span class="sd">           commands for command-line UI.</span>
+
+<span class="sd">        :param configuration: Configuration that should be populated.</span>
+<span class="sd">        :type configuration: :class:`._Configuration`&quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">optParseOption</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">optParseOption</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">option</span> <span class="o">=</span> <span class="n">optParseOption</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">OptionsUtils</span><span class="o">.</span><span class="n">isExistingOption</span><span class="p">(</span><span class="n">option</span><span class="p">):</span>
+                        <span class="n">configuration</span><span class="o">.</span><span class="n">_addOrReplaceOption</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">optParseOption</span><span class="p">]))</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">Utils</span><span class="o">.</span><span class="n">fatalExit</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="s2">&quot;Wrong value </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> of the option </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> specified on the command line.&quot;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">__optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">optParseOption</span><span class="p">],</span> <span class="n">option</span><span class="p">))</span></div></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

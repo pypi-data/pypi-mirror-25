@@ -1,0 +1,331 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Examples &#8212; AutoArchive User Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../_static/autoarchive.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="General Information" href="general_information.html" />
+    <link rel="prev" title="Configuration File" href="config_file.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="general_information.html" title="General Information"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="config_file.html" title="Configuration File"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AutoArchive User Manual (ver. 1.4.1)</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<p>Let’s make a <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> of configuration files of all users except the user “foo”.  Let’s assume that our system has
+unix-like style of home directories (directory “/home” contains directories of all users; configuration files begins
+with dot).  Name of this backup will be “user-configs”.</p>
+<div class="section" id="configuring-the-archive-example">
+<span id="id1"></span><h2>Configuring the Archive Example<a class="headerlink" href="#configuring-the-archive-example" title="Permalink to this headline">¶</a></h2>
+<p>First, we need to create the file “user-configs.aa” under the “~/.config/aa/archive_specs/” directory - this is the
+<a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a>.  The file doesn’t need to have the same name as the <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a>.  If it does however, the
+option <code class="docutils literal"><span class="pre">name</span></code> can be left out (in this example we specified it anyway, even it is not needed).</p>
+<p>In the <code class="docutils literal"><span class="pre">path</span></code> variable we specify the archive root which is the <strong>the base directory which content we want to
+backup</strong>.</p>
+<p>Variables <code class="docutils literal"><span class="pre">include-files</span></code> and <code class="docutils literal"><span class="pre">exclude-files</span></code> contains list of files and directories that we want to be included or
+excluded respectively.  In this example we specify <code class="docutils literal"><span class="pre">*/.*</span></code> pattern because we want to include home directories of all
+users (such as /home/<strong>bob</strong>, /home/<strong>joe</strong>, etc.), what the first <code class="docutils literal"><span class="pre">*</span></code> is for.  And from within those user home
+directories we want to include everything that begins with <code class="docutils literal"><span class="pre">.</span></code> (for example /home/bob/<strong>.bashrc</strong>), what the <code class="docutils literal"><span class="pre">.*</span></code>
+pattern is for.  Paths specified in these variables are relative to <code class="docutils literal"><span class="pre">path</span></code>.</p>
+<p>Although, yet we do not want to include <em>all</em> user home directories as we specified in <code class="docutils literal"><span class="pre">include-files</span></code>.  Those
+directories that should not be included we put in <code class="docutils literal"><span class="pre">exclude-files</span></code> (“foo” in this example, which makes /home/foo
+excluded).  If we would not want to exclude any file then the corresponding variable would be specified as
+<code class="docutils literal"><span class="pre">exclude-files</span> <span class="pre">=</span></code>.</p>
+<p>Content of the “user-configs.aa” file:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="c1"># ------ begin of user-configs.aa ------</span>
+<span class="c1"># AutoArchive&#39;s archive specification file for users configuration files</span>
+<span class="k">[Content]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">user-configs</span>
+<span class="na">path</span> <span class="o">=</span> <span class="s">/home</span>
+<span class="na">include-files</span> <span class="o">=</span> <span class="s">*/.*</span>
+<span class="na">exclude-files</span> <span class="o">=</span> <span class="s">foo</span>
+
+<span class="k">[Archive]</span>
+<span class="na">dest-dir</span> <span class="o">=</span> <span class="s">/mnt/backup</span>
+<span class="c1"># ------ end of user-configs.aa ------</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="backup-creation-example">
+<span id="id2"></span><h2>Backup Creation Example<a class="headerlink" href="#backup-creation-example" title="Permalink to this headline">¶</a></h2>
+<p>Once we configured the <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a> we can create the <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> easily with command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>and in the “/mnt/backup” directory the file “user-configs.tar.gz” will be created.</p>
+<p>Given the “user-configs.aa” example file above, the command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">-</span><span class="n">i</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>will create <strong>level 0</strong> incremental backup – “user-configs.tar.gz” which is essentially the same as a
+non-incremental backup.  Another execution of the same command will create <strong>level 1</strong> backup named
+“user-configs.1.tar.gz” which contains only a differences from level 0.  Each subsequent call will create a <strong>next
+level</strong> which will contain only a differences from previous.</p>
+<p>In order to restart to level 0 again, thus create a <strong>fresh full backup</strong>, the following command can be used:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">-</span><span class="n">i</span> <span class="o">-</span><span class="n">l</span> <span class="mi">0</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>Note that you <strong>should remove</strong> all previously created “user-configs” backups with <a class="reference internal" href="glossary.html#term-level"><span class="xref std std-term">level</span></a> higher than 0
+because they are no longer valid in regards to the newly created level 0 backup.  You may pass
+<code class="docutils literal"><span class="pre">--remove-obsolete-backups</span></code> option to the command above and they will be removed automatically.</p>
+<div class="section" id="backup-keeping">
+<span id="backup-keeping-example"></span><h3>Backup Keeping<a class="headerlink" href="#backup-keeping" title="Permalink to this headline">¶</a></h3>
+<p>We assume that all previously created backups were removed in order to demonstrate the backup keeping.</p>
+<p>First we create a standard backup:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>This creates “user-configs.tar.gz” backup.  Some days later let’s say, we want to create the same backup again.
+However we do not want to overwrite the original one.  The option <code class="docutils literal"><span class="pre">-k</span></code> can be used to keep the original backup:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">-</span><span class="n">k</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>This will rename the original backup to “user-configs.<strong>aa</strong>.tar.gz” and create the new one “user-configs.tar.gz”.
+If we create the same backup for the third time (still using the <code class="docutils literal"><span class="pre">-k</span></code>) option, “user-configs.aa.tar.gz” will be
+removed, “user-configs.tar.gz” will be renamed to “user-configs.aa.tar.gz” and the new “user-configs.tar.gz” will be
+created.  So AutoArchive by default keeps single old backup when <code class="docutils literal"><span class="pre">-k</span></code> options is specified.  To keep more, e.g. four
+backups we would specify <code class="docutils literal"><span class="pre">--number-of-old-backups=4</span></code> alongside with <code class="docutils literal"><span class="pre">-k</span></code>.</p>
+<p>Incremental backups can be kept as well.  Again, we assume that all previously created backups were removed.  Let’s
+create a few levels of incremental “user-configs” archive:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">-</span><span class="n">i</span> <span class="o">-</span><span class="n">l</span> <span class="mi">0</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+<span class="n">aa</span> <span class="o">-</span><span class="n">i</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+<span class="n">aa</span> <span class="o">-</span><span class="n">i</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+<span class="n">aa</span> <span class="o">-</span><span class="n">i</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>This will create following files:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">1.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">2.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">3.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</pre></div>
+</div>
+<p>Then we (manually) restart to level 2 while asking to keep old backups:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">-</span><span class="n">i</span> <span class="o">-</span><span class="n">l</span> <span class="mi">2</span> <span class="o">-</span><span class="n">k</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>After this command following files will be present:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">1.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">2.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">2.</span><span class="n">aa</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">3.</span><span class="n">aa</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</pre></div>
+</div>
+<p>Let’s explain what happened.  The original file “user-configs.2.tar.gz” was going to be overwritten therefore it was
+renamed to “user-configs.2.aa.tar.gz”.  As all backup levels higher than the renamed one depends on it they have to be
+renamed as well.  In this example “user-configs.3.tar.gz” depends on “user-configs.2.tar.gz” therefore it was renamed
+to “user-configs.3.aa.tar.gz”.  Finally the new <a class="reference internal" href="glossary.html#term-increment"><span class="xref std std-term">increment</span></a> “user-configs.2.tar.gz” was created.</p>
+</div>
+</div>
+<div class="section" id="listing-archives-example">
+<h2>Listing Archives Example<a class="headerlink" href="#listing-archives-example" title="Permalink to this headline">¶</a></h2>
+<p>Our “user-configs” <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a> can be listed by following command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">--</span><span class="nb">list</span>
+</pre></div>
+</div>
+<p>Which results to the following output:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">user</span><span class="o">-</span><span class="n">configs</span> <span class="o">/</span><span class="n">home</span>                    <span class="o">/</span><span class="n">mnt</span><span class="o">/</span><span class="n">backups</span>               <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>If we pass <code class="docutils literal"><span class="pre">--verbose</span></code> option then it shows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Name</span><span class="p">:</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+<span class="n">Root</span><span class="p">:</span> <span class="o">/</span><span class="n">home</span>
+<span class="n">Archiver</span> <span class="nb">type</span><span class="p">:</span> <span class="n">targz</span>
+<span class="n">Destination</span> <span class="n">directory</span><span class="p">:</span> <span class="o">/</span><span class="n">mnt</span><span class="o">/</span><span class="n">backups</span>
+<span class="n">Current</span> <span class="n">backup</span> <span class="n">level</span><span class="o">/</span><span class="nb">next</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+<span class="n">Target</span> <span class="n">backup</span> <span class="n">level</span> <span class="k">for</span> <span class="n">non</span><span class="o">-</span><span class="n">full</span> <span class="n">restart</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">Upcoming</span> <span class="n">restart</span> <span class="n">reason</span><span class="p">:</span> <span class="p">[</span><span class="n">No</span> <span class="n">restart</span> <span class="n">scheduled</span> <span class="k">for</span> <span class="n">the</span> <span class="nb">next</span> <span class="n">backup</span><span class="o">.</span><span class="p">]</span>
+<span class="n">Restart</span> <span class="n">count</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="p">]</span><span class="o">/</span><span class="p">[</span><span class="o">-</span><span class="p">]</span>
+<span class="n">Days</span> <span class="n">since</span> <span class="n">last</span> <span class="n">restart</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="p">]</span><span class="o">/</span><span class="p">[</span><span class="o">-</span><span class="p">]</span>
+<span class="n">Days</span> <span class="n">since</span> <span class="n">last</span> <span class="n">full</span> <span class="n">restart</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="p">]</span><span class="o">/</span><span class="p">[</span><span class="o">-</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The archive <em>Name</em> is “user-configs” as configured with the <code class="docutils literal"><span class="pre">name</span></code> variable in the
+<a class="reference internal" href="#configuring-the-archive-example"><span class="std std-ref">Configuring the Archive Example</span></a> section.  <em>Root</em> corresponds to the value configured with the <code class="docutils literal"><span class="pre">path</span></code> variable.
+<em>Archiver type</em> is “targz” which is the default.  <em>Destination directory</em> “/mnt/backup” is configured with <code class="docutils literal"><span class="pre">dest-dir</span></code>
+variable.  <em>Current backup level/next/max.</em> shows [0]/[1]/[10] because in the section <a class="reference internal" href="#backup-creation-example"><span class="std std-ref">Backup Creation Example</span></a> we
+have created an incremental backup of level 0, so current level is 0.  Next level is 1 (restarting is not enabled).
+Both the current and the next levels are enclosed in square brackets because incremental archiving is not enabled (it
+was enabled only temporarily with the <code class="docutils literal"><span class="pre">-i</span></code> option).  Finally, the maximal backup level is 10 as it is the default.
+It is also shown in square brackets because restarting is not enabled; this also applies for all following values.
+Since no <code class="docutils literal"><span class="pre">max-restart-level-size</span></code> is specified the <em>Target backup level for non-full restart</em> is and always be 1.
+Obviously, no restart is scheduled as the <em>Upcoming restart reason</em> value is showing.  Since no restart ever occurred
+and no value is specified for the rest of restarting options the values <em>Restart count/max.</em>, <em>Days since last
+restart/max.</em> and <em>Days since last full restart/max.</em> shows only dashes.</p>
+</div>
+<div class="section" id="cleaning-orphaned-information-example">
+<h2>Cleaning Orphaned Information Example<a class="headerlink" href="#cleaning-orphaned-information-example" title="Permalink to this headline">¶</a></h2>
+<p>If we remove the “user-configs.aa” <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a> then the <code class="docutils literal"><span class="pre">--list</span></code> will still be showing the <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a>
+with its name enclosed in square brackets (it becomes the <a class="reference internal" href="glossary.html#term-orphaned-archive"><span class="xref std std-term">orphaned archive</span></a>):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>[user-configs] ?                    .                            [0]/[?]/[10]
+</pre></div>
+</div>
+<p>This is because some information is still stored in the AutoArchive’s configuration directory.  It is the snapshot file
+created by <strong class="command">tar</strong> when incremental <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> was created.  There may be more information left behind if
+restarting would be enabled.  All of this orphaned information can be deleted with the <code class="docutils literal"><span class="pre">--purge</span></code> command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">--</span><span class="n">purge</span> <span class="n">user</span><span class="o">-</span><span class="n">configs</span>
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">aa</span> <span class="o">--</span><span class="n">purge</span> <span class="o">--</span><span class="nb">all</span>
+</pre></div>
+</div>
+<p>which would remove all orphaned archives.</p>
+</div>
+<div class="section" id="backup-restoration-example">
+<span id="id3"></span><h2>Backup Restoration Example<a class="headerlink" href="#backup-restoration-example" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="restoring-non-incremental-backup">
+<h3>Restoring Non-Incremental Backup<a class="headerlink" href="#restoring-non-incremental-backup" title="Permalink to this headline">¶</a></h3>
+<p>Let’s say we have created simple (non-incremental) backup as in the <a class="reference internal" href="#backup-creation-example"><span class="std std-ref">Backup Creation Example</span></a>.  Thus we have
+a file called “user-configs.tar.gz” in the “/mnt/backup” directory.  As the AutoArchive does not handle restoration we
+will use standard <strong>GNU tar</strong> archiver.</p>
+<p>To restore the backup to its original destination and thus <strong>replace all existing files with the ones from the
+backup</strong> we can use following command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">tar</span> <span class="o">-</span><span class="n">xf</span> <span class="o">/</span><span class="n">mnt</span><span class="o">/</span><span class="n">backup</span><span class="o">/</span><span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="o">-</span><span class="n">C</span> <span class="o">/</span><span class="n">home</span>
+</pre></div>
+</div>
+<p>The value of the <code class="docutils literal"><span class="pre">-C</span></code> option (/home) is the same as the value of <code class="docutils literal"><span class="pre">path</span></code> variable in the “user-configs.aa”.  The
+<code class="docutils literal"><span class="pre">-C</span></code> option can be left out if the destination is the <em>current working directory</em> (in other words you did “cd /home”
+earlier).</p>
+<p>Of course the backup can be restored to any arbitrary location by replacing “/home” with some other path in the command
+above.  This may be more safe and convenient as it does not replaces original files.  The extracted backup files can be
+reviewed and copied to the original destination afterwards.  You may also use a graphical file manager or an archive
+manager to browse content of the backup interactively.</p>
+</div>
+<div class="section" id="restoring-incremental-backup">
+<h3>Restoring Incremental Backup<a class="headerlink" href="#restoring-incremental-backup" title="Permalink to this headline">¶</a></h3>
+<p>Suppose we have several increments of the “user-configs” archive in the /mnt/backup directory.  The content of the
+directory is following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ ls -1 /mnt/backup
+-rw-r--r-- 1 root root  10M Apr 20 17:07 user-configs.tar.gz
+-rw-r--r-- 1 root root   1M May 11 12:21 user-configs.1.tar.gz
+-rw-r--r-- 1 root root 1.5M Jun 26 16:43 user-configs.2.tar.gz
+</pre></div>
+</div>
+<p>Which means we have backup level 0, 1 and 2.  To restore entire backup to the latest possible date (in this case
+Jun 26) we have to restore all backup levels.  Similarly to the previous example the following series of commands will
+restore the backup to the original location <strong>replacing</strong> the original files there:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">tar</span> <span class="o">-</span><span class="n">xf</span> <span class="o">/</span><span class="n">mnt</span><span class="o">/</span><span class="n">backup</span><span class="o">/</span><span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="o">-</span><span class="n">G</span> <span class="o">-</span><span class="n">C</span> <span class="o">/</span><span class="n">home</span>
+<span class="n">tar</span> <span class="o">-</span><span class="n">xf</span> <span class="o">/</span><span class="n">mnt</span><span class="o">/</span><span class="n">backup</span><span class="o">/</span><span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">1.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="o">-</span><span class="n">G</span> <span class="o">-</span><span class="n">C</span> <span class="o">/</span><span class="n">home</span>
+<span class="n">tar</span> <span class="o">-</span><span class="n">xf</span> <span class="o">/</span><span class="n">mnt</span><span class="o">/</span><span class="n">backup</span><span class="o">/</span><span class="n">user</span><span class="o">-</span><span class="n">configs</span><span class="o">.</span><span class="mf">2.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="o">-</span><span class="n">G</span> <span class="o">-</span><span class="n">C</span> <span class="o">/</span><span class="n">home</span>
+</pre></div>
+</div>
+<p>As in the previous example the “-C /home” can be left out (backup will be restored to the current directory) or “/home”
+replaced with some other path (backup will be restored to that path).</p>
+</div>
+</div>
+<div class="section" id="referring-to-external-archive-specification-example">
+<span id="id4"></span><h2>Referring To External Archive Specification Example<a class="headerlink" href="#referring-to-external-archive-specification-example" title="Permalink to this headline">¶</a></h2>
+<p>In this example we want to configure <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a> for “/data” directory <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backups</span></a>.  There will be two locations
+where backups are stored.  One is a large capacity NAS mounted at “/mnt/nas”, the other is a smaller external disk
+mounted at “/mnt/backup_disk”.</p>
+<p>Below is content of two <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification files</span></a> for this use case.  The first one
+configures archive “data-nas” for NAS storage destination.  Second file configures archive “data-disk” for
+external disk location.  It is taking all values except <code class="docutils literal"><span class="pre">dest-dir</span></code> from the “data-nas.aa” file via external
+references.  Additionally it excludes “videos” directory so that backup will fit to disk.</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="c1"># ------ begin of data-nas.aa ------</span>
+<span class="k">[Content]</span>
+<span class="na">path</span> <span class="o">=</span> <span class="s">/</span>
+<span class="na">include-files</span> <span class="o">=</span> <span class="s">data-nas</span>
+<span class="na">exclude-files</span> <span class="o">=</span>
+
+<span class="k">[Archive]</span>
+<span class="na">dest-dir</span> <span class="o">=</span> <span class="s">/mnt/nas</span>
+<span class="c1"># ------ end of data-nas.aa ------</span>
+</pre></div>
+</div>
+<div class="highlight-ini"><div class="highlight"><pre><span></span># ------ begin of data-disk.aa ------
+[External]
+data-nas
+
+[Content]
+path = @(data-nas.path)
+include-files = @(data-nas.include-files)
+exclude-files = @(data-nas.exclude-files) videos
+
+[Archive]
+dest-dir = /mnt/backup_disk
+# ------ end of data-disk.aa ------
+</pre></div>
+</div>
+<div class="section" id="specifying-path-to-the-external-file">
+<h3>Specifying path to the external file<a class="headerlink" href="#specifying-path-to-the-external-file" title="Permalink to this headline">¶</a></h3>
+<p>Would the “data-nas.aa” file in previous example be in a different directory than <a class="reference internal" href="glossary.html#term-archive-specifications-directory"><span class="xref std std-term">archive specifications directory</span></a> its
+path had to be specified:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="c1"># ------ begin of data-disk.aa ------</span>
+<span class="k">[External]</span>
+<span class="na">data-nas</span> <span class="o">=</span> <span class="s">/path/to/data-nas.aa</span>
+
+<span class="k">[Content]</span>
+<span class="c1"># ...</span>
+<span class="c1"># ------ end of data-disk.aa ------</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="general_information.html" title="General Information"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="config_file.html" title="Configuration File"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AutoArchive User Manual (ver. 1.4.1)</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Robert Cernansky.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

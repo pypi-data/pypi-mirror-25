@@ -1,0 +1,459 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._application.archiving._archiving &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._application.archiving._archiving</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _archiving.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2017 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_Archiving` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_Archiving&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.configuration</span> <span class="k">import</span> <span class="n">Options</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._application.archiving.archive_spec</span> <span class="k">import</span> <span class="n">ArchiveSpec</span><span class="p">,</span> <span class="n">ConfigConstants</span><span class="p">,</span> <span class="n">ArchiveSpecInfo</span><span class="p">,</span> \
+    <span class="n">ArchiveSpecOptions</span>
+<span class="kn">from</span> <span class="nn">._archive_info</span> <span class="k">import</span> <span class="n">_ArchiveInfo</span><span class="p">,</span> <span class="n">_BackupLevelRestartReasons</span>
+<span class="kn">from</span> <span class="nn">._archiver_manipulator</span> <span class="k">import</span> <span class="n">ArchiverManipulator</span>
+<span class="kn">from</span> <span class="nn">._archiving_constants</span> <span class="k">import</span> <span class="n">_RestartStorageVariables</span>
+<span class="kn">from</span> <span class="nn">._backup_information_provider</span> <span class="k">import</span> <span class="n">_BackupInformationProvider</span>
+<span class="kn">from</span> <span class="nn">._command_executor</span> <span class="k">import</span> <span class="n">_CommandExecutor</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_Archiving"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving">[docs]</a><span class="k">class</span> <span class="nc">_Archiving</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Provides means for working with archives.</span>
+
+<span class="sd">    Several methods of this class requires an :term:`archive specification file` as the input parameter (usually</span>
+<span class="sd">    named ``specFile``).  This file should contain all information required to create the :term:`backup`.  Its format is</span>
+<span class="sd">    defined by the standard :mod:`configparser` module.  It has to contain section ``[Content]`` and may contain</span>
+<span class="sd">    section ``[Archive]``.  The ``[Content]`` section requires following options to be present: ``path``,</span>
+<span class="sd">    ``include-files`` and ``exclude-files``.  Optionally, ``name`` can be present.  Options in the archive</span>
+<span class="sd">    specification file has higher priority than those in the configuration.</span>
+
+<span class="sd">    :param componentUi: Access to user interface.</span>
+<span class="sd">    :type componentUi: :class:`.CmdlineUi`</span>
+<span class="sd">    :param applicationContext: Application context.</span>
+<span class="sd">    :type applicationContext: :class:`.ApplicationContext`</span>
+<span class="sd">    :param serviceAccessor: Access to services.</span>
+<span class="sd">    :type serviceAccessor: :class:`.IServiceAccessor`</span>
+<span class="sd">    :param commandExecutor: For executing commands before and after backup creation.</span>
+<span class="sd">    :type commandExecutor: :class:`_CommandExecutor`&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">componentUi</span><span class="p">,</span> <span class="n">applicationContext</span><span class="p">,</span> <span class="n">serviceAccessor</span><span class="p">,</span> <span class="n">commandExecutor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span> <span class="o">=</span> <span class="n">componentUi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span> <span class="o">=</span> <span class="n">serviceAccessor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__commandExecutor</span> <span class="o">=</span> <span class="n">commandExecutor</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span> <span class="o">=</span> <span class="n">applicationContext</span><span class="o">.</span><span class="n">configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span> <span class="o">=</span> <span class="n">applicationContext</span><span class="o">.</span><span class="n">storage</span>
+
+        <span class="c1"># stores already created ArchiveSpec instances; key is path to the archive specification file and the value</span>
+        <span class="c1"># is the instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpecs</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+
+<div class="viewcode-block" id="_Archiving.makeBackup"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving.makeBackup">[docs]</a>    <span class="k">def</span> <span class="nf">makeBackup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the :term:`backup` based on ``specFile``.</span>
+
+<span class="sd">        The result can be a file with a full backup or an incremental backup of some particular level.  This depends on</span>
+<span class="sd">        the :term:`archive specification file` (``specFile``), the configuration (:class:`.IConfiguration`), previous</span>
+<span class="sd">        operations with the ``specFile`` and the time.  Some of the properties of :class:`._ArchiveInfo` returned by the</span>
+<span class="sd">        method :meth:`getArchiveInfo()` can be used to determine what the result will be.  The path and name of the</span>
+<span class="sd">        created file will be assembled as follows:</span>
+<span class="sd">        “&lt;Options.DEST_DIR&gt;/&lt;archive_name&gt;[.&lt;backup_level&gt;].&lt;archiver_specific_extension&gt;”.</span>
+
+<span class="sd">        Method uses :class:`.CmdlineUi`-like interface to report errors, warnings et al. to the user.</span>
+
+<span class="sd">        .. warning:: This method utilizes the :term:`user configuration directory` so the option \</span>
+<span class="sd">           :attr:`.Options.USER_CONFIG_DIR` has to point to an *existing* directory.</span>
+
+<span class="sd">        :param specFile: Path to the :term:`archive specification file`.</span>
+<span class="sd">        :type specFile: ``str``</span>
+
+<span class="sd">        :raise ValueError: If the desired archiver type is not supported.&quot;&quot;&quot;</span>
+
+        <span class="n">archiveSpec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getOrTryCreateArchiveSpec</span><span class="p">(</span><span class="n">specFile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">archiveSpec</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__commandExecutor</span><span class="o">.</span><span class="n">executeBeforeCommand</span><span class="p">(</span><span class="n">archiveSpec</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">archiverManipulator</span> <span class="o">=</span> <span class="n">ArchiverManipulator</span><span class="p">(</span>
+                <span class="n">_BackupInformationProvider</span><span class="p">(</span><span class="n">archiveSpec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span><span class="p">)</span>
+            <span class="n">backupFilePath</span> <span class="o">=</span> <span class="n">archiverManipulator</span><span class="o">.</span><span class="n">createBackup</span><span class="p">()</span>
+            <span class="n">archiverManipulator</span><span class="o">.</span><span class="n">saveBackupLevelInfo</span><span class="p">(</span><span class="n">backupFilePath</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to create the backup: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to create the backup: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__commandExecutor</span><span class="o">.</span><span class="n">executeAfterCommand</span><span class="p">(</span><span class="n">archiveSpec</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="_Archiving.getArchiveSpecs"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving.getArchiveSpecs">[docs]</a>    <span class="k">def</span> <span class="nf">getArchiveSpecs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterable of all known archive specification files.</span>
+
+<span class="sd">        :return: Iterable of archive specification files information.</span>
+<span class="sd">        :rtype: ``Iterable&lt;ArchiveSpecInfo&gt;``</span>
+
+<span class="sd">        :raise RuntimeError: If list of archive specification can not be obtained.&quot;&quot;&quot;</span>
+
+        <span class="n">archiveSpecsDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">archiveSpecsDir</span><span class="p">):</span>
+            <span class="n">specFiles</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">fname</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fname</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">ConfigConstants</span><span class="o">.</span><span class="n">ARCHIVE_SPEC_EXT</span><span class="p">,</span>
+                               <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">archiveSpecsDir</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">specFile</span> <span class="ow">in</span> <span class="n">specFiles</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">ArchiveSpecInfo</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">specFile</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">archiveSpecsDir</span><span class="p">,</span> <span class="n">specFile</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Archive specifications directory </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> does not exists.&quot;</span><span class="p">,</span> <span class="n">archiveSpecsDir</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="_Archiving.filterValidSpecFiles"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving.filterValidSpecFiles">[docs]</a>    <span class="k">def</span> <span class="nf">filterValidSpecFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFiles</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns names of :term:`configured archives &lt;configured archive&gt;` from valid only</span>
+<span class="sd">        :term:`archive specification files &lt;archive specification file&gt;` passed in ``specFiles``.</span>
+
+<span class="sd">        :param specFiles: Paths to archive specification files that shall be validated and from which the names</span>
+<span class="sd">          shall be retrieved.</span>
+<span class="sd">        :type specFiles: ``Iterable&lt;str&gt;``</span>
+
+<span class="sd">        :return: Iterable of names of validly configured archives.</span>
+<span class="sd">        :rtype: ``Iterable&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">getOrTryCreateArchiveSpecSilently</span><span class="p">(</span><span class="n">specFile</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getOrCreateArchiveSpec</span><span class="p">(</span><span class="n">specFile</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">LookupError</span><span class="p">,</span> <span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+
+
+        <span class="n">archiveSpecs</span> <span class="o">=</span> <span class="p">(</span><span class="n">getOrTryCreateArchiveSpecSilently</span><span class="p">(</span><span class="n">archiveSpec</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">archiveSpec</span> <span class="ow">in</span> <span class="n">specFiles</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">archiveSpec</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">archiveSpec</span> <span class="ow">in</span> <span class="n">archiveSpecs</span>
+                <span class="k">if</span> <span class="n">archiveSpec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_Archiving.getArchiveInfo"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving.getArchiveInfo">[docs]</a>    <span class="k">def</span> <span class="nf">getArchiveInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns information about archive represented by the ``specFile`` parameter.</span>
+
+<span class="sd">        .. warning:: This method utilizes the :term:`user configuration directory` so the option \</span>
+<span class="sd">           :attr:`.Options.USER_CONFIG_DIR` has to point to an *existing* directory.</span>
+
+<span class="sd">        :param specFile: Path to the :term:`archive specification file`.</span>
+<span class="sd">        :type specFile: ``str``</span>
+
+<span class="sd">        :return: Information about an archive or ``None``.</span>
+<span class="sd">        :rtype: :class:`_ArchiveInfo`&quot;&quot;&quot;</span>
+
+        <span class="n">archiveSpec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getOrTryCreateArchiveSpec</span><span class="p">(</span><span class="n">specFile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">archiveSpec</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">storagePortion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="o">.</span><span class="n">createStoragePortion</span><span class="p">(</span><span class="n">realm</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">])</span>
+
+        <span class="n">archiverManipulator</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">backupInformationProvider</span> <span class="o">=</span> <span class="n">_BackupInformationProvider</span><span class="p">(</span>
+                <span class="n">archiveSpec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span><span class="p">)</span>
+            <span class="n">archiverManipulator</span> <span class="o">=</span> <span class="n">ArchiverManipulator</span><span class="p">(</span>
+                <span class="n">backupInformationProvider</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to get some of the archive information: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to get archive information: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># create and populate _ArchiveInfo instance</span>
+        <span class="n">archiveInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ArchiveInfo</span><span class="p">(</span><span class="n">archiveSpec</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">])</span> <span class="k">if</span> <span class="n">archiverManipulator</span> \
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">getStoredArchiveInfo</span><span class="p">(</span><span class="n">archiveSpec</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">])</span>
+
+        <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">PATH</span><span class="p">]</span>
+        <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_archiverType</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">]</span>
+        <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_destDir</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">DEST_DIR</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">archiverManipulator</span> <span class="ow">and</span> <span class="n">archiverManipulator</span><span class="o">.</span><span class="n">isOptionSupported</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">):</span>
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_incremental</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">]</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_backupLevel</span> <span class="o">=</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">currentBackupLevel</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restarting</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTARTING</span><span class="p">]</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restartAfterLevel</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_LEVEL</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="n">_BackupLevelRestartReasons</span><span class="o">.</span><span class="n">RestartCountLimitReached</span> <span class="ow">or</span> \
+                   <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span> <span class="ow">is</span> <span class="n">_BackupLevelRestartReasons</span><span class="o">.</span><span class="n">LastFullRestartAgeLimitReached</span><span class="p">:</span>
+                    <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_nextBackupLevel</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_nextBackupLevel</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_nextBackupLevel</span> <span class="o">=</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">nextBackupLevel</span>
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restartReason</span> <span class="o">=</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">restartReason</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restartLevel</span> <span class="o">=</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">restartLevel</span>
+
+            <span class="k">if</span> <span class="n">storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">):</span>
+                <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restartCount</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">storagePortion</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span>
+                    <span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">))</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_fullRestartAfterCount</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_COUNT</span><span class="p">]</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_lastRestart</span> <span class="o">=</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">getLastRestartDate</span><span class="p">()</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restartAfterAge</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_AGE</span><span class="p">]</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_lastFullRestart</span> <span class="o">=</span> <span class="n">backupInformationProvider</span><span class="o">.</span><span class="n">getLastFullRestartDate</span><span class="p">()</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_fullRestartAfterAge</span> <span class="o">=</span> <span class="n">archiveSpec</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_AGE</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">archiveInfo</span></div>
+
+
+
+<div class="viewcode-block" id="_Archiving.getStoredArchiveInfo"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving.getStoredArchiveInfo">[docs]</a>    <span class="k">def</span> <span class="nf">getStoredArchiveInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns information about an archive from stored data.</span>
+
+<span class="sd">        Unlike in the :meth:`getArchiveInfo` method the information is not read from the</span>
+<span class="sd">        :term:`archive specification file` but from other stored data about the archive created by the component in</span>
+<span class="sd">        previous runs.  Such data can be fetched for example from application storage (:class:`.IStorage`) or other</span>
+<span class="sd">        sources specific to the archiver.  It is expected that the large portion of data will be missing in the</span>
+<span class="sd">        returned information.</span>
+
+<span class="sd">        .. warning:: This method utilizes the :term:`user configuration directory` so the option \</span>
+<span class="sd">           :attr:`.Options.USER_CONFIG_DIR` has to point to an *existing* directory.</span>
+
+<span class="sd">        See also: :meth:`getStoredArchiveNames()`</span>
+
+<span class="sd">        :param archiveName: Name of the archive which information shall be returned.</span>
+<span class="sd">        :type archiveName: ``str``</span>
+
+<span class="sd">        :return: Information about an archive or ``None`` if no data for the archive was found.</span>
+<span class="sd">        :rtype: :class:`_ArchiveInfo`&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">archiveName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getStoredArchiveNames</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">archiveInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ArchiveInfo</span><span class="p">(</span><span class="n">archiveName</span><span class="p">)</span>
+        <span class="n">storagePortion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="o">.</span><span class="n">createStoragePortion</span><span class="p">(</span><span class="n">realm</span> <span class="o">=</span> <span class="n">archiveName</span><span class="p">)</span>
+
+        <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_archiverType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">]</span>
+        <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_destDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">DEST_DIR</span><span class="p">]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_backupLevel</span> <span class="o">=</span> <span class="n">_BackupInformationProvider</span><span class="o">.</span><span class="n">getBackupLevelForBackup</span><span class="p">(</span>
+                <span class="n">archiveName</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to determine the backup level: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to determine the backup level: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="p">))</span>
+
+        <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_incremental</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">]</span> <span class="k">if</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">backupLevel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">archiveInfo</span><span class="o">.</span><span class="n">incremental</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restartAfterLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_LEVEL</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">storagePortion</span><span class="o">.</span><span class="n">hasVariable</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">):</span>
+                <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_restartCount</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                    <span class="n">storagePortion</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">RESTART_COUNT</span><span class="p">))</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_fullRestartAfterCount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_COUNT</span><span class="p">]</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_lastRestart</span> <span class="o">=</span> <span class="n">_BackupInformationProvider</span><span class="o">.</span><span class="n">getRestartDate</span><span class="p">(</span>
+                <span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_RESTART</span><span class="p">,</span> <span class="n">storagePortion</span><span class="p">)</span>
+
+            <span class="n">archiveInfo</span><span class="o">.</span><span class="n">_lastFullRestart</span> <span class="o">=</span> <span class="n">_BackupInformationProvider</span><span class="o">.</span><span class="n">getRestartDate</span><span class="p">(</span>
+                <span class="n">_RestartStorageVariables</span><span class="o">.</span><span class="n">LAST_FULL_RESTART</span><span class="p">,</span> <span class="n">storagePortion</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">archiveInfo</span></div>
+
+
+
+<div class="viewcode-block" id="_Archiving.getStoredArchiveNames"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving.getStoredArchiveNames">[docs]</a>    <span class="k">def</span> <span class="nf">getStoredArchiveNames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns iterable of archive names which has some data stored in a persistent storage.</span>
+
+<span class="sd">        .. warning:: This method utilizes the :term:`user configuration directory` so the option \</span>
+<span class="sd">           :attr:`.Options.USER_CONFIG_DIR` has to point to an *existing* directory.</span>
+
+<span class="sd">        See also: :meth:`getStoredArchiveInfo()`</span>
+
+<span class="sd">        :return: Iterable of archive names.</span>
+<span class="sd">        :rtype: ``Iterable&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="n">archiveNames</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">archiveNames</span> <span class="o">=</span> <span class="n">_BackupInformationProvider</span><span class="o">.</span><span class="n">getStoredArchiveNames</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to get list of stored archive names: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">archiveNames</span></div>
+
+
+
+<div class="viewcode-block" id="_Archiving.purgeStoredArchiveData"><a class="viewcode-back" href="../../../../api/application.archiving.html#AutoArchive._application.archiving._archiving._Archiving.purgeStoredArchiveData">[docs]</a>    <span class="k">def</span> <span class="nf">purgeStoredArchiveData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes all data stored for the archive named ``archiveName``.</span>
+
+<span class="sd">        .. warning:: This method utilizes the :term:`user configuration directory` so the option \</span>
+<span class="sd">           :attr:`.Options.USER_CONFIG_DIR` has to point to an **existing** directory.</span>
+
+<span class="sd">        See also: :meth:`getStoredArchiveInfo()`</span>
+
+<span class="sd">        :param archiveName: Name of the archive which data shall be purged.</span>
+<span class="sd">        :type archiveName: ``str``</span>
+
+<span class="sd">        :raise KeyError: If ``archiveName`` does not have any stored data to purge.</span>
+<span class="sd">        :raise OSError: If an error occurred during the operation of removing data from a physical storage.&quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ArchiverManipulator</span><span class="o">.</span><span class="n">tryPurgeStoredArchiveData</span><span class="p">(</span>
+                <span class="n">archiveName</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceAccessor</span><span class="p">):</span>
+
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;There is no data stored for an archive named </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">archiveName</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__getOrTryCreateArchiveSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getOrCreateArchiveSpec</span><span class="p">(</span><span class="n">specFile</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to open archive specification file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">LookupError</span><span class="p">,</span> <span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getOrCreateArchiveSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">,</span> <span class="n">silently</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">specFile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpecs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpecs</span><span class="p">[</span><span class="n">specFile</span><span class="p">]</span>
+
+        <span class="n">archiveSpec</span> <span class="o">=</span> <span class="n">ArchiveSpec</span><span class="p">(</span><span class="n">specFile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">silently</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiveSpecs</span><span class="p">[</span><span class="n">specFile</span><span class="p">]</span> <span class="o">=</span> <span class="n">archiveSpec</span>
+        <span class="k">return</span> <span class="n">archiveSpec</span>
+
+
+
+    <span class="k">class</span> <span class="nc">__ArchiveInfo</span><span class="p">(</span><span class="n">_ArchiveInfo</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

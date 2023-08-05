@@ -1,0 +1,358 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._services.archiver._internal_tar_archiver_provider &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._services.archiver._internal_tar_archiver_provider</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _internal_tar_archiver_provider.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2016 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_InternalTarArchiverProvider` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_InternalTarArchiverProvider&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">stat</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">tarfile</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.py_additions</span> <span class="k">import</span> <span class="n">staticproperty</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">BackupSubOperations</span><span class="p">,</span> <span class="n">BackupOperationErrors</span>
+<span class="kn">from</span> <span class="nn">._tar_archiver_provider_base</span> <span class="k">import</span> <span class="n">_TarArchiverProviderBase</span><span class="p">,</span> <span class="n">BackupTypes</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_InternalTarArchiverProvider"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._internal_tar_archiver_provider._InternalTarArchiverProvider">[docs]</a><span class="k">class</span> <span class="nc">_InternalTarArchiverProvider</span><span class="p">(</span><span class="n">_TarArchiverProviderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Internal archiver service provider.</span>
+
+<span class="sd">    See also: :class:`._TarArchiverProviderBase`.&quot;&quot;&quot;</span>
+
+    <span class="c1"># backup type to tarfile compress token map</span>
+    <span class="n">__BACKUP_TYPE_TO_COMPRESS_TOKEN</span> <span class="o">=</span> <span class="p">{</span><span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                       <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">:</span> <span class="s2">&quot;gz&quot;</span><span class="p">,</span>
+                                       <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">:</span> <span class="s2">&quot;bz2&quot;</span><span class="p">}</span>
+
+
+
+    <span class="c1"># {{{ _TarArchiverProviderBase overrides</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workDir</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">workDir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__someFilesChanged</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+
+    <span class="nd">@staticproperty</span>
+    <span class="k">def</span> <span class="nf">supportedBackupTypes</span><span class="p">():</span>
+        <span class="s2">&quot;See :attr:`._TarArchiverProviderBase.supportedBackupTypes`&quot;</span>
+
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">,</span>
+                          <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">,</span>
+                          <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">})</span>
+
+
+
+<div class="viewcode-block" id="_InternalTarArchiverProvider.backupFiles"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._internal_tar_archiver_provider._InternalTarArchiverProvider.backupFiles">[docs]</a>    <span class="k">def</span> <span class="nf">backupFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">overwriteAtStart</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.backupFiles()`.&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">backupFiles</span><span class="p">(</span><span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span> <span class="n">overwriteAtStart</span><span class="p">)</span>
+
+        <span class="n">backupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span>
+                                                 <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+        <span class="n">workingBackupFilePath</span> <span class="o">=</span> <span class="n">backupFilePath</span> <span class="k">if</span> <span class="n">overwriteAtStart</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">getWorkingPath_</span><span class="p">(</span><span class="n">backupFilePath</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__someFilesChanged</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">openModeCompressionToken</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__BACKUP_TYPE_TO_COMPRESS_TOKEN</span><span class="p">[</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">]</span>
+        <span class="n">tarFile</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">workingBackupFilePath</span><span class="p">,</span> <span class="s2">&quot;w:&quot;</span> <span class="o">+</span> <span class="n">openModeCompressionToken</span><span class="p">,</span> <span class="nb">format</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">PAX_FORMAT</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cwdSave</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getFileNames</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">excludeFiles</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">statInfo</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">lstat</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__handleIoOrOsError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Stat</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_ISREG</span><span class="p">(</span><span class="n">statInfo</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_MODE</span><span class="p">]):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__addRegularFile</span><span class="p">(</span><span class="n">tarFile</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">statInfo</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__addSpecialFile</span><span class="p">(</span><span class="n">tarFile</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">statInfo</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__handleIoOrOsError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">cwdSave</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__handleIoOrOsError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+
+        <span class="n">tarFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__someFilesChanged</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Finish</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">SomeFilesChanged</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">overwriteAtStart</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">workingBackupFilePath</span><span class="p">,</span> <span class="n">backupFilePath</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">backupFilePath</span></div>
+
+
+
+<div class="viewcode-block" id="_InternalTarArchiverProvider.backupFilesIncrementally"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._internal_tar_archiver_provider._InternalTarArchiverProvider.backupFilesIncrementally">[docs]</a>    <span class="k">def</span> <span class="nf">backupFilesIncrementally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">overwriteAtStart</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.backupFilesIncrementally()`.&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not supported.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_InternalTarArchiverProvider.getSupportedFeatures"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._internal_tar_archiver_provider._InternalTarArchiverProvider.getSupportedFeatures">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getSupportedFeatures</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.getSupportedFeatures()`.&quot;</span>
+
+        <span class="k">if</span> <span class="n">backupType</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_TarArchiverProviderBase</span><span class="o">.</span><span class="n">getSupportedFeatures</span><span class="p">()</span></div>
+
+    <span class="c1"># }}} _TarArchiverProviderBase overrides</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__addRegularFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tarFile</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">statInfo</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a regular file to the :term:`backup`.</span>
+
+<span class="sd">        Method is called for each regular file that shall be added to the backup.</span>
+
+<span class="sd">        See also: :meth:`__addSpecialFile()`.</span>
+
+<span class="sd">        :param tarFile: Tar file where the ``name`` shall be added.</span>
+<span class="sd">        :type tarFile: :class:`TarFile`</span>
+<span class="sd">        :param name: Path to a regular file that shall be added to the backup.  It should be relative to archive&#39;s</span>
+<span class="sd">           root directory.</span>
+<span class="sd">        :type name: ``str``</span>
+<span class="sd">        :param statInfo: Stat information of the file ``name`` as returned by :meth:`os.lstat()`.</span>
+<span class="sd">        :type statInfo: ``stat_result``</span>
+
+<span class="sd">        :raise IOError: If there was an error while opening the file.&quot;&quot;&quot;</span>
+
+        <span class="n">tarInfo</span> <span class="o">=</span> <span class="n">tarFile</span><span class="o">.</span><span class="n">gettarinfo</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fileObj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fileAdd</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">tarFile</span><span class="o">.</span><span class="n">addfile</span><span class="p">(</span><span class="n">tarInfo</span><span class="p">,</span> <span class="n">fileObj</span><span class="p">)</span>
+
+            <span class="n">statInfoAfter</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">lstat</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">statInfo</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_SIZE</span><span class="p">]</span> <span class="o">!=</span> <span class="n">statInfoAfter</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_SIZE</span><span class="p">]</span> <span class="ow">or</span> \
+                <span class="n">statInfo</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_MTIME</span><span class="p">]</span> <span class="o">!=</span> <span class="n">statInfoAfter</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_MTIME</span><span class="p">]</span> <span class="ow">or</span> \
+                <span class="n">statInfo</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_MODE</span><span class="p">]</span> <span class="o">!=</span> <span class="n">statInfoAfter</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_MODE</span><span class="p">]</span> <span class="ow">or</span> \
+                <span class="n">statInfo</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_UID</span><span class="p">]</span> <span class="o">!=</span> <span class="n">statInfoAfter</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_UID</span><span class="p">]</span> <span class="ow">or</span> \
+                <span class="n">statInfo</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_GID</span><span class="p">]</span> <span class="o">!=</span> <span class="n">statInfoAfter</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_GID</span><span class="p">]:</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Read</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">FileChanged</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__someFilesChanged</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__addSpecialFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tarFile</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">statInfo</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a special file to the :term:`backup`.</span>
+
+<span class="sd">        Method is called for each special file, such as directory, named pipe, device file, link et al. that shall be</span>
+<span class="sd">        added to the backup.</span>
+
+<span class="sd">        See also: :meth:`addRegularFile_()`.</span>
+
+<span class="sd">        :param tarFile: Tar file where the ``name`` shall be added.</span>
+<span class="sd">        :type tarFile: :class:`TarFile`</span>
+<span class="sd">        :param name: Path to a special file that shall be added to the backup.  It should be relative to archive&#39;s</span>
+<span class="sd">           root directory.</span>
+<span class="sd">        :type name: ``str``</span>
+<span class="sd">        :param statInfo: Stat information of the file ``name`` as returned by :meth:`os.lstat()`.</span>
+<span class="sd">        :type statInfo: ``stat_result``&quot;&quot;&quot;</span>
+
+        <span class="n">tarInfo</span> <span class="o">=</span> <span class="n">tarFile</span><span class="o">.</span><span class="n">gettarinfo</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tarInfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fileAdd</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">tarFile</span><span class="o">.</span><span class="n">addfile</span><span class="p">(</span><span class="n">tarInfo</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_ISSOCK</span><span class="p">(</span><span class="n">statInfo</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_MODE</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">SocketIgnored</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownTypeIgnored</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getFileNames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">includeFiles</span><span class="p">,</span> <span class="n">excludeFiles</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">getFileNamesUnfiltered</span><span class="p">(</span><span class="n">fileNames</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">fileName</span> <span class="ow">in</span> <span class="n">fileNames</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="n">fileName</span><span class="p">):</span>
+
+                    <span class="c1"># variables to track if includeName and directories list returned by os.walk() were visited in the</span>
+                    <span class="c1"># os.walk() for loop; if not, assume permission denied</span>
+                    <span class="n">includeNameVisited</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">listedDirs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                    <span class="n">visitedDirs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+                    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">fileName</span><span class="p">):</span>
+                        <span class="n">includeNameVisited</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">listedDirs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+                                           <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dirs</span>
+                                           <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">d</span><span class="p">))})</span>
+                        <span class="n">visitedDirs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+
+                        <span class="k">yield</span> <span class="n">root</span>
+
+                        <span class="c1"># yield files and links to directories within root (we yield links to directories as they</span>
+                        <span class="c1"># were files because we do not follow them)</span>
+                        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dirs</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">d</span><span class="p">)))):</span>
+                            <span class="k">yield</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">includeNameVisited</span><span class="p">:</span>
+                        <span class="n">showDirOpenError</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">notVisitedDir</span> <span class="ow">in</span> <span class="n">listedDirs</span> <span class="o">-</span> <span class="n">visitedDirs</span><span class="p">:</span>
+                        <span class="n">showDirOpenError</span><span class="p">(</span><span class="n">notVisitedDir</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">fileName</span>
+
+
+
+        <span class="k">def</span> <span class="nf">showDirOpenError</span><span class="p">(</span><span class="n">dirName</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dirName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">excludeFiles</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">PermissionDenied</span><span class="p">,</span> <span class="n">dirName</span><span class="p">)</span>
+
+
+
+        <span class="k">def</span> <span class="nf">parentDirs</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">_result</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">_lastDirName</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Returns a set of parent directories of ``path``.</span>
+
+<span class="sd">            For example for &quot;dir/foo/bar&quot; it returns {&quot;dir/foo&quot;, &quot;dir&quot;}.&quot;&quot;&quot;</span>
+
+            <span class="k">if</span> <span class="n">_result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+            <span class="n">dirName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dirName</span> <span class="ow">and</span> <span class="n">dirName</span> <span class="o">!=</span> <span class="n">_lastDirName</span><span class="p">:</span>
+                <span class="n">_result</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dirName</span><span class="p">)</span>
+                <span class="n">parentDirs</span><span class="p">(</span><span class="n">dirName</span><span class="p">,</span> <span class="n">_result</span><span class="p">,</span> <span class="n">dirName</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_result</span>
+
+
+
+        <span class="k">def</span> <span class="nf">filterFileNames</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">excludeNames</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span> <span class="k">if</span> <span class="p">(</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">excludeNames</span> <span class="ow">and</span> <span class="n">parentDirs</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">isdisjoint</span><span class="p">(</span><span class="n">excludeNames</span><span class="p">)))</span>
+
+
+
+        <span class="k">return</span> <span class="n">filterFileNames</span><span class="p">(</span><span class="n">getFileNamesUnfiltered</span><span class="p">(</span><span class="n">includeFiles</span><span class="p">),</span> <span class="n">excludeFiles</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__handleIoOrOsError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">errorException</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">errorException</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">EACCES</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">PermissionDenied</span><span class="p">,</span> <span class="n">errorException</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">errorException</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENOSPC</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No space left on device.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownOsError</span><span class="p">,</span> <span class="n">errorException</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
+                                      <span class="n">errorException</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

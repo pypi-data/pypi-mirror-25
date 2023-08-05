@@ -1,0 +1,345 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._infrastructure.storage._file_storage &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._infrastructure.storage._file_storage</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _file_storage.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`FileStorage` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;FileStorage&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">configparser</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.utils</span> <span class="k">import</span> <span class="n">Utils</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.configuration</span> <span class="k">import</span> <span class="n">Options</span>
+<span class="kn">from</span> <span class="nn">._storage_portion</span> <span class="k">import</span> <span class="n">_StoragePortion</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="FileStorage"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage">[docs]</a><span class="k">class</span> <span class="nc">FileStorage</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Application&#39;s persistent storage.</span>
+
+<span class="sd">    Provides access to application&#39;s persistent storage.  Any arbitrary variables can be saved to it.  Data are stored</span>
+<span class="sd">    in text files.</span>
+
+<span class="sd">    This storage implementation utilizes local filesystem, specifically a subdirectory of</span>
+<span class="sd">    :term:`user configuration directory` named ``storage``.  Data are stored in text files.  The directory is</span>
+<span class="sd">    automatically created if it does not exists.  Storage content is read upon construction and cached into memory.</span>
+<span class="sd">    This class does not provide any means to re-read the storage content from disk.</span>
+
+<span class="sd">    .. note:: This class can be instantiated only once.</span>
+
+<span class="sd">    :param configuration: Application configuration.</span>
+<span class="sd">    :type configuration: :class:`.IConfiguration`&quot;&quot;&quot;</span>
+
+    <span class="n">__STORAGE_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;storage&quot;</span>
+    <span class="n">__REALM_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;realm&quot;</span>
+    <span class="n">__DEFAULT_SECTION</span> <span class="o">=</span> <span class="s2">&quot;AutoArchive&quot;</span>
+    <span class="n">__DEFAULT_REALM</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+
+    <span class="c1"># ``True`` if an instance of this class was already created.</span>
+    <span class="n">__instantiated</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__instantiated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Instance already created.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__instantiated</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># dictionary of realm name as the key and ConfigParser instance as the value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storageDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">__STORAGE_SUBDIR</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storageDir</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">]:</span>
+                <span class="n">Utils</span><span class="o">.</span><span class="n">printWarning</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Storage directory does not exists. Creating </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">__storageDir</span><span class="p">))</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storageDir</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">storageFile</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storageDir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s2">&quot;*.&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">__REALM_SUFFIX</span><span class="p">):</span>
+            <span class="n">storage</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">RawConfigParser</span><span class="p">()</span>
+            <span class="n">storage</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">storageFile</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">storageFile</span><span class="p">))[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">storage</span>
+
+
+
+<div class="viewcode-block" id="FileStorage.getValue"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage.getValue">[docs]</a>    <span class="k">def</span> <span class="nf">getValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">section</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">realm</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a cached value from the persistent storage.</span>
+
+<span class="sd">        :param variable: The name of the variable which value shall be read.</span>
+<span class="sd">        :type variable: ``str``</span>
+<span class="sd">        :param section: Name of a section within a realm.</span>
+<span class="sd">        :type section: ``str``</span>
+<span class="sd">        :param realm: Name of a separate storage entity (typically represented by a file).</span>
+<span class="sd">        :type realm: ``str``</span>
+
+<span class="sd">        :return: Value of the passed ``variable``.</span>
+<span class="sd">        :rtype: ``str``</span>
+
+<span class="sd">        :raise KeyError: If ``variable``, ``section`` or ``realm`` does not</span>
+<span class="sd">           exists.&quot;&quot;&quot;</span>
+
+        <span class="n">section</span> <span class="o">=</span> <span class="n">section</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_SECTION</span>
+        <span class="n">realm</span> <span class="o">=</span> <span class="n">realm</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_REALM</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">variable</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__handleStorageOperationException</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">realm</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FileStorage.saveValue"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage.saveValue">[docs]</a>    <span class="k">def</span> <span class="nf">saveValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">section</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">realm</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Saves a value to the persistent storage.</span>
+
+<span class="sd">        A value passed as ``value`` parameter will be saved to the persistent storage under the name passed as</span>
+<span class="sd">        ``variable`` argument.</span>
+
+<span class="sd">        .. note:: A string representation of the value is saved (str(value)).</span>
+
+<span class="sd">        :param variable: The name under which the value will be saved.</span>
+<span class="sd">        :type variable: ``str``</span>
+<span class="sd">        :param value: The value that shall be saved.</span>
+<span class="sd">        :type value: ``object``</span>
+<span class="sd">        :param section: Name of a section within a realm.</span>
+<span class="sd">        :type section: ``str``</span>
+<span class="sd">        :param realm: Name of a separate storage entity (typically represented by a file).</span>
+<span class="sd">        :type realm: ``str``&quot;&quot;&quot;</span>
+
+        <span class="n">section</span> <span class="o">=</span> <span class="n">section</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_SECTION</span>
+        <span class="n">realm</span> <span class="o">=</span> <span class="n">realm</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_REALM</span>
+
+        <span class="k">if</span> <span class="n">realm</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">RawConfigParser</span><span class="p">()</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">storage</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+            <span class="n">storage</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+
+        <span class="n">storage</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getStorageFile</span><span class="p">(</span><span class="n">realm</span><span class="p">),</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">sf</span><span class="p">:</span>
+            <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sf</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FileStorage.hasVariable"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage.hasVariable">[docs]</a>    <span class="k">def</span> <span class="nf">hasVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">section</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">realm</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns ``True`` if the storage contains ``variable``.</span>
+
+<span class="sd">        :param variable: Name of the variable which presence shall be determined.</span>
+<span class="sd">        :type variable: ``str``</span>
+<span class="sd">        :param section: Name of a section within a realm.</span>
+<span class="sd">        :type section: ``str``</span>
+<span class="sd">        :param realm: Name of a separate storage entity (typically represented by a file).</span>
+<span class="sd">        :type realm: ``str``</span>
+
+<span class="sd">        :return: ``True`` if ``variable`` is present in the storage.</span>
+<span class="sd">        :rtype: ``bool``&quot;&quot;&quot;</span>
+
+        <span class="n">section</span> <span class="o">=</span> <span class="n">section</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_SECTION</span>
+        <span class="n">realm</span> <span class="o">=</span> <span class="n">realm</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_REALM</span>
+
+        <span class="k">if</span> <span class="n">realm</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span><span class="o">.</span><span class="n">has_section</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">variable</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FileStorage.tryRemoveVariable"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage.tryRemoveVariable">[docs]</a>    <span class="k">def</span> <span class="nf">tryRemoveVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">section</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">realm</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes variable from the persistent storage.</span>
+
+<span class="sd">        If variable existed to be removed, returns ``True``; otherwise return ``False``.</span>
+
+<span class="sd">        :param variable: The name of the variable which value shall be removed.</span>
+<span class="sd">        :type variable: ``str``</span>
+<span class="sd">        :param section: Name of a section within a realm.</span>
+<span class="sd">        :type section: ``str``</span>
+<span class="sd">        :param realm: Name of a separate storage entity (typically represented by a file).</span>
+<span class="sd">        :type realm: ``str``</span>
+
+<span class="sd">        :return: ``True`` if variable existed; ``False`` otherwise.</span>
+<span class="sd">        :rtype: ``bool``</span>
+
+<span class="sd">        :raise KeyError: If ``section`` or ``realm`` does not exists.&quot;&quot;&quot;</span>
+
+        <span class="n">section</span> <span class="o">=</span> <span class="n">section</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_SECTION</span>
+        <span class="n">realm</span> <span class="o">=</span> <span class="n">realm</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_REALM</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span><span class="o">.</span><span class="n">remove_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">variable</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__handleStorageOperationException</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">realm</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FileStorage.getRealms"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage.getRealms">[docs]</a>    <span class="k">def</span> <span class="nf">getRealms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns all realms that exists in the storage.</span>
+
+<span class="sd">        :return: Iterable of realm names.</span>
+<span class="sd">        :rtype: ``Iterable&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="FileStorage.removeRealm"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage.removeRealm">[docs]</a>    <span class="k">def</span> <span class="nf">removeRealm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">realm</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes the ``realm`` including all information that contains from the persistent storage.</span>
+
+<span class="sd">        :param realm: Name of a separate storage entity (typically represented by a file).</span>
+<span class="sd">        :type realm: ``str``</span>
+
+<span class="sd">        :raise KeyError: If ``realm`` does not exists.</span>
+<span class="sd">        :raise OSError: If an error occurred during the operation of removing data from a physical storage.&quot;&quot;&quot;</span>
+
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage</span><span class="p">[</span><span class="n">realm</span><span class="p">]</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__getStorageFile</span><span class="p">(</span><span class="n">realm</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="FileStorage.createStoragePortion"><a class="viewcode-back" href="../../../../api/infrastructure.storage.html#AutoArchive._infrastructure.storage._file_storage.FileStorage.createStoragePortion">[docs]</a>    <span class="k">def</span> <span class="nf">createStoragePortion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">realm</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns IStoragePortion instance set to ``section`` and ``realm``.</span>
+
+<span class="sd">        .. note:: If ``section`` or ``realm`` does not exists the implementation should not create either of them right</span>
+<span class="sd">           away but rather on first value save.</span>
+
+<span class="sd">        :param section: Name of a section within a realm.</span>
+<span class="sd">        :type section: ``str``</span>
+<span class="sd">        :param realm: Name of a separate storage entity (typically represented by a file).</span>
+<span class="sd">        :type realm: ``str``</span>
+
+<span class="sd">        :return: :class:`.IStoragePortion` instance</span>
+<span class="sd">        :rtype: :class:`.IStoragePortion`&quot;&quot;&quot;</span>
+
+        <span class="n">section</span> <span class="o">=</span> <span class="n">section</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_SECTION</span>
+        <span class="n">realm</span> <span class="o">=</span> <span class="n">realm</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__DEFAULT_REALM</span>
+        <span class="k">return</span> <span class="n">_StoragePortion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">realm</span><span class="p">)</span></div>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__handleStorageOperationException</span><span class="p">(</span><span class="n">exception</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">realm</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">exception</span>
+        <span class="k">except</span> <span class="n">configparser</span><span class="o">.</span><span class="n">NoOptionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="s2">&quot;No such variable &#39;</span><span class="si">{}</span><span class="s2">&#39; in storage realm &#39;</span><span class="si">{}</span><span class="s2">&#39; and section &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">realm</span><span class="p">,</span> <span class="n">section</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;No such realm in the storage: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">realm</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">configparser</span><span class="o">.</span><span class="n">NoSectionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;No such section &#39;</span><span class="si">{}</span><span class="s2">&#39; in storage realm &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">realm</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getStorageFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">realm</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storageDir</span><span class="p">,</span> <span class="n">realm</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">__REALM_SUFFIX</span><span class="p">)</span></div>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

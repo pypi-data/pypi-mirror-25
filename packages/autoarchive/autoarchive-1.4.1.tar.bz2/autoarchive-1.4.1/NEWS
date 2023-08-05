@@ -1,0 +1,702 @@
+AutoArchive user visible changes
+================================
+
+
+Version 1.4.1 [2017-09-22]
+--------------------------
+
+* Fixed broken distribution package.
+
+
+Version 1.4.0 [2017-09-22]
+--------------------------
+
+* External references in archive specification files
+
+  Archive specification file may now reference another .aa files with special
+  syntax:
+
+  option = @(reference_name.referenced_option)
+
+  Where 'reference_name' is the name of the other file (without .aa extension)
+  or name defined in section '[External]'.  The referenced file has to be
+  declared in the '[External]' section.
+
+* Options in configuration file resorted to match command line
+
+  Options in default global configuration file are in the same order as printed
+  by ‘aa --help’.
+
+* Option names in archive specification files are case sensitive now
+
+* Enhanced example archive specification files
+
+  In example files cover incremental backups, backup level restarting, removing
+  obsolete backups and backup keeping.
+
+* Fixed example archive specification files
+
+  Example files had section [General] instead of [Content].
+
+
+Version 1.3.0 [2016-11-09]
+--------------------------
+
+* Added possibility to overwrite backups at the start of creation.
+
+  Option --overwrite-at-start was added which -- when enabled -- causes backups
+  to be overwritten at the start of backup creation.  This is useful in case of
+  big backups and low free space.  It allows behavior like in versions before
+  1.2.1.  The default -- if not enabled -- is to create the backup with
+  temporary name and rename it after it is created.
+
+* Running commands before and after backup creation of all selected archives
+
+  New options--command-before-all-backups=COMMAND_BEFORE_ALL and
+  --command-after-all-backups=COMMAND_AFTER_ALL were added.  If specified the
+  corresponding command is executed before and/or after backup creation of all
+  selected archives.  These commands will be executed only once in a single
+  invocation of AutoArchive as opposite to --command-before-backup and
+  --command-after-backup which are executed for each archive.
+
+* Commands can be configured also in the system configuration file
+
+  Options ‘command-before-backup’ and ‘command-after-backup’ can now be
+  specified also in the system configuration file in addition to user
+  configuration file, archive specification and command line.
+
+* Correctly capture and propagate tar messages in localized environments
+
+  If environment language was not set to English error messages from Tar were
+  not recognized correctly.
+
+* Abort backup creation in case of “No space left on device” error.
+
+  If there is no space left for a backup to be created the operation is aborted
+  and creation of the next backup is started if any.
+
+* Do not report empty error messages (lines) from tar as errors.
+
+  In some cases Tar prints an empty line to standard error which led to
+  incomplete error messages printed by AutoArchive.  For example:
+
+  aa: Error! [backup] An error occurred:
+
+  These empty lines are no longer treated as errors and are not propagated.
+
+* Added missing ‘--force-*’ and negation options
+
+  Following missing options were added:
+
+  - --force-command-before-backup
+  - --force-command-after-backup
+  - --no-remove-obsolete-backups
+
+
+Version 1.2.1 [2015-12-05]
+--------------------------
+
+* Use temporary backup file name while creating it
+
+  During backup creation the file name has now ‘._partial’ suffix.  Once it is
+  successfully finished the file is renamed to the proper name (the suffix is
+  removed).  This prevents incomplete backups to be left around, e. g. in case
+  the user interrupts the backup creation.
+
+* Do not install system configuration file /etc/aa/aa.conf if not possible
+
+  Installation now skips copying of system configuration file aa.conf to /etc/aa
+  if the destination (/etc/aa) is outside of the installation prefix and is not
+  writable.  This allows non problematic installation to Python virtual
+  environments.
+
+* Fix “dry run” installation
+
+  Simulated installation (--dry-run) was always failing.  Fixed now.
+
+
+Version 1.2.0 [2015-01-19]
+--------------------------
+
+* Running arbitrary commands before and after backup creation
+
+  New options --command-before-backup=COMMAND_BEFORE and
+  --command-after-backup=COMMAND_AFTER were added.  If specified the
+  corresponding command is executed before or after each backup creation.
+
+* Refactored to make the architecture simpler
+
+  Applications is composed in more straightforward way, without Mainf
+  framework.  Component structure was improved and several unnecessary
+  interfaces were removed.
+
+
+Version 1.1.1 [2014-04-19]
+--------------------------
+
+* Fixed exception when restarting was enabled for already existing archive
+
+  If restarting was switched to enabled for an existing archive that has already
+  some backup levels created then an exception might have been thrown at the end
+  of backup creation.  This was happening when the backup was restarted,
+  --full-restart-after-count was not set and the restarting for that archive was
+  enabled for the first time.
+
+
+Version 1.1.0 [2014-02-28]
+--------------------------
+
+* Backup keeping
+
+  AutoArchive can now preserve backups that are going to be overwritten during
+  backup creation.  It can be turned on with the new option -k or
+  --keep-old-backups.  When enabled, single old backup will be kept each time
+  the new backup is created over an existing one.  The number of kept backups
+  can be changed with another new option --number-of-old-backups=NUM.  Backup
+  keeping works also for incremental backups in which case all relevant
+  increments are kept.
+
+
+Version 1.0.1 [2013-03-01]
+--------------------------
+
+* Fixed crash with Python 3.3 (bug #3606424).
+
+  Application crashed right after the start when running with Python 3.3.
+  Thanks to Aleksey Avdeev for the reporting and hints.
+
+
+Version 1.0.0 [2012-08-02]
+--------------------------
+
+* New option --remove-obsolete-backups was added.
+
+  The newly added option --remove-obsolete-backups, when enabled, backups
+  of levels higher than the current one are removed during backup creation
+  operation.
+
+* Added option --quiet.
+
+  New option --quiet was added.  If specified, only error messages are shown.
+  It has higher priority than --verbose.  So if both are specified at the same
+  level (e. g. both are passed on the command line or both are specified in
+  the configuration file) then only --quiet is taken into account.
+
+* Selective listing of orphaned archives.
+
+  The List action now shows only selected archives also in case they are
+  orphaned.  Previously all orphaned archives were always listed regardless
+  of which were specified on the command line.
+
+* Removed support for “.tar.lzma” backups.
+
+  Archive type “tarlzma” which was creating “.tar.lzma” backups is no longer
+  supported and was removed.  Type “tarxz” supersedes it.
+
+* Ignore starting “/” and “..” in ‘include-files’ and ‘exclude-files’.
+
+  Implemented new behaviour when reading paths from archive specification
+  file – if a path in ‘include-files’ or ‘exclude-files’ variable is an
+  absolute path then the starting “/” is ignored.  Likewise, for paths that
+  points to a parent directory the “..” is ignored.
+
+* Search for tar binary is done in multiple locations.
+
+  Tar binary is searched in directories specified in PATH environment variable.
+  If not found there then it is searched in /bin, /usr/bin and /usr/local/bin
+  directories.
+
+* Improved exit codes in List and Purge operations.
+
+  List operation returns exit code 1 if a warning or error occurs (for example,
+  if user pass a name of non-existing archive).  Purge operation returns exit
+  code 1 if requested archive was not purged or other problem occurs.
+
+* Archive specifications directory is automatically created.
+
+  If the archive specifications directory (which is by default
+  ~/.config/aa/archive_specs) does not exists, it will be created.
+
+* Backup level is not increased in case of a fatal error.
+
+  If the backup operation finishes with a fatal error the backup level is not
+  raised.  Also no information (such as number of restarts, etc.) is stored in
+  that case.
+
+* Removed error when passing orphaned archive to the List action.
+
+  If an orphaned archive is passed as the argument for List action it no longer
+  shows the error that archive specification file can not be found.  The
+  selected orphaned archive is listed without errors.
+
+* Fix listing of archives in case of non-existent one.
+
+  The List operation finished prematurely after it attempted to list
+  a non-existent archive, which caused that remaining archives were not
+  listed.  This was fixed so now it shows all selected archives even if
+  there are some non-existent ones among them.
+
+* Fixed exception when absolute paths were used in ‘include-files’.
+
+  If ‘include-files’ contained absolute paths and internal archiver was used
+  then the backup creation failed with exception 'RuntimeError: maximum
+  recursion depth exceeded while calling a Python object'.
+
+* Fixed crash after interrupted backup creation.
+
+  It the backup creation—for the archive with ‘full-restart-after-count’ set—
+  was interrupted (e. g. by Ctrl+C) then subsequent attempts to create the
+  backup failed because the program crashed.
+
+* User documentation improvements:
+
+** Added examples on backup restoration to the user documentation.
+
+** Added description of the versioning scheme to the user documentation.
+
+** Short description of exit codes was added to the user documentation.
+
+* Refactoring of Archiving component.
+
+  Part of the Archiving component responsibility was moved to the newly created
+  Archiver service.
+
+
+Version 0.5.2 [2012-06-19]
+--------------------------
+
+* Fixed exclude matching for external archiver
+
+  Exclude pattern now has to match the whole path, not just the name.  Up to now
+  if ‘foo’ was specified as excluded, all files and directories named ‘foo’ were
+  excluded (e. g. bar/foo, foo, dir/bar/foo) which was wrong.  From now on, only
+  ‘foo’ would be excluded from the previous list.  If one would want to exclude
+  ‘bar/foo’ then he has to explicitly specify ‘bar/foo’ as excluded.
+
+* Fixed not excluding content of excluded directories for internal tar archiver
+
+  Content of excluded directories was not excluded when using internal tar
+  archiver.  This was fixed.
+
+* Fixed restarting to a higher level
+
+  If ‘max-restart-level-size’ option was specified the restarting was done
+  always to the highest level.  The size of previous backup levels was not taken
+  into account.  This was fixed to work as expected.
+
+
+Version 0.5.1 [2012-02-27]
+--------------------------
+
+* Fixed ignoring of symbolic links by internal tar
+
+  When *_internal archiver type was used, symbolic links to directories were not
+  included in the backup.  Error message "permission denied" was shown instead.
+
+* Fixed showing warnings about non-accessible files in unrelated archives
+
+  During the list operation warnings about non-accessible files were shown for
+  _all_ configured archives.  This was fixed, now warnings only related to
+  _selected_ archives are being shown.
+
+* Message "Cannot stat: ..." from GNU Tar is now handled as an error
+
+  This corresponds with handling of the message "Cannot open: ...".
+
+* Tests were included into the source distribution
+
+
+Version 0.5.0 [2012-02-16]
+--------------------------
+
+* Options in “negative form” can no longer be used in configuration files
+
+  Normal option form with “no” value should be used instead.  For example,
+  instead of using “no-restarting = yes” the form “restarting = no” should be
+  used.  This applies to configuration files (system and user) and archive
+  specification files.
+
+* Removed option --force-no-incremental
+
+  It is not needed anymore because “no-incremental” can not be specified in the
+  archive specification file.
+
+* Changed the default behaviour in case no arguments are passed
+
+  If no AA_SPEC arguments are specified on the command line program no longer
+  creates backups for all configured archives.  It shows an error instead.  To
+  operate on all archives the --all option has to be used.
+
+* Introduced a concept of commands
+
+  So far AutoArchive was able to do only a single operation - backup creation.
+  With this version additional operations were added (archive listing and
+  purging archive data).  In order to be able to choose which operation shall
+  be executed, commands were introduced.  A command can be passed as a program
+  argument in a form similar to long option.  The command can not be specified
+  in the any of configuration files.  By default, if no command is specified,
+  the backup creation action will be executed.
+
+* Added support for listing archives
+
+  The command --list was added which prints information about all archives as
+  configured in the archive specifications directory and all non-configured
+  archives for which the application still stores some data (orphaned
+  archives).  With AA_SPEC argument only the specified archives are listed.
+  Command has also a verbose form activated by “verbose” option.
+
+* Added support for purging remains of non-existing archives
+
+  During the backup creation the application internally stores some data about
+  the archive.  If such archive is deleted later (e. g. by removing its archive
+  specification file) stored data remains.  Such data, so called orphaned
+  archives, can be removed by --purge command.  The are also shown by the
+  --list command.
+
+* Name of the application in output messages is not shown with full path
+
+  The application executable name which prefixes output messages now contains
+  the name only, without the path to it.
+
+* Added --force-restarting option
+
+* Output of the --help command was clarified
+
+  In the --help output and the user documentation options were grouped to
+  categories to make it more clear.
+
+* External archivers show “permission denied” message as an error now
+
+  If a file or directory can not be opened then the type of the shown message
+  is now consistent between external and internal archivers.  It is shown as
+  error.
+
+* Internal archivers shows final error message
+
+  If an error occurs during creation of a backup then at the end of the
+  process internal archiver shows a message that the backup creation has
+  failed.  This is same behaviour as external archivers already has.
+
+* Fixed ignoring of archive name from the archive specification file
+
+  The archive name specified in the archive specification file via the “name”
+  variable was ignored.
+
+* Fixed ignoring of force options in some cases
+
+* Fixed crash if an “empty” variable was specified in a configuration file
+
+  If the configuration file contained non-string option without a value
+  (e. g. “compression-level =”), the program thrown an exception and finished.
+
+* A new chapter “Operations Explained” added to User Manual.
+
+  Chapter briefly describes operations which can be performed by the
+  application.
+
+* Underscores in options on the command-line are not replaced by dashes
+
+  Removed undocumented feature that options specified on the command-line could
+  be provided with underscores (“_”) in place of dashes (“-”).  Now, only
+  dashes are valid.
+
+* AutoArchive now depends on Python 3.2
+
+
+Version 0.4.0 [2011-06-17]
+--------------------------
+
+* Tar format of created archives was changed to POSIX.1-2001.
+
+  Option --format=posix is passed to GNU tar.
+
+* Backup level restarting
+
+  When incremental archiving is used AutoArchive can automatically restart
+  the backup level to a lower number on various occasions such as, when certain
+  backup level was reached, or after configured time period.  Two types of
+  restarting were added: restarting to a lower level which is higher than
+  level 0 (typically to level 1), and restarting to level 0.
+
+  By default the restarting is turned off.  It can be turned on by the
+  --restarting option or turned off by --no-restarting.
+
+  Following options were added to support restarting to a lower level:
+  --restart-after-level=LEVEL, --restart-after-age=DAYS,
+  --max-restart-level-size=PERCENTAGE
+
+  Following options were added to support restarting to level 0:
+  --full-restart-after-count=COUNT, --full-restart-after-age=DAYS
+
+  See the program help or the user documentation for their description.
+
+* Added support for Python's internal tar.
+
+  With internal tar support the GNU tar binary becomes optional.  One may use
+  tar_internal, targz_internal and tarbz2_internal archiver types which use
+  internal tar implementation that does not depend on GNU tar, gzip and bzip2
+  external binaries.
+
+  Incremental archiving and compression strength setting are not supported by
+  internal archiver types.
+
+* Added an option for specifying the archive destination directory.
+
+  New option -d DIR_PATH, --dest-dir=DIR_PATH was added.  It takes a path as
+  the argument and if specified, the archive will be created in that path.  Its
+  default value is "." (current directory) so the behaviour is not changed from
+  previous versions.  It can be specified also in archive specification file.
+
+  “Force” option --force-dest-dir=DIR_PATH was added as well.
+
+* Improved handling of tar messages.
+
+  Messages that tar program sends to stderr are printed as warnings by
+  AutoArchive.  Similarly, messages that tar sends to stdout are printed as
+  verbose messages by AutoArchive.
+
+* If used archiver type does not support a specified feature the user is warned
+  about it.
+
+* Fixed the program crash when ‘tar’ archiver type was specified.
+
+* Added User documentation in HTML format
+
+  Alongside with manual pages the user documentation is now available also in
+  HTML.  Entire documentation processing was moved to Sphinx.  Sources are
+  written in ReStructuredText format and outputs to HTML, manual pages and
+  README documents are generated.
+
+
+Version 0.3.1 [2011-03-28]
+--------------------------
+
+* Output messages contains archive specification file reference
+
+  If an error, warning or info message is printed during an archive
+  specification file processing (during archive creation), it contains name of
+  the currently processed .aa file or a path to it enclosed in square
+  brackets.  This is useful if more .aa files are processed in a single run.
+
+* Fixed setting of the exit code
+
+  Exit code was always 0 even if an error occurred.
+
+* Fixed error reporting in case of inaccessible archive root directory
+
+  If directory set in the “path” option is not valid in some way (i.e. does not
+  exists) the error is shown only once.
+
+* Fixed priority of user-config-dir option
+
+  If both command line and configuration file specified the user-config-dir
+  option then the value from the configuration file was preferred.  This was
+  fixed so now the command line option has higher priority.
+
+* Fixed reading the --user-config-file from command line
+
+  Option --user-config-file was ignored when specified on the command line.
+
+
+Version 0.3.0 [2011-03-18]
+--------------------------
+
+* Changed format of the archive specification file
+
+  Incompatible changes of the “.aa file” format were introduced.  Section
+  [General] has been renamed to [Content].  Also, a new section [Archive] was
+  added.  Preferred option format is now “variable-name = value” instead of
+  “variable_name: value” – this affects options “include_files” and
+  “exclude_files”.
+
+  Migration of all “.aa files” is required.  It involves renaming the [General]
+  section to [Archive]; also renaming options “include_files” and
+  “exclude_files” to “include-files” and “exclude-files” respectively.
+  Optionally, the colon (:) after the variable name can be replaced by equals
+  sign (=).
+
+* Added support for configuration files
+
+  Most of the options that is possible to specify on the command line can be
+  now specified in a configuration file as well.  System-wide and user
+  configuration files are supported in “/etc/aa/aa.conf” and
+  “~/.config/aa/aa.conf” paths respectively.  Options names are same as command
+  line ones except the leading ‘--’.
+
+* Archive specification files can contain configuration options
+
+  Some of the command line or configuration options can be specified in the
+  archive specification file as well, under the [Archive] section.  Options
+  specified here have higher priority than options in configuration files and
+  the command line.  An error is reported if a known configuration option which
+  is not supported in the archive spec. file is present in it.  Also an error
+  is reported if the archive spec. file contains an unsupported section.
+
+* Archive specifications directory.
+
+  Archive specification files can now be stored in a dedicated directory – the
+  archive specifications directory.  By default, if no “.aa file” is specified
+  on the command line, all “.aa files” from the archive specifications
+  directory are processed.  If the archive specification file is specified
+  without the extension then it is searched in the archive specifications
+  directory.  If it is specified with the extension then it is the path to it.
+
+* New options
+
+** --archive-specs-dir
+
+   Directory where archive specification files will be searched.
+
+** --user-config-file
+
+   Alternate user configuration file.
+
+** --user-config-dir
+
+   Alternate user configuration directory.
+
+** Force options
+
+   As some of the options can be specified in the archive specification file
+   they can not be overridden by a same command line option.  Therefore several
+   “force” command line options was introduced.  For example the option
+   “archiver” can be overridden by --force-archiver even if “archiver” is
+   specified in an archiver spec. file.
+
+*** --force-archiver
+
+   Force archiver type.
+
+*** --force-incremental
+
+   Force incremental backup.
+
+*** --force-compression-level
+
+   Force compression strength level.
+
+*** --force-no-incremental
+
+   Force disabling the incremental backup.
+
+** --no-incremental
+
+   Disable incremental backup.
+
+* Default archiver type was changed to targz.
+
+* Do not give up if specified level is too high
+
+  If --level value is higher than next level in a row, do not fail but use
+  next-in-a-row level value instead.
+
+* Fixed error handling when creating user directories
+
+  If it is not possible to create the user configuration directory or the
+  snapshot directory an error is reported instead of an unhandled exception.
+
+* Moved to Python 3
+
+  AutoArchive now requires Python 3.
+
+* Refactored to a new architecture
+
+  Application was split to several separate components (Configuration,
+  Archiving, UI) which are managed by a framework (Mainf).  Components are
+  using the framework to expose their public interfaces and access interfaces
+  of other components.
+
+
+Version 0.2.0 [2010-03-21]
+--------------------------
+
+* Added xz support for tar archives.
+
+  In the --archiver option it is now possible to specify a tarxz type which
+  creates .tar.xz archives.
+
+* Changed the --compresion-level option spelling
+
+  Option --compresion-level was changed to --compression-level.
+
+* Fixed environment variable overwriting when using -c option
+
+  If the --compression-level option is specified, the corresponding option is
+  added to the environment variable for specific compression utility so its
+  previous content is not overwritten.  This fixes behavior in scenarios like:
+
+  $ BZIP2=-v aa -c 1 etc.aa
+
+  where in previous versions the option -v set in BZIP2 environment variable
+  did not have any effect.
+
+
+Version 0.1.2 [2009-04-14]
+--------------------------
+
+* Specified GNU GPL version in file headers (bug #2691699).
+
+  No GNU GPL version was specified in headers of source code files which was
+  confusing about used version of the license. Now every source file specifies
+  version 3 of the GNU GPL license.
+
+* Added example files (bug #2692252).
+
+  Added some example '.aa' configuration files to doc directory.
+
+* Created autoarchive symlink to aa command and aa man page (bug #2692266).
+
+  Created symbolic link to aa command named 'autoarchive'. It is thus possible
+  to use either aa or autoarchive command. Same for the man page.
+
+
+Version 0.1.1 [2008-11-19]
+--------------------------
+
+* Better handling of archiver exit codes and failures.
+
+  When tar exits with code 1 (Some files changed while being archived), the
+  result of backup operation is not 'failed'. Notice message is printed
+  instead.
+
+
+Version 0.1.0 [2008-10-25]
+--------------------------
+
+* Added gzip and lzma support for tar archives.
+
+  New archiver types are possible to specify in --archiver option: targz and
+  tarlzma which creates tar.gz and tar.lzma archives.
+
+* Path to user configuration directory changed.
+
+  User configuration directory is now at ~/.config/aa/ instead of ~/.aa/.
+
+* Added ability to specify multiple .aa files.
+
+  Now it is possible to specify more than one archive spec file as
+  arguments. All of them will be processed and corresponding number of archives
+  will be created.
+
+
+Version 0.0.4 [2008-09-19]
+--------------------------
+
+* Fixed bug where specifying backup level 0 leads to creation of level 1 if
+  level 0 already existed.
+
+* Fixed printing of empty error messages.
+
+* Ctrl-C does not print stack trace anymore.
+
+
+Version 0.0.3 [2008-09-16]
+--------------------------
+
+* First public release.
+
+
+
+Local variables:
+mode: outline
+end:

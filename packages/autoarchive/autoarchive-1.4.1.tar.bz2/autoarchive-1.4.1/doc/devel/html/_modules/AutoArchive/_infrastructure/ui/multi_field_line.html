@@ -1,0 +1,243 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._infrastructure.ui.multi_field_line &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._infrastructure.ui.multi_field_line</h1><div class="highlight"><pre>
+<span></span><span class="c1"># multi_field_line.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`MultiFieldLine` class, :data:`FieldStretchiness` enum and :class:`DisplayField` namedtuple.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MultiFieldLine&quot;</span><span class="p">,</span> <span class="s2">&quot;FieldStretchiness&quot;</span><span class="p">,</span> <span class="s2">&quot;DisplayField&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.py_additions</span> <span class="k">import</span> <span class="n">Enum</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CONSTANTS</span>
+
+<span class="c1">#: Display field stretchiness.</span>
+<span class="n">FieldStretchiness</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+    <span class="s2">&quot;Normal&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Medium&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Low&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># }}} CONSTANTS</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="MultiFieldLine"><a class="viewcode-back" href="../../../../api/infrastructure.ui.html#AutoArchive._infrastructure.ui.multi_field_line.MultiFieldLine">[docs]</a><span class="k">class</span> <span class="nc">MultiFieldLine</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A line of text that consists of multiple fields.</span>
+
+<span class="sd">    :param fields: Parts that together assembles the line.</span>
+<span class="sd">    :type fields: ``Sequence&lt;DisplayField&gt;``</span>
+<span class="sd">    :param referenceLineWidth: Total physical width of the line used as a reference for computing physical widths</span>
+<span class="sd">       based on relative widths of fields and re-computing them to a different total size in :meth:`computeFieldWidths`.</span>
+<span class="sd">    :type referenceLineWidth: ``int``&quot;&quot;&quot;</span>
+
+    <span class="n">__MAX_STRETCHINESS_CONSTANT</span> <span class="o">=</span> <span class="mi">1000</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">referenceLineWidth</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__fields</span> <span class="o">=</span> <span class="n">fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__referenceLineWidth</span> <span class="o">=</span> <span class="n">referenceLineWidth</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets fields that this line consists of.</span>
+
+<span class="sd">        :rtype: ``Sequence&lt;DisplayField&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fields</span>
+
+
+
+    <span class="c1"># SMELL: This should return a structure of text and width.  Full DisplayField is not necessary.  Then the fields</span>
+    <span class="c1"># property can be removed.</span>
+<div class="viewcode-block" id="MultiFieldLine.computeFieldWidths"><a class="viewcode-back" href="../../../../api/infrastructure.ui.html#AutoArchive._infrastructure.ui.multi_field_line.MultiFieldLine.computeFieldWidths">[docs]</a>    <span class="k">def</span> <span class="nf">computeFieldWidths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">physicalLineWidth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes physical width for each field.</span>
+
+<span class="sd">        Widths are computed based on relative widths and stretchiness so that total line width is no bigger than</span>
+<span class="sd">        passes ``physicalLineWidth``.</span>
+
+<span class="sd">        :param physicalLineWidth: Actual total line width (in the same units as ``referenceLineWidth``.</span>
+<span class="sd">        :type physicalLineWidth: ``int``</span>
+<span class="sd">        :return: Sequence of physical widths in the same order as :attr:`fields`.</span>
+<span class="sd">        :rtype: ``list&lt;int&gt;``&quot;&quot;&quot;</span>
+
+        <span class="n">referenceToPhysical</span> <span class="o">=</span> <span class="n">physicalLineWidth</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">__referenceLineWidth</span>
+        <span class="c1"># we are abusing DisplayField here by storing physical (reference) width in widthWeight</span>
+        <span class="n">referenceFields</span> <span class="o">=</span> <span class="p">[</span><span class="n">DisplayField</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">widthWeight</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">__referenceLineWidth</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">stretchiness</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">__fields</span><span class="p">]</span>
+
+        <span class="n">lowStretchedFields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">referenceFields</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Low</span><span class="p">]</span>
+        <span class="n">lowStretchedPhysicalWidths</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">widthWeight</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">__applyStretchiness</span><span class="p">(</span><span class="n">referenceToPhysical</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">stretchiness</span><span class="p">)</span> <span class="k">for</span>
+                                      <span class="n">f</span> <span class="ow">in</span> <span class="n">lowStretchedFields</span><span class="p">]</span>
+
+        <span class="n">referenceToPhysicalNoLow</span> <span class="o">=</span> <span class="p">(</span><span class="n">physicalLineWidth</span> <span class="o">-</span> <span class="nb">sum</span><span class="p">(</span><span class="n">lowStretchedPhysicalWidths</span><span class="p">))</span> <span class="o">/</span> \
+                                   <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__referenceLineWidth</span> <span class="o">-</span> <span class="nb">sum</span><span class="p">((</span><span class="n">f</span><span class="o">.</span><span class="n">widthWeight</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">lowStretchedFields</span><span class="p">)))</span>
+        <span class="n">mediumStretchedFields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">referenceFields</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Medium</span><span class="p">]</span>
+        <span class="n">mediumStretchedPhysicalWidths</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">widthWeight</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">__applyStretchiness</span><span class="p">(</span><span class="n">referenceToPhysicalNoLow</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">stretchiness</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span>
+            <span class="n">mediumStretchedFields</span><span class="p">]</span>
+
+        <span class="n">referenceToPhysicalNoLowMedium</span> <span class="o">=</span> <span class="p">(</span><span class="n">physicalLineWidth</span> <span class="o">-</span>
+            <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">lowStretchedPhysicalWidths</span><span class="p">)</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">mediumStretchedPhysicalWidths</span><span class="p">)))</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__referenceLineWidth</span> <span class="o">-</span>
+            <span class="p">(</span><span class="nb">sum</span><span class="p">((</span><span class="n">f</span><span class="o">.</span><span class="n">widthWeight</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">lowStretchedFields</span><span class="p">))</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">((</span><span class="n">f</span><span class="o">.</span><span class="n">widthWeight</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">mediumStretchedFields</span><span class="p">))))</span>
+        <span class="n">normalStretchedFields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">referenceFields</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Normal</span><span class="p">]</span>
+        <span class="n">normalStretchedPhysicalWidths</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">widthWeight</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">__applyStretchiness</span><span class="p">(</span><span class="n">referenceToPhysicalNoLowMedium</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">stretchiness</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span>
+            <span class="n">normalStretchedFields</span><span class="p">]</span>
+
+        <span class="c1"># assemble list of widths in order that corresponds to self.__fields</span>
+        <span class="n">widths</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lowIdx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">mediumIdx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">normalIdx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Low</span><span class="p">:</span>
+                <span class="n">widths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">lowStretchedPhysicalWidths</span><span class="p">[</span><span class="n">lowIdx</span><span class="p">]))</span>
+                <span class="n">lowIdx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">field</span><span class="o">.</span><span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Medium</span><span class="p">:</span>
+                <span class="n">widths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">mediumStretchedPhysicalWidths</span><span class="p">[</span><span class="n">mediumIdx</span><span class="p">]))</span>
+                <span class="n">mediumIdx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">field</span><span class="o">.</span><span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Normal</span><span class="p">:</span>
+                <span class="n">widths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">normalStretchedPhysicalWidths</span><span class="p">[</span><span class="n">normalIdx</span><span class="p">]))</span>
+                <span class="n">normalIdx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">widths</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__applyStretchiness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coefficient</span><span class="p">,</span> <span class="n">stretchiness</span><span class="p">):</span>
+        <span class="n">stretchinessConstant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__quantifyStretchiness</span><span class="p">(</span><span class="n">stretchiness</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">coefficient</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">stretchinessConstant</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MAX_STRETCHINESS_CONSTANT</span><span class="p">)</span> <span class="o">+</span> <span class="n">coefficient</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__quantifyStretchiness</span><span class="p">(</span><span class="n">stretchiness</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Normal</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">if</span>  <span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Medium</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">100</span>
+        <span class="k">if</span> <span class="n">stretchiness</span> <span class="o">==</span> <span class="n">FieldStretchiness</span><span class="o">.</span><span class="n">Low</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">900</span></div>
+
+
+
+<span class="n">DisplayField</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;DisplayField&quot;</span><span class="p">,</span> <span class="s2">&quot;text widthWeight stretchiness&quot;</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;One part of a multi-field line.</span>
+
+<span class="sd">:param text: Text that shall be displayed in the field.</span>
+<span class="sd">:type text: ``str``</span>
+<span class="sd">:param widthWeight: Number from 0 to 1 which represents relative width of the field.  0 means zero width and 1 means</span>
+<span class="sd">   maximal width.</span>
+<span class="sd">:type widthWeight: ``float``</span>
+<span class="sd">:param stretchiness: Determines how much the field change its size when the actual total line width changes.</span>
+<span class="sd">:type stretchiness: :data:`FieldStretchiness`&quot;&quot;&quot;</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

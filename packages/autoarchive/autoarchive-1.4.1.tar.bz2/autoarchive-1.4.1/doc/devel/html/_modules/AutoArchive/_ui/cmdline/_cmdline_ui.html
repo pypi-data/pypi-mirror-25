@@ -1,0 +1,385 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._ui.cmdline._cmdline_ui &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._ui.cmdline._cmdline_ui</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _cmdline_ui.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`CmdlineUi` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CmdlineUi&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.py_additions</span> <span class="k">import</span> <span class="n">event</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.ui</span> <span class="k">import</span> <span class="n">VerbosityLevels</span><span class="p">,</span> <span class="n">UiMessageKinds</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.configuration</span> <span class="k">import</span> <span class="n">Options</span>
+
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="CmdlineUi"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi">[docs]</a><span class="k">class</span> <span class="nc">CmdlineUi</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Implementation of the command-line user interface.</span>
+
+<span class="sd">    Provides basic methods for showing messages of various importance to a user.  It uses standard output and standard</span>
+<span class="sd">    error as the user interface.</span>
+
+<span class="sd">    :param appEnvironment: Application environment.</span>
+<span class="sd">    :type appEnvironment: :class:`.AppEnvironment`</span>
+<span class="sd">    :param configuration: Application configuration.</span>
+<span class="sd">    :type configuration: :class:`.IConfiguration`&quot;&quot;&quot;</span>
+
+    <span class="c1">#: Maximal length of the archive name in output messages.</span>
+    <span class="n">__MAX_NAME_LENGTH</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">appEnvironment</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span> <span class="o">=</span> <span class="n">configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span> <span class="o">=</span> <span class="n">appEnvironment</span>
+
+        <span class="c1"># currently processed archive specification file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processingArchSpec</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">messageShown</span><span class="p">(</span><span class="n">messageKind</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fired after a user message was shown.</span>
+
+<span class="sd">        Event is fired when one of the message kinds from :data:`UiMessageKinds` enum was shown or would be shown (but</span>
+<span class="sd">        was suppressed due to the verbosity level).</span>
+
+<span class="sd">        :param messageKind: Kind of the message that was shown.</span>
+<span class="sd">        :type messageKind: :data:`UiMessageKinds`&quot;&quot;&quot;</span>
+
+        <span class="k">pass</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">verbosity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the verbosity level.</span>
+
+<span class="sd">        If verbosity level is :data:`VerbosityLevels.Quiet` only messages of kind :data:`UiMessageKinds.Error` are</span>
+<span class="sd">        shown.  For level :data:`VerbosityLevels.Normal` all messages kinds except :data:`UiMessageKinds.Verbose`</span>
+<span class="sd">        are shown.  For level :data:`VerbosityLevels.Verbose` all message kinds are shown.</span>
+
+<span class="sd">        :rtype: :data:`VerbosityLevels`&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span>
+        <span class="k">return</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Normal</span>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.setProcessingArchSpec"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.setProcessingArchSpec">[docs]</a>    <span class="k">def</span> <span class="nf">setProcessingArchSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archSpec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets currently processed :term:`archive specification file`.</span>
+
+<span class="sd">        :param archSpec: The archive specification file name or path to it.</span>
+<span class="sd">        :type archSpec: ``str``&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processingArchSpec</span> <span class="o">=</span> <span class="n">archSpec</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.showVerbose"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.showVerbose">[docs]</a>    <span class="k">def</span> <span class="nf">showVerbose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Show a verbose-type message (:data:`UiMessageKinds.Verbose`) to the user.</span>
+
+<span class="sd">        Verbose messages should be shown only if user enables it.  Although this method can be called regardless of</span>
+<span class="sd">        current verbosity level, the concrete implementation can decide whether it will be shown or not if verbosity</span>
+<span class="sd">        level is 0.  It is not recommended to call this method if verbosity level is 0 due to performance reasons.</span>
+<span class="sd">        Current verbosity level can be obtained via :attr:`verbosity` property.</span>
+
+<span class="sd">        See also: :attr:`verbosity`.</span>
+
+<span class="sd">        :param msg: The message that should be shown to the user.</span>
+<span class="sd">        :type msg: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">==</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Verbose</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Verbose</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.showNotification"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.showNotification">[docs]</a>    <span class="k">def</span> <span class="nf">showNotification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Show an unintrusive notification message (:data:`UiMessageKinds.Notification`) to the user.</span>
+
+<span class="sd">        .. note:: If user interface implementation does not have means to support notifications then it should be</span>
+<span class="sd">           presented to the user similarly as :meth:`showInfo`.</span>
+
+<span class="sd">        See also: :attr:`verbosity`.</span>
+
+<span class="sd">        :param msg: The message that should be shown to the user.</span>
+<span class="sd">        :type msg: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">!=</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Notification</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.showInfo"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.showInfo">[docs]</a>    <span class="k">def</span> <span class="nf">showInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Show an information message (:data:`UiMessageKinds.Info`) to the user.</span>
+
+<span class="sd">        See also: :attr:`verbosity`.</span>
+
+<span class="sd">        :param msg: The message that should be shown to the user.</span>
+<span class="sd">        :type msg: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">!=</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__processingArchSpec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Info</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.showWarning"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.showWarning">[docs]</a>    <span class="k">def</span> <span class="nf">showWarning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Show a warning message (:data:`UiMessageKinds.Warning`) to the user.</span>
+
+<span class="sd">        See also: :attr:`verbosity`.</span>
+
+<span class="sd">        :param msg: The message that should be shown to the user.</span>
+<span class="sd">        :type msg: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">!=</span> <span class="n">VerbosityLevels</span><span class="o">.</span><span class="n">Quiet</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__printAttentionMsg</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Warning</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.showError"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.showError">[docs]</a>    <span class="k">def</span> <span class="nf">showError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Show an error message to (:data:`UiMessageKinds.Error`) the user.</span>
+
+<span class="sd">        See also: :attr:`verbosity`.</span>
+
+<span class="sd">        :param msg: The message that should be shown to the user.</span>
+<span class="sd">        :type msg: ``str``&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__printAttentionMsg</span><span class="p">(</span><span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messageShown</span><span class="p">(</span><span class="n">UiMessageKinds</span><span class="o">.</span><span class="n">Error</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.presentLine"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.presentLine">[docs]</a>    <span class="k">def</span> <span class="nf">presentLine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Present a line of text to the user.</span>
+
+<span class="sd">        .. note:: The verbosity level has no effect on presenting the line.</span>
+
+<span class="sd">        :param line: The text that shall be presented to the user.</span>
+<span class="sd">        :type line: ``str``&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">line</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CmdlineUi.presentMultiFieldLine"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._cmdline_ui.CmdlineUi.presentMultiFieldLine">[docs]</a>    <span class="k">def</span> <span class="nf">presentMultiFieldLine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multiFieldLine</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Present a line consisting of multiple fields of text to the user.</span>
+
+<span class="sd">        .. note:: The verbosity level has no effect on presenting the line.</span>
+
+<span class="sd">        :param multiFieldLine: Line that shall be presented.</span>
+<span class="sd">        :type multiFieldLine: :class:`.MultiFieldLine`&quot;&quot;&quot;</span>
+
+        <span class="n">physicalWidth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getTermWidth</span><span class="p">()</span>
+        <span class="n">widths</span> <span class="o">=</span> <span class="n">multiFieldLine</span><span class="o">.</span><span class="n">computeFieldWidths</span><span class="p">(</span><span class="n">physicalWidth</span><span class="p">)</span>
+        <span class="n">widthIdx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">multiFieldLine</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">widths</span><span class="p">[</span><span class="n">widthIdx</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">widthIdx</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">multiFieldLine</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="n">widths</span><span class="p">[</span><span class="n">widthIdx</span><span class="p">]</span>
+            <span class="n">paddedText</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;{text:&lt;</span><span class="si">{width}</span><span class="s2">} &quot;</span><span class="p">,</span> <span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shortenString</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">width</span><span class="p">),</span> <span class="n">width</span> <span class="o">=</span> <span class="n">width</span><span class="p">)</span>
+            <span class="n">line</span> <span class="o">+=</span> <span class="n">paddedText</span>
+            <span class="n">widthIdx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__printStandardMsg</span><span class="p">(</span><span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__printStandardMsg</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">currentArchSpec</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">archSpecToken</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;[</span><span class="si">{}</span><span class="s2">] &quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__getArchSpecToken</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">))</span> <span class="k">if</span> <span class="n">currentArchSpec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">archSpecToken</span><span class="p">,</span> <span class="n">msg</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__printAttentionMsg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attentionString</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="n">archSpecToken</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot; [</span><span class="si">{}</span><span class="s2">] &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchSpecToken</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__processingArchSpec</span><span class="p">))</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__processingArchSpec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot; &quot;</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{executableName}</span><span class="s2">: </span><span class="si">{attentionString}</span><span class="s2">!</span><span class="si">{archSpecToken}{msg}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">executableName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">executableName</span><span class="p">,</span>
+                <span class="n">attentionString</span> <span class="o">=</span> <span class="n">attentionString</span><span class="p">,</span>
+                <span class="n">archSpecToken</span> <span class="o">=</span> <span class="n">archSpecToken</span><span class="p">,</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span><span class="p">))</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__getArchSpecToken</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">currentArchSpec</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">_shortenString</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cls</span><span class="o">.</span><span class="n">__MAX_NAME_LENGTH</span><span class="p">),</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">currentArchSpec</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">currentArchSpec</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_shortenString</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+        <span class="n">halfLength</span> <span class="o">=</span> <span class="n">length</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">token</span><span class="p">[:</span><span class="n">halfLength</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;~&quot;</span> <span class="o">+</span> <span class="n">token</span><span class="p">[</span><span class="o">-</span><span class="n">halfLength</span> <span class="o">-</span> <span class="p">((</span><span class="n">length</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">length</span> <span class="k">else</span> <span class="n">token</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__getTermWidth</span><span class="p">():</span>
+
+        <span class="k">def</span> <span class="nf">getWinWidth</span><span class="p">(</span><span class="n">fd</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">struct</span><span class="o">,</span> <span class="nn">fcntl</span><span class="o">,</span> <span class="nn">termios</span>
+                <span class="n">expectStruct</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;hh&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;hh&quot;</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">termios</span><span class="o">.</span><span class="n">TIOCGWINSZ</span><span class="p">,</span> <span class="n">expectStruct</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">width</span>
+
+
+
+        <span class="c1"># try get terminal width from standard file descriptors using ioctl</span>
+        <span class="k">for</span> <span class="n">stdFd</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">winWidth</span> <span class="o">=</span> <span class="n">getWinWidth</span><span class="p">(</span><span class="n">stdFd</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">winWidth</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">winWidth</span>
+
+        <span class="c1"># try get terminal width from controlling terminal file descriptor using ioctl</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">ctermid</span><span class="p">())</span> <span class="k">as</span> <span class="n">termFd</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">getWinWidth</span><span class="p">(</span><span class="n">termFd</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># try environment variable</span>
+        <span class="k">if</span> <span class="s2">&quot;COLUMNS&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;COLUMNS&quot;</span><span class="p">]</span>
+
+        <span class="c1"># try call external program stty</span>
+        <span class="n">status</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">getstatusoutput</span><span class="p">(</span><span class="s2">&quot;stty size&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">splitOutput</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splitOutput</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">splitOutput</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="mi">80</span></div>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

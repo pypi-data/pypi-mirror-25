@@ -1,0 +1,155 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Archive Specification File &#8212; AutoArchive User Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../_static/autoarchive.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Configuration File" href="config_file.html" />
+    <link rel="prev" title="Operations Explained" href="operations_explained.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="config_file.html" title="Configuration File"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="operations_explained.html" title="Operations Explained"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AutoArchive User Manual (ver. 1.4.1)</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="archive-specification-file">
+<span id="arch-spec"></span><h1>Archive Specification File<a class="headerlink" href="#archive-specification-file" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">Archive specification file</span></a> contains all information needed for creation of a single archive.</p>
+<p>Options in the <a class="reference internal" href="glossary.html#term-aa-file"><span class="xref std std-term">.aa file</span></a> are divided into sections.  A section begins with the section name enclosed in square
+brackets.  It contains variables which represents the options.</p>
+<p>Variables are written in the <code class="docutils literal"><span class="pre">option-name</span> <span class="pre">=</span> <span class="pre">value</span></code> form, one variable per line.  Boolean values are written as
+<code class="docutils literal"><span class="pre">yes</span></code> and <code class="docutils literal"><span class="pre">no</span></code>.  For path values, tilde (<code class="docutils literal"><span class="pre">~</span></code>) is expanded to the user’s home.  Form <code class="docutils literal"><span class="pre">option-name</span> <span class="pre">=</span></code> can be
+used to specify a variable with undefined value.</p>
+<p>Values of <code class="docutils literal"><span class="pre">include-files</span></code> and <code class="docutils literal"><span class="pre">exclude-files</span></code> options that contains spaces has to be enclosed in double quotes
+(<code class="docutils literal"><span class="pre">&quot;&quot;</span></code>).  They may contain standard shell wildcards.</p>
+<p>When specifying the value it is possible to refer to other variables from the same file using the form
+<code class="docutils literal"><span class="pre">%(variable-name)s</span></code> or variables from an external file using the form <code class="docutils literal"><span class="pre">&#64;(external-name.variable-name)</span></code> where
+<code class="docutils literal"><span class="pre">external-name</span></code> is reference which has to be defined in <code class="docutils literal"><span class="pre">[External]</span></code> section.</p>
+<p>Lines beginning with <code class="docutils literal"><span class="pre">#</span></code> or <code class="docutils literal"><span class="pre">;</span></code> are ignored and may be used for comments.</p>
+<p>Three sections are valid: <code class="docutils literal"><span class="pre">[External</span></code>, <code class="docutils literal"><span class="pre">[Archive]</span></code> (optional) and <code class="docutils literal"><span class="pre">[Content]</span></code>.</p>
+<div class="section" id="section-external">
+<h2>Section <code class="docutils literal"><span class="pre">[External]</span></code><a class="headerlink" href="#section-external" title="Permalink to this headline">¶</a></h2>
+<p>This section contains definition of external references.  Each reference is put on a single line.  They can be
+specified by two forms: as a single variable or as a <code class="docutils literal"><span class="pre">variable</span> <span class="pre">=</span> <span class="pre">path</span></code> pair.</p>
+<p>If <strong>single variable</strong> is specified it refers to <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a> of the same name as the variable but
+without the ‘.aa’ extension.  The file is searched in the <a class="reference internal" href="glossary.html#term-archive-specifications-directory"><span class="xref std std-term">archive specifications directory</span></a>.</p>
+<p>The <strong>variable = path</strong> form allows to refer a file from an arbitrary location by specifying its absolute or relative
+path.  Paths are relative to the directory of the original file.  In both cases variable name is used in the reference.
+See <a class="reference internal" href="examples.html#referring-to-external-archive-specification-example"><span class="std std-ref">Referring To External Archive Specification Example</span></a> for the example of the <a class="reference internal" href="glossary.html#term-aa-file"><span class="xref std std-term">.aa file</span></a> with external references.</p>
+</div>
+<div class="section" id="section-archive">
+<h2>Section <code class="docutils literal"><span class="pre">[Archive]</span></code><a class="headerlink" href="#section-archive" title="Permalink to this headline">¶</a></h2>
+<p>This section can contain configuration options which are, when specified, overriding the ones specified in
+configuration files and command line.</p>
+<p><strong>Options valid in the [Archive] section:</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li>archiver</li>
+<li>compression-level</li>
+<li>dest-dir</li>
+<li>overwrite-at-start</li>
+<li>incremental</li>
+<li>restarting</li>
+<li>restart-after-level</li>
+<li>restart-after-age</li>
+<li>full-restart-after-count</li>
+<li>full-restart-after-age</li>
+<li>max-restart-level-size</li>
+<li>remove-obsolete-backups</li>
+<li>keep-old-backups</li>
+<li>number-of-old-backups</li>
+<li>command-before-backup</li>
+<li>command-after-backup</li>
+</ul>
+</div></blockquote>
+<p>See <a class="reference internal" href="description.html#usage"><span class="std std-ref">Usage</span></a> for their description.</p>
+</div>
+<div class="section" id="section-content">
+<h2>Section <code class="docutils literal"><span class="pre">[Content]</span></code><a class="headerlink" href="#section-content" title="Permalink to this headline">¶</a></h2>
+<p>This section contains options specific to an archive.  All options except <code class="docutils literal"><span class="pre">name</span></code> are required.</p>
+<p><strong>Options valid in the [Content] section:</strong></p>
+<blockquote>
+<div><ul>
+<li><p class="first">name</p>
+<p>Archive name.  Created <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> will be named according value of this variable plus appropriate extension.  It is
+optional; default value is the name of the <a class="reference internal" href="glossary.html#term-aa-file"><span class="xref std std-term">.aa file</span></a> without the extension.</p>
+</li>
+<li><p class="first">path</p>
+<p>Path to archive root.  All paths and file names specified in the same archive specification file will be relative
+to this path.  It will be also the root of the created archive.</p>
+</li>
+<li><p class="first">include-files</p>
+<p>List of space separated file or directory names to backup.  Paths here are relative to the path specified in
+<code class="docutils literal"><span class="pre">path</span></code> variable above.  Starting forward slash (<code class="docutils literal"><span class="pre">/</span></code>) from absolute paths as well as parent directory tokens
+(<code class="docutils literal"><span class="pre">..</span></code>) will be ignored.</p>
+</li>
+<li><p class="first">exclude-files</p>
+<p>List of space separated file or directory names to be excluded from the backup.  Use <code class="docutils literal"><span class="pre">exclude-files</span> <span class="pre">=</span></code> to
+specify that no files should be excluded.  Similarly to <code class="docutils literal"><span class="pre">include-files</span></code> these paths are relative to <code class="docutils literal"><span class="pre">path</span></code>.</p>
+</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="config_file.html" title="Configuration File"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="operations_explained.html" title="Operations Explained"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AutoArchive User Manual (ver. 1.4.1)</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Robert Cernansky.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

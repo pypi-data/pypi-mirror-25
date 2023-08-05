@@ -1,0 +1,241 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._ui.cmdline._user_action_executor &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._ui.cmdline._user_action_executor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _user_action_executor.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2017 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`UserActionExecutor` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;UserActionExecutor&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.utils</span> <span class="k">import</span> <span class="n">Utils</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.configuration</span> <span class="k">import</span> <span class="n">Options</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._application.archiving.archive_spec</span> <span class="k">import</span> <span class="n">ArchiveSpecInfo</span><span class="p">,</span> <span class="n">ConfigConstants</span>
+<span class="kn">from</span> <span class="nn">._cmdline_commands</span> <span class="k">import</span> <span class="n">CmdlineCommands</span><span class="p">,</span> <span class="n">_CmdlineCommandsUtils</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="UserActionExecutor"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._user_action_executor.UserActionExecutor">[docs]</a><span class="k">class</span> <span class="nc">UserActionExecutor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Takes care of execution of a user action specified on the command line.</span>
+
+<span class="sd">    :param componentUi: Access to user interface.</span>
+<span class="sd">    :type componentUi: :class:`.CmdlineUi`</span>
+<span class="sd">    :param applicationContext: Application context.</span>
+<span class="sd">    :type applicationContext: :class:`.ApplicationContext`</span>
+<span class="sd">    :param archivingApplication: The application interface.</span>
+<span class="sd">    :type archivingApplication: :class:`.ArchivingApplication`&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">componentUi</span><span class="p">,</span> <span class="n">applicationContext</span><span class="p">,</span> <span class="n">archivingApplication</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span> <span class="o">=</span> <span class="n">componentUi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archivingApplication</span> <span class="o">=</span> <span class="n">archivingApplication</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span> <span class="o">=</span> <span class="n">applicationContext</span><span class="o">.</span><span class="n">configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span> <span class="o">=</span> <span class="n">applicationContext</span><span class="o">.</span><span class="n">appEnvironment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getUserAction</span><span class="p">()</span>
+
+
+
+<div class="viewcode-block" id="UserActionExecutor.execute"><a class="viewcode-back" href="../../../../api/ui.cmdline.html#AutoArchive._ui.cmdline._user_action_executor.UserActionExecutor.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Executes an action defined for the specified command for specified</span>
+<span class="sd">        :term:`archive specification files &lt;archive specification file&gt;`.</span>
+
+<span class="sd">        Command is read from the :attr:`.ApplicationContext.appEnvironment.options`.  If ``options`` has an attribute</span>
+<span class="sd">        that matches one of the :class:`.CmdlineCommands` and the value of that attribute is ``True`` then the action</span>
+<span class="sd">        for the matching command is executed.  If there is no such attribute, then the default action ``create`` is</span>
+<span class="sd">        executed.</span>
+
+<span class="sd">        Archive specification files can be specified by following ways:</span>
+
+<span class="sd">          - By archive names passed in :attr:`.ApplicationContext.appEnvironment.arguments`.</span>
+
+<span class="sd">            Archive name can not contain the string defined by :attr:`.ConfigConstants.ARCHIVE_SPEC_EXT` at the end</span>
+<span class="sd">            otherwise it would be taken as the path to an archive specification file.  Archive specification files</span>
+<span class="sd">            corresponding to the names are looked up in the path defined by :attr:`.Options.ARCHIVE_SPECS_DIR` option.</span>
+
+<span class="sd">          - By paths to archive specification files passed in :attr:`.ApplicationContext.appEnvironment.arguments`.</span>
+
+<span class="sd">            A path must end with the string defined by :attr:`.ConfigConstants.ARCHIVE_SPEC_EXT`.</span>
+
+<span class="sd">        :return: ``True`` if the action execution was successful; ``False`` otherwise.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__validateUserAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__action</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">selectedArchiveSpecs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__retrieveSelectedArchiveSpecs</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">CREATE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archivingApplication</span><span class="o">.</span><span class="n">executeCreateAction</span><span class="p">(</span><span class="n">selectedArchiveSpecs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">LIST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archivingApplication</span><span class="o">.</span><span class="n">executeListAction</span><span class="p">(</span><span class="n">selectedArchiveSpecs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">__action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">PURGE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archivingApplication</span><span class="o">.</span><span class="n">executePurgeAction</span><span class="p">(</span><span class="n">selectedArchiveSpecs</span><span class="p">)</span></div>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="k">def</span> <span class="nf">__getUserAction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">optparseValues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">options</span>
+        <span class="k">for</span> <span class="n">optParseOption</span> <span class="ow">in</span> <span class="n">optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">optparseValues</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">optParseOption</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">_CmdlineCommandsUtils</span><span class="o">.</span><span class="n">isExistingCommand</span><span class="p">(</span><span class="n">optParseOption</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">optParseOption</span>
+        <span class="k">return</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">CREATE</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__validateUserAction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">CREATE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="s2">&quot;No archive specification given. Please pass the name or path to an &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;archive specification file as the program&#39;s argument; or use option &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;--all if you want to process all configured archive specifications.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">PURGE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">]:</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="s2">&quot;No archive name given. Please pass the name of an archive as the &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;program&#39;s argument or use option --all if you want to purge all &quot;</span> <span class="o">+</span>
+                                             <span class="s2">&quot;orphaned archive data.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__retrieveSelectedArchiveSpecs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="nd">@Utils</span><span class="o">.</span><span class="n">uniq</span>
+        <span class="k">def</span> <span class="nf">getSelectedArchiveSpecs</span><span class="p">():</span>
+            <span class="n">archiveSpecsDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">archiveName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveNameArguments</span><span class="p">():</span>
+                <span class="k">yield</span> <span class="n">ArchiveSpecInfo</span><span class="p">(</span><span class="n">archiveName</span><span class="p">,</span>
+                                      <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">archiveSpecsDir</span><span class="p">,</span> <span class="n">archiveName</span> <span class="o">+</span> <span class="n">ConfigConstants</span><span class="o">.</span><span class="n">ARCHIVE_SPEC_EXT</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">archiveSpec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getArchiveSpecPathArguments</span><span class="p">():</span>
+                <span class="k">yield</span> <span class="n">ArchiveSpecInfo</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">archiveSpec</span><span class="p">)</span>
+
+
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">getSelectedArchiveSpecs</span><span class="p">())</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getArchiveNameArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">arg</span>
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">arg</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ConfigConstants</span><span class="o">.</span><span class="n">ARCHIVE_SPEC_EXT</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__getArchiveSpecPathArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">arg</span>
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">arguments</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">arg</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">ConfigConstants</span><span class="o">.</span><span class="n">ARCHIVE_SPEC_EXT</span><span class="p">)</span></div>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

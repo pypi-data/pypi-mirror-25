@@ -1,0 +1,293 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._services.archiver.backup_definition &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._services.archiver.backup_definition</h1><div class="highlight"><pre>
+<span></span><span class="c1"># backup_definition.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:const:`MIN_COMPRESSION_STRENGTH` and :const:`MAX_COMPRESSION_STRENGTH` constants, :data:`BackupTypes`,</span>
+<span class="sd">:data:`ArchiverFeatures`, :data:`BackupSubOperations`, :data:`BackupOperationErrors` enums</span>
+<span class="sd">and :class:`BackupDefinition` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MIN_COMPRESSION_STRENGTH&quot;</span><span class="p">,</span> <span class="s2">&quot;MAX_COMPRESSION_STRENGTH&quot;</span><span class="p">,</span> <span class="s2">&quot;BackupTypes&quot;</span><span class="p">,</span> <span class="s2">&quot;ArchiverFeatures&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;BackupSubOperations&quot;</span><span class="p">,</span> <span class="s2">&quot;BackupOperationErrors&quot;</span><span class="p">,</span> <span class="s2">&quot;BackupDefinition&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.py_additions</span> <span class="k">import</span> <span class="n">Enum</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CONSTANTS</span>
+
+<span class="c1">#: Minimal compression strength value.</span>
+<span class="n">MIN_COMPRESSION_STRENGTH</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1">#: Maximal compression strength value.</span>
+<span class="n">MAX_COMPRESSION_STRENGTH</span> <span class="o">=</span> <span class="mi">9</span>
+
+<span class="c1"># }}} CONSTANTS</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<span class="c1">#: Backup types.</span>
+<span class="n">BackupTypes</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+    <span class="s2">&quot;Tar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarGz&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarBz2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TarXz&quot;</span><span class="p">)</span>
+
+
+
+<span class="c1">#: Features that archiver service may support.</span>
+<span class="n">ArchiverFeatures</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+    <span class="s2">&quot;CompressionStrength&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Incremental&quot;</span><span class="p">)</span>
+
+
+
+<span class="c1">#: Operations executed during backup creation.</span>
+<span class="n">BackupSubOperations</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+
+    <span class="c1">#: Unknown operation</span>
+    <span class="s2">&quot;Unknown&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Unknown operation on a filesystem object.</span>
+    <span class="s2">&quot;UnknownFileOperation&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: :meth:`os.stat()` (or access) operation on a filesystem object.</span>
+    <span class="s2">&quot;Stat&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Filesystem object open operation.</span>
+    <span class="s2">&quot;Open&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: File read operation.</span>
+    <span class="s2">&quot;Read&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Finishing the backup creation.</span>
+    <span class="s2">&quot;Finish&quot;</span><span class="p">)</span>
+
+
+
+<span class="c1">#: Errors that may occur during backup operation.</span>
+<span class="n">BackupOperationErrors</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span>
+
+    <span class="c1">#: Unknown error.</span>
+    <span class="s2">&quot;UnknownError&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: An operation on a filesystem object was not successful due to other/unknown system error.</span>
+    <span class="s2">&quot;UnknownOsError&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: An operation on a filesystem object was not successful due to permission denied system error.</span>
+    <span class="s2">&quot;PermissionDenied&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: A socket was ignored.</span>
+    <span class="s2">&quot;SocketIgnored&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: An unknown filesystem object typ was ignored.</span>
+    <span class="s2">&quot;UnknownTypeIgnored&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: The file was changed while it has been adding to the backup.</span>
+    <span class="s2">&quot;FileChanged&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: Some files were changed during backup creation.</span>
+    <span class="s2">&quot;SomeFilesChanged&quot;</span><span class="p">,</span>
+
+    <span class="c1">#: A directory has been renamed since last backup level.</span>
+    <span class="s2">&quot;DirectoryRenamed&quot;</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="BackupDefinition"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.backup_definition.BackupDefinition">[docs]</a><span class="k">class</span> <span class="nc">BackupDefinition</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Container class for information needed to create a backup.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupType</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destination</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__includeFiles</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__excludeFiles</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backupId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The backup identifier, typically the name is used.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span>
+
+    <span class="nd">@backupId</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backupId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">backupType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Type of the backup.</span>
+
+<span class="sd">        :rtype: :data:`BackupTypes`&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupType</span>
+
+    <span class="nd">@backupType</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">backupType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__backupType</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">destination</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Path to the directory which contains the backup.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__destination</span>
+
+    <span class="nd">@destination</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">destination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destination</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Path to the root directory of the source content.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__root</span>
+
+    <span class="nd">@root</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">includeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set of source filesystem objects paths relative to :attr:`root`.</span>
+
+<span class="sd">        :rtype: ``Set&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__includeFiles</span>
+
+    <span class="nd">@includeFiles</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">includeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__includeFiles</span> <span class="o">=</span> <span class="n">value</span>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">excludeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set of excluded filesystem objects paths relative to :attr:`root`.</span>
+
+<span class="sd">        :rtype: ``Set&lt;str&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__excludeFiles</span>
+
+    <span class="nd">@excludeFiles</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">excludeFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__excludeFiles</span> <span class="o">=</span> <span class="n">value</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

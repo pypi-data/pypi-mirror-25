@@ -1,0 +1,231 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._infrastructure.configuration._config_file_processor &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._infrastructure.configuration._config_file_processor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _config_file_processor.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_ConfigFileProcessor` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_ConfigFileProcessor&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">configparser</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.utils</span> <span class="k">import</span> <span class="n">Utils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">Options</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_ConfigFileProcessor"><a class="viewcode-back" href="../../../../api/infrastructure.configuration.html#AutoArchive._infrastructure.configuration._config_file_processor._ConfigFileProcessor">[docs]</a><span class="k">class</span> <span class="nc">_ConfigFileProcessor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Processes configuration files and populates :class:`.IConfiguration` instance.</span>
+
+<span class="sd">    :param appEnvironment: :class:`.AppEnvironment` instance.</span>
+<span class="sd">    :type appEnvironment: :class:`.AppEnvironment`</span>
+<span class="sd">    :param factoryUserConfigDir: Pre-defined path to the :term:`user configuration directory`.</span>
+<span class="sd">    :type factoryUserConfigDir: ``str``</span>
+<span class="sd">    :param factoryUserConfigFileProvider: Function that returns path to the :term:`user configuration file` based on</span>
+<span class="sd">       the passed configuration directory.</span>
+<span class="sd">    :type factoryUserConfigFileProvider: ``function{str, =&gt;str}``</span>
+<span class="sd">    :param userConfigDir: Path to the user configuration directory.</span>
+<span class="sd">    :type userConfigDir: ``str``</span>
+<span class="sd">    :param userConfigFile: Path to the user configuration file.</span>
+<span class="sd">    :type userConfigFile: ``str``&quot;&quot;&quot;</span>
+
+    <span class="c1"># system configuration file - full path</span>
+    <span class="n">__SYSTEM_CONFIG_FILE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;/etc/aa/aa.conf&quot;</span><span class="p">)</span>
+
+    <span class="n">__SECTION_GENERAL</span> <span class="o">=</span> <span class="s2">&quot;General&quot;</span>
+    <span class="n">__SECTION_ARCHIVE</span> <span class="o">=</span> <span class="s2">&quot;Archive&quot;</span>
+
+    <span class="c1"># options not suitable for a configuration file</span>
+    <span class="n">__INVALID_OPTIONS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+                                  <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">LEVEL</span><span class="p">,</span>
+                                              <span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span>
+                                              <span class="n">Options</span><span class="o">.</span><span class="n">NO_INCREMENTAL</span><span class="p">,</span>
+                                              <span class="n">Options</span><span class="o">.</span><span class="n">NO_RESTARTING</span><span class="p">,</span>
+                                              <span class="n">Options</span><span class="o">.</span><span class="n">NO_REMOVE_OBSOLETE_BACKUPS</span><span class="p">,</span>
+                                              <span class="n">Options</span><span class="o">.</span><span class="n">NO_KEEP_OLD_BACKUPS</span><span class="p">,</span>
+                                              <span class="n">Options</span><span class="o">.</span><span class="n">NO_ALL</span><span class="p">,</span>
+                                              <span class="n">Options</span><span class="o">.</span><span class="n">NO_OVERWRITE_AT_START</span><span class="p">))</span>
+
+    <span class="c1"># options not suitable for the global configuration file</span>
+    <span class="n">__INVALID_OPTIONS_GLOBAL</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+    <span class="c1"># options not suitable for the user configuration file</span>
+    <span class="n">__INVALID_OPTIONS_USER</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+                                       <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_FILE</span><span class="p">,</span>
+                                                   <span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">appEnvironment</span><span class="p">,</span> <span class="n">factoryUserConfigDir</span><span class="p">,</span> <span class="n">factoryUserConfigFileProvider</span><span class="p">,</span> <span class="n">userConfigDir</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">userConfigFile</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span> <span class="o">=</span> <span class="n">appEnvironment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__factoryUserConfigDir</span> <span class="o">=</span> <span class="n">factoryUserConfigDir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__factoryUserConfigFileProvider</span> <span class="o">=</span> <span class="n">factoryUserConfigFileProvider</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__userConfigDir</span> <span class="o">=</span> <span class="n">userConfigDir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__userConfigFile</span> <span class="o">=</span> <span class="n">userConfigFile</span>
+
+
+
+<div class="viewcode-block" id="_ConfigFileProcessor.populateConfiguration"><a class="viewcode-back" href="../../../../api/infrastructure.configuration.html#AutoArchive._infrastructure.configuration._config_file_processor._ConfigFileProcessor.populateConfiguration">[docs]</a>    <span class="k">def</span> <span class="nf">populateConfiguration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Populates ``configuration`` with options.</span>
+
+<span class="sd">        :param configuration: Configuration that should be populated.</span>
+<span class="sd">        :type configuration: :class:`._Configuration`&quot;&quot;&quot;</span>
+
+        <span class="n">supportedSections</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__SECTION_GENERAL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__SECTION_ARCHIVE</span><span class="p">}</span>
+
+        <span class="c1"># process system configuration file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processConfigFile</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__SYSTEM_CONFIG_FILE</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">supportedSections</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__INVALID_OPTIONS</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">__INVALID_OPTIONS_GLOBAL</span><span class="p">)</span>
+
+        <span class="c1"># process user configuration file</span>
+        <span class="n">userConfigDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__userConfigDir</span> <span class="ow">or</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">__factoryUserConfigDir</span>
+            
+        <span class="n">userConfigFile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__userConfigFile</span> <span class="ow">or</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_FILE</span><span class="p">]</span> <span class="ow">or</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">__factoryUserConfigFileProvider</span><span class="p">(</span><span class="n">userConfigDir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processConfigFile</span><span class="p">(</span>
+            <span class="n">userConfigFile</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">supportedSections</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__INVALID_OPTIONS</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">__INVALID_OPTIONS_USER</span><span class="p">)</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__processConfigFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configFile</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">supportedSections</span><span class="p">,</span> <span class="n">invalidOptions</span><span class="p">):</span>
+        <span class="n">configParser</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">(</span><span class="n">interpolation</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">configParser</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">configFile</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">configparser</span><span class="o">.</span><span class="n">MissingSectionHeaderError</span><span class="p">,</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ParsingError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">Utils</span><span class="o">.</span><span class="n">fatalExit</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">UnicodeDecodeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">Utils</span><span class="o">.</span><span class="n">fatalExit</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to parse file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> [</span><span class="si">{}</span><span class="s2">].&quot;</span><span class="p">,</span> <span class="n">configFile</span><span class="p">,</span> <span class="n">ex</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">supportedSections</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">configParser</span><span class="o">.</span><span class="n">sections</span><span class="p">()))</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">supportedSections</span><span class="p">):</span>
+            <span class="n">Utils</span><span class="o">.</span><span class="n">fatalExit</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="s2">&quot;One or more invalid sections found in the configuration file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">configFile</span><span class="p">),</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">executableName</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__addOptionsFromSection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__SECTION_GENERAL</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">configParser</span><span class="p">,</span> <span class="n">configFile</span><span class="p">,</span> <span class="n">invalidOptions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__addOptionsFromSection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__SECTION_ARCHIVE</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">configParser</span><span class="p">,</span> <span class="n">configFile</span><span class="p">,</span> <span class="n">invalidOptions</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__addOptionsFromSection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">configParser</span><span class="p">,</span> <span class="n">configFile</span><span class="p">,</span> <span class="n">invalidOptions</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">configParser</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">configOption</span> <span class="ow">in</span> <span class="n">configParser</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">configOption</span> <span class="ow">in</span> <span class="n">invalidOptions</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Not suitable for a config. file&quot;</span><span class="p">)</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">configParser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">configOption</span><span class="p">)</span>
+                    <span class="n">configuration</span><span class="o">.</span><span class="n">_addOrReplaceOption</span><span class="p">(</span><span class="n">configOption</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">Utils</span><span class="o">.</span><span class="n">fatalExit</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="s2">&quot;Invalid option </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> in the configuration file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">configOption</span><span class="p">,</span> <span class="n">configFile</span><span class="p">),</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">executableName</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">Utils</span><span class="o">.</span><span class="n">fatalExit</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="s2">&quot;Wrong value </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> of the option </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> in the configuration file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+                            <span class="n">value</span><span class="p">,</span> <span class="n">configOption</span><span class="p">,</span> <span class="n">configFile</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">__appEnvironment</span><span class="o">.</span><span class="n">executableName</span><span class="p">)</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

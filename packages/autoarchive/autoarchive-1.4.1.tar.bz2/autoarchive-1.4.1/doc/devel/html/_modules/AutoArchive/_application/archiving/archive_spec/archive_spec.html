@@ -1,0 +1,354 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._application.archiving.archive_spec.archive_spec &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._application.archiving.archive_spec.archive_spec</h1><div class="highlight"><pre>
+<span></span><span class="c1"># archive_spec.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2017 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`ArchiveSpec` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ArchiveSpec&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">configparser</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.configuration</span> <span class="k">import</span> <span class="n">ConfigurationBase</span><span class="p">,</span> <span class="n">Options</span><span class="p">,</span> <span class="n">OptionsUtils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">ArchiveSpecOptions</span>
+<span class="kn">from</span> <span class="nn">._sections</span> <span class="k">import</span> <span class="n">_Sections</span>
+<span class="kn">from</span> <span class="nn">._archive_spec_config_parser</span> <span class="k">import</span> <span class="n">_ArchiveSpecConfigParser</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="ArchiveSpec"><a class="viewcode-back" href="../../../../../api/application.archiving.archive_spec.html#AutoArchive._application.archiving.archive_spec.archive_spec.ArchiveSpec">[docs]</a><span class="k">class</span> <span class="nc">ArchiveSpec</span><span class="p">(</span><span class="n">ConfigurationBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The :term:`archive` specification.</span>
+
+<span class="sd">    Contains all information needed to create the :term:`backup` such as the name, list of files which shall be</span>
+<span class="sd">    included into the backup, list of files to exclude, etc.  These values can be configured in the</span>
+<span class="sd">    :term:`archive specification file` (``specFile``) or in the general configuration such as command line or</span>
+<span class="sd">    configuration files.  Options that can be read from this class are defined as static attributes of</span>
+<span class="sd">    :class:`.ArchiveSpecOptions` and :class:`.Options`.  If an option is not defined in the</span>
+<span class="sd">    archive specification file it is read from ``configuration``.</span>
+
+<span class="sd">    The instance is fully populated during construction.</span>
+
+<span class="sd">    :param specFile: :term:`Archive specification file` name (the “.aa file”).</span>
+<span class="sd">    :type specFile: ``str``</span>
+<span class="sd">    :param configuration: The application&#39;s configuration.</span>
+<span class="sd">    :type configuration: :class:`.ConfigurationBase`</span>
+<span class="sd">    :param componentUi: The application&#39;s :term:`UI` interface.  If ``None`` then messages about non-accessible</span>
+<span class="sd">       files or other errors during processing of **included** and **excluded** file lists will not be shown.</span>
+<span class="sd">    :type componentUi: :class:`.CmdlineUi`</span>
+
+<span class="sd">    :raise OSError: If ``specFile`` can not be opened.</span>
+<span class="sd">    :raise LookupError: If a *section* or an *option* is missing in ``specFile``.</span>
+<span class="sd">    :raise SyntaxError: If ``specFile`` can not be parsed.</span>
+<span class="sd">    :raise KeyError: If an invalid (unsupported) *section* or *option* is found in the :term:`archive specification</span>
+<span class="sd">       file`.</span>
+<span class="sd">    :raise ValueError: If option&#39;s *value* is not correct.&quot;&quot;&quot;</span>
+
+    <span class="c1"># configuration options that are also supported in the arch. spec. file</span>
+    <span class="n">__CONFIG_OPTIONS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">COMPRESSION_LEVEL</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">DEST_DIR</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">RESTARTING</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_LEVEL</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_AGE</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_COUNT</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_AGE</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">MAX_RESTART_LEVEL_SIZE</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">REMOVE_OBSOLETE_BACKUPS</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">KEEP_OLD_BACKUPS</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">NUMBER_OF_OLD_BACKUPS</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">COMMAND_BEFORE_BACKUP</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">COMMAND_AFTER_BACKUP</span><span class="p">,</span>
+                                  <span class="n">Options</span><span class="o">.</span><span class="n">OVERWRITE_AT_START</span><span class="p">})</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">componentUi</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="c1"># {{{ attributes</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span> <span class="o">=</span> <span class="n">configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span> <span class="o">=</span> <span class="n">componentUi</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__spec</span> <span class="o">=</span> <span class="n">_ArchiveSpecConfigParser</span><span class="p">(</span>
+            <span class="n">forbiddenOptions</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">OptionsUtils</span><span class="o">.</span><span class="n">getAllOptions</span><span class="p">())</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">__CONFIG_OPTIONS</span><span class="p">},</span>
+            <span class="n">archiveSpecsDir</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">[</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">])</span>
+
+        <span class="c1"># }}} attributes</span>
+
+        <span class="c1"># read the archive specification file (the .aa file)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__spec</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">specFile</span><span class="p">))</span>
+
+        <span class="c1"># populate the instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__addRequiredSpecFileOptions</span><span class="p">(</span><span class="n">specFile</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__addOptionalSpecFileOptions</span><span class="p">(</span><span class="n">specFile</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__addOptionalConfigurationOptions</span><span class="p">()</span>
+
+
+
+    <span class="c1"># {{{ ConfigurationBase overrides</span>
+
+<div class="viewcode-block" id="ArchiveSpec.getRawValue"><a class="viewcode-back" href="../../../../../api/application.archiving.archive_spec.html#AutoArchive._application.archiving.archive_spec.archive_spec.ArchiveSpec.getRawValue">[docs]</a>    <span class="k">def</span> <span class="nf">getRawValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`.ConfigurationBase.getRawValue()`.&quot;</span>
+
+        <span class="k">if</span> <span class="n">option</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">options_</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">getRawValue</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__configuration</span><span class="o">.</span><span class="n">getRawValue</span><span class="p">(</span><span class="n">option</span><span class="p">)</span></div>
+
+    <span class="c1"># }}} ConfigurationBase overrides</span>
+
+
+
+    <span class="c1"># {{{ helpers</span>
+
+    <span class="c1"># {{{ options adding</span>
+
+    <span class="k">def</span> <span class="nf">__addRequiredSpecFileOptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">):</span>
+        <span class="s2">&quot;Add non-optional options (specific to archive spec. file).&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="c1"># add path and check its existence</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__addOptionFromSpec</span><span class="p">(</span><span class="n">_Sections</span><span class="o">.</span><span class="n">CONTENT</span><span class="p">,</span> <span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">PATH</span><span class="p">)</span>
+
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">PATH</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot access directory </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> configured in the </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> option; it does not exists.&quot;</span><span class="p">,</span>
+                    <span class="n">path</span><span class="p">,</span> <span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">PATH</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot access directory </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> configured in the </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> option; it is not a directory.&quot;</span><span class="p">,</span>
+                    <span class="n">path</span><span class="p">,</span> <span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">PATH</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">options_</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">INCLUDE_FILES</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">__readFilesLists</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">INCLUDE_FILES</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options_</span><span class="p">[</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">EXCLUDE_FILES</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">__readFilesLists</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">EXCLUDE_FILES</span><span class="p">))</span>
+
+        <span class="k">except</span> <span class="n">configparser</span><span class="o">.</span><span class="n">NoSectionError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;Missing section </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> in specification file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">section</span><span class="p">,</span> <span class="n">specFile</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">configparser</span><span class="o">.</span><span class="n">NoOptionError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;Missing option </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> in section </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> of specification file </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+                <span class="n">ex</span><span class="o">.</span><span class="n">option</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">section</span><span class="p">,</span> <span class="n">specFile</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__addOptionalSpecFileOptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specFile</span><span class="p">):</span>
+        <span class="s2">&quot;Add optional options specific to archive spec. file.&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__addOptionFromSpec</span><span class="p">(</span>
+            <span class="n">_Sections</span><span class="o">.</span><span class="n">CONTENT</span><span class="p">,</span> <span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">NAME</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">specFile</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__addOptionalConfigurationOptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;Add optional options that can be present also in configuration.&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__spec</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">_Sections</span><span class="o">.</span><span class="n">ARCHIVE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__CONFIG_OPTIONS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__tryAddOptionFromSpec</span><span class="p">(</span><span class="n">_Sections</span><span class="o">.</span><span class="n">ARCHIVE</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span>
+
+
+
+    <span class="c1"># {{{ options adding sub-helpers</span>
+
+    <span class="k">def</span> <span class="nf">__addOrReplaceOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options_</span><span class="p">[</span><span class="n">option</span><span class="p">]</span> <span class="o">=</span> <span class="n">OptionsUtils</span><span class="o">.</span><span class="n">strToOptionType</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;Wrong value </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> of the option </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2"> in the archive specification file.&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">option</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__addOptionFromSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__addOrReplaceOption</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">),</span> <span class="n">fallback</span> <span class="o">=</span> <span class="n">default</span><span class="p">))</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__tryAddOptionFromSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__spec</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__addOrReplaceOption</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)))</span>
+
+
+
+    <span class="c1"># {{{ file lists processing</span>
+
+    <span class="k">def</span> <span class="nf">__readFilesLists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">listKind</span><span class="p">):</span>
+        <span class="s2">&quot;Read configured include or exclude files or directories.&quot;</span>
+
+        <span class="c1"># extract filenames from specFile and store them into list</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">r&#39;(?:&quot;.+?&quot;)|(?:\S+)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_Sections</span><span class="o">.</span><span class="n">CONTENT</span><span class="p">,</span> <span class="n">listKind</span><span class="p">))</span>
+
+        <span class="c1"># previous regexp leaves quotes in filenames so they must be removed</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__clearQuotes</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+
+        <span class="c1"># remove parent directory path elements and absolute path token (&quot;/&quot;); for paths like &quot;../../foo/bar&quot; it</span>
+        <span class="c1"># returns &quot;foo/bar&quot; and for absolute paths like &quot;/bar/baz&quot; it returns &quot;bar/baz&quot;;</span>
+        <span class="c1"># for each path in files it splits it by &quot;/&quot; and uses dropwhile() function to filter-out</span>
+        <span class="c1"># first &quot;/&quot; (empty pathElement) and &quot;..&quot; (pathElement == os.pardir); then joins the result back to the path</span>
+        <span class="c1"># representation</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">dropwhile</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pathElement</span><span class="p">:</span> <span class="ow">not</span> <span class="n">pathElement</span> <span class="ow">or</span> <span class="n">pathElement</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">,</span>
+                                                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">))))</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">files</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__expandWilds</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__expandWilds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+        <span class="s2">&quot;Expand wildcards in list of files.&quot;</span>
+
+        <span class="n">cwdSave</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_Sections</span><span class="o">.</span><span class="n">CONTENT</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ArchiveSpecOptions</span><span class="o">.</span><span class="n">PATH</span><span class="p">))))</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+        <span class="n">expandedFiles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">fileName</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">expanded</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">expanded</span><span class="p">:</span>
+                <span class="n">expandedFiles</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">expanded</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__componentUi</span><span class="o">.</span><span class="n">showWarning</span><span class="p">(</span>
+                        <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Cannot access </span><span class="se">\&quot;</span><span class="si">{}</span><span class="se">\&quot;</span><span class="s2">. No such file or directory.&quot;</span><span class="p">,</span> <span class="n">fileName</span><span class="p">))</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">cwdSave</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">expandedFiles</span><span class="p">)</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__clearQuotes</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
+        <span class="s2">&quot;Remove quotes from file names.&quot;</span>
+
+        <span class="k">for</span> <span class="n">fileName</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;(?&lt;=&quot;).+(?=&quot;)&#39;</span><span class="p">,</span> <span class="n">fileName</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">fileName</span></div>
+
+    <span class="c1"># }}} file lists processing</span>
+
+    <span class="c1"># }}} options adding sub-helpers</span>
+
+    <span class="c1"># }}} options adding</span>
+
+    <span class="c1"># }}} helpers</span>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

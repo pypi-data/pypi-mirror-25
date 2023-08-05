@@ -1,0 +1,532 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "AA" "1" "Sep 22, 2017" "1.4.1" "AutoArchive"
+.SH NAME
+aa \- a simple backup utility
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.nf
+\fBaa\fP [\fIoptions\fP] [\fIcommand\fP] [\fIAA_SPEC\fP]...
+\fBautoarchive\fP [\fIoptions\fP] [\fIcommand\fP] [\fIAA_SPEC\fP]...
+.fi
+.sp
+.SH DESCRIPTION
+.sp
+\fBAutoArchive\fP is a simple utility to help create backups more easily.  The idea of the program is that all essential
+information for creating a single backup\-\-\-such as list of directories that should be archived, the archive name,
+etc.\-\-\-is stored in a single file \-\- the archive specification file\&.  It can use \fItar\fP(1) for creating archives, it
+has a command line interface and supports incremental backups.
+.sp
+Archive specification files, also called ".aa files" are normally stored in a predefined location from where they are
+processed by the \fBaa\fP command which results to creating of a corresponding backup for each.
+.sp
+Command \fBautoarchive\fP is alias for \fBaa\fP; these commands are equivalent.
+.SH OPTIONS
+.sp
+Most of the options can be specified also in \fIconfiguration files\fP and in the archive specification file (by using
+the long option form and leaving out leading dashes) \-\- see \fIaa.conf\fP(5) and \fIaa_arch_spec\fP(5) for complete list of options that
+can be specified there.  Command line options has higher priority than options in configuration files but lower
+priority than the ones in the archive specification file.  \fB\-\-force\-*\fP options are available for the purpose of
+overriding some of the options specified in the \&.aa file\&.
+.sp
+Boolean options can also have a negation form defined.  It has the "no\-" prefix before the option name.  For example:
+\fB\-\-incremental\fP vs. \fB\-\-no\-incremental\fP\&.  The negation form has always higher priority than the normal form.
+.sp
+\fBList of command line options\fP
+.INDENT 0.0
+.INDENT 3.5
+\fBCommands:\fP
+.sp
+Commands for program\(aqs operations.  The default operation is the backup creation if no command is specified.
+.INDENT 0.0
+.TP
+.B \-\-list
+Show all configured or orphaned archives\&.
+.TP
+.B \-\-purge
+Purge stored data for an orphaned archive.
+.TP
+.B \-\-version
+Show program\(aqs version number and exit.
+.TP
+.B \-h\fP,\fB  \-\-help
+Show this help message and exit.
+.UNINDENT
+.sp
+\fBGeneral options:\fP
+.INDENT 0.0
+.TP
+.B \-v\fP,\fB  \-\-verbose
+Turn on verbose output.
+.TP
+.B \-q\fP,\fB  \-\-quiet
+Turn on quiet output.  Only errors will be shown.  If \fB\-\-quiet\fP is turned on at the same level as
+\fB\-\-verbose\fP (e. g. both are specified on the command line) then \fB\-\-quiet\fP has higher priority than
+\fB\-\-verbose\fP\&.
+.TP
+.B \-\-all
+Operate on all configured archives\&. See also \fB\-\-archive\-specs\-dir\fP\&.
+.TP
+.BI \-\-archive\-specs\-dir\fB= DIR_PATH
+Directory where archive specification files will be searched for (default:
+~/.config/aa/archive_specs).
+.TP
+.BI \-\-user\-config\-file\fB= FILE_PATH
+Alternate user configuration file (default: ~/.config/aa/aa.conf).
+.TP
+.BI \-\-user\-config\-dir\fB= DIR_PATH
+Alternate user configuration directory (default: ~/.config/aa).
+.UNINDENT
+.sp
+\fBArchiving options:\fP
+.INDENT 0.0
+.TP
+.BI \-a \ ARCHIVER\fP,\fB \ \-\-archiver\fB= ARCHIVER
+Specify archiver type.  Supported types are: \(aqtar\(aq, \(aqtargz\(aq, \(aqtarbz2\(aq, \(aqtarxz\(aq, \(aqtar_internal\(aq,
+\(aqtargz_internal\(aq, \(aqtarbz2_internal\(aq (default: targz).
+.TP
+.BI \-c \ NUM\fP,\fB \ \-\-compression\-level\fB= NUM
+Compression strength level.  If not specified, default behaviour of underlying compression program will be used.
+.TP
+.BI \-d \ DIR_PATH\fP,\fB \ \-\-dest\-dir\fB= DIR_PATH
+Directory where the backup will be created (default: <current directory>).
+.TP
+.B \-\-overwrite\-at\-start
+If enabled, backups are overwritten at the start of creation.  If disabled (default), backups are overwritten
+at the end of creation.  Enabling this option can be useful with big backups and low free space on the backup
+volume.
+.sp
+Let\(aqs say \fBaa data\fP command will create backup /backups/data.tar.gz.  If a file with the same name already
+exists in /backups then \-\- in case this option is enabled \-\- it will be overwritten as soon as creation of the
+new backup starts.  If the option is not enabled the new backup will be first created under a temporary name
+leaving the old backup untouched.  After the new backup is fully created it is renamed to /backups/data.tar.gz
+overwriting the old one.
+.UNINDENT
+.sp
+\fBIncremental archiving options:\fP
+.INDENT 0.0
+.TP
+.B \-i\fP,\fB  \-\-incremental
+Perform incremental backup.
+.TP
+.BI \-l \ LEVEL\fP,\fB \ \-\-level\fB= LEVEL
+Specify backup level which should be created.  All information about higher levels\-\-\-if any exists\-\-\-will be
+erased.  If not present, the next level in a row will be created.
+.TP
+.B \-\-restarting
+Turn on backup level restarting.  See other \fB*restart\-*\fP options to configure the restarting behaviour.
+.TP
+.BI \-\-restart\-after\-level\fB= LEVEL
+Maximal backup level.  If reached, it will be restarted back to a lower level (which is typically level 1 but it
+depends on \fB\-\-max\-restart\-level\-size\fP) (default: 10).
+.TP
+.BI \-\-restart\-after\-age\fB= DAYS
+Number of days after which the backup level is restarted.  Similarly to \fB\-\-restart\-after\-level\fP it will be
+restarted to level 1 or higher.
+.TP
+.BI \-\-full\-restart\-after\-count\fB= COUNT
+Number of backup level restarts after which the level is restarted to 0.
+.TP
+.BI \-\-full\-restart\-after\-age\fB= DAYS
+Number of days after which the backup level is restarted to 0.
+.TP
+.BI \-\-max\-restart\-level\-size\fB= PERCENTAGE
+Maximal percentage size of a backup (of level > 0) to which level is allowed restart to.  The size is
+percentage of size of the level 0 backup file.  If a backup of particular level has its size bigger than
+defined percentage, restart to that level will not be allowed.
+.TP
+.B \-\-remove\-obsolete\-backups
+Turn on removing backups of levels that are no longer valid due to the backup level restart.  All backups of
+the backup level higher than the one currently being created will be removed.
+.UNINDENT
+.sp
+\fBOptions for keeping old backups\fP
+.INDENT 0.0
+.TP
+.B \-k\fP,\fB  \-\-keep\-old\-backups
+Turn on backup keeping.  When a backup is about to be overwritten, it is renamed instead.  If \fB\-\-incremental\fP
+is enabled it applies to all corresponding increments\&.  The new name is created by inserting a
+keeping ID in front of backup file(s) extension.  The keeping ID is a string from interval \(aqaa\(aq, \(aqab\(aq, ...,
+\(aqzy\(aq, \(aqzz\(aq where \(aqaa\(aq represents most recent kept backup.
+.TP
+.BI \-\-number\-of\-old\-backups\fB= NUM
+Number of old backups to keep when \fB\-\-keep\-old\-backups\fP is enabled (default: 1).
+.UNINDENT
+.sp
+\fBCommand execution options\fP
+.INDENT 0.0
+.TP
+.BI \-\-command\-before\-all\-backups\fB= COMMAND_BEFORE_ALL
+Arbitrary command that will be executed before backup creation for the set of selected archives.  The command
+will be executed only once in a single invocation of \fBAutoArchive\fP\&.
+.TP
+.BI \-\-command\-after\-all\-backups\fB= COMMAND_AFTER_ALL
+Arbitrary command that will be executed after backup creation for the set of selected archives.  The command
+will be executed only once in a single invocation of \fBAutoArchive\fP\&.
+.TP
+.BI \-\-command\-before\-backup\fB= COMMAND_BEFORE
+Arbitrary command to execute prior to each backup creation.
+.TP
+.BI \-\-command\-after\-backup\fB= COMMAND_AFTER
+Arbitrary command to execute after each backup creation.
+.UNINDENT
+.sp
+Format of \fICOMMAND_*\fP arguments is:
+.INDENT 0.0
+.INDENT 3.5
+\fIcommand\fP [\fIarguments\fP]
+.UNINDENT
+.UNINDENT
+.sp
+If \fIarguments\fP are specified then the whole expression should be enclosed in quotes.  For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-\-command\-before\-backup="foo arg1"
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Additionally if an argument contains spaces it should be enclosed as well:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-\-command\-after\-backup="foo arg1 \(aqarg with spaces 2\(aq arg3"
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBForce options:\fP
+.sp
+Options to override standard options defined in archive specification files.
+.INDENT 0.0
+.TP
+.BI \-\-force\-archiver\fB= ARCHIVER
+Force archiver type.  Supported types are: \(aqtar\(aq, \(aqtargz\(aq, \(aqtarbz2\(aq, \(aqtarxz\(aq, \(aqtar_internal\(aq,
+\(aqtargz_internal\(aq, \(aqtarbz2_internal\(aq.
+.TP
+.B \-\-force\-incremental
+Force incremental backup.
+.TP
+.B \-\-force\-restarting
+Force backup level restarting.
+.TP
+.BI \-\-force\-compression\-level\fB= NUM
+Force compression strength level.
+.TP
+.BI \-\-force\-dest\-dir\fB= DIR_PATH
+Force the directory where the backup will be created.
+.TP
+.BI \-\-force\-command\-before\-backup\fB= COMMAND_BEFORE
+Force configuration of the command to execute prior to each backup creation.
+.TP
+.BI \-\-force\-command\-after\-backup\fB= COMMAND_AFTER
+Force configuration of the command to execute after each backup creation.
+.TP
+.B \-\-force\-overwrite\-at\-start
+Force backup overwriting behavior.
+.UNINDENT
+.sp
+\fBNegation options:\fP
+.sp
+Negative variants of standard boolean options.
+.INDENT 0.0
+.TP
+.B \-\-no\-incremental
+Disable incremental backup.
+.TP
+.B \-\-no\-restarting
+Turn off backup level restarting.
+.TP
+.B \-\-no\-remove\-obsolete\-backups
+Turn off obsolete backups removing.
+.TP
+.B \-\-no\-keep\-old\-backups
+Turn off backup keeping.
+.TP
+.B \-\-no\-all
+Do not operate on all configured archives\&.
+.TP
+.B \-\-no\-overwrite\-at\-start
+Do not overwrite backup at the start of creation.  Overwrite after the new backup is created.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fIAA_SPEC\fP is the \fIarchive specification file argument\fP\&.  It determines the archive specification file that shall be
+processed.  None, single or multiple \fIAA_SPEC\fP arguments are allowed.  If option \fB\-\-all\fP or command \fB\-\-list\fP is
+specified then no \fIAA_SPEC\fP argument is required.  Otherwise at least single \fIAA_SPEC\fP argument is required.  If it
+contains the ".aa" extension then it is taken as the path to an archive specification file.  Otherwise, if specified
+without the extension, the corresponding \&.aa file is searched in the archive specifications directory\&.
+.SH EXIT CODES
+.sp
+AutoArchive can return following exit codes:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+0: The operation finished successfully.
+.IP \(bu 2
+1: The operation finished with minor (warnings) or major (errors) issues.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH FILES
+.INDENT 0.0
+.TP
+.B \fI~/.config/aa/aa.conf\fP
+User configuration file.  See \fIaa.conf\fP(5) for its description.
+.TP
+.B \fI~/.config/aa/archive_specs/\fP
+Default directory that contains archive specification files\&.  See \fIaa_arch_spec\fP(5) for
+description of the \&.aa file format.
+.TP
+.B \fI~/.config/aa/snapshots/*.snar\fP
+Files that stores information about incremental backup.  They are created by \fBGNU tar\fP archiver.
+.TP
+.B \fI~/.config/aa/storage/*.realm\fP
+Application internal persistent storage.  It stores various data needed to be preserved between program runs.  For
+example: last backup level restart, number of backup level restart, etc.
+.TP
+.B \fI/etc/aa/aa.conf\fP
+System configuration file.  See \fIaa.conf\fP(5) for its description.
+.UNINDENT
+.SH EXAMPLES
+.sp
+Let\(aqs make a backup of configuration files of all users except the user "foo".  Let\(aqs assume that our system has
+unix\-like style of home directories (directory "/home" contains directories of all users; configuration files begins
+with dot).  Name of this backup will be "user\-configs".
+.sp
+First, we need to create the file "user\-configs.aa" under the "~/.config/aa/archive_specs/" directory \- this is the
+archive specification file\&.  The file doesn\(aqt need to have the same name as the backup\&.  If it does however, the
+option \fBname\fP can be left out (in this example we specified it anyway, even it is not needed).
+.sp
+In the \fBpath\fP variable we specify the archive root which is the \fBthe base directory which content we want to
+backup\fP\&.
+.sp
+Variables \fBinclude\-files\fP and \fBexclude\-files\fP contains list of files and directories that we want to be included or
+excluded respectively.  In this example we specify \fB*/.*\fP pattern because we want to include home directories of all
+users (such as /home/\fBbob\fP, /home/\fBjoe\fP, etc.), what the first \fB*\fP is for.  And from within those user home
+directories we want to include everything that begins with \fB\&.\fP (for example /home/bob/\fB\&.bashrc\fP), what the \fB\&.*\fP
+pattern is for.  Paths specified in these variables are relative to \fBpath\fP\&.
+.sp
+Although, yet we do not want to include \fIall\fP user home directories as we specified in \fBinclude\-files\fP\&.  Those
+directories that should not be included we put in \fBexclude\-files\fP ("foo" in this example, which makes /home/foo
+excluded).  If we would not want to exclude any file then the corresponding variable would be specified as
+\fBexclude\-files =\fP\&.
+.sp
+Content of the "user\-configs.aa" file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# \-\-\-\-\-\- begin of user\-configs.aa \-\-\-\-\-\-
+# AutoArchive\(aqs archive specification file for users configuration files
+[Content]
+name = user\-configs
+path = /home
+include\-files = */.*
+exclude\-files = foo
+
+[Archive]
+dest\-dir = /mnt/backup
+# \-\-\-\-\-\- end of user\-configs.aa \-\-\-\-\-\-
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Once we configured the archive we can create the backup easily with command:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+aa user\-configs
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+and in the "/mnt/backup" directory the file "user\-configs.tar.gz" will be created.
+.sp
+Given the "user\-configs.aa" example file above, the command:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+aa \-i user\-configs
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+will create \fBlevel 0\fP incremental backup \-\- "user\-configs.tar.gz" which is essentially the same as a
+non\-incremental backup.  Another execution of the same command will create \fBlevel 1\fP backup named
+"user\-configs.1.tar.gz" which contains only a differences from level 0.  Each subsequent call will create a \fBnext
+level\fP which will contain only a differences from previous.
+.sp
+In order to restart to level 0 again, thus create a \fBfresh full backup\fP, the following command can be used:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+aa \-i \-l 0 user\-configs
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Note that you \fBshould remove\fP all previously created "user\-configs" backups with level higher than 0
+because they are no longer valid in regards to the newly created level 0 backup.  You may pass
+\fB\-\-remove\-obsolete\-backups\fP option to the command above and they will be removed automatically.
+.SS Backup Keeping
+.sp
+We assume that all previously created backups were removed in order to demonstrate the backup keeping.
+.sp
+First we create a standard backup:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+aa user\-configs
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This creates "user\-configs.tar.gz" backup.  Some days later let\(aqs say, we want to create the same backup again.
+However we do not want to overwrite the original one.  The option \fB\-k\fP can be used to keep the original backup:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+aa \-k user\-configs
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This will rename the original backup to "user\-configs.\fBaa\fP\&.tar.gz" and create the new one "user\-configs.tar.gz".
+If we create the same backup for the third time (still using the \fB\-k\fP) option, "user\-configs.aa.tar.gz" will be
+removed, "user\-configs.tar.gz" will be renamed to "user\-configs.aa.tar.gz" and the new "user\-configs.tar.gz" will be
+created.  So AutoArchive by default keeps single old backup when \fB\-k\fP options is specified.  To keep more, e.g. four
+backups we would specify \fB\-\-number\-of\-old\-backups=4\fP alongside with \fB\-k\fP\&.
+.sp
+Incremental backups can be kept as well.  Again, we assume that all previously created backups were removed.  Let\(aqs
+create a few levels of incremental "user\-configs" archive:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+aa \-i \-l 0 user\-configs
+aa \-i user\-configs
+aa \-i user\-configs
+aa \-i user\-configs
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This will create following files:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+user\-configs.tar.gz
+user\-configs.1.tar.gz
+user\-configs.2.tar.gz
+user\-configs.3.tar.gz
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Then we (manually) restart to level 2 while asking to keep old backups:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+aa \-i \-l 2 \-k user\-configs
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+After this command following files will be present:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+user\-configs.tar.gz
+user\-configs.1.tar.gz
+user\-configs.2.tar.gz
+user\-configs.2.aa.tar.gz
+user\-configs.3.aa.tar.gz
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Let\(aqs explain what happened.  The original file "user\-configs.2.tar.gz" was going to be overwritten therefore it was
+renamed to "user\-configs.2.aa.tar.gz".  As all backup levels higher than the renamed one depends on it they have to be
+renamed as well.  In this example "user\-configs.3.tar.gz" depends on "user\-configs.2.tar.gz" therefore it was renamed
+to "user\-configs.3.aa.tar.gz".  Finally the new increment "user\-configs.2.tar.gz" was created.
+.SH LICENSE
+.sp
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License version 3 as published by the Free Software Foundation.
+.sp
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+.sp
+You should have received a copy of the GNU General Public License along with this program.  If not, see
+<\fI\%http://www.gnu.org/licenses/\fP>.
+.SH SEE ALSO
+.sp
+\fIaa.conf\fP(5), \fIaa_arch_spec\fP(5), \fItar\fP(1), \fIgzip\fP(1), \fIbzip2\fP(1), \fIxz\fP(1)
+.SH COPYRIGHT
+2003 - 2017, Robert Cernansky
+.\" Generated by docutils manpage writer.
+.

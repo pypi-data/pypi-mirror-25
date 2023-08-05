@@ -1,0 +1,217 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Operations Explained &#8212; AutoArchive User Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../_static/autoarchive.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Archive Specification File" href="arch_spec.html" />
+    <link rel="prev" title="Program Description" href="description.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="arch_spec.html" title="Archive Specification File"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="description.html" title="Program Description"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AutoArchive User Manual (ver. 1.4.1)</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="operations-explained">
+<h1>Operations Explained<a class="headerlink" href="#operations-explained" title="Permalink to this headline">¶</a></h1>
+<p>AutoArchive can execute several commands.  Besides the <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> creation—its main function—it can show list of
+<a class="reference internal" href="glossary.html#term-configured-archive"><span class="xref std std-term">configured</span></a> and <a class="reference internal" href="glossary.html#term-orphaned-archive"><span class="xref std std-term">orphaned archives</span></a> displaying various information about them,
+or perform a cleaning action that wipes the orphaned archive data.  The operation is chosen by specifying the
+corresponding command as a program’s argument.  For list of all commands see the <a class="reference internal" href="description.html#usage"><span class="std std-ref">Usage</span></a> section.</p>
+<div class="section" id="configuring-the-archive">
+<h2>Configuring the Archive<a class="headerlink" href="#configuring-the-archive" title="Permalink to this headline">¶</a></h2>
+<p>One of the actions that is actually not handled by the AutoArchive is the configuration of the <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a>.  In order to
+be able to create a <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> AutoArchive has to be provided by an <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a>.  It needs to be created
+manually and placed to <a class="reference internal" href="glossary.html#term-archive-specifications-directory"><span class="xref std std-term">archive specifications directory</span></a> or path to it passed as the program’s argument.  Archive
+specification file is a plain text file with simple structure which is described in the <a class="reference internal" href="config_file.html#config-file"><span class="std std-ref">Configuration File</span></a> section.
+Sample files are distributed with the program and an example is provided also in the
+<a class="reference internal" href="examples.html#configuring-the-archive-example"><span class="std std-ref">Configuring the Archive Example</span></a> section.</p>
+</div>
+<div class="section" id="backup-creation">
+<h2>Backup Creation<a class="headerlink" href="#backup-creation" title="Permalink to this headline">¶</a></h2>
+<p>Main AutoArchive’s function is the <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> creation.  It is the default operation so no command needs to be specified
+in order to create one.  Name or path to an <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a> is required unless <code class="docutils literal"><span class="pre">--all</span></code> option is given.
+By default non-incremental <em>tar.gz</em> backup is created in the current directory.  This can be changed with options on
+the command line, configuration files or the archive specification file itself.  A simple example of the backup
+creation is shown in the <a class="reference internal" href="examples.html#backup-creation-example"><span class="std std-ref">Backup Creation Example</span></a> section.  See also <a class="reference internal" href="description.html#usage"><span class="std std-ref">Usage</span></a>, <a class="reference internal" href="config_file.html#config-file"><span class="std std-ref">Configuration File</span></a> and
+<a class="reference internal" href="arch_spec.html#arch-spec"><span class="std std-ref">Archive Specification File</span></a> sections for all possible configuration options.</p>
+<div class="section" id="incremental-backup-creation">
+<h3>Incremental Backup Creation<a class="headerlink" href="#incremental-backup-creation" title="Permalink to this headline">¶</a></h3>
+<p>Passing <code class="docutils literal"><span class="pre">-i</span></code> option on the commandline or specifying corresponding configuration option in a configuration file
+causes creation of incremental backups.  In this case a single full backup is created upon first execution.  Subsequent
+executions will create diff backups with increasing <a class="reference internal" href="glossary.html#term-backup-level"><span class="xref std std-term">backup level</span></a>.  To restore a backup the full backup plus all
+<a class="reference internal" href="glossary.html#term-increment"><span class="xref std std-term">increments</span></a> (or all increment up to the desired restoration point) are required.  Options for manual or
+automatic restarting to a particular lower level are available.  When restarting is applied option
+<code class="docutils literal"><span class="pre">--remove-obsolete-backups</span></code> can be specified to remove backups that becomes obsolete due to the restart.</p>
+</div>
+<div class="section" id="keeping-old-backups">
+<h3>Keeping old backups<a class="headerlink" href="#keeping-old-backups" title="Permalink to this headline">¶</a></h3>
+<p>In order to reduce risk of losing a valuable older backup AutoArchive can keep backups which are going to be
+removed or overwritten during a new backup creation.  This feature makes possible to have desired number of older
+backups always available with or without using the incremental archiving.  To enable it use <code class="docutils literal"><span class="pre">-k</span></code> option and to
+specify desired number of kept backups use the <code class="docutils literal"><span class="pre">--number-of-old-backups=NUM</span></code> option.  The option
+<code class="docutils literal"><span class="pre">--remove-obsolete-backups</span></code> can be used to automatically remove <a class="reference internal" href="glossary.html#term-kept-backup"><span class="xref std std-term">kept backups</span></a> which may become
+obsolete due to lowering the <code class="docutils literal"><span class="pre">--number-of-old-backups=NUM</span></code> value.</p>
+<p>Each kept backup (or series of kept backup <a class="reference internal" href="glossary.html#term-increment"><span class="xref std std-term">increments</span></a> in case of incremental archiving) has its own
+<a class="reference internal" href="glossary.html#term-keeping-id"><span class="xref std std-term">keeping ID</span></a>.  The most recent kept backup gets keeping ID ‘aa’, second most recent gets ‘ab’ and so on up to
+maximal value ‘zz’ (which is by default further limited by <code class="docutils literal"><span class="pre">--number-of-old-backups=NUM</span></code>).  When a new backup is
+going to be kept back all existing kept backup are shifted so that they get higher keeping ID.  Backups with
+keeping ID ‘aa’ will get ‘ab’, those with ‘ab’ gets ‘ac’ and so on.  When number of kept backups would exceed value
+of the <code class="docutils literal"><span class="pre">--number-of-old-backups=NUM</span></code> option the last kept backup (with highest keeping ID) is removed.</p>
+<p>Refer to <a class="reference internal" href="examples.html#backup-keeping-example"><span class="std std-ref">Backup Keeping</span></a> section for an example.</p>
+</div>
+</div>
+<div class="section" id="listing-archives">
+<span id="id1"></span><h2>Listing Archives<a class="headerlink" href="#listing-archives" title="Permalink to this headline">¶</a></h2>
+<p>In order to list all archives and show information about them the <code class="docutils literal"><span class="pre">--list</span></code> command is provided.  By default it shows
+all <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archives</span></a> that are known to AutoArchive and <a class="reference internal" href="glossary.html#term-orphaned-archive"><span class="xref std std-term">orphaned archives</span></a>.  Note that “archive”
+here means the “archive configuration”, which is represented by the <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a>, not the result of the
+<a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> creation (the *.tar.gz file).  If one or more names or paths to archive specification files are passed as
+arguments it lists only those.</p>
+<p>The output has two forms: normal and verbose.</p>
+<div class="section" id="normal-output">
+<span id="id2"></span><h3>Normal output<a class="headerlink" href="#normal-output" title="Permalink to this headline">¶</a></h3>
+<p>The structure of the normal <code class="docutils literal"><span class="pre">--list</span></code> output is following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">Name</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">Root</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">Destination</span> <span class="n">directory</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">Current</span> <span class="n">backup</span> <span class="n">level</span><span class="o">/</span><span class="nb">next</span><span class="o">/</span><span class="nb">max</span><span class="o">.&gt;</span>
+</pre></div>
+</div>
+<p>An <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a> per line is listed.</p>
+</div>
+<div class="section" id="verbose-output">
+<h3>Verbose output<a class="headerlink" href="#verbose-output" title="Permalink to this headline">¶</a></h3>
+<p>If <code class="docutils literal"><span class="pre">--verbose</span></code> option is specified alongside with <code class="docutils literal"><span class="pre">--list</span></code> the verbose form is printed.  It shows following
+information:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Name</span><span class="p">:</span>
+<span class="n">Root</span><span class="p">:</span>
+<span class="n">Archiver</span> <span class="nb">type</span><span class="p">:</span>
+<span class="n">Destination</span> <span class="n">directory</span><span class="p">:</span>
+<span class="n">Current</span> <span class="n">backup</span> <span class="n">level</span><span class="o">/</span><span class="nb">next</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span>
+<span class="n">Target</span> <span class="n">backup</span> <span class="n">level</span> <span class="k">for</span> <span class="n">non</span><span class="o">-</span><span class="n">full</span> <span class="n">restart</span><span class="p">:</span>
+<span class="n">Upcoming</span> <span class="n">restart</span> <span class="n">reason</span><span class="p">:</span>
+<span class="n">Restart</span> <span class="n">count</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span>
+<span class="n">Days</span> <span class="n">since</span> <span class="n">last</span> <span class="n">restart</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span>
+<span class="n">Days</span> <span class="n">since</span> <span class="n">last</span> <span class="n">full</span> <span class="n">restart</span><span class="o">/</span><span class="nb">max</span><span class="o">.</span><span class="p">:</span>
+</pre></div>
+</div>
+<p><strong>The meaning of the particular fields is:</strong></p>
+<dl class="docutils">
+<dt>Name</dt>
+<dd><a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">Archive</span></a> name as determined from <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a> name or the <code class="docutils literal"><span class="pre">name</span></code> option.</dd>
+<dt>Root</dt>
+<dd>Archive’s root path as configured with <code class="docutils literal"><span class="pre">path</span></code> option.</dd>
+<dt>Archiver type</dt>
+<dd>Type of the archiver as configured with the <code class="docutils literal"><span class="pre">archiver</span></code> option.</dd>
+<dt>Destination directory</dt>
+<dd>Directory where the <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> will be created as configured with the <code class="docutils literal"><span class="pre">dest-dir</span></code> option.</dd>
+<dt>Current backup level/next/max.</dt>
+<dd>Corresponds to “Current backup level/Next backup level/Maximal backup level”. Current backup level is the backup
+level that was created in last backup creation.  Next backup level is the backup level that will be created in next
+backup creation (if restarting is enabled it will not be always the next level in a row).  Maximal backup level is
+the value configured with the <code class="docutils literal"><span class="pre">restart-after-level</span></code> option.</dd>
+<dt>Target backup level for non-full restart</dt>
+<dd>Backup level to which will be restarted to in case of non-full backup level restart (for example if
+<code class="docutils literal"><span class="pre">restart-after-level</span></code> value is reached.  It is typically 1 but can be higher due to <code class="docutils literal"><span class="pre">max-restart-level-size</span></code>
+option.</dd>
+<dt>Upcoming restart reason</dt>
+<dd>Show the reason of following backup level restart.</dd>
+<dt>Restart count/max.</dt>
+<dd>Number of non-full backup level restarts and maximal number of restarts as configured with the
+<code class="docutils literal"><span class="pre">full-restart-after-count</span></code> option.</dd>
+<dt>Days since last restart/max.</dt>
+<dd>Number of days since last non-full backup level restart occurred and maximal number of days without a restart as
+configured with the <code class="docutils literal"><span class="pre">restart-after-age</span></code> option.</dd>
+<dt>Days since last full restart/max.</dt>
+<dd>Number of days since last full backup level restart occurred and maximal number of days without a full restart as
+configured with the <code class="docutils literal"><span class="pre">full-restart-after-age</span></code> option.</dd>
+</dl>
+</div>
+<div class="section" id="value-format">
+<h3>Value format<a class="headerlink" href="#value-format" title="Permalink to this headline">¶</a></h3>
+<p>If the value is enclosed in square brackets ([]) it means that it is not relevant to the current <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a>
+configuration.  For example if an archive was previously configured as incremental and some incremental <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backups</span></a> were already created, and its configuration was changed to non-incremental later, then the actual backup
+levels are shown but they are enclosed in square brackets.  <strong>In case of</strong> <a class="reference internal" href="glossary.html#term-orphaned-archive"><span class="xref std std-term">orphaned archives</span></a>
+<strong>the</strong> <em>name</em> <strong>is enclosed in square brackets.</strong></p>
+<p>If the value is not applicable or not available a dash (-) is printed instead.</p>
+<p>Sometimes a question mark (?) is printed instead of the value which means that the value could not be determined while
+it is expected to be available.  This happens mostly for orphaned archives where only a limited
+number of information is available.</p>
+</div>
+</div>
+<div class="section" id="cleaning-orphaned-information">
+<h2>Cleaning Orphaned Information<a class="headerlink" href="#cleaning-orphaned-information" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="glossary.html#term-orphaned-archive"><span class="xref std std-term">Orphaned archives</span></a> shown in the <code class="docutils literal"><span class="pre">--list</span></code> output with their names enclosed in square brackets does
+not have a corresponding <a class="reference internal" href="glossary.html#term-archive-specification-file"><span class="xref std std-term">archive specification file</span></a>.  It is just leftover information saved in a previous backup
+creation operation (it is not the <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">backup</span></a> itself).  This information can be removed with the <code class="docutils literal"><span class="pre">--purge</span></code> command.  It
+may be provided with the orphaned archive name in order to remove information about that particular <a class="reference internal" href="glossary.html#term-archive"><span class="xref std std-term">archive</span></a> or with
+the <code class="docutils literal"><span class="pre">--all</span></code> option in order to remove information about all orphaned archives.</p>
+<p>Note that the <code class="docutils literal"><span class="pre">--purge</span></code> command does not remove created backups.</p>
+</div>
+<div class="section" id="restoration-of-the-backup">
+<h2>Restoration of the Backup<a class="headerlink" href="#restoration-of-the-backup" title="Permalink to this headline">¶</a></h2>
+<p>AutoArchive does not handle backup restoration by itself.  <a class="reference internal" href="glossary.html#term-backup"><span class="xref std std-term">Backups</span></a> can be restored by using standard
+<strong>GNU tar</strong> archiver or any other tar-compatible archiver.  Please see the <strong>GNU tar</strong> documentation for more
+information or the <a class="reference internal" href="examples.html#backup-restoration-example"><span class="std std-ref">Backup Restoration Example</span></a> section for examples on restoring backups.</p>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="arch_spec.html" title="Archive Specification File"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="description.html" title="Program Description"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AutoArchive User Manual (ver. 1.4.1)</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Robert Cernansky.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

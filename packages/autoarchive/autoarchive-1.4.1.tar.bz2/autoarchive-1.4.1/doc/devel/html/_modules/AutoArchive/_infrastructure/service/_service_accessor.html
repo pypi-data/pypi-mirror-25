@@ -1,0 +1,272 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._infrastructure.service._service_accessor &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._infrastructure.service._service_accessor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _service_accessor.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2014 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`ServiceAccessor`.&quot;&quot;&quot;</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<span class="c1"># SMELL: Application layer can register.  Factor the registration out to a separate class?.</span>
+<div class="viewcode-block" id="ServiceAccessor"><a class="viewcode-back" href="../../../../api/infrastructure.service.html#AutoArchive._infrastructure.service._service_accessor.ServiceAccessor">[docs]</a><span class="k">class</span> <span class="nc">ServiceAccessor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Access to services.</span>
+
+<span class="sd">    A service can be made available by registering via this interface.  Registered classes has to implement</span>
+<span class="sd">    :class:`.IService`.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># key is :class:`IServiceIdentification`, value is list of tuples (service provider class,</span>
+        <span class="c1"># service provider identification)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__services</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># key is service provider class, value is its instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__serviceInstances</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+
+<div class="viewcode-block" id="ServiceAccessor.getOrCreateService"><a class="viewcode-back" href="../../../../api/infrastructure.service.html#AutoArchive._infrastructure.service._service_accessor.ServiceAccessor.getOrCreateService">[docs]</a>    <span class="k">def</span> <span class="nf">getOrCreateService</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Provides access to registered services interfaces.</span>
+
+<span class="sd">        See also: :meth:`registerInterface`.</span>
+
+<span class="sd">        :param serviceIdentification: Identification of the service that shall be created.</span>
+<span class="sd">        :type serviceIdentification: :class:`.IServiceIdentification`</span>
+<span class="sd">        :param providerIdentification: Corresponding service provider identification object.  It should be one of the</span>
+<span class="sd">          instances returned by :meth:`getProvidersIdentifications`.  For services with a single provider</span>
+<span class="sd">          (implementation) it can be ``None``.</span>
+<span class="sd">        :type providerIdentification: ``serviceIdentification.providerIdentificationInterface``</span>
+<span class="sd">        :param args: Service specific arguments.</span>
+<span class="sd">        :return: Instance of a service provider of the particular service.</span>
+<span class="sd">        :rtype:  ``serviceIdentification.interface``</span>
+
+<span class="sd">        :raise KeyError: If ``serviceIdentification`` is not registered.&quot;&quot;&quot;</span>
+
+        <span class="n">providers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__findProviders</span><span class="p">(</span><span class="n">serviceIdentification</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__filterProvidersByIdentification</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Service </span><span class="si">{}</span><span class="s2"> is not registered with service provider </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">,</span>
+                           <span class="n">providerIdentification</span><span class="p">))</span>
+
+        <span class="n">providerClass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__findProviderClass</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">providerClass</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceInstances</span><span class="p">:</span>
+            <span class="n">serviceInstance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceInstances</span><span class="p">[</span><span class="n">providerClass</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">serviceInstance</span> <span class="o">=</span> <span class="n">providerClass</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__serviceInstances</span><span class="p">[</span><span class="n">providerClass</span><span class="p">]</span> <span class="o">=</span> <span class="n">serviceInstance</span>
+
+        <span class="k">return</span> <span class="n">serviceInstance</span></div>
+
+
+
+<div class="viewcode-block" id="ServiceAccessor.getProvidersIdentifications"><a class="viewcode-back" href="../../../../api/infrastructure.service.html#AutoArchive._infrastructure.service._service_accessor.ServiceAccessor.getProvidersIdentifications">[docs]</a>    <span class="k">def</span> <span class="nf">getProvidersIdentifications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns providers identifications for the given service.</span>
+
+<span class="sd">        :param serviceIdentification: Identification of the service.</span>
+<span class="sd">        :type serviceIdentification: :class:`.IServiceIdentification`</span>
+<span class="sd">        :return: Service providers.</span>
+<span class="sd">        :rtype: ``iterable&lt;serviceIdentification.providerIdentificationInterface&gt;``</span>
+
+<span class="sd">        :raise KeyError: If ``serviceIdentification`` is not registered.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__findProviders</span><span class="p">(</span><span class="n">serviceIdentification</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="ServiceAccessor.registerService"><a class="viewcode-back" href="../../../../api/infrastructure.service.html#AutoArchive._infrastructure.service._service_accessor.ServiceAccessor.registerService">[docs]</a>    <span class="k">def</span> <span class="nf">registerService</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">,</span> <span class="n">providerClass</span><span class="p">,</span> <span class="n">providerIdentification</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Registers a service.</span>
+
+<span class="sd">        See also: :meth:`unregisterService`, :meth:`getOrCreateService`.</span>
+
+<span class="sd">        :param serviceIdentification: Identification of the service that shall be registered.</span>
+<span class="sd">        :type serviceIdentification: :class:`.IServiceIdentification`</span>
+<span class="sd">        :param providerClass: Provider of the service.</span>
+<span class="sd">        :type providerClass: ``type{`` ``serviceIdentification.interface``, :class:`IService`\ ``}``</span>
+<span class="sd">        :param providerIdentification: Corresponding service provider identification object.</span>
+<span class="sd">        :type providerIdentification: ``serviceIdentification.providerIdentificationInterface``</span>
+
+<span class="sd">        :raise TypeError: If ``providerClass`` does not implement ``serviceIdentification.interface``.  If</span>
+<span class="sd">          ``providerIdentification`` does not implement ``serviceIdentification.providerIdentificationInterface``.</span>
+<span class="sd">        :raise KeyError: If ``serviceIdentification`` is already registered with ``providerClass`` or</span>
+<span class="sd">          ``providerIdentification``.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">providerClass</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="o">.</span><span class="n">interface</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;providerClass&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">providerIdentification</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">providerIdentification</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="o">.</span><span class="n">providerIdentificationInterface</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;serviceProviderInfo&quot;</span><span class="p">)</span>
+
+        <span class="n">providers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__tryFindProviders</span><span class="p">(</span><span class="n">serviceIdentification</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">providers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">providers</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__services</span><span class="p">[</span><span class="n">serviceIdentification</span><span class="p">]</span> <span class="o">=</span> <span class="n">providers</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__filterProvidersByIdentification</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Service </span><span class="si">{}</span><span class="s2"> is already registered with service provider info </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">,</span>
+                           <span class="n">providerIdentification</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__filterProvidersByClass</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">providerClass</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Service </span><span class="si">{}</span><span class="s2"> is already registered with service provider class </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">,</span>
+                           <span class="n">providerClass</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__services</span><span class="p">[</span><span class="n">serviceIdentification</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">providerClass</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="ServiceAccessor.unregisterService"><a class="viewcode-back" href="../../../../api/infrastructure.service.html#AutoArchive._infrastructure.service._service_accessor.ServiceAccessor.unregisterService">[docs]</a>    <span class="k">def</span> <span class="nf">unregisterService</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unregisters a service with all its providers.</span>
+
+<span class="sd">        All serviceType instances all destroyed first.</span>
+
+<span class="sd">        See also: :meth:`registerService`, :meth:`getOrCreateService`.</span>
+
+<span class="sd">        :param serviceIdentification: Identification of the service that shall be registered.</span>
+<span class="sd">        :type serviceIdentification: :class:`.IServiceIdentification`</span>
+
+<span class="sd">        :raise KeyError: If ``serviceIdentification`` is not registered.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destroyServiceInstances</span><span class="p">(</span><span class="n">serviceIdentification</span><span class="p">)</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__services</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__findService</span><span class="p">(</span><span class="n">serviceIdentification</span><span class="p">)]</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">__destroyServiceInstances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">):</span>
+        <span class="s2">&quot;Destroys service instances if any.&quot;</span>
+
+        <span class="n">providers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__findProviders</span><span class="p">(</span><span class="n">serviceIdentification</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">provider</span> <span class="ow">in</span> <span class="n">providers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">provider</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceInstances</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__serviceInstances</span><span class="p">[</span><span class="n">provider</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__findProviders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__services</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__findService</span><span class="p">(</span><span class="n">serviceIdentification</span><span class="p">)]</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__tryFindProviders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">serviceIdentification</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__services</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__services</span><span class="p">[</span><span class="n">serviceIdentification</span><span class="p">]</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__findService</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">serviceIdentification</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__services</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Service </span><span class="si">{}</span><span class="s2"> is not registered&quot;</span><span class="p">,</span> <span class="n">serviceIdentification</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">serviceIdentification</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__findProviderClass</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">providers</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">):</span>
+        <span class="n">provider</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__filterProvidersByIdentification</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">provider</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__filterProvidersByIdentification</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">providerIdentification</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">providers</span> <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">providerIdentification</span><span class="p">]</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__filterProvidersByClass</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">providerClass</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">providers</span> <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">providerClass</span><span class="p">]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

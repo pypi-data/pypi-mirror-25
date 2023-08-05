@@ -1,0 +1,540 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._services.archiver._tar_archiver_provider_base &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._services.archiver._tar_archiver_provider_base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># tar_archiver_provider_base.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2015 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_TarArchiverProviderBase` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_TarArchiverProviderBase&quot;</span><span class="p">,</span> <span class="s2">&quot;_BACKUP_TYPES_TO_EXTENSIONS&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.py_additions</span> <span class="k">import</span> <span class="n">event</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.service</span> <span class="k">import</span> <span class="n">IService</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">BackupTypes</span><span class="p">,</span> <span class="n">ArchiverFeatures</span>
+
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CONSTANTS</span>
+
+<span class="n">_BACKUP_TYPES_TO_EXTENSIONS</span> <span class="o">=</span> <span class="p">{</span><span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">:</span> <span class="s2">&quot;tar&quot;</span><span class="p">,</span>
+                               <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">:</span> <span class="s2">&quot;tar.gz&quot;</span><span class="p">,</span>
+                               <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">:</span> <span class="s2">&quot;tar.bz2&quot;</span><span class="p">,</span>
+                               <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarXz</span><span class="p">:</span> <span class="s2">&quot;tar.xz&quot;</span><span class="p">}</span>
+
+<span class="c1"># }}} CONSTANTS</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<span class="c1"># SMELL: Methods that have BackupDefinition as a parameter should be moved to BackupDefinition class (which should be</span>
+<span class="c1"># renamed to Backup then - it does not represent a physical backup though, maybe the name should be something</span>
+<span class="c1"># different or split to two classes, one which represents physical backup and other that represents the definition).</span>
+<div class="viewcode-block" id="_TarArchiverProviderBase"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase">[docs]</a><span class="k">class</span> <span class="nc">_TarArchiverProviderBase</span><span class="p">(</span><span class="n">IService</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for tar archiver service providers.</span>
+
+<span class="sd">    Abstract constructor of this class, should be called from derived constructors.  It initializes the</span>
+<span class="sd">    :attr:`workDir_` property.</span>
+
+<span class="sd">    :param workDir: Path to a writable directory.  The service will use it as persistent storage.</span>
+<span class="sd">    :type workDir: ``str``&quot;&quot;&quot;</span>
+
+    <span class="n">__PARTIAL_FILE_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;._partial&quot;</span>
+
+
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workDir</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__workDir</span> <span class="o">=</span> <span class="n">workDir</span>
+
+
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span> <span class="nf">supportedBackupTypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a set of backup types supported by this archiver service.</span>
+
+<span class="sd">        :rtype: ``set&lt;BackupTypes&gt;``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+
+
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">fileAdd</span><span class="p">(</span><span class="n">filesystemObjectName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raised when an filesystem object is added to the backup.</span>
+
+<span class="sd">        :param filesystemObjectName: Name of the filesystem object.</span>
+<span class="sd">        :type filesystemObjectName: ``str``&quot;&quot;&quot;</span>
+
+
+
+    <span class="nd">@event</span>
+    <span class="k">def</span> <span class="nf">backupOperationError</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">filesystemObjectName</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">unknownErrorString</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raised when an non-fatal error occur during the backup operation.</span>
+
+<span class="sd">        :param operation: The operation which was running when the error occurred.</span>
+<span class="sd">        :type operation: :data:`BackupSubOperations`</span>
+<span class="sd">        :param error: The error that occurred.</span>
+<span class="sd">        :type error: :data:`BackupOperationErrors`</span>
+<span class="sd">        :param filesystemObjectName: Name of the filesystem object that was processed when the error occurred.  It is</span>
+<span class="sd">           non-None only if ``operation`` is one of ``UnknownFileOperation``, ``Stat``, ``Open`` or ``Read``.</span>
+<span class="sd">        :type filesystemObjectName: ``str``</span>
+<span class="sd">        :param unknownErrorString: Error string.  It is non-None only if the ``error`` is either ``UnknownError`` or,</span>
+<span class="sd">           ``UnknownOsError``.</span>
+<span class="sd">        :type unknownErrorString: ``str``&quot;&quot;&quot;</span>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.backupFiles"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.backupFiles">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">backupFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">overwriteAtStart</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a backup.</span>
+
+<span class="sd">        :param backupDefinition: Defines the backup that shall be created.  All attributes of the passed instance has</span>
+<span class="sd">           to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param compressionStrength: Value from interval &lt;MIN_COMPRESSION_STRENGTH, MAX_COMPRESSION_STRENGTH&gt;</span>
+<span class="sd">           representing the strength of compression.  It has to be non-None only for backup types that supports</span>
+<span class="sd">           compression and compression strength setting.</span>
+<span class="sd">        :type compressionStrength: ``int``</span>
+<span class="sd">        :param overwriteAtStart: If ``True``, backups are overwritten at the start of creation; otherwise they are</span>
+<span class="sd">           overwritten at the end of creation (new backups are created with temporary name first and renamed when</span>
+<span class="sd">           completed).</span>
+<span class="sd">        :type overwriteAtStart: ``bool``</span>
+
+<span class="sd">        :return: Path to the created backup.</span>
+<span class="sd">        :rtype: ``str``</span>
+
+<span class="sd">        :raise RuntimeError: If ``compressionStrength`` is non-``None`` and ``backupDefinition.backupType`` does not</span>
+<span class="sd">           supports compression or compression strength setting.  If an unknown error occurred during backup creation.</span>
+<span class="sd">        :raise ValueError: If ``compressionStrength`` is outside of required interval or if</span>
+<span class="sd">           ``backupDefinition.backupType`` is not supported by the implementation.</span>
+<span class="sd">        :raise OSError: If a system error occurred while making the backup.</span>
+
+<span class="sd">        Performs basic checks before the backup creation.</span>
+
+<span class="sd">        .. note:: Derived classes should call this base method on the beginning of the overridden method.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedFeature_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__raiseIfEmptyIncludeFiles</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.backupFilesIncrementally"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.backupFilesIncrementally">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">backupFilesIncrementally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">overwriteAtStart</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates an incremental backup.</span>
+
+<span class="sd">        A backup of specified level or the next level in a row will be created.  The maximal backup level will be</span>
+<span class="sd">        increased (see :meth:`getMaxBackupLevel()`).</span>
+
+<span class="sd">        :param backupDefinition: Defines the backup that shall be created.  All attributes of the passed instance has</span>
+<span class="sd">           to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param compressionStrength: Value from interval &lt;MIN_COMPRESSION_STRENGTH, MAX_COMPRESSION_STRENGTH&gt;</span>
+<span class="sd">           representing the strength of compression.  It has to be non-None only for backup types that supports</span>
+<span class="sd">           compression and compression strength setting.</span>
+<span class="sd">        :type compressionStrength: ``int``</span>
+<span class="sd">        :param level: Backup level that shall be created.  If ``None``, the next level in a row will be created, which</span>
+<span class="sd">           is the the one returned by :meth:`getMaxBackupLevel()`.  The value has to be from interval</span>
+<span class="sd">           &lt;0, :meth:`getMaxBackupLevel()`&gt;.</span>
+<span class="sd">        :type level: ``int``</span>
+<span class="sd">        :param overwriteAtStart: If ``True``, backups are overwritten at the start of creation; otherwise they are</span>
+<span class="sd">               overwritten at the end of creation (new backups are created with temporary name first and renamed when</span>
+<span class="sd">               completed).</span>
+<span class="sd">        :type overwriteAtStart: ``bool``</span>
+
+<span class="sd">        :return: Path to the created backup.</span>
+<span class="sd">        :rtype: ``str``</span>
+
+<span class="sd">        :raise RuntimeError: If ``compressionStrength`` is non-``None`` and ``backupDefinition.backupType`` does not</span>
+<span class="sd">           supports compression or compression strength setting.  If an unknown error occurred during backup creation.</span>
+<span class="sd">        :raise ValueError: If ``compressionStrength`` or ``level`` is outside of required interval or if</span>
+<span class="sd">           ``backupDefinition.backupType`` is not supported by the implementation.</span>
+<span class="sd">        :raise NotImplementedError: If incremental backup is not supported.</span>
+<span class="sd">        :raise OSError: If a system error occurred while making the backup.</span>
+
+<span class="sd">        Performs basic checks before the incremental backup creation.</span>
+
+<span class="sd">        .. note:: Derived classes should call this base method on the beginning of the overridden method.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedFeature_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span> <span class="mi">99</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__raiseIfEmptyIncludeFiles</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.removeBackup"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.removeBackup">[docs]</a>    <span class="k">def</span> <span class="nf">removeBackup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a backup.</span>
+
+<span class="sd">        Backup defined by ``backupDefinition`` will be removed.</span>
+
+<span class="sd">        :param backupDefinition: Defines backup that shall be removed.  :attr:`BackupDefinition.backupId`,</span>
+<span class="sd">           :attr:`BackupDefinition.backupType` and :attr:`BackupDefinition.destination` attributes of the passed</span>
+<span class="sd">           instance has to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param keepingId: The ID under which the backup is currently kept.  ``None`` if it is not kept.</span>
+<span class="sd">        :type keepingId: ``str``</span>
+
+<span class="sd">        :raise ValueError: If ``backupDefinition.backupType`` is not supported by the implementation.</span>
+<span class="sd">        :raise OSError: If a system error occurred during removing operation.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span>
+            <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="n">keepingId</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.removeBackupIncrements"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.removeBackupIncrements">[docs]</a>    <span class="k">def</span> <span class="nf">removeBackupIncrements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove backup increments starting from ``level``.</span>
+
+<span class="sd">        Backups (increments) of backup level higher or equal than ``level`` or higher that the current backup level - in</span>
+<span class="sd">        case ``level`` is ``None`` - will be removed.  The maximal backup level (:meth:`getMaxBackupLevel()`) will be</span>
+<span class="sd">        set to the value ``level``.</span>
+
+<span class="sd">        :param backupDefinition: Defines backup that shall be removed.  :attr:`BackupDefinition.backupId`,</span>
+<span class="sd">           :attr:`BackupDefinition.backupType` and :attr:`BackupDefinition.destination` attributes of the passed</span>
+<span class="sd">           instance has to be initialized.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param level: The first level that shall be removed.  All backups of levels higher or equal than ``level`` will</span>
+<span class="sd">           be removed.  If ``None``, backups of levels higher or equal than the one returned by</span>
+<span class="sd">           :meth:`getMaxBackupLevel()` will be removed.  The value has to be &gt;= 0.</span>
+<span class="sd">        :type level: ``int``</span>
+<span class="sd">        :param keepingId: The ID under which the backup is currently kept.  ``None`` if it is not kept.</span>
+<span class="sd">        :type keepingId: ``str``</span>
+
+<span class="sd">        :raise ValueError: If ``level`` is outside of required interval or if ``backupDefinition.backupType`` is not</span>
+<span class="sd">           supported by the implementation.</span>
+<span class="sd">        :raise NotImplementedError: If incremental backup is not supported.</span>
+<span class="sd">        :raise OSError: If a system error occurred during removing operation.&quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not supported.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getSupportedFeatures"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.getSupportedFeatures">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getSupportedFeatures</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a set of supported features, either all of them or for given ``backupType``.</span>
+
+<span class="sd">        :param backupType: The backup type for which the features shall be returned or ``None`` if all supported</span>
+<span class="sd">           features shall be returned.</span>
+<span class="sd">        :type backupType: :data:`BackupTypes`</span>
+
+<span class="sd">        :return: Supported features for given ``backupType`` or all supported features.</span>
+<span class="sd">        :rtype: ``set&lt;ArchiverFeatures&gt;``</span>
+
+<span class="sd">        :raise ValueError: If the given ``backupType`` is not supported by this service&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getMaxBackupLevel"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.getMaxBackupLevel">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determines and returns maximal backup level that can be created.</span>
+
+<span class="sd">        :param backupId: ID of the backup for which the level shall be determined.</span>
+<span class="sd">        :type backupId: ``str``</span>
+
+<span class="sd">        :return: The maximal backup level that can be created by :meth:`backupFilesIncrementally()`.</span>
+<span class="sd">        :rtype: ``int``</span>
+
+<span class="sd">        :raise NotImplementedError: If incremental backup is not supported.</span>
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not supported.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getStoredBackupIds"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.getStoredBackupIds">[docs]</a>    <span class="k">def</span> <span class="nf">getStoredBackupIds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns iterable of archive IDs which has some data stored in a persistent storage.</span>
+
+<span class="sd">        See also: :meth:`purgeStoredBackupData()`.</span>
+
+<span class="sd">        :return: Iterable of archive names.</span>
+<span class="sd">        :rtype: ``Iterable&lt;str&gt;``</span>
+
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.purgeStoredBackupData"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.purgeStoredBackupData">[docs]</a>    <span class="k">def</span> <span class="nf">purgeStoredBackupData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes internal data from a persistent storage for the passed ``backupId``.</span>
+
+<span class="sd">        See also: :meth:`getStoredBackupIds()`.</span>
+
+<span class="sd">        :param backupId: ID of the backup of which data shall be purged.</span>
+<span class="sd">        :type backupId: ``str``</span>
+
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+        <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.doesBackupExist"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.doesBackupExist">[docs]</a>    <span class="k">def</span> <span class="nf">doesBackupExist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns ``True``, if backup exists.</span>
+
+<span class="sd">        :param backupDefinition: Defines the backup which existence shall be queried.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param level: The level of backup of which existence shall be checked.  If ``None``, existence</span>
+<span class="sd">           of non-incremental backup will be checked.  The value has to be &gt;= 0.</span>
+<span class="sd">        :type level: ``int``</span>
+<span class="sd">        :param keepingId: The kept backup with this ID will be checked for existence.  ``None`` if the actual (not kept)</span>
+<span class="sd">           backup will be checked.</span>
+<span class="sd">        :type keepingId: ``str``</span>
+
+<span class="sd">        :return: ``True`` if the backup exists, ``False`` otherwise.</span>
+<span class="sd">        :rtype: ``bool``</span>
+
+<span class="sd">        :raise ValueError: If ``backupDefinition.backupType`` is not supported by the implementation.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span>
+            <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">keepingId</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.doesAnyBackupLevelExist"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.doesAnyBackupLevelExist">[docs]</a>    <span class="k">def</span> <span class="nf">doesAnyBackupLevelExist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">fromLevel</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns ``True``, if one or more backup levels of a backup defined by ``backupDefinition`` exists.</span>
+
+<span class="sd">        :param backupDefinition: Defines the backup which existence shall be queried.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param fromLevel: The specified backup level and above will be checked for existence. The value has to be &gt;= 0.</span>
+<span class="sd">        :type fromLevel: ``int``</span>
+<span class="sd">        :param keepingId: The kept backup with this ID will be checked for existence.  ``None`` if the actual (not kept)</span>
+<span class="sd">           backup will be checked.</span>
+<span class="sd">        :type keepingId: ``str``</span>
+
+<span class="sd">        :return: ``True`` if any backup level exists, ``False`` otherwise.</span>
+<span class="sd">        :rtype: ``bool``</span>
+
+<span class="sd">        :raise ValueError: If ``backupDefinition.backupType`` is not supported by the implementation.&quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not supported.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.keepBackup"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.keepBackup">[docs]</a>    <span class="k">def</span> <span class="nf">keepBackup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">keepingId</span><span class="p">,</span> <span class="n">newKeepingId</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Keeps a backup with ``keepingId`` under the ``newKeepingId``.</span>
+
+<span class="sd">        See also: :meth:`doesBackupExist()` or :meth:`doesAnyBackupLevelExist()`.</span>
+
+<span class="sd">        :param backupDefinition: Defines the backup that shall be kept.</span>
+<span class="sd">        :type backupDefinition: :class:`BackupDefinition`</span>
+<span class="sd">        :param keepingId: The ID under which the backup is currently kept.  ``None`` if it is not kept yet.</span>
+<span class="sd">        :type keepingId: ``str``</span>
+<span class="sd">        :param newKeepingId: The ID under which the backup is shall be kept.</span>
+<span class="sd">        :type newKeepingId: ``str``</span>
+<span class="sd">        :param level: The level of backup of which shall be kept.  If ``None``, non-incremental backup will be kept.</span>
+<span class="sd">            The value has to be &gt;= 0.</span>
+<span class="sd">        :type level: ``int``</span>
+
+<span class="sd">        :raise ValueError: If ``backupDefinition.backupType`` is not supported by the implementation or if</span>
+<span class="sd">           ``newKeepingId`` is ``None`` or empty string.</span>
+<span class="sd">        :raise FileExistsError: If backup with the specified ``newKeepingId`` already exists.</span>
+<span class="sd">        :raise FileNotFoundError: If backup with the specified ``keepingId`` does not exist.</span>
+<span class="sd">        :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">newKeepingId</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameter &#39;newKeepingId&#39; has to be non-empty string&quot;</span><span class="p">)</span>
+
+        <span class="n">currentBackupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span>
+            <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">keepingId</span><span class="p">)</span>
+        <span class="n">keptBackupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span>
+            <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">newKeepingId</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">keptBackupFilePath</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">keptBackupFilePath</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">currentBackupFilePath</span><span class="p">,</span> <span class="n">keptBackupFilePath</span><span class="p">)</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">workDir_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets path to the working directory.</span>
+
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__workDir</span>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getBackupFilePath_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.getBackupFilePath_">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getBackupFilePath_</span><span class="p">(</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupType</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assembles the backup file name and returns a path to it.</span>
+
+<span class="sd">        :param backupId: ID of the backup for which the path shall be returned.</span>
+<span class="sd">        :type backupId: ``str``</span>
+<span class="sd">        :param backupType: Type of the backup.</span>
+<span class="sd">        :type backupType: :data:`BackupTypes`</span>
+<span class="sd">        :param destination: Path to the directory where the to the backup shall be created.</span>
+<span class="sd">        :type destination: ``str``</span>
+<span class="sd">        :param level: Backup level.</span>
+<span class="sd">        :type level: ``int``</span>
+<span class="sd">        :param keepingId: Path of the kept backup with this ID will be returned.  ``None`` if path of the actual (not</span>
+<span class="sd">           kept) backup shall be returned.</span>
+<span class="sd">        :type keepingId: ``str``</span>
+
+<span class="sd">        :return: Path to the backup file.</span>
+<span class="sd">        :rtype: ``str``&quot;&quot;&quot;</span>
+
+        <span class="n">levelToken</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">)</span> <span class="k">if</span> <span class="n">level</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">keepToken</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">keepingId</span> <span class="k">if</span> <span class="n">keepingId</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">destination</span><span class="p">,</span> <span class="n">backupId</span> <span class="o">+</span> <span class="n">levelToken</span> <span class="o">+</span> <span class="n">keepToken</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span>
+                                         <span class="n">_BACKUP_TYPES_TO_EXTENSIONS</span><span class="p">[</span><span class="n">backupType</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.getWorkingPath_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.getWorkingPath_">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getWorkingPath_</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">properPath</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">properPath</span> <span class="o">+</span> <span class="n">cls</span><span class="o">.</span><span class="n">__PARTIAL_FILE_SUFFIX</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.raiseIfUnsupportedBackupType_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.raiseIfUnsupportedBackupType_">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raises an exception if the passed ``backupType`` is not supported by the implementation.</span>
+
+<span class="sd">        See also: :attr:`._TarArchiverProviderBase.supportedBackupTypes`.</span>
+
+<span class="sd">        :param backupType: The backup type that shall be checked.</span>
+<span class="sd">        :type backupType: :data:`.BackupTypes`</span>
+
+<span class="sd">        :raise ValueError: If the passed ``backupType`` is not supported by the concrete implementation.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">backupType</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">supportedBackupTypes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unsupported backup type: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">backupType</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="_TarArchiverProviderBase.raiseIfUnsupportedFeature_"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver.archiver_service_identification._TarArchiverProviderBase.raiseIfUnsupportedFeature_">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">raiseIfUnsupportedFeature_</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">__parametersToFeatures</span><span class="p">(</span><span class="n">compressionStrength</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">getSupportedFeatures</span><span class="p">(</span><span class="n">backupType</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Feature </span><span class="si">{}</span><span class="s2"> is not supported be the backup type </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                                              <span class="nb">str</span><span class="p">(</span><span class="n">feature</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">backupType</span><span class="p">)))</span></div>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__raiseIfEmptyIncludeFiles</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">includeFiles</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">includeFiles</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Nothing to backup.&quot;</span><span class="p">)</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__parametersToFeatures</span><span class="p">(</span><span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">compressionStrength</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">CompressionStrength</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">Incremental</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">features</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

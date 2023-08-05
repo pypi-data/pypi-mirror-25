@@ -1,0 +1,516 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive.starter &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive.starter</h1><div class="highlight"><pre>
+<span></span><span class="c1"># starter.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2016 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;Initializes the application and starts it.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Starter&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">optparse</span> <span class="k">import</span> <span class="n">OptionParser</span><span class="p">,</span> <span class="n">OptionGroup</span>
+
+<span class="kn">from</span> <span class="nn">._meta</span> <span class="k">import</span> <span class="n">_Meta</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.utils</span> <span class="k">import</span> <span class="n">Constants</span><span class="p">,</span> <span class="n">Utils</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure._app_environment</span> <span class="k">import</span> <span class="n">AppEnvironment</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.service._service_accessor</span> <span class="k">import</span> <span class="n">ServiceAccessor</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure._application_context</span> <span class="k">import</span> <span class="n">ApplicationContext</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.configuration._configuration_factory</span> <span class="k">import</span> <span class="n">ConfigurationFactory</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.configuration</span> <span class="k">import</span> <span class="n">Options</span><span class="p">,</span> <span class="n">OptionsUtils</span><span class="p">,</span> <span class="n">ArchiverTypes</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.storage._file_storage</span> <span class="k">import</span> <span class="n">FileStorage</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._services.archiver._archiver_service_component</span> <span class="k">import</span> <span class="n">ArchiverServiceComponent</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._services.external_command_executor._external_command_executor_service_component</span> <span class="k">import</span> \
+    <span class="n">ExternalCommandExecutorServiceComponent</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._application.archiving</span> <span class="k">import</span> <span class="n">ArchivingApplication</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._ui.cmdline._user_action_executor</span> <span class="k">import</span> <span class="n">UserActionExecutor</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._ui.cmdline._cmdline_ui</span> <span class="k">import</span> <span class="n">CmdlineUi</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._ui.cmdline._cmdline_commands</span> <span class="k">import</span> <span class="n">CmdlineCommands</span>
+
+
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CONSTANTS</span>
+
+<span class="c1">#: Tuple of service components</span>
+<span class="n">_SERVICE_COMPONENTS</span> <span class="o">=</span> <span class="p">(</span><span class="n">ExternalCommandExecutorServiceComponent</span><span class="p">,</span> <span class="n">ArchiverServiceComponent</span><span class="p">)</span>
+
+<span class="c1"># }}} CONSTANTS</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="Starter"><a class="viewcode-back" href="../../api/autoarchive.html#AutoArchive.starter.Starter">[docs]</a><span class="k">class</span> <span class="nc">Starter</span><span class="p">(</span><span class="n">metaclass</span> <span class="o">=</span> <span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="s2">&quot;Fires up the show.&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+
+<div class="viewcode-block" id="Starter.start"><a class="viewcode-back" href="../../api/autoarchive.html#AutoArchive.starter.Starter.start">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="s2">&quot;Initializes and starts the program.&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">optparseValues</span><span class="p">,</span> <span class="n">arguments</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__parseArguments</span><span class="p">()</span>
+            <span class="n">appEnvironment</span> <span class="o">=</span> <span class="n">AppEnvironment</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">optparseValues</span><span class="p">,</span> <span class="n">arguments</span><span class="p">)</span>
+            <span class="n">configuration</span> <span class="o">=</span> <span class="n">ConfigurationFactory</span><span class="o">.</span><span class="n">makeConfiguration</span><span class="p">(</span><span class="n">appEnvironment</span><span class="p">)</span>
+            <span class="n">storage</span> <span class="o">=</span> <span class="n">FileStorage</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
+
+            <span class="n">applicationContext</span> <span class="o">=</span> <span class="n">ApplicationContext</span><span class="p">(</span><span class="n">appEnvironment</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">storage</span><span class="p">)</span>
+            <span class="n">serviceAccessor</span> <span class="o">=</span> <span class="n">ServiceAccessor</span><span class="p">()</span>
+            <span class="n">serviceComponents</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__createServiceComponents</span><span class="p">(</span><span class="n">applicationContext</span><span class="p">,</span> <span class="n">serviceAccessor</span><span class="p">)</span>
+
+            <span class="n">cmdlineUi</span> <span class="o">=</span> <span class="n">CmdlineUi</span><span class="p">(</span><span class="n">appEnvironment</span><span class="p">,</span> <span class="n">configuration</span><span class="p">)</span>
+
+            <span class="n">archivingApplication</span> <span class="o">=</span> <span class="n">ArchivingApplication</span><span class="p">(</span><span class="n">cmdlineUi</span><span class="p">,</span> <span class="n">applicationContext</span><span class="p">,</span> <span class="n">serviceAccessor</span><span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">UserActionExecutor</span><span class="p">(</span><span class="n">cmdlineUi</span><span class="p">,</span> <span class="n">applicationContext</span><span class="p">,</span> <span class="n">archivingApplication</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Aborted by user.&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">traceback</span>
+            <span class="k">if</span> <span class="n">Constants</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">Utils</span><span class="o">.</span><span class="n">printError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Exception occurred: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exception_only</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">ex</span><span class="p">)))</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__createServiceComponents</span><span class="p">(</span><span class="n">applicationContext</span><span class="p">,</span> <span class="n">serviceAccessor</span><span class="p">):</span>
+        <span class="n">serviceComponents</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">serviceComponentClass</span> <span class="ow">in</span> <span class="n">_SERVICE_COMPONENTS</span><span class="p">:</span>
+            <span class="n">serviceComponents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">serviceComponentClass</span><span class="p">(</span><span class="n">applicationContext</span><span class="p">,</span> <span class="n">serviceAccessor</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">serviceComponents</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__parseArguments</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="s2">&quot;Parses command line arguments.&quot;</span>
+
+        <span class="c1"># define usage and version strings</span>
+        <span class="n">usage</span> <span class="o">=</span> <span class="s2">&quot;Usage: %prog [options] [command] [AA_SPEC]...&quot;</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="n">_Meta</span><span class="o">.</span><span class="n">DESCRIPTION</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">%prog version </span><span class="si">{version}</span><span class="s2"></span>
+
+<span class="si">{copyright}</span><span class="s2"></span>
+
+<span class="si">{license}</span><span class="s2"></span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">version</span> <span class="o">=</span> <span class="n">_Meta</span><span class="o">.</span><span class="n">VERSION</span><span class="p">,</span> <span class="n">copyright</span> <span class="o">=</span> <span class="n">_Meta</span><span class="o">.</span><span class="n">COPYRIGHT</span><span class="p">,</span>
+               <span class="n">license</span> <span class="o">=</span> <span class="n">_Meta</span><span class="o">.</span><span class="n">LICENSE</span><span class="p">)</span>
+        <span class="n">epilog</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">AA_SPEC is the archive specification file argument.  It determines the archive specification file that shall be</span>
+<span class="s2">processed.  If AA_SPEC contains the &quot;.aa&quot; extension then it is taken as the path to an archive specification</span>
+<span class="s2">file.  Otherwise, if specified without the extension, the corresponding .aa file is searched in the archive</span>
+<span class="s2">specifications directory (see option --</span><span class="si">{}</span><span class="s2">).&quot;&quot;&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">)</span>
+
+        <span class="c1"># create parser and add the options</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">OptionParser</span><span class="p">(</span><span class="n">usage</span> <span class="o">=</span> <span class="n">usage</span><span class="p">,</span> <span class="n">version</span> <span class="o">=</span> <span class="n">version</span><span class="p">,</span> <span class="n">description</span> <span class="o">=</span> <span class="n">description</span><span class="p">,</span> <span class="n">epilog</span> <span class="o">=</span> <span class="n">epilog</span><span class="p">,</span>
+                              <span class="n">add_help_option</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># {{{ commands</span>
+
+        <span class="n">commandsGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;Commands&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;Commands for program&#39;s operations.  The default operation is the backup &quot;</span> <span class="o">+</span>
+                                    <span class="s2">&quot;creation if no command is specified.&quot;</span><span class="p">)</span>
+
+        <span class="n">commandsGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">LIST</span><span class="p">),</span> <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Show all configured or orphaned archives.&quot;</span><span class="p">)</span>
+
+        <span class="n">commandsGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">CmdlineCommands</span><span class="o">.</span><span class="n">PURGE</span><span class="p">),</span> <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Purge stored data for an orphaned archive.&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">remove_option</span><span class="p">(</span><span class="s2">&quot;--version&quot;</span><span class="p">)</span>
+        <span class="n">commandsGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;--version&quot;</span><span class="p">,</span> <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Show program&#39;s version number and exit.&quot;</span><span class="p">)</span>
+
+        <span class="n">commandsGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-h&quot;</span><span class="p">,</span> <span class="s2">&quot;--help&quot;</span><span class="p">,</span> <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;help&quot;</span><span class="p">,</span> <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Show this help message and exit.&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">commandsGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} commands</span>
+
+        <span class="c1"># {{{ archiving related options</span>
+
+        <span class="n">archivingGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;Archiving options&quot;</span><span class="p">)</span>
+
+        <span class="n">archiverChoices</span> <span class="o">=</span> <span class="p">[</span><span class="n">OptionsUtils</span><span class="o">.</span><span class="n">archiverTypeToStr</span><span class="p">(</span><span class="n">arch</span><span class="p">)</span>
+                           <span class="k">for</span> <span class="n">arch</span> <span class="ow">in</span> <span class="n">ArchiverTypes</span><span class="p">]</span>
+        <span class="n">archivingGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVER</span><span class="p">),</span> <span class="n">choices</span> <span class="o">=</span> <span class="n">archiverChoices</span><span class="p">,</span>
+                                  <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Specify archiver type.  Supported types are: </span><span class="si">{choices}</span><span class="s2"> &quot;</span> <span class="o">+</span>
+                                                    <span class="s2">&quot;(default: targz).&quot;</span><span class="p">,</span>  <span class="n">choices</span> <span class="o">=</span> <span class="n">archiverChoices</span><span class="p">))</span>
+
+        <span class="n">compressionLevelChoices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+                                   <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
+        <span class="n">archivingGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">COMPRESSION_LEVEL</span><span class="p">),</span>
+                                  <span class="n">choices</span> <span class="o">=</span> <span class="n">compressionLevelChoices</span><span class="p">,</span>
+                                  <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;NUM&quot;</span><span class="p">,</span>
+                                  <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Compression strength level.  If not specified, default behaviour of &quot;</span> <span class="o">+</span>
+                                         <span class="s2">&quot;underlying compression program will be used.&quot;</span><span class="p">)</span>
+
+        <span class="n">archivingGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">DEST_DIR</span><span class="p">),</span>
+                                  <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;DIR_PATH&quot;</span><span class="p">,</span>
+                                  <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Directory where the backup will be created (default: &lt;current directory&gt;).&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">archivingGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} archiving related options</span>
+
+        <span class="c1"># {{{ incremental archiving related options</span>
+
+        <span class="n">incrementalGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;Incremental archiving options&quot;</span><span class="p">)</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">),</span>
+                                    <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Perform incremental backup.&quot;</span><span class="p">)</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">LEVEL</span><span class="p">),</span>
+                                    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Specify the backup level which should be created.  All information about &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;higher levels---if any exists---will be erased.  If not present, the &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;next level in a row will be created.&quot;</span><span class="p">)</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTARTING</span><span class="p">),</span>
+                                    <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Turns on backup level restarting.  See other &#39;*restart-*&#39; options to &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;configure the restarting behaviour.&quot;</span><span class="p">)</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_LEVEL</span><span class="p">),</span>
+                                    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                                    <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;LEVEL&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Maximal backup level.  If reached, it will be restarted back &quot;</span> <span class="o">+</span>
+                                                      <span class="s2">&quot;to a lower level (which is typically level 1 but it depends &quot;</span> <span class="o">+</span>
+                                                      <span class="s2">&quot;on &#39;--</span><span class="si">{}</span><span class="s2">&#39;) (default: 10).&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="o">.</span><span class="n">MAX_RESTART_LEVEL_SIZE</span><span class="p">))</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_AGE</span><span class="p">),</span>
+                                    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                                    <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;DAYS&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Number of days after which the backup level is restarted.  &quot;</span> <span class="o">+</span>
+                                                      <span class="s2">&quot;Similarly to &#39;--</span><span class="si">{}</span><span class="s2">&#39; it will be restarted to level 1 or higher.&quot;</span><span class="p">,</span>
+                                                      <span class="n">Options</span><span class="o">.</span><span class="n">RESTART_AFTER_LEVEL</span><span class="p">))</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_COUNT</span><span class="p">),</span>
+                                    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                                    <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;COUNT&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Number of backup level restarts after which the level is restarted to 0.&quot;</span><span class="p">)</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FULL_RESTART_AFTER_AGE</span><span class="p">),</span>
+                                    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                                    <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;DAYS&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Number of days after which the backup level is restarted to 0.&quot;</span><span class="p">)</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">MAX_RESTART_LEVEL_SIZE</span><span class="p">),</span>
+                                    <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                                    <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;PERCENTAGE&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Maximal percentage size of a backup (of level &gt; 0) to which level is &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;allowed restart to.  The size is percentage of size of the level 0 &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;backup file.  If a backup of particular level has its size bigger &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;than defined percentage, restart to that level will not be allowed.&quot;</span><span class="p">)</span>
+
+        <span class="n">incrementalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">REMOVE_OBSOLETE_BACKUPS</span><span class="p">),</span>
+                                    <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                    <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Turn on removing backups of levels that are no longer valid due to the &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;backup level restart.  All backups of the backup level higher than the &quot;</span> <span class="o">+</span>
+                                           <span class="s2">&quot;one currently being created will be removed.&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">incrementalGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} incremental archiving related options</span>
+
+        <span class="c1"># {{{ options related to old backups keeping</span>
+
+        <span class="n">keepingGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;Options for keeping old backups&quot;</span><span class="p">)</span>
+
+        <span class="n">keepingGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-k&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">KEEP_OLD_BACKUPS</span><span class="p">),</span>
+                                <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Turn on backup keeping.  When a backup is about to be &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;overwritten, it is renamed instead.  If &#39;--</span><span class="si">{}</span><span class="s2">&#39; is enabled it &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;applies to all corresponding increments.  The new name is &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;created by inserting a keeping ID in front of backup file(s) &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;extension.  The keeping ID is a string from interval &#39;aa&#39;, &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;&#39;ab&#39;, ..., &#39;zy&#39;, &#39;zz&#39; where &#39;aa&#39; represents most recent kept &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;backup.&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="o">.</span><span class="n">INCREMENTAL</span><span class="p">))</span>
+
+        <span class="n">keepingGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">NUMBER_OF_OLD_BACKUPS</span><span class="p">),</span>
+                                <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                                <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;NUM&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Number of old backups to keep when &#39;--</span><span class="si">{}</span><span class="s2">&#39; is enabled &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;(default: 1).&quot;</span><span class="p">,</span> <span class="n">Options</span><span class="o">.</span><span class="n">KEEP_OLD_BACKUPS</span><span class="p">))</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">keepingGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} options related to old backups keeping</span>
+
+        <span class="c1"># {{{ command execution options</span>
+
+        <span class="n">commandExecutionGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;Command execution options&quot;</span><span class="p">)</span>
+
+        <span class="n">commandExecutionGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">COMMAND_BEFORE_ALL_BACKUPS</span><span class="p">),</span>
+                                         <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+                                         <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;COMMAND_BEFORE_ALL&quot;</span><span class="p">,</span>
+                                         <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Arbitrary command that will be executed before backup creation &quot;</span> <span class="o">+</span>
+                                                <span class="s2">&quot;for the set of selected archives.&quot;</span><span class="p">)</span>
+
+        <span class="n">commandExecutionGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">COMMAND_AFTER_ALL_BACKUPS</span><span class="p">),</span>
+                                         <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+                                         <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;COMMAND_AFTER_ALL&quot;</span><span class="p">,</span>
+                                         <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Arbitrary command that will be executed after backup creation &quot;</span> <span class="o">+</span>
+                                                <span class="s2">&quot;for the set of selected archives.&quot;</span><span class="p">)</span>
+
+        <span class="n">commandExecutionGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">COMMAND_BEFORE_BACKUP</span><span class="p">),</span>
+                                         <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+                                         <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;COMMAND_BEFORE&quot;</span><span class="p">,</span>
+                                         <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Arbitrary command to execute prior to each backup creation.&quot;</span><span class="p">)</span>
+
+        <span class="n">commandExecutionGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">COMMAND_AFTER_BACKUP</span><span class="p">),</span>
+                                         <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+                                         <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;COMMAND_AFTER&quot;</span><span class="p">,</span>
+                                         <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Arbitrary command to execute after each backup creation.&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">commandExecutionGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} command execution options</span>
+
+        <span class="c1"># {{{ general options</span>
+
+        <span class="n">generalGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;General options&quot;</span><span class="p">)</span>
+
+        <span class="n">generalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">),</span>
+                                <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;count&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Turn on verbose output.&quot;</span><span class="p">)</span>
+
+        <span class="n">generalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-q&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">),</span>
+                                <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Turn on quiet output.  Only errors will be shown.  If --</span><span class="si">{quiet}</span><span class="s2"> &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;is turned on at the same level as --</span><span class="si">{verbose}</span><span class="s2"> (e. g. both are &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;specified on the command line) then --</span><span class="si">{quiet}</span><span class="s2"> has higher priority &quot;</span> <span class="o">+</span>
+                                                  <span class="s2">&quot;than --</span><span class="si">{verbose}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">quiet</span> <span class="o">=</span> <span class="n">Options</span><span class="o">.</span><span class="n">QUIET</span><span class="p">,</span>
+                                                  <span class="n">verbose</span> <span class="o">=</span> <span class="n">Options</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">))</span>
+
+        <span class="n">generalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">ALL</span><span class="p">),</span>
+                                <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Operate on all configured archives. See also --</span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                                                  <span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">))</span>
+
+        <span class="n">generalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">OVERWRITE_AT_START</span><span class="p">),</span>
+                                <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;If enabled, backups are overwritten at the start of creation.  If disabled &quot;</span> <span class="o">+</span>
+                                       <span class="s2">&quot;(default), backups are overwritten at the end of creation.  Enabling this &quot;</span> <span class="o">+</span>
+                                       <span class="s2">&quot;option can be useful with big backups and low free space on the backup volume.&quot;</span><span class="p">)</span>
+
+        <span class="n">generalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">ARCHIVE_SPECS_DIR</span><span class="p">),</span>
+                                <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;DIR_PATH&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Directory where archive specification files will be searched for (default: &quot;</span> <span class="o">+</span>
+                                       <span class="s2">&quot;~/.config/aa/archive_specs).&quot;</span><span class="p">)</span>
+
+        <span class="n">generalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_FILE</span><span class="p">),</span>
+                                <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;FILE_PATH&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Alternate user configuration file (default: ~/.config/aa/aa.conf).&quot;</span><span class="p">)</span>
+
+        <span class="n">generalGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">USER_CONFIG_DIR</span><span class="p">),</span>
+                                <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;DIR_PATH&quot;</span><span class="p">,</span>
+                                <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Alternate user configuration directory (default: ~/.config/aa).&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">generalGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} general options</span>
+
+        <span class="c1"># {{{ force options</span>
+
+        <span class="n">forceGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;Force options&quot;</span><span class="p">,</span> <span class="s2">&quot;Options to override standard options defined in &quot;</span> <span class="o">+</span>
+                                                          <span class="s2">&quot;archive specification files.&quot;</span><span class="p">)</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_ARCHIVER</span><span class="p">),</span>
+                              <span class="n">choices</span> <span class="o">=</span> <span class="n">archiverChoices</span><span class="p">,</span>
+                              <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;ARCHIVER&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                  <span class="s2">&quot;Force archiver type.  Supported types are: </span><span class="si">{choices}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">choices</span> <span class="o">=</span> <span class="n">archiverChoices</span><span class="p">))</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_INCREMENTAL</span><span class="p">),</span>
+                              <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Force incremental backup.&quot;</span><span class="p">)</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_RESTARTING</span><span class="p">),</span>
+                              <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Force backup level restarting.&quot;</span><span class="p">)</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_COMPRESSION_LEVEL</span><span class="p">),</span>
+                              <span class="n">choices</span> <span class="o">=</span> <span class="n">compressionLevelChoices</span><span class="p">,</span>
+                              <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;NUM&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Force compression strength level.&quot;</span><span class="p">)</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_DEST_DIR</span><span class="p">),</span>
+                              <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;DIR_PATH&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Force the directory where the backup will be created.&quot;</span><span class="p">)</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_COMMAND_BEFORE_BACKUP</span><span class="p">),</span>
+                              <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+                              <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;COMMAND_BEFORE&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Force configuration of the command to execute prior to each backup creation.&quot;</span><span class="p">)</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_COMMAND_AFTER_BACKUP</span><span class="p">),</span>
+                              <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+                              <span class="n">metavar</span> <span class="o">=</span> <span class="s2">&quot;COMMAND_AFTER&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Force configuration of the command to execute after each backup creation.&quot;</span><span class="p">)</span>
+
+        <span class="n">forceGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">FORCE_OVERWRITE_AT_START</span><span class="p">),</span>
+                              <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                              <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Force backup overwriting behavior.&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">forceGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} force options</span>
+
+        <span class="c1"># {{{ negation options</span>
+
+        <span class="n">negationGroup</span> <span class="o">=</span> <span class="n">OptionGroup</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="s2">&quot;Negation options&quot;</span><span class="p">,</span> <span class="s2">&quot;Negative variants of standard boolean options.&quot;</span><span class="p">)</span>
+
+        <span class="n">negationGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">NO_INCREMENTAL</span><span class="p">),</span>
+                                 <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Disable incremental backup.&quot;</span><span class="p">)</span>
+
+        <span class="n">negationGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">NO_RESTARTING</span><span class="p">),</span>
+                                 <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Turn off backup level restarting.&quot;</span><span class="p">)</span>
+
+        <span class="n">negationGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">NO_REMOVE_OBSOLETE_BACKUPS</span><span class="p">),</span>
+                                 <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Turn off obsolete backups removing.&quot;</span><span class="p">)</span>
+
+        <span class="n">negationGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">NO_KEEP_OLD_BACKUPS</span><span class="p">),</span>
+                                 <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Turn off backup keeping.&quot;</span><span class="p">)</span>
+
+        <span class="n">negationGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">NO_ALL</span><span class="p">),</span>
+                                 <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Do not operate on all configured archive specification files.&quot;</span><span class="p">)</span>
+
+        <span class="n">negationGroup</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__makeCmdlineOption</span><span class="p">(</span><span class="n">Options</span><span class="o">.</span><span class="n">NO_OVERWRITE_AT_START</span><span class="p">),</span>
+                                 <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;Do not overwrite backup at the start of creation. Overwrite after the new &quot;</span> <span class="o">+</span>
+                                        <span class="s2">&quot;backup is created.&quot;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option_group</span><span class="p">(</span><span class="n">negationGroup</span><span class="p">)</span>
+
+        <span class="c1"># }}} negation options</span>
+
+        <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__makeCmdlineOption</span><span class="p">(</span><span class="n">option</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;--&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)</span></div>
+
+<span class="c1"># }}} CLASSES</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

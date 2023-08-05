@@ -1,0 +1,815 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>AutoArchive._services.archiver._external_tar_archiver_provider &#8212; AutoArchive Developer Manual (ver. 1.4.1)</title>
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for AutoArchive._services.archiver._external_tar_archiver_provider</h1><div class="highlight"><pre>
+<span></span><span class="c1"># _external_tar_archiver_provider.py</span>
+<span class="c1">#</span>
+<span class="c1"># Project: AutoArchive</span>
+<span class="c1"># License: GNU GPLv3</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (C) 2003 - 2016 Róbert Čerňanský</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;:class:`_ExternalTarArchiverProvider` class.&quot;&quot;&quot;</span>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_ExternalTarArchiverProvider&quot;</span><span class="p">]</span>
+
+
+
+<span class="c1"># {{{ INCLUDES</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">select</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.utils</span> <span class="k">import</span> <span class="n">Utils</span>
+<span class="kn">from</span> <span class="nn">AutoArchive._infrastructure.py_additions</span> <span class="k">import</span> <span class="n">staticproperty</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">BackupTypes</span><span class="p">,</span> <span class="n">BackupSubOperations</span><span class="p">,</span> <span class="n">ArchiverFeatures</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="p">,</span> <span class="n">MIN_COMPRESSION_STRENGTH</span><span class="p">,</span> \
+    <span class="n">MAX_COMPRESSION_STRENGTH</span>
+<span class="kn">from</span> <span class="nn">._tar_archiver_provider_base</span> <span class="k">import</span> <span class="n">_TarArchiverProviderBase</span><span class="p">,</span> <span class="n">_BACKUP_TYPES_TO_EXTENSIONS</span>
+
+<span class="c1"># }}} INCLUDES</span>
+
+
+
+<span class="c1"># {{{ CLASSES</span>
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider">[docs]</a><span class="k">class</span> <span class="nc">_ExternalTarArchiverProvider</span><span class="p">(</span><span class="n">_TarArchiverProviderBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;External archiver service provider.</span>
+
+<span class="sd">    See also: :class:`._TarArchiverProviderBase`.</span>
+
+<span class="sd">    :raise OSError: If creation of the snapshot directory failed.&quot;&quot;&quot;</span>
+
+    <span class="c1"># name of the archiver binary</span>
+    <span class="n">__ARCHIVER_BINARY</span> <span class="o">=</span> <span class="s2">&quot;tar&quot;</span>
+
+    <span class="c1"># directories where tar is being looked up if it was not found in PATH</span>
+    <span class="n">__ARCHIVER_LOCATIONS_FALLBACKS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;/bin&quot;</span><span class="p">,</span> <span class="s2">&quot;/usr/bin&quot;</span><span class="p">,</span> <span class="s2">&quot;/usr/local/bin&quot;</span><span class="p">)</span>
+
+    <span class="c1"># backup type to GNU tar compress option map</span>
+    <span class="n">__BACKUP_TYPE_TO_COMPRESS_OPTION</span> <span class="o">=</span> <span class="p">{</span><span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                        <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">:</span> <span class="s2">&quot;--gzip&quot;</span><span class="p">,</span>
+                                        <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">:</span> <span class="s2">&quot;--bzip2&quot;</span><span class="p">,</span>
+                                        <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarXz</span><span class="p">:</span> <span class="s2">&quot;--xz&quot;</span><span class="p">}</span>
+
+
+
+    <span class="c1"># {{{ _TarArchiverProviderBase overrides</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workDir</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">workDir</span><span class="p">)</span>
+
+        <span class="c1"># stores the error state during the backup operation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__errorOccurred</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># path to the tar binary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archiver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__locateTar</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="o">.</span><span class="n">makeSnapshotsDir</span><span class="p">(</span><span class="n">workDir</span><span class="p">)</span>
+
+
+
+    <span class="nd">@staticproperty</span>
+    <span class="k">def</span> <span class="nf">supportedBackupTypes</span><span class="p">():</span>
+        <span class="s2">&quot;See :attr:`._TarArchiverProviderBase.supportedBackupTypes`&quot;</span>
+
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">,</span>
+                          <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">,</span>
+                          <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">,</span>
+                          <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarXz</span><span class="p">})</span>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.backupFiles"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.backupFiles">[docs]</a>    <span class="k">def</span> <span class="nf">backupFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">overwriteAtStart</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.backupFiles()`.&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">backupFiles</span><span class="p">(</span><span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span> <span class="n">overwriteAtStart</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__raiseIfBadCompressionStrength</span><span class="p">(</span><span class="n">compressionStrength</span><span class="p">)</span>
+
+        <span class="n">backupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span>
+                                                 <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+        <span class="n">workingBackupFilePath</span> <span class="o">=</span> <span class="n">backupFilePath</span> <span class="k">if</span> <span class="n">overwriteAtStart</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">getWorkingPath_</span><span class="p">(</span><span class="n">backupFilePath</span><span class="p">)</span>
+
+        <span class="n">sysEnvironment</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">arguments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__arguments</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">workingBackupFilePath</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+                                     <span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">excludeFiles</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span>
+                                     <span class="n">sysEnvironment</span><span class="p">)</span>
+        <span class="n">sysEnvironment</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">arguments</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">tarProcess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__executeTar</span><span class="p">(</span><span class="n">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sysEnvironment</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__processTarOutput</span><span class="p">(</span><span class="n">tarProcess</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">overwriteAtStart</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">workingBackupFilePath</span><span class="p">,</span> <span class="n">backupFilePath</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">backupFilePath</span></div>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.backupFilesIncrementally"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.backupFilesIncrementally">[docs]</a>    <span class="k">def</span> <span class="nf">backupFilesIncrementally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">overwriteAtStart</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.backupFilesIncrementally()`.&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">backupFilesIncrementally</span><span class="p">(</span><span class="n">backupDefinition</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">overwriteAtStart</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__raiseIfBadCompressionStrength</span><span class="p">(</span><span class="n">compressionStrength</span><span class="p">)</span>
+
+        <span class="n">externalTarIncrementalUtility</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">workDir_</span><span class="p">)</span>
+
+        <span class="n">maxBackupLevel</span> <span class="o">=</span> <span class="n">externalTarIncrementalUtility</span><span class="o">.</span><span class="n">getMaxBackupLevel</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">level</span> <span class="o">=</span> <span class="n">maxBackupLevel</span>
+
+        <span class="k">if</span> <span class="n">level</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">level</span> <span class="o">&gt;</span> <span class="n">maxBackupLevel</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;&#39;level&#39; must be from interval 0 &lt;= level &lt;= maxBackupLevel (</span><span class="si">{}</span><span class="s2">). The passed value was </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                <span class="n">maxBackupLevel</span><span class="p">,</span> <span class="n">level</span><span class="p">))</span>
+
+        <span class="n">workingSnapshotFilePath</span> <span class="o">=</span> <span class="n">externalTarIncrementalUtility</span><span class="o">.</span><span class="n">createWorkingSnapshotFile</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+
+        <span class="n">backupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span>
+                                                 <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+        <span class="n">workingBackupFilePath</span> <span class="o">=</span> <span class="n">backupFilePath</span> <span class="k">if</span> <span class="n">overwriteAtStart</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">getWorkingPath_</span><span class="p">(</span><span class="n">backupFilePath</span><span class="p">)</span>
+
+        <span class="n">sysEnvironment</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">arguments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__arguments</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">workingBackupFilePath</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+                                     <span class="n">backupDefinition</span><span class="o">.</span><span class="n">includeFiles</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">excludeFiles</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span>
+                                     <span class="n">sysEnvironment</span><span class="p">,</span> <span class="n">workingSnapshotFilePath</span><span class="p">)</span>
+        <span class="n">sysEnvironment</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">arguments</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tarProcess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__executeTar</span><span class="p">(</span><span class="n">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sysEnvironment</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__processTarOutput</span><span class="p">(</span><span class="n">tarProcess</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">overwriteAtStart</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">workingBackupFilePath</span><span class="p">,</span> <span class="n">backupFilePath</span><span class="p">)</span>
+            <span class="n">externalTarIncrementalUtility</span><span class="o">.</span><span class="n">manageSnapshotFiles</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">workingSnapshotFilePath</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workingSnapshotFilePath</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">workingSnapshotFilePath</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">backupFilePath</span></div>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.removeBackupIncrements"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.removeBackupIncrements">[docs]</a>    <span class="k">def</span> <span class="nf">removeBackupIncrements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.removeBackupIncrements()`.&quot;</span>
+
+        <span class="n">externalTarIncrementalUtility</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">workDir_</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">level</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;&#39;level&#39; must be &gt; 0. The passed value was </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">level</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getMaxBackupLevel</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">)</span>
+
+        <span class="n">removeLevel</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="n">backupExists</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">backupExists</span><span class="p">:</span>
+            <span class="n">backupFilePath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBackupFilePath_</span><span class="p">(</span>
+                <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">removeLevel</span><span class="p">,</span>
+                <span class="n">keepingId</span><span class="p">)</span>
+            <span class="n">backupExists</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">backupFilePath</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">backupExists</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">backupFilePath</span><span class="p">)</span>
+                <span class="n">externalTarIncrementalUtility</span><span class="o">.</span><span class="n">tryRemoveSnapshotFile</span><span class="p">(</span><span class="n">removeLevel</span><span class="p">,</span> <span class="n">keepingId</span><span class="p">)</span>
+            <span class="n">removeLevel</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getMaxBackupLevel</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">level</span> <span class="ow">and</span> <span class="n">keepingId</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># ouch! some rogue snapshots still exists; deal with them slowly and painfully</span>
+            <span class="n">externalTarIncrementalUtility</span><span class="o">.</span><span class="n">removeSnapshotFiles</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.getSupportedFeatures"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.getSupportedFeatures">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">getSupportedFeatures</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">backupType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.getSupportedFeatures()`.&quot;</span>
+
+        <span class="k">if</span> <span class="n">backupType</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">raiseIfUnsupportedBackupType_</span><span class="p">(</span><span class="n">backupType</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">backupType</span> <span class="o">==</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">Tar</span><span class="p">:</span>
+            <span class="n">supportedFeatures</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">((</span><span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">Incremental</span><span class="p">,))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">supportedFeatures</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">Incremental</span><span class="p">,</span>
+                                           <span class="n">ArchiverFeatures</span><span class="o">.</span><span class="n">CompressionStrength</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">supportedFeatures</span></div>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.getMaxBackupLevel"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.getMaxBackupLevel">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.getMaxBackupLevel()`.&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="p">(</span><span class="n">backupId</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">workDir_</span><span class="p">)</span><span class="o">.</span><span class="n">getMaxBackupLevel</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.getStoredBackupIds"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.getStoredBackupIds">[docs]</a>    <span class="nd">@Utils</span><span class="o">.</span><span class="n">uniq</span>
+    <span class="k">def</span> <span class="nf">getStoredBackupIds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.getStoredBackupIds()`.&quot;</span>
+
+        <span class="n">snapshots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="o">.</span><span class="n">getSnapshotsForBackup</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="o">.</span><span class="n">getSnapshotsDir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workDir_</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">snapshot</span><span class="p">))[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">snapshot</span> <span class="ow">in</span> <span class="n">snapshots</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.purgeStoredBackupData"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.purgeStoredBackupData">[docs]</a>    <span class="k">def</span> <span class="nf">purgeStoredBackupData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.purgeStoredBackupData()`.&quot;</span>
+
+        <span class="n">snapshotsDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="o">.</span><span class="n">getSnapshotsDir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workDir_</span><span class="p">)</span>
+        <span class="n">snapshots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="o">.</span><span class="n">getSnapshotsForBackup</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">,</span> <span class="n">backupId</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">snapshot</span> <span class="ow">in</span> <span class="n">snapshots</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">,</span> <span class="n">snapshot</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="_ExternalTarArchiverProvider.doesAnyBackupLevelExist"><a class="viewcode-back" href="../../../../api/services.archiver.html#AutoArchive._services.archiver._external_tar_archiver_provider._ExternalTarArchiverProvider.doesAnyBackupLevelExist">[docs]</a>    <span class="k">def</span> <span class="nf">doesAnyBackupLevelExist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupDefinition</span><span class="p">,</span> <span class="n">fromLevel</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;See: :meth:`._TarArchiverProviderBase.doesAnyBackupLevelExist()`.&quot;</span>
+
+        <span class="n">keepToken</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">keepingId</span> <span class="k">if</span> <span class="n">keepingId</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># SMELL: Backup path is similarly assembled in super().getBackupFilePath_.</span>
+        <span class="n">level0Glob</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span>
+                                  <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span> <span class="o">+</span> <span class="n">keepToken</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span>
+                                  <span class="n">_BACKUP_TYPES_TO_EXTENSIONS</span><span class="p">[</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">])</span>
+        <span class="n">levelGreaterThan0Glob</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span>
+                                             <span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupId</span> <span class="o">+</span> <span class="s2">&quot;.*&quot;</span> <span class="o">+</span> <span class="n">keepToken</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span>
+                                             <span class="n">_BACKUP_TYPES_TO_EXTENSIONS</span><span class="p">[</span><span class="n">backupDefinition</span><span class="o">.</span><span class="n">backupType</span><span class="p">])</span>
+        <span class="n">backups</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">level0Glob</span><span class="p">)),</span>
+                                  <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">levelGreaterThan0Glob</span><span class="p">)))</span>
+        <span class="n">backups</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">dropwhile</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">bac</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__ExternalTarIncrementalUtility</span><span class="o">.</span><span class="n">getLevelFromFileName</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">bac</span><span class="p">),</span> <span class="n">keepingId</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">fromLevel</span><span class="p">,</span> <span class="n">backups</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">backups</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span></div>
+
+    <span class="c1"># }}} _TarArchiverProviderBase overrides</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__executeTar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arguments</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+        <span class="n">environment</span><span class="p">[</span><span class="s2">&quot;LC_MESSAGES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;C&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;LC_ALL&quot;</span> <span class="ow">in</span> <span class="n">environment</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">environment</span><span class="p">[</span><span class="s2">&quot;LC_ALL&quot;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tarProcess</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">__archiver</span><span class="p">]</span> <span class="o">+</span> <span class="n">arguments</span><span class="p">,</span> <span class="n">stdout</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                                          <span class="n">stderr</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">env</span> <span class="o">=</span> <span class="n">environment</span><span class="p">,</span> <span class="n">universal_newlines</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Error while executing external archiving program: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archiver</span><span class="p">),</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">__archiver</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tarProcess</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__processTarOutput</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiverProcess</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__errorOccurred</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onBackupOperationError</span>
+
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="c1"># capture program&#39;s standard output and standard error and use CmdlineUi-like interface to print captured</span>
+            <span class="c1"># messages; note that the order of messages written to stdout vs. messages written to stderr might not be</span>
+            <span class="c1"># preserved</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">readyStreams</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">((</span><span class="n">archiverProcess</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">archiverProcess</span><span class="o">.</span><span class="n">stderr</span><span class="p">),</span> <span class="p">(),</span> <span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">streamActive</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">for</span> <span class="n">readyStream</span> <span class="ow">in</span> <span class="n">readyStreams</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">readyStream</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+                        <span class="n">streamActive</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__propagateArchiverMessage</span><span class="p">(</span><span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">readyStream</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">archiverProcess</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">archiverProcess</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">streamActive</span><span class="p">:</span>
+                    <span class="k">break</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__onBackupOperationError</span>
+
+        <span class="k">if</span> <span class="n">archiverProcess</span><span class="o">.</span><span class="n">returncode</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__handleArchiverExitCode</span><span class="p">(</span><span class="n">archiverProcess</span><span class="o">.</span><span class="n">returncode</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupType</span><span class="p">,</span> <span class="n">backupFilePath</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">includeFiles</span><span class="p">,</span> <span class="n">excludeFiles</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span>
+                    <span class="n">sysEnvironment</span><span class="p">,</span> <span class="n">snapshotPath</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;Assembles and returns arguments to the tar binary.&quot;</span>
+
+        <span class="n">compressOption</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__BACKUP_TYPE_TO_COMPRESS_OPTION</span><span class="p">[</span><span class="n">backupType</span><span class="p">]</span>
+
+        <span class="c1"># operation has to be first one</span>
+        <span class="n">archiverOptions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;--create&quot;</span><span class="p">,</span> <span class="s2">&quot;--format=posix&quot;</span><span class="p">,</span> <span class="s2">&quot;--verbose&quot;</span><span class="p">]</span>
+
+        <span class="c1"># insert options required for this archiver</span>
+        <span class="k">if</span> <span class="n">compressOption</span><span class="p">:</span>
+            <span class="n">archiverOptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compressOption</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">snapshotPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">archiverOptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--listed-incremental=&quot;</span> <span class="o">+</span> <span class="n">snapshotPath</span><span class="p">)</span>
+
+        <span class="c1"># add options required for this archiver type</span>
+        <span class="n">archiverOptions</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--file=&quot;</span> <span class="o">+</span> <span class="n">backupFilePath</span><span class="p">,</span>
+                            <span class="s2">&quot;--directory=&quot;</span> <span class="o">+</span> <span class="n">root</span><span class="p">]</span>
+
+        <span class="c1"># add converted include and exclude files</span>
+        <span class="n">archiverOptions</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__convertIncludesAndExcludes</span><span class="p">(</span><span class="n">includeFiles</span><span class="p">,</span> <span class="n">excludeFiles</span><span class="p">)</span>
+
+        <span class="c1"># create environment</span>
+        <span class="n">environment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__convertCompressionStrength</span><span class="p">(</span><span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span> <span class="n">sysEnvironment</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">archiverOptions</span><span class="p">,</span> <span class="n">environment</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__propagateArchiverMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">sentToStderr</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Propagates archiver message an event.</span>
+
+<span class="sd">        Parses the passed ``message``, evaluates it and fires :meth:`._TarArchiverProviderBase.backupOperationError`</span>
+<span class="sd">        event if it is an (non-fatal) error message or :meth:`._TarArchiverProviderBase.fileAdd` otherwise.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">sentToStderr</span><span class="p">:</span>
+
+            <span class="c1"># messages that will be ignored</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;(: Exiting with failure status due to previous errors)|&quot;</span> <span class="o">+</span>
+                         <span class="s2">&quot;(: (.*): Directory is new)&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+                <span class="k">return</span>
+
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: (.*): cannot stat: (.*)&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EACCES</span><span class="p">))</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Stat</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">PermissionDenied</span><span class="p">,</span>
+                                              <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Stat</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownOsError</span><span class="p">,</span>
+                                              <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: (.*): cannot open: (.*)&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EACCES</span><span class="p">))</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">PermissionDenied</span><span class="p">,</span>
+                                              <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownOsError</span><span class="p">,</span>
+                                              <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: (.*): socket ignored&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Open</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">SocketIgnored</span><span class="p">,</span>
+                                          <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: (.*): file changed as we read it&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Read</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">FileChanged</span><span class="p">,</span>
+                                          <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: (.*): directory has been renamed&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Read</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">DirectoryRenamed</span><span class="p">,</span>
+                                          <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: No space left on device&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No space left on device.&quot;</span><span class="p">)</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;(unrecognized option.*)|(Try.+--help.+for more information.*)&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Incompatible external archiver binary: </span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">).&quot;</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">__archiver</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: Error is not recoverable: exiting now&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;External archiver aborted.&quot;</span><span class="p">)</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;: (.*): (.+)&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">UnknownFileOperation</span><span class="p">,</span>
+                                          <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownError</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">return</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Unknown</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownError</span><span class="p">,</span>
+                                      <span class="n">unknownErrorString</span> <span class="o">=</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fileAdd</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__handleArchiverExitCode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exitCode</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exitCode</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backupOperationError</span><span class="p">(</span><span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Finish</span><span class="p">,</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">SomeFilesChanged</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__errorOccurred</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unexpected failure of the archiver program; exit code: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exitCode</span><span class="p">))</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__convertIncludesAndExcludes</span><span class="p">(</span><span class="n">includeFiles</span><span class="p">,</span> <span class="n">excludeFiles</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converts list of files and list of excluded files to the form suitable for the archiver program.</span>
+
+<span class="sd">        :return: List of arguments for the archiver.&quot;&quot;&quot;</span>
+
+        <span class="n">archiverOptions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">excludeFiles</span><span class="p">:</span>
+            <span class="n">archiverOptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--anchored&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">exclude</span> <span class="ow">in</span> <span class="n">excludeFiles</span><span class="p">:</span>
+            <span class="n">archiverOptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--exclude=&quot;</span> <span class="o">+</span> <span class="n">exclude</span><span class="p">)</span>
+
+        <span class="n">archiverOptions</span> <span class="o">+=</span> <span class="n">includeFiles</span>
+
+        <span class="k">return</span> <span class="n">archiverOptions</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__convertCompressionStrength</span><span class="p">(</span><span class="n">backupType</span><span class="p">,</span> <span class="n">compressionStrength</span><span class="p">,</span> <span class="n">sysEnvironment</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converts compression strength to an environment variable.</span>
+
+<span class="sd">        :return: Dictionary representing environment with the required environment variable.&quot;&quot;&quot;</span>
+
+        <span class="n">environment</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">compressionStrength</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">backupType</span> <span class="o">==</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarGz</span><span class="p">:</span>
+                <span class="n">envName</span> <span class="o">=</span> <span class="s2">&quot;GZIP&quot;</span>
+                <span class="k">if</span> <span class="n">compressionStrength</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">compressionStrength</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">backupType</span> <span class="o">==</span> <span class="n">BackupTypes</span><span class="o">.</span><span class="n">TarBz2</span><span class="p">:</span>
+                <span class="n">envName</span> <span class="o">=</span> <span class="s2">&quot;BZIP2&quot;</span>
+                <span class="k">if</span> <span class="n">compressionStrength</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">compressionStrength</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">envName</span> <span class="o">=</span> <span class="s2">&quot;XZ_OPT&quot;</span>
+
+            <span class="n">sysEnvValue</span> <span class="o">=</span> <span class="n">sysEnvironment</span><span class="p">[</span><span class="n">envName</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="k">if</span> <span class="n">envName</span> <span class="ow">in</span> <span class="n">sysEnvironment</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">environment</span><span class="p">[</span><span class="n">envName</span><span class="p">]</span> <span class="o">=</span> <span class="n">sysEnvValue</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">compressionStrength</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">environment</span>
+
+
+
+    <span class="k">def</span> <span class="nf">__onBackupOperationError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">filesystemObjectName</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">unknownErrorString</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__errorOccurred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__errorOccurred</span> <span class="ow">or</span> \
+                               <span class="p">(</span><span class="n">operation</span> <span class="o">!=</span> <span class="n">BackupSubOperations</span><span class="o">.</span><span class="n">Finish</span> <span class="ow">and</span>
+                                <span class="p">(</span><span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">PermissionDenied</span> <span class="ow">or</span>
+                                 <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownOsError</span> <span class="ow">or</span>
+                                 <span class="n">error</span> <span class="o">==</span> <span class="n">BackupOperationErrors</span><span class="o">.</span><span class="n">UnknownError</span><span class="p">))</span>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__raiseIfBadCompressionStrength</span><span class="p">(</span><span class="n">compressionStrength</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">compressionStrength</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+           <span class="p">(</span><span class="n">compressionStrength</span> <span class="o">&lt;</span> <span class="n">MIN_COMPRESSION_STRENGTH</span> <span class="ow">or</span> <span class="n">compressionStrength</span> <span class="o">&gt;</span> <span class="n">MAX_COMPRESSION_STRENGTH</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Compression strength value </span><span class="si">{}</span><span class="s2"> is out of defined interval&quot;</span><span class="p">,</span>
+                                        <span class="n">compressionStrength</span><span class="p">))</span>
+
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__locateTar</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">getTarPath</span><span class="p">(</span><span class="n">directories</span><span class="p">):</span>
+            <span class="n">resultPath</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="n">directories</span><span class="p">:</span>
+                <span class="n">testTarPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__ARCHIVER_BINARY</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">testTarPath</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">testTarPath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">):</span>
+                    <span class="n">resultPath</span> <span class="o">=</span> <span class="n">testTarPath</span>
+                    <span class="k">break</span>
+
+            <span class="k">return</span> <span class="n">resultPath</span>
+
+
+
+        <span class="c1"># first try to find tar in PATH</span>
+        <span class="n">tarPath</span> <span class="o">=</span> <span class="n">getTarPath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">get_exec_path</span><span class="p">())</span>
+
+        <span class="c1"># then try fallback locations</span>
+        <span class="k">if</span> <span class="n">tarPath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tarPath</span> <span class="o">=</span> <span class="n">getTarPath</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__ARCHIVER_LOCATIONS_FALLBACKS</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tarPath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Unable to locate the archiver binary: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__ARCHIVER_BINARY</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">tarPath</span>
+
+
+
+    <span class="k">class</span> <span class="nc">__ExternalTarIncrementalUtility</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Utility class for GNU tar incremental backup operations.&quot;&quot;&quot;</span>
+
+        <span class="c1"># subdirectory for snapshots</span>
+        <span class="n">__SNAPSHOTS_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;snapshots&quot;</span>
+
+        <span class="c1"># suffix for snapshot files used in incremental backups</span>
+        <span class="n">__SNAPSHOT_SUFFIX</span> <span class="o">=</span> <span class="s2">&quot;.snar&quot;</span>
+
+
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupId</span><span class="p">,</span> <span class="n">workDir</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span> <span class="o">=</span> <span class="n">backupId</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__workDir</span> <span class="o">=</span> <span class="n">workDir</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__snapshotsDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSnapshotsDir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__workDir</span><span class="p">)</span>
+
+
+
+        <span class="k">def</span> <span class="nf">getMaxBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Returns maximal backup level that is possible to create.</span>
+
+<span class="sd">            :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+            <span class="n">currentBackupLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getBackupLevel</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">currentBackupLevel</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">currentBackupLevel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+
+
+
+        <span class="k">def</span> <span class="nf">getSnapshotFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="s2">&quot;Returns full path to snapshot file for a certain backup level.&quot;</span>
+
+            <span class="n">keepingToken</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">keepingId</span> <span class="k">if</span> <span class="n">keepingId</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__snapshotsDir</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getLevelSuffix</span><span class="p">(</span><span class="n">level</span><span class="p">)</span> <span class="o">+</span> <span class="n">keepingToken</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">__SNAPSHOT_SUFFIX</span><span class="p">)</span>
+
+
+
+        <span class="k">def</span> <span class="nf">getSnapshots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="s2">&quot;Returns sequence of snapshot file names for current backup.&quot;</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSnapshotsForBackup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__snapshotsDir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__backupId</span><span class="p">)</span>
+
+
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">getSnapshotsForBackup</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">snapshotsDir</span><span class="p">,</span> <span class="n">backupId</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Returns sequence of snapshot file names for the archive named ``backupId`` or all of them.</span>
+
+<span class="sd">            :param snapshotsDir: Directory where the snapshot files are stored.  Can be obtained with</span>
+<span class="sd">               :meth:`getSnapshotsDir` method.</span>
+<span class="sd">            :type snapshotsDir: ``str``</span>
+<span class="sd">            :param backupId: Name of the archive for which the snapshot file names shall be returned.  If not specified</span>
+<span class="sd">               all snapshot files will be returned.</span>
+<span class="sd">            :type backupId: ``str``</span>
+
+<span class="sd">            :return: Sequence of snapshot file names.</span>
+<span class="sd">            :rtype: ``Sequence&lt;str&gt;``</span>
+
+<span class="sd">            :raise OSError: If ``snapshotsDir`` does not exists or is not accessible.  The exception contains two</span>
+<span class="sd">               parameters: the error message and the name of the directory.&quot;&quot;&quot;</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s2">&quot;Snapshots directory does not exists.&quot;</span><span class="p">,</span> <span class="n">snapshotsDir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s2">&quot;Snapshots directory is not accessible for reading or listing&quot;</span><span class="p">,</span> <span class="n">snapshotsDir</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">backupId</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">backupId</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
+            <span class="n">snapshots</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span>
+                <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">,</span> <span class="n">backupId</span> <span class="o">+</span> <span class="n">cls</span><span class="o">.</span><span class="n">__SNAPSHOT_SUFFIX</span><span class="p">)),</span>
+                <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">,</span> <span class="n">backupId</span> <span class="o">+</span> <span class="s2">&quot;.*&quot;</span> <span class="o">+</span> <span class="n">cls</span><span class="o">.</span><span class="n">__SNAPSHOT_SUFFIX</span><span class="p">)))</span>
+
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span> <span class="k">for</span> <span class="n">snapshot</span> <span class="ow">in</span> <span class="n">snapshots</span><span class="p">)</span>
+
+
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">getSnapshotsDir</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">workDir</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workDir</span><span class="p">,</span> <span class="n">cls</span><span class="o">.</span><span class="n">__SNAPSHOTS_SUBDIR</span><span class="p">)</span>
+
+
+
+        <span class="k">def</span> <span class="nf">manageSnapshotFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">latestLevelSnapshotFilePath</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Moves snapshot file to its proper location and name in order to preserve it and removes redundant ones.</span>
+
+<span class="sd">            :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">removeSnapshotFiles</span><span class="p">(</span><span class="n">level</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">latestLevelSnapshotFilePath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSnapshotFileName</span><span class="p">(</span><span class="n">level</span><span class="p">))</span>
+
+            <span class="c1"># change the file permissions according to umask</span>
+            <span class="n">umask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="n">umask</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSnapshotFileName</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="mo">0o666</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">umask</span><span class="p">)</span>
+
+
+
+        <span class="k">def</span> <span class="nf">removeSnapshotFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Remove snapshot files for levels higher or equal to ``level``.&quot;&quot;&quot;</span>
+
+            <span class="k">for</span> <span class="n">snapshot</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSnapshots</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLevelFromFileName</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">level</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__snapshotsDir</span><span class="p">,</span> <span class="n">snapshot</span><span class="p">))</span>
+
+
+
+        <span class="c1"># SMELL: Currently a snapshot file with a keeping ID other than None will never exists.  Snapshots are not kept.</span>
+        <span class="k">def</span> <span class="nf">tryRemoveSnapshotFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">keepingId</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Removes snapshot file for given backup level if it exists.</span>
+
+<span class="sd">            :param level: Backup level for which the snapshot file shall be removed.</span>
+<span class="sd">            :type level: ``int``</span>
+<span class="sd">            :param keepingId: If not ``None`` a kept snapshot with this ID will be removed.</span>
+<span class="sd">            :type keepingId: ``str``</span>
+
+<span class="sd">            :return: ``True`` if the snapshot file was removed; ``False`` if the file does not exists.</span>
+
+<span class="sd">            :raise OSError: If a system error occurred.&quot;&quot;&quot;</span>
+
+            <span class="n">snapshotFileName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSnapshotFileName</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">keepingId</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">snapshotFileName</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">snapshotFileName</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENOENT</span><span class="p">:</span>
+                        <span class="k">raise</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+                <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="k">return</span> <span class="kc">False</span>
+
+
+
+        <span class="k">def</span> <span class="nf">createWorkingSnapshotFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Copies snapshot file for ``level`` to a temporary file.&quot;&quot;&quot;</span>
+
+            <span class="n">tempFileDescriptor</span><span class="p">,</span> <span class="n">tempFilePath</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkstemp</span><span class="p">(</span><span class="s2">&quot;.snar&quot;</span><span class="p">,</span> <span class="s2">&quot;autoarchive&quot;</span><span class="p">)</span>
+
+            <span class="c1"># copy the snapshot file for previous level to a temporary one which will be used to create the new</span>
+            <span class="c1"># increment; after that it will be moved to the proper location and name according to processed archive and</span>
+            <span class="c1"># level; this way backup files for each created level will be preserved and thus it will be possible to</span>
+            <span class="c1"># create also lower level backups (otherwise it would be only possible to create level N+1 backup (where N</span>
+            <span class="c1"># is the latest/current level) or level 0 (go from the beginning))</span>
+            <span class="k">if</span> <span class="n">level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSnapshotFileName</span><span class="p">(</span><span class="n">level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">srcSnapshotFile</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tempFileDescriptor</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tempFile</span><span class="p">:</span>
+                        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfileobj</span><span class="p">(</span><span class="n">srcSnapshotFile</span><span class="p">,</span> <span class="n">tempFile</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="c1"># we do not need a previous snapshot file if the backup level is 0</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tempFilePath</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">tempFilePath</span>
+
+
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">makeSnapshotsDir</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">workDir</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Creates the snapshots directory.</span>
+
+<span class="sd">            :raise OSError: If creation of the directory was not successful.&quot;&quot;&quot;</span>
+
+            <span class="n">snapshotsDir</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">getSnapshotsDir</span><span class="p">(</span><span class="n">workDir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">snapshotsDir</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EEXIST</span><span class="p">:</span>
+                        <span class="k">raise</span>
+
+
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">getLevelFromFileName</span><span class="p">(</span><span class="n">fileName</span><span class="p">,</span> <span class="n">keptBackup</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Extracts backup level number from the file name.</span>
+
+<span class="sd">            :param fileName: Name of the file used to get the backup level from.  It should be in the form:</span>
+<span class="sd">              &#39;&lt;archive_name&gt;[.&lt;level&gt;].&lt;suffix&gt;&#39;.</span>
+<span class="sd">            :type fileName: ``str``</span>
+
+<span class="sd">            :return: The :term:`backup level` retrieved from the file name.</span>
+<span class="sd">            :rtype: ``int``&quot;&quot;&quot;</span>
+
+            <span class="n">root</span><span class="p">,</span> <span class="n">levelToken</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fileName</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">keptBackup</span><span class="p">:</span>
+                <span class="n">root</span><span class="p">,</span> <span class="n">levelToken</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">levelToken</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">levelToken</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">root</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">levelToken</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">level</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">return</span> <span class="n">level</span>
+
+
+
+        <span class="k">def</span> <span class="nf">__getBackupLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">level</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">snapshotFiles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSnapshots</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">snapshotFiles</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">getLevelFromFileName</span><span class="p">(</span><span class="n">snapshotFile</span><span class="p">)</span>
+                             <span class="k">for</span> <span class="n">snapshotFile</span> <span class="ow">in</span> <span class="n">snapshotFiles</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">level</span>
+
+
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">__getLevelSuffix</span><span class="p">(</span><span class="n">level</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Returns file name suffix according to the backup level.</span>
+
+<span class="sd">            :param level: Backup level for which the suffix shall be returned.</span>
+<span class="sd">            :type level: ``int``</span>
+
+<span class="sd">            :return: File name suffix for backup level in the form &#39;.&lt;level&gt;&#39;.</span>
+<span class="sd">            :rtype: ``str``&quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">)</span> <span class="k">if</span> <span class="n">level</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">AutoArchive Developer Manual (ver. 1.4.1)</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2003 - 2017, Róbert Čerňanský.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>
