@@ -1,0 +1,1 @@
+This is a toolkit that outputs strong rules for the decision engine. The strong rules of the output are applied directly to rule tuning. In a number of testing process which has been a good effect and business praise
