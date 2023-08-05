@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+import sys
+import os.path
+
+# get base path of asap_aplagent module
+MBASE = ''
+try:
+  # if we are installed
+  import asap_aplagent
+  import inspect
+  MBASE = os.path.dirname(inspect.getfile(asap_aplagent))
+except ImportError:
+  # if we are in repo
+  MBASE = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), '..', 'asap_aplagent')
+MBASE = os.path.abspath(MBASE)
+# print(MBASE)
+
+# get path of binary
+BBASE = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+import subprocess
+ARG="--debug --verbose"
+ARG=""
+
+subprocess.call("cat *.asap |{}/asap --plugins=asap.plugins.stdlib,asap.plugins.timer,asap.plugins.tkinter,asap.plugins.solver {}".format(BBASE, ARG), shell=True, cwd=MBASE)

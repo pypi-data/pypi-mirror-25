@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+
+# needs clingo.so to be built with the correct Python version
+# this software currently supports python3
+
+# ASAP Answer Set Application Programming
+# Copyright (C) 2015-2017  Peter Schueller <schueller.p@gmail.com>
+# Copyright (c) 2015-2017, Antonius Weinzierl <weinzierl@kr.tuwien.ac.at>
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+# 
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# TODO make this a real script, move most content to hexlite package
+
+import sys
+import platform
+
+if not platform.python_version().startswith('3'):
+  sys.stdout.write("Please use Python 3!\n")
+  sys.exit(-1)
+
+import logging
+# initially log everything
+logging.basicConfig(
+  level=logging.NOTSET, stream=sys.stderr,
+  format="%(levelname)1s:%(filename)10s:%(lineno)3d:%(message)s")
+# make log level names shorter so that we can show them
+logging.addLevelName(50, 'C')
+logging.addLevelName(40, 'E')
+logging.addLevelName(30, 'W')
+logging.addLevelName(20, 'I')
+logging.addLevelName(10, 'D')
+
+# load rest after configuring logging
+import os, argparse, traceback, pprint
+
+try:
+  import asap.core as core
+except ImportError:
+  # it seems we are not installed correctly
+  # (`python3 setup.py develop [--user]`
+  #  or `pip3 install asap [--user]`)
+  # or PYTHONUSERBASE is not set
+  #
+  logging.warning("asap is not installed correctly, trying to use path of script to infer path of modules")
+  # try to run from git repo directly without installation
+  CORE_PATH = os.path.dirname(os.path.realpath(sys.argv[0]))
+  sys.path.insert(0, os.path.join(CORE_PATH, '../'))
+  import asap.core as core
+from asap.core import api
+
+# currently only clingo engine
+
+# clingo python API
+try:
+  # try without any settings
+  import clingo
+except ImportError:
+  # try in ~/.hexlite/
+  try:
+    sys.path.append(os.path.expanduser('~/.asap/'))
+    import clingo
+  except ImportError:
+    logging.warning("Could not find clingo python module in global or local (~/.asap/) installation")
+    import asap.clingo.buildclingo as bcm
+    if not bcm.build():
+      logging.critical("Could not install clingo python module. Please retry or install manually and retry running asap.")
+      sys.exit(-1)
+  # now it should work
+  try:
+    # add a NEW path (non-existence of clingo module seems to be cached)
+    sys.path.append(os.path.expanduser('~/.asap//'))
+    import clingo
+  except ImportError:
+    logging.critical("Installed clingo python module but cannot import it. Please report this to the developers.")
+    sys.exit(-1)
+
+def setupLogging(args):
+  level = logging.WARNING
+  if args.verbose:
+    level=logging.INFO
+  if args.debug:
+    level=logging.DEBUG
+  # call only once
+  logging.getLogger().setLevel(level)
+
+def interpretArguments(argv):
+  parser = argparse.ArgumentParser(
+    description='ASAP - Answer Set Application Programming - Clingo-based Engine')
+  parser.add_argument('--plugins', nargs=1, required=True, metavar='IN', action='store',
+    help='Names of plugins (Python modules) that should be loaded. Separate with ",". Standard Plugins: asap.plugins.stdlib, asap.plugins.tkinter, asap.plugins.timer. Specific plugins: tetris.')
+  parser.add_argument('--verbose', action='store_true', default=False, help='Activate verbose mode.')
+  parser.add_argument('--debug', action='store_true', default=False, help='Show debug output.')
+  args = parser.parse_args(argv)
+  #warn('args='+repr(args))
+
+  config = {}
+  config['plugins'] = args.plugins[0].split(',')
+  config['args'] = args
+  setupLogging(args)
+  logging.debug('args='+repr(args))
+  return config
+
+# import these after importing clingo, because it requires clingo too
+import asap.clingo.engine as engine
+
+def main():
+  code = 0
+  try:
+    config = interpretArguments(sys.argv[1:])
+
+    cbe = engine.ClingoBackend()
+    # read program from stdin
+    input_program = sys.stdin.read()
+    # mandatory plugins
+    plugins_ = [ engine.ExitPlugin(cbe), engine.ImmediatePlugin(cbe), engine.PersistencePlugin(cbe) ]
+    plugins_ += engine.loadPlugins(config['plugins'])
+    # TODO environment: plugin data like timers, drawing list?
+    cbe.evaluate(input_program, plugins_, environment=None, fluentfile=None)
+  except SystemExit:
+    pass
+  except:
+    logging.error('Exception: '+traceback.format_exc())
+    logging.error('For reporting bugs, unexpected behavior, or suggestions, please send an email to schueller.p@gmail.com')
+    code = 1
+  sys.exit(code)
+
+if __name__ == '__main__':
+  main()
