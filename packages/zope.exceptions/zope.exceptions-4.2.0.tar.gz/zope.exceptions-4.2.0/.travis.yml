@@ -1,0 +1,22 @@
+language: python
+sudo: false
+python:
+    - 2.7
+    - 3.4
+    - 3.5
+    - 3.6
+    - pypy
+install:
+    - pip install -U pip setuptools
+    - pip install -U coverage coveralls
+    - pip install -U -e .[test,docs]
+script:
+    - coverage run -m zope.testrunner --test-path=src
+    - coverage run -a -m sphinx -b doctest -d docs/_build/doctrees docs docs/_build/doctest
+notifications:
+    email: false
+cache: pip
+before_cache:
+    - rm -f $HOME/.cache/pip/log/debug.log
+after_success:
+  - coveralls
