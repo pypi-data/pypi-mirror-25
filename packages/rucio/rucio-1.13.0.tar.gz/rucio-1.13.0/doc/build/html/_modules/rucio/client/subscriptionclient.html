@@ -1,0 +1,272 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>rucio.client.subscriptionclient &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for rucio.client.subscriptionclient</h1><div class="highlight"><pre>
+<span class="c"># Copyright European Organization for Nuclear Research (CERN)</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># You may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Authors:</span>
+<span class="c"># - Cedric Serfon, &lt;cedric.serfon@cern.ch&gt;, 2013-2014,2017</span>
+<span class="c"># - Ralph Vigne, &lt;ralph.vigne@cern.ch&gt;, 2015</span>
+<span class="c"># - Vincent Garonne, &lt;vincent.garonne@cern.ch&gt;, 2015</span>
+
+<span class="kn">from</span> <span class="nn">json</span> <span class="k">import</span> <span class="n">dumps</span>
+<span class="kn">from</span> <span class="nn">requests.status_codes</span> <span class="k">import</span> <span class="n">codes</span>
+
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">BaseClient</span>
+<span class="kn">from</span> <span class="nn">rucio.client.baseclient</span> <span class="k">import</span> <span class="n">choice</span>
+<span class="kn">from</span> <span class="nn">rucio.common.utils</span> <span class="k">import</span> <span class="n">build_url</span>
+
+
+<div class="viewcode-block" id="SubscriptionClient"><a class="viewcode-back" href="../../../subscription.html#rucio.client.subscriptionclient.SubscriptionClient">[docs]</a><span class="k">class</span> <span class="nc">SubscriptionClient</span><span class="p">(</span><span class="n">BaseClient</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;SubscriptionClient class for working with subscriptions&quot;&quot;&quot;</span>
+
+    <span class="n">SUB_BASEURL</span> <span class="o">=</span> <span class="s">&#39;subscriptions&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rucio_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_host</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ca_cert</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">auth_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">creds</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s">&#39;rucio-clients&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SubscriptionClient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">rucio_host</span><span class="p">,</span> <span class="n">auth_host</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">ca_cert</span><span class="p">,</span> <span class="n">auth_type</span><span class="p">,</span> <span class="n">creds</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">user_agent</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SubscriptionClient.add_subscription"><a class="viewcode-back" href="../../../subscription.html#rucio.client.subscriptionclient.SubscriptionClient.add_subscription">[docs]</a>    <span class="k">def</span> <span class="nf">add_subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="nb">filter</span><span class="p">,</span> <span class="n">replication_rules</span><span class="p">,</span> <span class="n">comments</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">retroactive</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a new subscription which will be verified against every new added file and dataset</span>
+
+<span class="sd">        :param name: Name of the subscription</span>
+<span class="sd">        :type:  String</span>
+<span class="sd">        :param account: Account identifier</span>
+<span class="sd">        :type account:  String</span>
+<span class="sd">        :param filter: Dictionary of attributes by which the input data should be filtered</span>
+<span class="sd">                       **Example**: ``{&#39;dsn&#39;: &#39;data11_hi*.express_express.*,data11_hi*physics_MinBiasOverlay*&#39;, &#39;account&#39;: &#39;tzero&#39;}``</span>
+<span class="sd">        :type filter:  Dict</span>
+<span class="sd">        :param replication_rules: Replication rules to be set : Dictionary with keys copies, rse_expression, weight, rse_expression</span>
+<span class="sd">        :type replication_rules:  Dict</span>
+<span class="sd">        :param comments: Comments for the subscription</span>
+<span class="sd">        :type comments:  String</span>
+<span class="sd">        :param lifetime: Subscription&#39;s lifetime (days); False if subscription has no lifetime</span>
+<span class="sd">        :type lifetime:  Integer or False</span>
+<span class="sd">        :param retroactive: Flag to know if the subscription should be applied on previous data</span>
+<span class="sd">        :type retroactive:  Boolean</span>
+<span class="sd">        :param dry_run: Just print the subscriptions actions without actually executing them (Useful if retroactive flag is set)</span>
+<span class="sd">        :type dry_run:  Boolean</span>
+<span class="sd">        :param priority: The priority of the subscription (3 by default)</span>
+<span class="sd">        :type priority: Integer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SUB_BASEURL</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">account</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">name</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">filter</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;filter should be a dict&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">replication_rules</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">replication_rules</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;replication_rules should be a list&#39;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;options&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;filter&#39;</span><span class="p">:</span> <span class="nb">filter</span><span class="p">,</span> <span class="s">&#39;replication_rules&#39;</span><span class="p">:</span> <span class="n">replication_rules</span><span class="p">,</span> <span class="s">&#39;comments&#39;</span><span class="p">:</span> <span class="n">comments</span><span class="p">,</span>
+                      <span class="s">&#39;lifetime&#39;</span><span class="p">:</span> <span class="n">lifetime</span><span class="p">,</span> <span class="s">&#39;retroactive&#39;</span><span class="p">:</span> <span class="n">retroactive</span><span class="p">,</span> <span class="s">&#39;dry_run&#39;</span><span class="p">:</span> <span class="n">dry_run</span><span class="p">,</span> <span class="s">&#39;priority&#39;</span><span class="p">:</span> <span class="n">priority</span><span class="p">}})</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubscriptionClient.list_subscriptions"><a class="viewcode-back" href="../../../subscription.html#rucio.client.subscriptionclient.SubscriptionClient.list_subscriptions">[docs]</a>    <span class="k">def</span> <span class="nf">list_subscriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary with the subscription information :</span>
+<span class="sd">        Examples: ``{&#39;status&#39;: &#39;INACTIVE/ACTIVE/BROKEN&#39;, &#39;last_modified_date&#39;: ...}``</span>
+
+<span class="sd">        :param name: Name of the subscription</span>
+<span class="sd">        :type:  String</span>
+<span class="sd">        :param account: Account identifier</span>
+<span class="sd">        :type account:  String</span>
+<span class="sd">        :returns: Dictionary containing subscription parameter</span>
+<span class="sd">        :rtype:   Dict</span>
+<span class="sd">        :raises: exception.NotFound if subscription is not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SUB_BASEURL</span>
+        <span class="k">if</span> <span class="n">account</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">+=</span> <span class="s">&#39;/%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">account</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">+=</span> <span class="s">&#39;/%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">+=</span> <span class="s">&#39;/&#39;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubscriptionClient.update_subscription"><a class="viewcode-back" href="../../../subscription.html#rucio.client.subscriptionclient.SubscriptionClient.update_subscription">[docs]</a>    <span class="k">def</span> <span class="nf">update_subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">replication_rules</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">lifetime</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">retroactive</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates a subscription</span>
+
+<span class="sd">        :param name: Name of the subscription</span>
+<span class="sd">        :type:  String</span>
+<span class="sd">        :param account: Account identifier</span>
+<span class="sd">        :type account:  String</span>
+<span class="sd">        :param filter: Dictionary of attributes by which the input data should be filtered</span>
+<span class="sd">                       **Example**: ``{&#39;dsn&#39;: &#39;data11_hi*.express_express.*,data11_hi*physics_MinBiasOverlay*&#39;, &#39;account&#39;: &#39;tzero&#39;}``</span>
+<span class="sd">        :type filter:  Dict</span>
+<span class="sd">        :param replication_rules: Replication rules to be set : Dictionary with keys copies, rse_expression, weight, rse_expression</span>
+<span class="sd">        :type replication_rules:  Dict</span>
+<span class="sd">        :param comments: Comments for the subscription</span>
+<span class="sd">        :type comments:  String</span>
+<span class="sd">        :param lifetime: Subscription&#39;s lifetime (days); False if subscription has no lifetime</span>
+<span class="sd">        :type lifetime:  Integer or False</span>
+<span class="sd">        :param retroactive: Flag to know if the subscription should be applied on previous data</span>
+<span class="sd">        :type retroactive:  Boolean</span>
+<span class="sd">        :param dry_run: Just print the subscriptions actions without actually executing them (Useful if retroactive flag is set)</span>
+<span class="sd">        :type dry_run:  Boolean</span>
+<span class="sd">        :param priority: The priority of the subscription</span>
+<span class="sd">        :type priority: Integer</span>
+<span class="sd">        :raises: exception.NotFound if subscription is not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">account</span><span class="p">:</span>
+            <span class="n">account</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">account</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SUB_BASEURL</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">account</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">name</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">filter</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;filter should be a dict&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">replication_rules</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">replication_rules</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;replication_rules should be a list&#39;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({</span><span class="s">&#39;options&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;filter&#39;</span><span class="p">:</span> <span class="nb">filter</span><span class="p">,</span> <span class="s">&#39;replication_rules&#39;</span><span class="p">:</span> <span class="n">replication_rules</span><span class="p">,</span> <span class="s">&#39;comments&#39;</span><span class="p">:</span> <span class="n">comments</span><span class="p">,</span>
+                      <span class="s">&#39;lifetime&#39;</span><span class="p">:</span> <span class="n">lifetime</span><span class="p">,</span> <span class="s">&#39;retroactive&#39;</span><span class="p">:</span> <span class="n">retroactive</span><span class="p">,</span> <span class="s">&#39;dry_run&#39;</span><span class="p">:</span> <span class="n">dry_run</span><span class="p">,</span> <span class="s">&#39;priority&#39;</span><span class="p">:</span> <span class="n">priority</span><span class="p">}})</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">created</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubscriptionClient.list_subscription_rules"><a class="viewcode-back" href="../../../subscription.html#rucio.client.subscriptionclient.SubscriptionClient.list_subscription_rules">[docs]</a>    <span class="k">def</span> <span class="nf">list_subscription_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the associated rules of a subscription.</span>
+
+<span class="sd">        :param account: Account of the subscription.</span>
+<span class="sd">        :param name:    Name of the subscription.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">SUB_BASEURL</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;Rules&#39;</span><span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">build_url</span><span class="p">(</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_hosts</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_data</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exc_cls</span><span class="p">,</span> <span class="n">exc_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_exception</span><span class="p">(</span><span class="n">headers</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc_cls</span><span class="p">(</span><span class="n">exc_msg</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="../../../_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
