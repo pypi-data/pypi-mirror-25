@@ -1,0 +1,435 @@
+Metadata-Version: 2.0
+Name: Flask-RESTive
+Version: 0.0.3
+Summary: Flask RESTive is a REST API Flask extension based on Flask-RESTful & Marshmallow.
+Home-page: https://github.com/left-join/flask-restive
+Author: left-join
+Author-email: left-join@riseup.net
+License: MIT
+Download-URL: https://github.com/left-join/flask-restive.git
+Keywords: flask,rest,api,flask_restful,marshmallow
+Platform: any
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: flask (>=0.12.2)
+Requires-Dist: flask-restful (>=0.3.6)
+Requires-Dist: marshmallow (>=3.0.0b3)
+Requires-Dist: six (>=1.10.0)
+
+# flask-restive
+Flask-RESTive is a REST API Flask extension based on [Flask-RESTful](https://github.com/flask-restful/flask-restful) & [Marshmallow](https://github.com/marshmallow-code/marshmallow).
+
+[![Build Status](https://travis-ci.org/left-join/flask-restive.svg?branch=master)](https://travis-ci.org/left-join/flask-restive)
+[![Coverage Status](https://coveralls.io/repos/github/left-join/flask-restive/badge.svg?branch=master)](https://coveralls.io/github/left-join/flask-restive?branch=master)
+[![Code Health](https://landscape.io/github/left-join/flask-restive/master/landscape.svg?style=flat)](https://landscape.io/github/left-join/flask-restive/master)
+[![PyPI Version](https://img.shields.io/pypi/v/Flask-RESTive.svg)](https://pypi.python.org/pypi/Flask-RESTive)
+
+
+## Installation
+```bash
+pip install flask-restive
+```
+
+## Requirements
+- Python >= 2.7 or >= 3.4
+
+## Introdution
+
+#### Reusable resource concept
+In many cases we don't need to duplicate resource's methods code.
+Flask-RESTive adheres to a declarative approach. All that we need it's just define serializer behaviour and repo behaviour. The resource code it is not a place for define any business logic, it's view and we use it just for call serializers, repo and results render.
+```python
+class ClientResource(StorageResource):
+    data_schema_cls = ClientSchema
+    storage_cls = ClientStorage
+```
+
+#### Storage concept
+Storage is a repo class in DDD (Domain Driven Design) methodology. Storage can implement workflow with any database or multiple databases. Abstract storage provides interface methods:
+```python
+def open(self):
+    ...
+
+def close(self, exception=None):
+    ...
+
+def get_item(self, filter_params, **kwargs):
+    ...
+
+def get_count(self, filter_params=None, **kwargs):
+    ...
+
+def get_list(self, filter_params=None, slice_params=None, sorting_params=None, **kwargs):
+    ...
+
+def create_item(self, data_params, **kwargs):
+    ...
+
+def create_list(self, data_params, **kwargs):
+    ...
+
+def update_item(self, data_params, **kwargs):
+    ...
+
+def update_list(self, data_params, **kwargs):
+    ...
+
+def delete_list(self, filter_params=None, **kwargs):
+    ...
+```
+Anybody can make his own implementation of his special storage. Combine simple storage bricks to implement business logic layer in your storage.
+Storage supports **primary_key_fields** meta-attribute and use it to wrap result data to special object with primary_key property.
+```python
+class ClientStorage(Storage):
+    class Meta(Storage.Meta):
+        primary_key_fields = ('id',)
+```
+Wrapped objects are more useful to work with them on many storage combining and result processing.
+
+#### Schema concept
+Schema is a Marshmallow library class that implements serializer/deserializer logic. It's useful to define model fields in declarative style. It's a right to place to make any data validations or transmutations before or after storage data processing.
+```python
+class ClientSchema(Schema):
+    id = fields.Integer(required=True)
+    first_name = fields.String(required=True)
+    last_name = fields.String()
+```
+Data schema supports **primary_key_fields**, **sortable_fields** and **default_sorting** meta-attributes. Filter schema and sorting schema use it to auto-make filter and sorting fields and validation rules.
+```python
+class ClientSchema(Schema):
+    id = fields.Integer(required=True)
+    first_name = fields.String(required=True)
+    last_name = fields.String()
+
+    class Meta(Schema.Meta):
+        sortable_fields = ('id', 'first_name', 'last_name')
+        default_sorting = ('last_name', 'first_name', 'id')
+```
+
+## How to use
+
+```python
+from datetime import datetime
+
+from flask import Flask
+from flask_restive import Api, StorageResource, UUIDSchema, fields
+from marshmallow import pre_load
+from flask_restive_sqlalchemy import Model, Storage
+from sqlalchemy import Column, String, DateTime
+from sqlalchemy_utils import UUIDType
+
+
+app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+
+
+def utc_time():
+    return datetime.utcnow().replace(microsecond=0)
+
+
+class ClientSchema(UUIDSchema):
+    first_name = fields.String(required=True)
+    last_name = fields.String(required=True)
+    created_on = fields.DateTime(
+        required=True,
+        missing=lambda: utc_time().isoformat())
+    updated_on = fields.DateTime()
+
+    class Meta(UUIDSchema.Meta):
+        sortable_fields = ('id', 'created_on', 'updated_on')
+        default_sorting = ('-updated_on', '-created_on', 'id')
+
+    @pre_load(pass_many=False)
+    def set_updated_on(self, data):
+        # update time stamp on each create/update operation
+        data['updated_on'] = utc_time().isoformat()
+        return data
+
+
+class ClientModel(Model):
+    id = Column(UUIDType, primary_key=True)
+    first_name = Column(String)
+    last_name = Column(String)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+
+
+class ClientStorage(Storage):
+
+    class Meta(Storage.Meta):
+        model_cls = ClientModel
+        primary_key_fields = ('id',)
+
+
+class ClientResource(StorageResource):
+    data_schema_cls = ClientSchema
+    storage_cls = ClientStorage
+
+
+api = Api(app, prefix='/api/v1', api_resources=[
+    (ClientResource, ('/clients', '/clients/<uuid:id>')),
+])
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
+```
+
+Let's create new client:
+```bash
+curl -X POST "http://localhost:5000/api/v1/clients" -H "Content-Type: application/json" -d '{"first_name": "Alice", "last_name": "Liddell"}'
+{
+    "id": "0372be43-a668-421e-b8df-7246cdb40857",
+    "first_name": "Alice", "last_name": "Liddell",
+    "created_on": "2017-09-08T20:44:37",
+    "updated_on": "2017-09-08T20:44:37"
+}
+```
+
+Let's create two more:
+```bash
+curl -X POST "http://localhost:5000/api/v1/clients" -H "Content-Type: application/json" -d '[{"first_name": "Mad", "last_name": "Hatter"}, {"first_name": "Cheshire", "last_name": "Cat"}]'
+[
+    {
+        "id": "a593f5e2-e588-4e2a-ae57-c4dd8a3faed5",
+        "first_name": "Mad",
+        "last_name": "Hatter",
+        "created_on": "2017-09-08T20:45:15",
+        "updated_on": "2017-09-08T20:45:15"
+    },
+    {
+        "id": "c761ef71-d4b0-4b14-aa45-549ffcb72234",
+        "first_name": "Cheshire",
+        "last_name": "Cat",
+        "created_on": "2017-09-08T20:45:15",
+        "updated_on": "2017-09-08T20:45:15"
+    }
+]
+```
+
+Let's list created clients:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients"
+{
+    "offset": 0,
+    "limit": null,
+    "total_count": 3,
+    "items_count": 3,
+    "items_list": [
+        {
+            "id": "a593f5e2-e588-4e2a-ae57-c4dd8a3faed5",
+            "first_name": "Mad",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        },
+        {
+            "id": "c761ef71-d4b0-4b14-aa45-549ffcb72234",
+            "first_name": "Cheshire",
+            "last_name": "Cat", "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        },
+        {
+            "id": "0372be43-a668-421e-b8df-7246cdb40857",
+            "first_name": "Alice",
+            "last_name": "Liddell",
+            "created_on": "2017-09-08T20:44:37",
+            "updated_on": "2017-09-08T20:44:37"
+        }
+    ]
+}
+```
+
+Let's take one client:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients/0372be43-a668-421e-b8df-7246cdb40857"
+{
+    "id": "0372be43-a668-421e-b8df-7246cdb40857",
+    "first_name": "Alice",
+    "last_name": "Liddell",
+    "created_on": "2017-09-08T20:44:37",
+    "updated_on": "2017-09-08T20:44:37"
+}
+```
+
+Let's paginate list of clients:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients?offset=2&limit=2"
+{
+    "offset": 2,
+    "limit": 2,
+    "total_count": 3,
+    "items_count": 1,
+    "items_list": [
+        {
+            "id": "0372be43-a668-421e-b8df-7246cdb40857",
+            "first_name": "Alice",
+            "last_name": "Liddell",
+            "created_on": "2017-09-08T20:44:37",
+            "updated_on": "2017-09-08T20:44:37"
+        }
+    ]
+}
+```
+
+Let's update one client:
+```bash
+curl -X PATCH "http://localhost:5000/api/v1/clients/0372be43-a668-421e-b8df-7246cdb40857" -H "Content-Type: application/json" -d '{"last_name": "Hatter"}'
+{
+    "id": "0372be43-a668-421e-b8df-7246cdb40857",
+    "first_name": "Alice",
+    "last_name": "Hatter",
+    "created_on": "2017-09-08T20:44:37",
+    "updated_on": "2017-09-08T20:52:07"
+}
+```
+
+Let's list clients again:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients"
+{
+    "offset": 0,
+    "limit": null,
+    "total_count": 3,
+    "items_count": 3,
+    "items_list": [
+        {
+            "id": "0372be43-a668-421e-b8df-7246cdb40857",
+            "first_name": "Alice",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:44:37",
+            "updated_on": "2017-09-08T20:52:07"
+        },
+        {
+            "id": "a593f5e2-e588-4e2a-ae57-c4dd8a3faed5",
+            "first_name": "Mad",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        },
+        {
+            "id": "c761ef71-d4b0-4b14-aa45-549ffcb72234",
+            "first_name": "Cheshire",
+            "last_name": "Cat",
+            "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        }
+    ]
+}
+```
+
+Let's change sorting order:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients?sort_by=updated_on,created_on,-id"
+{
+    "offset": 0,
+    "limit": null,
+    "total_count": 3,
+    "items_count": 3,
+    "items_list": [
+        {
+            "id": "c761ef71-d4b0-4b14-aa45-549ffcb72234",
+            "first_name": "Cheshire",
+            "last_name": "Cat",
+            "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        },
+        {
+            "id": "a593f5e2-e588-4e2a-ae57-c4dd8a3faed5",
+            "first_name": "Mad",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        },
+        {
+            "id": "0372be43-a668-421e-b8df-7246cdb40857",
+            "first_name": "Alice",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:44:37",
+            "updated_on": "2017-09-08T20:52:07"
+        }
+    ]
+}
+```
+
+Let's filter clients:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients?last_name=Hatter"
+{
+    "offset": 0,
+    "limit": null,
+    "total_count": 2,
+    "items_count": 2,
+    "items_list": [
+        {
+            "id": "0372be43-a668-421e-b8df-7246cdb40857",
+            "first_name": "Alice",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:44:37",
+            "updated_on": "2017-09-08T20:52:07"
+        },
+        {
+            "id": "a593f5e2-e588-4e2a-ae57-c4dd8a3faed5",
+            "first_name": "Mad",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        }
+    ]
+}
+
+Let's filter clients by date range:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients?created_on__min=2017-09-08T20:00:00&created_on__max=2017-09-08T20:45:00"
+{
+    "offset": 0,
+    "limit": null,
+    "total_count": 1,
+    "items_count": 1,
+    "items_list": [
+        {
+            "id": "0372be43-a668-421e-b8df-7246cdb40857",
+            "first_name": "Alice",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:44:37",
+            "updated_on": "2017-09-08T20:52:07"
+        }
+    ]
+}
+```
+
+Let's filter clients by list of id:
+```bash
+curl -X GET "http://localhost:5000/api/v1/clients?id__in=0372be43-a668-421e-b8df-7246cdb40857,c761ef71-d4b0-4b14-aa45-549ffcb72234"
+{
+    "offset": 0,
+    "limit": null,
+    "total_count": 2,
+    "items_count": 2,
+    "items_list": [
+        {
+            "id": "0372be43-a668-421e-b8df-7246cdb40857",
+            "first_name": "Alice",
+            "last_name": "Hatter",
+            "created_on": "2017-09-08T20:44:37",
+            "updated_on": "2017-09-08T20:52:07"
+        },
+        {
+            "id": "c761ef71-d4b0-4b14-aa45-549ffcb72234",
+            "first_name": "Cheshire",
+            "last_name": "Cat",
+            "created_on": "2017-09-08T20:45:15",
+            "updated_on": "2017-09-08T20:45:15"
+        }
+    ]
+}
+```
+
+
