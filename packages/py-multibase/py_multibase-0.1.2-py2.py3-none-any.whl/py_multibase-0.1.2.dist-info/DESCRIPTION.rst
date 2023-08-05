@@ -1,0 +1,93 @@
+============
+py-multibase
+============
+
+.. image:: https://img.shields.io/pypi/v/py-multibase.svg
+        :target: https://pypi.python.org/pypi/py-multibase
+
+.. image:: https://img.shields.io/travis/multiformats/py-multibase.svg
+        :target: https://travis-ci.org/multiformats/py-multibase
+
+.. image:: https://codecov.io/gh/multiformats/py-multibase/branch/master/graph/badge.svg
+        :target: https://codecov.io/gh/multiformats/py-multibase
+
+.. image:: https://readthedocs.org/projects/py-multibase/badge/?version=latest
+        :target: https://py-multibase.readthedocs.io/en/latest/?badge=latest
+        :alt: Documentation Status
+
+.. image:: https://pyup.io/repos/github/multiformats/py-multibase/shield.svg
+     :target: https://pyup.io/repos/github/multiformats/py-multibase/
+     :alt: Updates
+
+`Multibase <https://github.com/multiformats/multibase>`_ implementation for Python
+
+Multibase is a protocol for distinguishing base encodings and other simple string encodings, and for ensuring full compatibility with program interfaces.
+
+It answers the question: Given data d encoded into string s, how can I tell what base d is encoded with?
+
+Base encodings exist because transports have restrictions, use special in-band sequences, or must be human-friendly.
+When systems chose a base to use, it is not always clear which base to use, as there are many tradeoffs in the decision.
+Multibase is here to save programs and programmers from worrying about which encoding is best.
+
+It solves the biggest problem: a program can use multibase to take input or produce output in whichever base is desired.
+
+The important part is that the value is self-describing, letting other programs elsewhere know what encoding it is using.
+
+* Free software: MIT license
+* Documentation: https://py-multibase.readthedocs.io.
+
+Installation
+------------
+
+.. code-block:: shell
+
+    $ pip install py-multibase
+
+
+Sample Usage
+------------
+
+.. code-block:: python
+
+    >>> # encoding a buffer
+    >>> from multibase import encode, decode
+    >>> encode('base58btc', 'hello world')
+    b'zStV1DL6CwTryKyV'
+    >>> encode('base64', 'hello world')
+    b'mGhlbGxvIHdvcmxk'
+    >>> # decoding a multibase
+    >>> decode('mGhlbGxvIHdvcmxk')
+    b'hello world'
+    >>> decode(b'zStV1DL6CwTryKyV')
+    b'hello world'
+    >>> decode(encode('base2', b'hello world'))
+    b'hello world'
+
+
+Supported codecs
+----------------
+
+* base2
+* base8
+* base10
+* base16
+* base16
+* base16
+* base32hex
+* base32
+* base32z
+* base58flickr
+* base58btc
+* base64
+* base64url
+
+
+History
+-------
+
+0.1.0 (2017-09-02)
+==================
+
+* First release on PyPI.
+
+
