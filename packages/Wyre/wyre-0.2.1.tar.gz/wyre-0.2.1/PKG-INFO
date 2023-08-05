@@ -1,0 +1,79 @@
+Metadata-Version: 1.1
+Name: wyre
+Version: 0.2.1
+Summary: Lightweight dependency injection for pure OOP.
+Home-page: https://gitlab.com/blndr/wyre
+Author: Abel André
+Author-email: abel.andre.87@gmail.com
+License: UNKNOWN
+Description: Philosophy
+        ----------
+        
+        Injecting class dependencies comes in 3 distinct ways :
+        
+        -  *using class attributes (okay)*
+        -  using setters (better)
+        -  **using constructor (best)**
+        
+        Wyre allows you to declare the dependencies of a given class using kwargs on a constructor. A single decorator ``@inject`` does the trick. This is particularly handy when your dependency tree grows large and deep. For example, this dependency chain : ``A < B < C < D < E``, would require you to write ``a = A(B(C(D(E()))))`` in order to create an instance of your class.
+        
+        Using Wyre, you keep :
+        
+        - your production code clean by writing just ``A()`` since it works recursively
+        - your unit tests simple : ``A(b=Mock())`` is all you need to mock out dependencies
+        
+        Usage
+        -----
+        
+        .. code:: python
+        
+            class C:
+                name = 'Bob'
+        
+        
+            class B:
+                @inject
+                def __init__(self, other_dependency=C):
+                    self.c = other_dependency
+        
+                def say_hello(self):
+                    return 'Hello %s !' % self.c.name
+        
+        
+            class A:
+                @inject
+                def __init__(self, dependency=B):
+                    self.b = dependency
+        
+                def greetings(self):
+                    return self.b.say_hello()
+        
+            a = A()
+            a.greetings() # returns 'Hello Bob !'
+        
+        Since ``__init__`` is decorated with ``@inject``, ``B`` instance will be created and injected in ``A`` at instantiation time.
+        
+        Limitations
+        -----------
+        
+        Important notes on what ``@inject`` does :
+        
+        - If an instance of a dependency is provided in ``kwargs``, it will be preserved and not overridden by a new instance.
+        - Circular dependencies are detected at instantiation time : an ``InjectionError`` will be raised.
+        - You can only use it on ``__init__()``. If you decorate any other function : an ``InjectionError`` will be raised.
+        - If no dependency is found among declared ``kwargs`` : an ``InjectionError`` will be raised.
+        - Wyre is strongly opinionated about dependency injection. As a matter of fact, singletons are not even considered.
+Keywords: dependency,injection,injector,inject,decorator,dependency injection
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Topic :: Software Development
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
