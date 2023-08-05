@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""\
+Usage:
+
+-l : Lists projects from all available sources
+-c : Adds a project, this must be fully qualified (preceded by '<section>/') 
+     to indicate which source the project should be added to
+-d : Deletes and existing project, this too must be fully qualified
+--clone : Clone the fully qualified project.
+"""
+
+import sys, re
+import getopt
+import configparser
+import inspect
+import gt.sources as gitsources
+import os
+import subprocess
+
+# Adding a source should be as simple as creating a new class with the
+# approrpiate methods in 'sources' that has a class name corresponding
+# to the desired source type and a constructor with params reflecting
+# the desired configuration parameters for sections of the associated
+# type.
+
+def get_sources():
+  r = {}
+  for name, obj in vars(gitsources).items():
+    if inspect.isclass(obj):
+      r[name.lower()] = obj
+  return r
+
+def constructor_args(cls):
+  return inspect.getargspec(cls.__init__).args[1:]
+
+def process_section(name, fields):
+    if 'type' not in fields:
+        raise Exception("The 'type' field is missing from [{0}]"
+                        .format(fields))
+      
+    sources = get_sources()
+    source = fields['type']
+    source_cls = sources.get(fields['type'])
+    
+    if not source_cls:
+      raise Exception("Invalid type {0} in section [{1}], valid types are {2}"\
+                      .format(fields['type'], name, ', '.join(sources.keys())))
+    
+    required = constructor_args(source_cls)
+    extra = []
+    missing = list(required)
+    
+    for f in fields.keys():
+      if f not in required and f != 'type':
+        extra.append(f)
+      if f in required:
+        missing.remove(f)
+        
+    if(extra):
+      raise Exception("Extraneous keys: {0} in section [{1}]"
+                      .format(', '.join(extra), name))
+    
+    if(missing):
+      raise Exception("Section [{0}] is of type '{1}' which requires the following missing keys: \n\n{2}"
+                      .format(name, source, '\n'.join(missing)))
+    
+    args = [fields[arg] for arg in required]
+    return source_cls(*args)
+        
+
+def load_config(config_file):
+  sources = {}
+  try:
+    cfg = configparser.ConfigParser()
+    cfg.read(config_file)
+  except:
+    raise Exception("Error parsing config file.")
+  for section in cfg.sections():
+    sources[section] = process_section(section, dict(cfg.items(section)))
+    
+  return sources
+
+
+def opt_check(opts):
+  mutex = [ "-c", "-d", "-l", "--clone" ]
+  n = 0
+  for c in mutex:
+    if c in opts:
+      opt = c
+      arg = opts[c]
+      n+=1
+      
+  if n != 1:
+    die("Exactly one of {0} must be specified."
+                    .format(', '.join(list(mutex) )))
+  return (opt, arg)
+      
+def die(err):
+  sys.stderr.write(__doc__)
+  sys.stderr.write("\nERROR: " + err + "\n")
+  sys.exit(1)
+
+def parse_name(name):
+  try:
+    source, project = re.search('^([^/]+)/(.*)', name).groups()
+  except:
+    die("{0} is not a valid project identifier.".format(name))
+    
+  if source not in sources:
+    die(source + " is not a valid source name.")
+    
+  return (sources[source], project)
+
+def _list():
+  return [name + '/' + repo for name,source in sources.items() for repo in source.list()]
+  
+def _create(name):
+  source, project = parse_name(name)
+        
+  source.create(project)
+  print("Successfully created " + name)
+  print("git remote add origin " + source.location(project))
+  
+def _delete(name):
+  source, project = parse_name(name)
+  
+  sys.stderr.write("You are about to delete {0} proceed (type YES to continue)?: ".format(name))
+  sys.stderr.flush()
+  r = sys.stdin.readline()
+  if r == "YES\n":
+    source.delete(project)
+    print("Successfully deleted " + name)
+  else:
+    sys.stderr.write("Aborting..\n");
+
+def _clone(name):
+  source, project = parse_name(name)
+  remote = source.location(project)
+  subprocess.check_output(["git", "clone", remote])
+
+
+# Begin
+
+sources = load_config(os.environ['HOME'] + '/.gtrc')
+try:
+    opts = dict(getopt.getopt(sys.argv[1:], "c:d:s:l", ["clone="])[0])
+except:
+  die("")
+
+opt, arg = opt_check(opts)
+
+if opt == '-l':
+  print('\n'.join(_list()))
+elif opt == '-c':
+  _create(arg)
+elif opt == '-d':
+  _delete(arg)
+elif opt == '--clone':
+  _clone(arg)
