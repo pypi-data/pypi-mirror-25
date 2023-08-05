@@ -1,0 +1,22 @@
+% this is a minimal example for a state
+% that can be modified with keyboard
+% (currently Example 8 in "old stuff" appendix)
+
+% initialize fluent with state off
+switch@next = off :- Ev.initial_event.
+
+% initialize fluent with state off only if not persistent
+switch_defined :- switch@prev = _.
+very_first_situation :- Ev.initial_event, not switch_defined.
+switch@next = off :- very_first_situation.
+
+% keyboard can switch on and off
+switch@next = off :- Ev.keyboard(special("Down")).
+switch@next = on :- Ev.keyboard(special("Up")).
+% keyboard can exit
+Do.exit(0) :- Ev.keyboard(normal("q")).
+
+% draw current status
+Do_0.drawRectangle(rel(0),rel(0),rel(100),rel(100),white).
+Do_1.drawText(2,2,"Up/Down: switch state, Q: quit",black).
+Do_1.drawText(5,4,State,red) :- switch@next = State.

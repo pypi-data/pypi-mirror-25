@@ -1,0 +1,65 @@
+ASAP - Answer Set Application Programming
+=========================================
+
+Running examples
+----------------
+
+* ./bin/asap-example-onoffswitch
+
+  This is the most simple example of a switch.
+
+* ./bin/asap-tetris
+
+  This example is the game Tetris, including a player
+  name, increasing difficulty with increasing score,
+  and a high score list.
+
+* ./bin/asap-aplagent
+
+  This example is an interactive action plan inspector
+  that works with domain and action description files
+  from APLAgent that can be obtained from
+  http://mbal.tk/APLAgentMgr/ and is distributed
+  under GPL license.
+
+Installation
+------------
+
+* If you do not have it: install `pip3`: for example under Ubuntu via
+    
+    ```$ sudo apt-get install python3-pip```
+
+* Install ASAP with pip3, see PyPi repository at https://pypi.python.org/pypi/asap
+
+    ```$ pip3 install asap --user```
+
+* Setup Python to use the "Userinstall" environment that allows you to install Python programs without overwriting system packages. This is achieved by adding the following to your `.profile` or `.bashrc` file:
+
+    export PYTHONUSERBASE=~/.local/
+    export PATH=$PATH:~/.local/bin
+
+* Run ASAP the first time. This will help to download and build pyclingo if you do not have pyclingo for Python 3 already usable via `import clingo`:
+
+    ```$ asap```
+
+    The first run of asap might ask you to enter the sudo password
+    to install several packages.
+    (If you do not want to enter your sudo password: abort, install the packages manually, and later run `asap` again.)
+
+  * Ubuntu 16.04 is tested
+  * Debian 8.6 (jessie) is tested
+  * Ubuntu 14.04 can not work without manual installation of cmake 3.1 or higher (for buildling clingo)
+
+Running `asap`
+--------------
+
+* cat <program> |./bin/asap <arguments>
+
+Citation
+--------
+
+  Schüller, Peter, and Antonius Weinzierl.
+  "Answer Set Application Programming: a Case Study on Tetris."
+  ICLP (Technical Communications). 2015.
+  http://ceur-ws.org/Vol-1433/tc_17.pdf
+
