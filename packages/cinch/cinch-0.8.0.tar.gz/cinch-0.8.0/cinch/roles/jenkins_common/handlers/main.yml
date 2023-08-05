@@ -1,0 +1,27 @@
+- name: generate public SSH key
+  shell: >-
+    ssh-keygen -y -f "{{ jenkins_user_home }}/.ssh/id_rsa" >
+    "{{ jenkins_user_home }}/.ssh/id_rsa.pub"
+  become: true
+  become_user: "{{ jenkins_user }}"
+  notify: configure user as CLI user
+
+- name: configure user as CLI user
+  jenkins_cli_user:
+    jenkins_home: "{{ jenkins_home }}"
+    jenkins_user: "{{ item }}"
+    key_file: "{{ jenkins_user_home }}/.ssh/id_rsa.pub"
+    state: present
+  become: true
+  ignore_errors: true
+  notify: restart Jenkins
+  with_items: "{{ [jenkins_admin.nickname] + jenkins_cli_users }}"
+  # Errors ignored because the file might not exist on slaves, and it might not
+  # yet be configured with roles, etc if this is executed on first run. However,
+  # it becomes important to have this running during subsequent executions
+
+- name: restart Jenkins
+  service:
+    name: jenkins
+    state: restarted
+  become: true
