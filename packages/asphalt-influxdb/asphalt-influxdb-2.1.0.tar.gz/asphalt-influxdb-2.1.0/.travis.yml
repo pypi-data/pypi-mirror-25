@@ -1,0 +1,39 @@
+sudo: required
+
+language: python
+
+services:
+  - docker
+
+python:
+  - "3.5"
+  - "3.6"
+
+before_install:
+  - docker-compose run -d -p 8086:8086 influxdb
+
+install: pip install tox-travis coveralls
+
+script: tox
+
+after_success: coveralls
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#asphalt"
+    on_success: change
+    on_failure: change
+    use_notice: true
+    skip_join: true
+
+deploy:
+  provider: pypi
+  user: agronholm
+  password:
+    secure: LVDA472qXVVSvVIVVLtlAvv/8XqAXnNJlAODMT1Yzgp4PoHg/qh4uM5LzjJELCJ78FvSXqe30hd2rQ20AFnnrtmjmeq+V8RQ5Xrt/Y0TOn//GR6PyjxVnccah5AlaueuzXQhDYbMY1ACEzlcbTxzckI3L+UkFS5+KO/WkcvGep6g4omX+6PMl8sDRorEewjDLbTNpbjueE0rX1qRiwXBZvxuPWP/xLhiwYDyTeNnrcHunDR42leKTh28sLJBiJKIDvuLQGQsJglAt5vEWVvYy7MUHDF6810uPrxcoXLv4+Nq1+ydaWU2zUb3xUPbC9HU9YMvww+d/TIbPECUigv8O6KXAjd+QyNnue7SDt2a+7e9JE83QKGyFt92rlQzyHciardPP/J82TTLmPlapGK4T2SDpfg2qRSPrroOWK9nooqCHaa9vqLT34TArrUlZF5Gxup360yMTLZ913nn+Ird91p7hPMBgTwF5mgwUFzeXiEgQ4PDbSihKwRY1jGBVLZKpl+ZydH1X6LDgRBDqfC1hbpp0PeNLOb03uAjNMiOeO4PPVmqw/ySNrj0NvOeMfQd2sr4qvqD1ru07k/POeItKjqSgs4j1DMCnzaNS2MSqY/FCDvQM8RVgSM880FJL+zgzF/5KURLrd8nsy3FsFAoFwITki1vEHPKi5n2mXXjuGc=
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
+    python: "3.5"
+    repo: asphalt-framework/asphalt-influxdb
