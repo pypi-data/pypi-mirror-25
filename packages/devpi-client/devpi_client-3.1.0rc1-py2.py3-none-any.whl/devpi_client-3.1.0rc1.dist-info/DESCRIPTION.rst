@@ -1,0 +1,102 @@
+===============================================================
+devpi-client: commands for python packaging and testing
+===============================================================
+
+The "devpi" command line tool is typically used in conjunction
+with `devpi-server <http://pypi.python.org/pypi/devpi-server>`_.
+It allows to upload, test and install packages from devpi indexes.
+See http://doc.devpi.net for quickstart and more documentation.
+
+* `issue tracker <https://github.com/devpi/devpi/issues>`_, `repo
+  <https://github.com/devpi/devpi>`_
+
+* IRC: #devpi on freenode, `mailing list
+  <https://mail.python.org/mm3/mailman3/lists/devpi-dev.python.org/>`_ 
+
+* compatibility: {win,unix}-py{27,34,35,36,py}
+
+
+
+
+
+=========
+Changelog
+=========
+
+
+
+.. towncrier release notes start
+
+3.1.0rc1 (2017-09-08)
+=====================
+
+Features
+--------
+
+- fix #386: add ``passwd`` command to enable password setting with interactive
+  input.
+
+- add ``-l/--list`` option to ``devpi test`` command to only list the release
+  files which would be tested.
+
+- add ``-s/--select`` option to ``devpi test``. This is a regular expression to
+  select release files for which tests will be run. With this option it's
+  possible to select wheels that aren't universal, or run tests only for one
+  specific release file.
+
+
+Bug Fixes
+---------
+
+- fix check for extracted path when testing packages where the package name
+  contains a dash, but the extracted path has underscores.
+
+- skip and warn about wheels which can't be tested instead of testing nothing.
+
+- fix issue227: add ``logout`` command as alias for ``logoff``.
+
+
+3.0.0 (2017-04-23)
+==================
+
+- add ``-r, --requirement`` option to `devpi install` to use requirements file.
+
+- add ``--pip-set-trusted=[yes|no|auto]`` option to ``devpi use`` to add or
+  remove ``trusted-host`` option to pip configuration when ``--set-cfg`` is
+  also given. ``auto`` is the default and sets it for http servers and https
+  which do not pass certificate validation.
+  Thanks to Andrew Leech for the PR.
+
+- add ``devpiclient_get_password`` hook which allows plugins to return a
+  password based on username and server url.
+
+- drop support for Python 2.6.
+
+- drop support for devpi-server < 4.0.0.
+
+
+2.7.0 (2016-10-14)
+==================
+
+- fix issue268: upload of docs with PEP440 version strings now works
+
+- fix issue362: close requests session, so all sockets are closed on exit
+
+- add ``--no-upload`` option to ``devpi test`` to skip upload of tox results
+
+
+2.6.4 (2016-07-15)
+==================
+
+- fix issue337: ``devpi upload`` for packages that produce output during build
+  now works.
+
+
+2.6.3 (2016-05-13)
+==================
+
+- update devpi-common requirement, so devpi-client can be installed in the same
+  virtualenv as devpi-server 4.0.0.
+
+
+
