@@ -1,0 +1,3 @@
+VERSION = '1.2.0'
+
+default_app_config = 'uaa_client.apps.UaaClientConfig'
