@@ -1,0 +1,348 @@
+Metadata-Version: 2.0
+Name: anthem
+Version: 0.10.0
+Summary: Make your Odoo scripts sing.
+Home-page: https://github.com/camptocamp/anthem
+Author: Camptocamp
+Author-email: info@camptocamp.com
+License: LGPLv3+
+Description-Content-Type: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2 :: Only
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: Implementation :: CPython
+
+Anthem: make your Odoo scripts sing 🐜🎵
+========================================
+
+.. image:: https://travis-ci.org/camptocamp/anthem.svg?branch=master
+    :target: https://travis-ci.org/camptocamp/anthem
+
+Anthem is a tool to help scripting Odoo instances for automated setup,
+upgrades, testing and more.
+
+It should be an alternative to the other tools like ``oerpscenario``.
+
+
+Make your own songs
+-------------------
+
+Writing your songs is as easy as creating a Python Package. The
+songs functions called by anthem must have a positional ``ctx``
+argument.
+
+::
+
+  ## songs/install.py
+
+  def setup_company(ctx):
+      """ Setup company """
+      company = ctx.env.ref('base.main_company')
+      company.name = 'My Company'
+
+
+  def main(ctx):
+      setup_company(ctx)
+
+
+Logs
+----
+
+A song can display some logs when executed with ``@anthem.log``,
+``Context.log`` and ``Context.log_line``.
+
+::
+
+  import anthem
+
+  @anthem.log
+  def setup_company(ctx):
+     """ Setting up company """
+     company = ctx.env.ref('base.main_company')
+     with ctx.log('Changing name'):
+         company.name = 'My Company'
+         ctx.log_line('Name changed')
+     with ctx.log('Loading a logo'):
+         company.logo = b64encode(LOGO_CONTENT)
+         ctx.log_line('Logo changed')
+
+
+The decorator on the function will display the first line of the docstring.
+Both the decorator and the context manager will show the timing of the
+execution. The upper example gives::
+
+  Setting up company...
+      Changing name...
+          Name changed
+      Changing name: 0.0150s
+      Loading a logo...
+          Logo changed
+      Loading a logo: 0.100s
+  Setting up company: 0.300s
+
+
+Execute your songs
+------------------
+
+Use the command line ``anthem``. Provided your songs and ``openerp`` are in the
+``PYTHONPATH``::
+
+  anthem songs.install::main -c path/to/openerp.cfg
+
+Anthem will execute the function ``main`` of the module ``songs.install`` with
+a ``ctx`` initialized with an Odoo ``env``.
+
+Instead of using ``-c`` for the command line, you can export the environment
+variable ``OPENERP_SERVER`` with the path of the configuration file.
+
+::
+
+  export OPENERP_SERVER=path/to/openerp.cfg
+  anthem songs.install::main
+
+In order to have ``openerp`` in the ``PYTHONPATH``, you might install it as a
+package with ``pip install -e`` or directly modify the ``PYTHONPATH``.
+
+In order to have your ``songs`` in the ``PYTHONPATH``, the better is to make a
+Python package out of them.
+
+Testing
+-------
+
+Dependencies
+~~~~~~~~~~~~
+
+To run the tests, you must have Postgresql running, with accesses for your user
+(or you will have to modify ``tests/config/odoo.cfg`` with your database
+username and password).
+
+Run the tests
+~~~~~~~~~~~~~
+
+To run ``anthem``'s tests, it is a good idea to do an *editable* install of it
+in a virtualenv, and then intall and run ``tox`` as follows::
+
+  $ git clone https://github.com/camptocamp/anthem.git
+  Cloning into 'anthem'...
+  $ cd anthem
+  $ python2 -m virtualenv env
+  $ source env/bin/activate
+  $ pip install -e .
+  $ pip install pytest invoke tox
+  $ tox
+
+Additional arguments will be passed to ``pytest``::
+
+  $ tox -e py27 -- -x tests/test_cli.py
+
+If you prefer to execute the tests directly with ``pytest``, you can run::
+
+  $ OPENERP_SERVER=tests/config/odoo.cfg py.test
+
+But before, you have to ensure to have the proper environment for the tests with::
+
+  $ invoke tests.prepare
+  $ invoke tests.createdb
+
+Those steps, automatically called when using ``tox``, will download the nightly
+release of Odoo and install it as a package, so tests can be run against it
+(and that's also why it is important to use a virtualenv!)
+
+When calling ``pytest``, you have to define the ``OPENERP_SERVER`` environment
+variable with the configuration file for the Odoo database that will be used
+for the tests.
+
+
+.. :changelog:
+
+Release History
+===============
+
+Unreleased
+----------
+
+**Features**
+
+**Bugfixes**
+
+**Improvements**
+
+**Documentation**
+
+**Build**
+
+
+0.10.0 (2017-09-19)
+------------------
+
+**Bugfixes**
+
+* Disable Odoo's xmlrpc port
+
+**Build**
+
+- Add 'build-release.sh' script with commands to build and upload the dist files
+
+0.9.0 (2017-08-21)
+------------------
+
+**Features**
+
+- New lyrics: modules.update_translations to update translations from po files
+- Lyrics 'uninstall' has been moved from uninstaller.uninstall to modules.uninstall,
+  previous path is still working for backward compatibility
+- New lyrics context manager 'records.switch_company'
+
+
+0.8.0 (2017-07-24)
+------------------
+
+**Features**
+
+- New lyrics: Define settings like being in the interface
+- Add CSV Loading columns control (columns whitelist and blacklist)
+
+**Bugfixes**
+
+- Fix error when loading CSV with no rows
+
+
+0.7.0 (2017-04-28)
+------------------
+
+**Improvements**
+
+- Split CSV loaders in functions to be able to get rows from a CSV or to load
+  rows, enabling to modify the rows before loading them for instance
+- create_or_update lyrics accepts now a model so we can change its env (user,
+  context, ...)
+- New lyrics to uninstall module
+
+
+0.6.0 (2017-01-18)
+------------------
+
+**Features**
+
+- CSV loaders can be used with a model in order to pass a context
+
+**Bugfixes**
+
+- Fix tests by installing eggs from odoo/requirements.txt
+
+
+0.5.0 (2016-10-12)
+------------------
+
+**Features**
+
+- Support Odoo 10
+- Allow to specify the encoding of an imported file, default is utf8
+
+**Bugfixes**
+
+- 'records.add_xmlid' lyrics do no longer fail when it already exists
+
+
+0.4.0 (2016-08-19)
+------------------
+
+**Features**
+
+- New lyrics: CSV loaders from path or stream
+- New ``ctx.log_line`` to print a line respecting the current indentation
+
+**Improvements**
+
+- Add tests for the existing lyrics
+
+**Build**
+
+- Finally green builds!
+
+
+0.3.0 (2016-07-26)
+------------------
+
+**Features**
+
+- Add --quiet mode
+
+**Fixes**
+
+- Encode the logged strings to the default encoding or utf8
+- Allow to use Ctrl-c to stop anthem.
+- Set openerp's loglevel to ERROR, its logs clutter anthem's own outputs
+
+0.2.0 (2016-07-22)
+------------------
+
+**Features**
+
+* Ability to log descriptions and timings in songs with the
+  context manager ``Context.log`` and the decorator ``anthem.log``.
+
+  ::
+
+    from anthem import log
+
+    @log
+    def setup_company(ctx):
+        """ Setup company """
+        # do stuff
+        with ctx.log('other stuff'):
+            # do other stuff
+
+    @log
+    def load_data(ctx):
+        """ Load data """
+        # load
+
+    @log
+    def main(ctx):
+        setup_company(ctx)
+        load_data(ctx)
+
+  If we run anthem on ``main``, we will get:
+
+  ::
+
+    running... main
+       running... Setup company
+          running... other stuff
+          other stuff: 0.850s
+       Setup company: 1.100s
+       running... Load data
+       Load data: 2.900s
+    main: 4.000s
+
+0.1.3 (2016-07-07)
+------------------
+
+**Fixes**
+
+- Correct lyric to create or update a record
+
+0.1.2 (2016-07-07)
+------------------
+
+- Add a lyric to create a xmlid
+- Add a lyric to create or update a record
+
+0.1.1 (2016-06-23)
+------------------
+
+- Fixed crash on non-editable install.
+
+0.1.0 (2016-06-23)
+------------------
+
+Initial release.
+
+
