@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+
+    <title>Aggregation Data Fitter</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="bootstrap/assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="bootstrap/theme.css" rel="stylesheet">
+    <!-- Custom styles for this app -->
+    <link href="bootstrap/orimon.css" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="bootstrap/assets/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body>
+
+    <!-- top navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <span class="navbar-brand">Aggregation Data Fitter</span>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li id="m_home" class="topnav_btn active"><a class="clickable">Home</a></li>
+            <li id="m_instructions" class="topnav_btn"><a class="clickable">Instructions</a></li>
+            <li id="m_about" class="topnav_btn"><a class="clickable">About</a></li>
+            <li id="m_contact" class="topnav_btn"><a class="clickable">Contact</a></li>
+            <li class="dropdown">
+              <a class="clickable dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">External Links <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="https://github.com/odedrim/kfits#installation-instructions">Instructions for Installing Kfits Locally</a></li>
+                <li><a href="https://github.com/odedrim/kfits">Download Kfits Source</a></li>
+                <li><a href="https://github.com/odedrim/kfits/tree/master/install">Download Kfits Installers</a></li>
+                <li role="separator" class="divider"></li>
+                <li class="dropdown-header">Other Software</li>
+                <li><a href="http://www.reichmannlab.com/softwares">Predictor of Hsp33-binding peptides</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <!-- bottom bar -->
+    <nav class="navbar navbar-inverse navbar-fixed-bottom">
+      <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="http://www.reichmannlab.com" style="font-size: 15px;">Created by Oded Rimon, Reichmann Lab, HUJI, Jerusalem, Israel, 2016</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidenav">
+        <div class="rotated90" style="height: 100px; top: calc(50% + 50px); left: 15px;">
+            <h1 style="color: #ccc; position: relative; left: 100%;">Progress</h1>
+            <div class="progress" style="width: 400px;">
+                <div id="total_progress" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%;"><span class="sr-only">0% Complete</span></div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid theme-showcase floater" role="main">
+
+      <!-- Main jumbotron for a primary marketing message or call to action -->
+      <div class="jumbotron">
+        <h1>Kfits: Fit Aggregation Data</h1>
+        <p>Fit aggregation kinetics to measured data, e.g. light scattering at 360nm or ThT dye fluorescence shift.<br>
+        See instructions for file format requirements etc.</p>
+      </div>
+
+
+      <div class="page-header">
+        <h1>Input and Parameters</h1>
+      </div>
+      <p>
+          <button class="btn btn-info loadExample" data-x-path="{{ example1 }}">Load Example 1</button>
+          <button class="btn btn-info loadExample" data-x-path="{{ example2 }}">Load Example 2</button>
+          <button class="btn btn-info loadExample" data-x-path="{{ example3 }}">Load Example 3</button>
+      </p>
+        <form enctype="multipart/form-data">
+            {% csrf_token %}
+            <input id="fdata" name="fdata" type="file" class="btn btn-primary" style="display:inline-block;" />
+            <button id="upload" type="button" class="btn btn-primary">Upload</button>
+            <input type="text" name="input_path" id="input_path" class="hidden" value="{{ tmp_file }}" style="width:70%" autocomplete="off" placeholder="Input File Path" />
+            <!--button id="input_check" type="button" class="btn btn-primary">Check</button -->
+            <!--button id="input_run" type="button" class="btn btn-success">Run</button -->
+            <button id="input_clear" type="button" class="btn btn-danger">Clear</button>
+        </form>
+      <br><p>
+        <span id="input_message_user" class="hidden" role="alert"></span>
+      </p>
+      <p>
+      Model: <select id="model_choice">
+          <option value="auto" selected="selected">Automatic Best Model</option>
+          {% for id, name in model_choice %}
+              <option value="{{ id }}">{{ name }}</option>
+          {% endfor %}
+      </select>
+      </p>
+
+      <p>
+      <input type="checkbox" id="noise_only_above" value="noise_only_above" checked>
+      Noise is Always Above Signal
+      <br>
+      <input type="checkbox" id="reaches_plateau" value="reaches_plateau">
+      Process Reached Plateau During Measurement
+      <br>
+      Number of points in boundary lines: &nbsp; &nbsp; <input type="number" id="num_dragpoints" value="3" min="2" max="9">
+      </p>
+
+      <div class="page-header">
+        <h1>Data Analysis</h1>
+      </div>
+      <ul class="nav nav-pills" role="tablist">
+          <li id="fig_b_orig" role="presentation" class="fig_badge active"><a class="clickable">Original</a></li>
+          <li id="fig_b_filt" role="presentation" class="fig_badge"><a class="clickable">Filtered</a></li>
+          <li id="fig_b_fit" role="presentation" class="fig_badge"><a class="clickable">Fit</a></li>
+      </ul>
+      <div id="fig_h_orig" class="fig_head">
+          <span id="fig1" data-mywidth="{{ width }}" data-myheight="{{ height }}"></span>
+          <div id="top_dragpoints">
+              <div id="top_dragline1" class="smallcirc" style="background-color:darkgreen; display:none;"></div>
+              <div id="top_dragline2" class="smallcirc" style="background-color:darkgreen; display:none;"></div>
+              <div id="top_dragline3" class="smallcirc" style="background-color:darkgreen; display:none;"></div>
+          </div>
+          <svg style="position:absolute;height:{{ height }}px;width:{{ width }}px;left:0;top:0;">
+              <g>
+                <path id="top_dragline" style="stroke:darkgreen;fill:none;" d="" />
+              </g>
+          </svg>
+          <div id="bottom_dragpoints">
+              <div id="bottom_dragline1" class="smallcirc" style="background-color:darkred; display:none;"></div>
+              <div id="bottom_dragline2" class="smallcirc" style="background-color:darkred; display:none;"></div>
+              <div id="bottom_dragline3" class="smallcirc" style="background-color:darkred; display:none;"></div>
+          </div>
+          <svg style="position:absolute;height:{{ height }}px;width:{{ width }}px;left:0;top:0;">
+              <g>
+                <path id="bottom_dragline" style="stroke:darkred;fill:none;" d="" />
+              </g>
+          </svg>
+          <button id="gross_filter" type="button" class="btn btn-success btn-offig" style="display:none;">Filter Datapoints Above Green Line and Below Red Line</button>
+      </div>
+      <div id="fig_h_filt" class="fig_head">
+          <span id="fig2"></span>
+          <div id="approx_start" style="position:absolute;display:none;left:90px;top:0px;">
+              <svg style="width:{{ width }}px;height:{{ height }}px;">
+                  <g>
+                    <path id="approx_start_p" style="stroke:#cccccc;fill:none;stroke-dasharray:4;stroke-width:3;" d="M 0 0 l 0 {{ height }}"></path>
+                    <path d="M 33.145696,53.586086 21.198176,60.48399 9.2506566,67.381894 V 53.586086 39.790279 l 11.9475194,6.897904 z" id="path4503" style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#ff6600;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:3.52999973;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:7.0599999, 3.53;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate" />
+                    <text x="5" y="550" fill="#cccccc">
+                        <tspan dx="0">Approx.</tspan>
+                        <tspan dx="-53" dy="20">Kinetics</tspan>
+                        <tspan dx="-53" dy="20">Start</tspan>
+                    </text>
+                  </g>
+              </svg>
+          </div>
+          <button id="fit_data" type="button" class="btn btn-warning btn-offig" style="width:{{ width }}px;display:none;">Fit Data</button>
+      </div>
+      <div id="fig_h_fit" class="fig_head">
+          <span id="fig3"></span>
+          <svg id="arrow_to_results" style="position: absolute; left: 400px; top: 300px; display: none;">
+              <defs id="defs4">
+                <marker style="overflow:visible;" id="Arrow2SendF" refX="0.0" refY="0.0" orient="auto">
+                    <path transform="scale(0.3) rotate(180) translate(-2.3,0)" d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z " style="stroke-linejoin:round;stroke:#800080;stroke-width:0.62500000;fill:#800080;fill-rule:evenodd" id="path4582"></path>
+                </marker>
+              </defs>
+              <g id="layer1">
+                  <path id="path2985" d="m 130,49.505039 0,67.857141" style="stroke-linejoin:miter;marker-end:url(#Arrow2SendF);stroke-opacity:1;stroke:#800080;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-width:15;fill:#800080" />
+                  <text xml:space="preserve" style="font-size:32px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#800080;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Sans Bold" id="text2991">
+                      <tspan x="215" y="17.505039" id="tspan2995" style="font-size:20px">Cleaning Results</tspan>
+                  </text>
+                  <text xml:space="preserve" style="font-size:32px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#800080;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Sans Bold" id="text2992">
+                      <tspan x="215" y="40.505039" id="tspan2999" style="font-size:20px">Below</tspan>
+                  </text>
+              </g>
+          </svg>
+      </div>
+
+      <div class="page-header">
+        <h1>Results</h1>
+      </div>
+
+      <div id="results" class="row">
+        <div class="col-md-6">
+            Noise Threshold:&nbsp;&nbsp;&nbsp;&nbsp;<input id="threshold" style="width:50px;" value="15" />&nbsp;&nbsp;
+            <button id="clean_data" type="button" class="btn btn-info" style="width:40%;" disabled>Apply Threshold</button>
+            <div id="fig4" style="margin-top:10px;"></div>
+            <button id="get_clean_data" type="button" class="btn btn-success" style="width:100%;">Download Clean Data</button>
+            <small style="padding: 10%"><em id="dlink"></em></small>
+        </div>
+        <div class="col-md-6">
+          <table class="table table-condensed">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody id="kinetic_variables">
+              <tr>
+                  <td>Model Used</td>
+                  <td id="model_name"></td>
+              </tr>
+              <tr>
+                  <td>t<sub>1</sub> (kinetics start)</td>
+                  <td id="t1"></td>
+              </tr>
+              <tr>
+                  <td>t<sub>2</sub> (kinetics end)</td>
+                  <td id="t2"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="page-header"></div>
+
+    </div> <!-- /container -->
+
+    <div class="overall">
+        <div id="instructions" class="well message">
+            <div class="page-header">
+                <h1>Usage Instructions</h1>
+            </div>
+            <h3>Input Format</h3>
+            <p>The input for <em>Kfits</em> is the raw results from kinetic measurements in a textual comma-separated or tab-delimited format, with the first column representing time and the second column representing some measure of protein aggregation or fibril formation. For example, the first column may contain time in seconds and the second may represent light scattering at 360 nm in arbitrary units.<br>The line preceding the first line of data is assumed to contain the text "XYDATA" and the data is followed by a blank line. A period of baseline measurement is expected to precede the actual aggregation process, and the aggregation is assumed to continue until the end of the measurement.</p>
+            <h3>Flags and Parameters</h3>
+            <p>After fitting the measured data with the chosen model function, <em>Kfits</em> removes data points that are far from the theoretical curve ("TC"). The threshold (noise threshold, "NS") for the distance from the curve is estimated by the algorithm described above and can be overridden by the user. When the user choses not the set the "Noise is Always Above Signal" flag, every point residing outside of the TC &pm; NS band is marked for removal and removed; if the flag is set, only points with recorded values larger than TC + NS are removed. This flag is recommended for light scattering measurements, where air bubbles randomly cause excessive scattering.</p>
+            <h3>Workflow</h3>
+            <p><b><i>Step 1.</i> Loading Data and Setting Parameters.</b> The user choses a file and uploads it to the system, which plots the original measurement to the screen. The user can then choose the parameters for the fit. These include the kinetic model to be used (an automatic best-fit option is available) and the "Noise is Always Above Signal" flag, explained in the figure below. Finally, the setting "Process Reached Plateau During Measurement" determines whether the software should search for a period of plateau at the end of the measurement, after the end of the kinetics - or not; if in doubt, try both options and see which one produces a better fit.<br></p>
+            <div style="text-align:center;"><img src="bootstrap/FigS1.png" alt="Figure S1 of the Bioinformatics paper, presenting the meaning of the 'noise above signal' flag in Kfits" /></div><br>
+            <p><b><i>Step 2.</i> Setting the Margins of the Signal.</b> In many cases, certain areas of the kinetic plot contain only noise, easily identifiable by the researcher. Two adjustable two-segment lines represent "only noise above this line" (green) and "only noise below this line" (red), allowing you to remove obvious noise.<br>
+            <b><i>Step 3.</i> Setting Approximate Start of Kinetics Curve.</b> Kinetic measurements often start with a baseline measurement, followed by addition of the components that create the observable signal. This setting has two effects: measurements before the chosen time point are used by the software to determine baseline values; and the model fit is assessed only according to data points after this point.<br>
+            <b><i>Step 4.</i> Fitting a Function to the Data.</b> The software will now try to fit the chosen model to the data using non-linear least-squares regression. It will then try to optimise the noise threshold, which can also be manually set by the user. Any datapoint residing outside the "signal band" will subsequently be removed.<br>
+            <b><i>Step 5.</i> Downloading Clean Data and Reviewing Kinetic Parameters.</b> At this final step, you can review your clean data as well as the calculated kinetic parameters. Then you can potentially adjust the noise threshold to achieve cleaner results or reduce loss of data, as well as download the clean results in textual format to your computer.</p>
+            <h3>The Example Data</h3>
+            See "About" for details on the example data.
+            <h1>Further Instructions</h1>
+            <h3>Adding Support for Other Kinetic Models</h3>
+            <p>The module kmodels.py describes the kinetic models that can be used by <em>Kfits</em>.<br>Each model is described by three constants: a function named <b><em>FIT_&lt;yourmodel&gt;_INIT</em></b> returning the default values for the parameters, a tuple named <b><em>FIT_&lt;yourmodel&gt;_PARAM_NAMES</em></b> containing the names of the parameter (allowing HTML tags) and the model itself represented by a parameterized function receiving time (t) as the first parameter and returning the expected y value at that time.</p>
+            <h4>Parameter Initiation Function</h4>
+            This function receives two parameters: The apparent maximum value and the calculated baseline. Based on this very basic information the function should approximate <b>very grossly</b> the parameters of the kinetic model, and return them in a tuple in the same order in which they will be constantly used in this model. These approximations will be used as the starting point from which the regression algorithm can begin fitting the model to the data.<br>For example, if we use the basic one-site binding model, i.e. y = (t * v<sub>max</sub>) / (t + t<sub>&#189;</sub>):<br>
+            <pre><code>def FIT_BASIC_INIT(apparent_max, baseline):
+    approx_vmax = apparent_max - baseline
+    approx_thalf = 12
+    return (approx_vmax, approx_thalf)</code></pre>
+            <h4>Parameter Name Tuple</h4>
+            This is simply a tuple of names, which may contain html tags. These are used for displaying the fitted model parameters to the user at the end of the fitting process.<br>For example:<br>
+            <pre><code>FIT_BASIC_PARAM_NAMES = ('v&lt;sub&gt;max&lt;/sub&gt;', 't&lt;sub&gt;&#189;&lt;/sub&gt;')</code></pre>
+            <h4>The Model Function</h4>
+            This function is the most important part of the model definition, as it implements the integrated rate law that should be fitted to the data if this model is correct. The function simply receives t, i.e. the value on the x axis, as well as the values of all the kinetic parameters of the model by the same order used in the parameter initiation function. It returns the prediction of the y value at that time point for the given values of the kinetic parameters.<br>For example:<br>
+            <pre><code>def fit_basic(t, vmax, thalf):
+    return (t * vmax) / (t + thalf)</code></pre>
+            <h4>Registering the Model</h4>
+            After implementing the three components of a model, the model should be registered by adding it to the return value of the function get_models (in the same module). This function returns a dictionary, in which keys represent short simple names of models (which should not contain spaces or special characters) and values are four-tuples. The four-tuple for a model is comprised of the model function, the parameter initiation function, the parameter name tuple, and a long human-readable name for the model - in that order.<br>For example:<br>
+            <pre><code>{'basic': (fit_basic, FIT_BASIC_INIT, FIT_BASIC_PARAM_NAMES, 'Basic One-Site Binding')}</code></pre>
+            Once the model is registered, the kfits server should be started (or restarted if it was running), and the new model will appear in the model choice box as well as being considered in the automatic model selection algorithm.
+        </div>
+        <div id="about" class="well message">
+            <div class="page-header">
+                <h1>About</h1>
+            </div>
+            <p>This software was intially written in September 2016 for Oded's personal use, and soon after extended to include a GUI for the comfort of the rest of the lab. By January 2017, the efforts to make it globally available, easy to use and as free as possible of bugs have begun. Finally, in May 2017, <em>Kfits</em> was ready to be sent out to the world.</p>
+            <h3>The Example Data</h3>
+            <p><em>Kfits</em> comes with three example datasets, which were added to help the user play with the different settings of the software and understand their effects on the fit. Below are explanations about the sources of these example data and what they represent.</p>
+            <h4>Example 1: Simulated Nucleation-Elongation</h4>
+            This <b>simulated example</b> was built to be a perfect fit for the Nucleation-Elongation model. Noise was added primarily above the signal (random numbers between -5 and +35 were added to each datapoint), and thus <em>Kfits</em> may perform better with the "Noise is Always Above Signal" <em>set</em>. The aggregation kinetics continue until the end of the "measurement", or possibly even afterwards, thus no plateau period is observed and the data are best fitted with the "Process Reached Plateau During Measurement" flag <em>unset</em>. Try changing the model to the one-site binding model or the automatic choice to get a feeling of how this system works.
+            <h4>Example 2: Simulated One-Site Binding</h4>
+            This <b>simulated example</b> was built to be a perfect fit for the One-Site Binding model. Noise was added on both sides of the signal (random numbers between -35 and +35 were added to each datapoint) - "Noise is Always Above Signal" is better <em>unset</em>. A plateau period with a slight decrease in signal (often seen in real measurements due to slow precipitation of aggregates) follows the kinetics and thus the use of "Process Reached Plateau During Measurement" is recommended.
+            <h4>Example 3: Real life Citrate synthase Aggregation Measured by Light Scattering</h4>
+            This is real data measured by Oded, showing the aggregation of chemically unfolded Citrate synthase upon dilution into a buffer containing a chaperone that decreases the rate and intensity of aggregation. For this example we recommend the One-Site Binding model, with "Noise is Always Above Signal" <em>set</em> and "Process Reached Plateau During Measurement" <em>set</em>. The fit is not perfect - but the important part is the <b>cleaning</b>, for which the fit doesn't have to be perfect, only good enough; a noise threshold of 6 yeilds the best results in our opinion.
+        </div>
+        <div id="contact" class="well message">
+            <div class="page-header">
+                <h1>Contact Details</h1>
+            </div>
+            <p>This software package was written by Oded Rimon, at Dr. Dana Reichmann's Lab.<br>
+               <br><u>The Lab is Located at:</u><br>
+               Dept. of Biological Chemistry, room 1-626<br>
+               The Alexander Silberman Institute of Life Science<br>
+               The Hebrew University of Jerusalem<br>
+               Givat Ram Campus, Jerusalem, 91904, Israel<br>
+               Tel: (+972) 2-658-5703<br>
+               <br><u>Email us at:</u><br>
+               Oded: <span id="email_oded"></span><br>
+               Dana: <span id="email_dana"></span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- JQuery -->
+    <script src="bootstrap/js/jquery.js"></script>
+    <script src="bootstrap/js/jquery-ui.js"></script>
+
+    <!-- Bootstrap -->
+    <script>window.jQuery || document.write('<script src="bootstrap/assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/assets/js/docs.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="bootstrap/assets/js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- Local Code -->
+    <script src="bootstrap/js/fitter.js"></script>
+    <script src="bootstrap/js/index.js"></script>
+  </body>
+</html>
