@@ -1,0 +1,43 @@
+#!/bin/sh
+
+set -e
+set -u
+
+tmp="$(mktemp -t mypy.XXXX)";
+
+#
+# Filter out messages from mypy that are not actual errors.
+#
+# Notes:
+#
+# * Mypy notices trial's use of a todo marker attribute on functions and
+#   complains that it's not part of a function object's interface, so we
+#   ignore: has no attribute "todo" or "skip"
+#
+# * These are related to Mypy not knowing about zope.interface:
+#   - Incompatible return value type
+#   - Method must have at least one argument
+#   - Unexpected keyword argument
+#
+
+mypy "$@"      \
+    | grep -v  \
+        -e ': note: '                                                                        \
+        -e ': error: Callable\[\[[^]]*\], [^]]*\] has no attribute "todo"'                   \
+        -e ': error: Callable\[\[[^]]*\], [^]]*\] has no attribute "skip"'                   \
+        -e ': error: Incompatible return value type (got "[^"]*", expected "IHTTPHeaders")'  \
+        -e ': error: Method must have at least one argument'                                 \
+        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'            \
+        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPRequest"'            \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersFromHeaders"'       \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestFromIRequest"'      \
+        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                      \
+        -e ': error: Unexpected keyword argument "[^"]*" for "MutableHTTPHeaders"'           \
+        -e 'src/txrequest/test/_legacy_request.py:'                                          \
+        > "${tmp}" || true;
+
+sort < "${tmp}";
+
+if grep -e ": error: " "${tmp}" > /dev/null; then
+  exit 1;
+fi;
