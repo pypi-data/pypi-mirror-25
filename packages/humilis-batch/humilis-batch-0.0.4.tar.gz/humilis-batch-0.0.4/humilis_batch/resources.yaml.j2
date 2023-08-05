@@ -1,0 +1,225 @@
+---
+resources:
+    {% if type == "SPOT" %}
+    SpotFleetRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  -
+                    Effect: "Allow"
+                    Principal:
+                      Service:
+                        - "spotfleet.amazonaws.com"
+                    Action:
+                      - "sts:AssumeRole"
+            ManagedPolicyArns:
+                - "arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetRole"
+    {% endif %}
+
+    EcsInstanceRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  -
+                    Effect: "Allow"
+                    Principal:
+                      Service:
+                        - "ec2.amazonaws.com"
+                    Action:
+                      - "sts:AssumeRole"
+            Policies:
+                - PolicyName: "EcsInstanceRolePolicy"
+                  PolicyDocument:
+                    Version: "2012-10-17"
+                    Statement:
+                        -   Effect: "Allow"
+                            Action:
+                                - "ecs:CreateCluster"
+                                - "ecs:DeregisterContainerInstance"
+                                - "ecs:DiscoverPollEndpoint"
+                                - "ecs:Poll"
+                                - "ecs:RegisterContainerInstance"
+                                - "ecs:StartTelemetrySession"
+                                - "ecs:UpdateContainerInstancesState"
+                                - "ecs:Submit*"
+                                - "ecr:GetAuthorizationToken"
+                                - "ecr:BatchCheckLayerAvailability"
+                                - "ecr:GetDownloadUrlForLayer"
+                                - "ecr:BatchGetImage"
+                                - "logs:CreateLogStream"
+                                - "logs:PutLogEvents"
+                            "Resource": "*"
+
+    EcsInstanceProfile:
+        Type: "AWS::IAM::InstanceProfile"
+        Properties:
+            Roles:
+                - Ref: EcsInstanceRole
+            InstanceProfileName: "{{__context.environment.name}}-{{__context.stage}}-{{__context.layer.name}}"
+
+    ServiceRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  -
+                    Effect: "Allow"
+                    Principal: 
+                      Service: 
+                        - "batch.amazonaws.com"
+                    Action: 
+                      - "sts:AssumeRole"
+            Path: "/"
+            Policies:
+                - PolicyName: "BatchServicePolicy"
+                  PolicyDocument:
+                      "Version": "2012-10-17"
+                      "Statement": [{
+                        "Effect": "Allow",
+                        "Action": [
+                            "ec2:DescribeAccountAttributes",
+                            "ec2:DescribeInstances",
+                            "ec2:DescribeSubnets",
+                            "ec2:DescribeSecurityGroups",
+                            "ec2:DescribeKeyPairs",
+                            "ec2:DescribeImages",
+                            "ec2:DescribeImageAttribute",
+                            "ec2:DescribeSpotFleetInstances",
+                            "ec2:DescribeSpotFleetRequests",
+                            "ec2:DescribeSpotPriceHistory",
+                            "ec2:RequestSpotFleet",
+                            "ec2:CancelSpotFleetRequests",
+                            "ec2:ModifySpotFleetRequest",
+                            "ec2:TerminateInstances",
+                            "autoscaling:DescribeAccountLimits",
+                            "autoscaling:DescribeAutoScalingGroups",
+                            "autoscaling:DescribeLaunchConfigurations",
+                            "autoscaling:DescribeAutoScalingInstances",
+                            "autoscaling:CreateLaunchConfiguration",
+                            "autoscaling:CreateAutoScalingGroup",
+                            "autoscaling:UpdateAutoScalingGroup",
+                            "autoscaling:SetDesiredCapacity",
+                            "autoscaling:DeleteLaunchConfiguration",
+                            "autoscaling:DeleteAutoScalingGroup",
+                            "autoscaling:CreateOrUpdateTags",
+                            "autoscaling:SuspendProcesses",
+                            "autoscaling:PutNotificationConfiguration",
+                            "autoscaling:TerminateInstanceInAutoScalingGroup",
+                            "ecs:DescribeClusters",
+                            "ecs:DescribeContainerInstances",
+                            "ecs:DescribeTaskDefinitions",
+                            "ecs:DescribeTasks",
+                            "ecs:ListClusters",
+                            "ecs:ListContainerInstances",
+                            "ecs:ListTaskDefinitionFamilies",
+                            "ecs:ListTaskDefinitions",
+                            "ecs:ListTasks",
+                            "ecs:CreateCluster",
+                            "ecs:DeleteCluster",
+                            "ecs:RegisterTaskDefinition",
+                            "ecs:DeregisterTaskDefinition",
+                            "ecs:RunTask",
+                            "ecs:StartTask",
+                            "ecs:StopTask",
+                            "ecs:UpdateContainerAgent",
+                            "ecs:DeregisterContainerInstance",
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents",
+                            "logs:DescribeLogGroups",
+                            "iam:GetInstanceProfile",
+                            "iam:PassRole"],
+                        "Resource": "*"
+                      }]
+
+    {% if not security_group_ids %}
+    SecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: Security group for AWS Batch instances ({{_env.name}})
+            VpcId: {{vpc_id or vpc}}
+            Tags:
+                - Key: Name
+                  Value: {{__context.environment.name}}-{{__context.stage.lower()}}-batch-sg
+            {% if ip_whitelist or sg_whitelist %}
+            SecurityGroupIngress:
+                {% for ip in ip_whitelist %}
+                - IpProtocol: tcp
+                  FromPort: -1
+                  ToPort: -1
+                  CidrIp: {{ip}}
+                - IpProtocol: icmp
+                  FromPort: -1
+                  ToPort: -1
+                  CidrIp: {{ip}}
+                {% endfor %}
+                {% for sg in sg_whitelist %}
+                - IpProtocol: tcp
+                  FromPort: -1
+                  ToPort: -1
+                  SourceSecurityGroupId: {{sg}}
+                {% endfor %}
+            {% endif %}
+    {% endif %}
+
+    ComputeEnvironment:
+      Type: "AWS::Batch::ComputeEnvironment"
+      Properties:
+        Type: MANAGED
+        ServiceRole:
+            "Fn::GetAtt" : ["ServiceRole", "Arn"]
+        ComputeEnvironmentName: "{{__context.environment.name}}-{{__context.stage}}-{{__context.layer.name}}"
+        ComputeResources:
+            MaxvCpus: {{max_cpus}}
+            MinvCpus: {{min_cpus}}
+            Tags: {{tags}}
+            {% if ec2_key_pair %}
+            Ec2KeyPair: {{ec2_key_pair}}
+            {% endif %}
+            Subnets:
+                {% for subnet in subnet_ids %}
+                - {{subnet}}
+                {% endfor %}
+            InstanceTypes: {{instance_types}}
+            {% if type == "SPOT" %}
+            SpotIamFleetRole:
+                "Fn::GetAtt" : ["SpotFleetRole", "Arn"]
+            {% endif %}
+            InstanceRole:
+                "Fn::GetAtt" : ["EcsInstanceProfile", "Arn"]
+            SecurityGroupIds:
+                {% if not security_group_ids %}
+                - {Ref: SecurityGroup}
+                {% else %}
+                {% for sg in security_group_ids %}
+                - {{sg}}
+                {% endfor %}
+                {% endif %}
+            Type: {{type}}
+            {% if type == "SPOT" %}
+            BidPercentage: {{bid_percentage}}
+            {% endif %}
+        State: "{{state}}"
+
+    PriorityJobQueue:
+        Type: "AWS::Batch::JobQueue"
+        Properties:
+            ComputeEnvironmentOrder:
+                - Order: 1
+                  ComputeEnvironment: {Ref: ComputeEnvironment}
+            Priority: 100
+            JobQueueName: "{{__context.environment.name}}-{{__context.stage}}-{{__context.layer.name}}-priority"
+
+    DefaultJobQueue:
+        Type: "AWS::Batch::JobQueue"
+        Properties:
+            ComputeEnvironmentOrder:
+                - Order: 1
+                  ComputeEnvironment: {Ref: ComputeEnvironment}
+            Priority: 1
+            JobQueueName: "{{__context.environment.name}}-{{__context.stage}}-{{__context.layer.name}}-default"
