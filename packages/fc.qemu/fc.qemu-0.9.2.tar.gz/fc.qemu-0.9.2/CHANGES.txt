@@ -1,0 +1,539 @@
+Release notes
+=============
+
+
+0.9.2 (2017-09-18)
+------------------
+
+- Fix guest agent timeout handling so that snapshots get an actual 120s
+  timeout to allow VMs to properly flush their IO.
+
+
+0.9.1 (2017-09-01)
+------------------
+
+- Remediate brownbag release: default config options were not properly included
+  in release.
+
+
+0.9 (2017-09-01)
+----------------
+
+- [feature] Allow managing host memory with a "maximum total" of memory that
+  can be configured on VMs (-m switch). This is not based on actual RAM usage or availability but planned and configured values of currently running VMs!
+
+  If a VM shall be inmigrated or started and the host would go beyond the
+  'vm-max-total-memory' setting with that VM then the action will fail.
+
+- [locking] Fix locking by moving to a separate lockfile and ensuring that
+  reentrant use of locks is handled correctly. Also, provide upgrade scenario
+  by additionally using the existing lock files.
+
+- [locking] Ensure we rewrite the config file only when locked to reduce
+  attack surface of the old mechanism while still upgrading.
+
+- [logging] Improve logging with more specific debug output.
+
+- [logging] Log the specific commandline that each Qemu process is started
+  with to aid debugging.
+
+- [logging] Switch logging from UTC to local server time. This has proven much
+  more confusing as our other on-disk logs are in server time.
+
+- [logging] Do not crash on broken logging (i.e. disk full or STDIO missing)
+  to avoid accidentally crashing a VM just because the controlling script runs into issues.
+
+- [logging] Add VM name prefixes also for stack dumps and tracebacks.
+
+- [consul] Ensure that consul event handling doesn't fail the process when
+  a thread fails. (Might be snake oil but doesn't hurt.)
+
+- [consul] Reduce consul event handling pool from 10 to 3 to reduce strain on
+  multiple parallel migrations.
+
+- [ceph] Properly close RBD volume references to avoid librbd crash.
+
+- [ceph] Ensure we don't open unnecessary duplicate RBD image handles.
+
+- [qemu] Increase Qemu QMP timeout to 5 minutes to tolerate latency during
+  migration cleanup as the QMP handler runs in the main thread and could be
+  blocked for a long period.
+
+- [migration] Improve outgoing migrations connecting to the incoming server:
+  simplify code and reduce unnecessary waiting periods. Better error output.
+
+- [migration] Improve live migration: skip compression, enable unlimited
+  bandwidth, and use ephemeral ports to avoid running into TCP timing issues when retrying live migrations quickly.
+
+- [config] Clean up default-option handling for some config options: we used
+  two different styles of defaults. They have been unified into a single
+  "default.conf" that gets loaded first.
+
+
+0.8.11 (2017-05-29)
+-------------------
+
+- Add thousands separator in logging to live migration log to allow easier
+  optical inspection.
+
+- Improve fsfreeze timeout handling: this can take quite a while and if we
+  are too eager then we end up quickly in unstable states.
+
+- Improve error and debug logging.
+
+- Improve resilience of continuing locally after a failed migration.
+
+
+0.8.10 (2017-04-12)
+-------------------
+
+- Improve logging: include PID of the running process to help detect and
+  understand potential conflicts in parallel runs.
+
+- Try harder to catch errors and retry correctly when resetting communication
+  with an agent.
+
+- Add another layer to protect the guest agent by acquiring an exclusive lock
+  on the guest agent socket file.
+
+- Keep trying to ensure a VM is unfrozen during regular `ensure` calls.
+
+
+0.8.9 (2017-04-07)
+------------------
+
+- Improve guest agent communication. The guest agent may be in an
+  inconsistent state that causes it to hang. We've seen this happening
+  where we froze machines and then have the agent be inconsistent.
+
+  This now properly resets the agent connection upon a sync by sending
+  the recommend "wrong" UTF-8 byte that guarantees to interrupt the
+  guest agent's JSON parser.
+
+- Improve logging output when destroying a VM because of an inconsistent
+  state. (#25158)
+
+
+0.8.8 (2016-11-18)
+------------------
+
+- Bugfix: migrations that ran into a timeout because the remote side
+  did not respond accidentally unlocked and cleaned up without shutting
+  the VM down properly. This resulted in multiple instances of a single VM.
+
+0.8.7 (2016-11-11)
+------------------
+
+- Don't change anything if a VM is marked online but no KVM host is assigned
+  (#23965).
+- Refactor Agent.ensure() for improved reliability and readability.
+- Decline to create a consistent snapshot if a VM is offline.
+- Speed up tests a bit.
+- Don't spawn unqualified partprobe invocations in parallel.
+- Make debug level logging a bit less verbose.
+
+
+0.8.6 (2016-11-04)
+------------------
+
+- Break inconsistent Ceph locks if the host holding an old lock is sure that a
+  VM is not running anymore (#23695).
+- Migration compatibility between Qemu 2.5 and 2.7 (#23695).
+- Always clean up unused resources like Consul service registrations and run
+  files.
+- Improve error reporting and logging.
+
+
+0.8.5 (2016-10-31)
+------------------
+
+- Fixed a major bug with event processing: the consul event processor was
+  using the multiprocessing.pool API incorrectly. This wasn't caught by the
+  tests and resulted in silent "no ops" of all event processing mechanisms.
+
+
+0.8.4 (2016-10-31)
+------------------
+
+- Waiting for Qemu to shutdown gracefully was not expecting a socket error,
+  which caused restarts to fail (cleanly). #24434
+
+- Limit the number of parallel processed consul events to avoid
+  overloading the host. Can be configured in the fc-qemu config file through::
+
+    [consul]
+    event-threads = <INT>
+
+  The default is 10 threads.
+
+- Lower the overhead of processing a consul config change event: do not
+  activate Ceph and Qemu connections and do not perform scrubbing (ensure)
+  when the config hasn't changed. Ceph and Qemu connections aren't needed in
+  that case and scrubbing is expected to be performed in a separate task from
+  a scheduler, not from an event handler that is supposed to only respond to
+  changes.
+
+- Provide a default for the binary-generation counter to allow smooth
+  upgrades from previous versions.
+
+
+0.8.3 (2016-10-23)
+------------------
+
+- Lower the guest agent timeout to help the tests complete faster and also
+  stay responsive if the guest shouldn't have an agent available either
+  yet, or currently, or generally.
+
+- Provide a Qemu config template variable that will determine the most current
+  Qemu machine type, given a prefix to filter for.
+
+- Provide a "binary generation counter" that is a) injected a boot
+  (to /tmp/fc-data/qemu-binary-generation-booted) and b) updated during every
+  "ensure" command (to /run/qemu-binary-generation-current). The guest should
+  use a difference between those files to schedule a cold reboot (i.e. a
+  shutdown) to restart with a fresh Qemu binary.
+
+
+0.8.2 (2016-09-20)
+------------------
+
+- Switch from using multiprocessing to threaded management of multiple consul
+  VM event handlers to reduce Python startup overhead when processing many VMs
+  in a single location. Also remove the sleep time.
+
+- Fix log error in consul snapshot event handling. Improve the test coverage
+  for consul event handling.
+
+- Remove superfluous VM name handling where a VM config file could be
+  specified instead of a VM name. This was causing obfuscation in the code
+  and was barely used anyway.
+
+- Allow using the telnet command even when fc.qemu _thinks_ that the VM
+  is not running. This command is helpful for debugging and blocking it
+  is a useless seatbelt.
+
+- Do not log QMP connection errors as the are extremely common and expected.
+
+
+0.8.1 (2016-09-11)
+------------------
+
+- Explicitly add logging to /var/log/fc-qemu.log. Do not filter
+  log output there: we always want all the information we can get.
+
+0.8 (2016-09-08)
+----------------
+
+- Introduce `fc-qemu telnet` command: a shortcut to connect to the human
+  monitor port without having to look up the port from a config manually.
+
+- Switch the monitor automation from using the telnet port to using the QMP
+  socket. This should be a _lot_ more reliable. This also fixes a previous
+  race condition where a migration status check may intermittently fail and
+  then break a migration unnecessarily.
+
+- Update vagrant environment to check against Qemu 2.6.
+
+- Revamp output formatting to use Hynek's great structlog library.
+
+- Limit a few more commands to specific VM states: stop only when running.
+
+- Implement IOPS limiting either based on VM-specific ENC data,
+  a Ceph pool default, or a global default. This limits IOPS for all disks
+  (individually, no groups, yet) in a VM and maintains this over time.
+
+- Rework Ceph volume unlocking: if a client owns a lock then breaking it
+  will cause an immediate disconnect of the rbd/rados connection to avoid
+  it sending further data updates. This can happen to us if we're setting
+  up the locks on an inmigration and then have to give them up again if the
+  migration fails.
+
+0.7.22 (2016-07-21)
+-------------------
+
+- Fix bug in `fc-qemu restart` which causes mkfs.xfs for tmp to fail.
+
+
+0.7.21 (2016-06-20)
+-------------------
+
+- Moderate swap and tmp volume sizes so that they do not scale linearly for very
+  large VMs. #21961
+
+
+0.7.20 (2016-05-03)
+-------------------
+
+- More logging output to help diagnosing a rare lock recovery failure
+  (#21345).
+- Remove shrink-vm. R.I.P. (#14222).
+
+
+0.7.19 (2016-04-08)
+-------------------
+
+- Fix a race condition: when continuously polling monitor status to determine
+  whether a VM is running, also consider the option that the VM was about
+  to shutdown and the monitor has gone away.
+
+
+0.7.18 (2016-04-04)
+-------------------
+
+- Another brownbag release: the snapshot refactoring wasn't tested properly
+  if snapshots actually existed.
+
+
+0.7.17 (2016-04-04)
+-------------------
+
+- Fix unicode/str issue: consul json decoded into unicode but librbd requires
+  a plain string.
+
+0.7.16 (2016-03-31)
+-------------------
+
+- Fix regression in snapshot taking.
+
+
+0.7.15 (2016-03-20)
+-------------------
+
+- Account for different mkfs options for XFS and mkfs.ext4 (#19079).
+- Improved Vagrant VM bootstrapping.
+- Refactor classes in hazmat/{ceph.py,volume.py} (#19079).
+- Use the "rbd_pool" ENC option to allow VM-specific selection of the RBD pool
+  instead of deriving it from the resource group name.
+- Improve success rate of recovering from failed migrations properly: certain
+  conditions would result in only partially released locks from the target
+  leading to inconsistent states.
+
+0.7.14 (2016-01-21)
+-------------------
+
+- Use XFS for tmp partitions (#17873).
+- Drop super-floppy setup von vdc and use a proper partition table instead
+  (#17873).
+- Fix file permissions for ENC seed JSON file.
+
+
+0.7.13 (2015-12-10)
+-------------------
+
+- Ignore consul requests for VMs with missing configuration (#18841).
+- Speed up initial NTP sync in Vagrant to avoid failing Ceph tests due to
+  unsynced MONs.
+- Refine Ceph.unlock() to remove own locks in a best-effort manner. This is
+  needed to recover from incomplete migrations (#18771).
+- Improve error handling with failed monitor connections.
+
+
+0.7.12 (2015-11-11)
+-------------------
+
+- Improve error handling during migration.
+- Fix timeout during fsfreeze that leads to locked up VMs (#18917).
+
+
+0.7.11 (2015-11-04)
+-------------------
+
+- Switch `aio` setting in default qemu.vm.cfg to "threads". This will keep
+  fc-qemu compatible with future Qemu versions (#18743).
+- Improve logging.
+- Place initial copy of ENC data in `/tmp/fc-data/enc.json`.
+
+
+0.7.10 (2015-08-12)
+-------------------
+
+- Refactor system-wide configuration code.
+- Create swap and tmp partition with proper filesystem labels (#16783).
+- Fix rare race condition during tmp volume creation.
+- Set filesystem labels for swap and tmp volumes (#17078).
+
+
+0.7.9 (2015-08-03)
+------------------
+
+- Add "snapshot" command. Can be triggered from command line and
+  via consul.
+
+
+0.7.8 (2015-07-27)
+------------------
+
+- Improve detection of running instances.
+
+- Broaden check for monitor connection to handle dual stack
+  environments.
+
+
+0.7.7 (2015-07-14)
+------------------
+
+- Fix migration issue: we ended up de-registering at the wrong time.
+
+
+0.7.6 (2015-07-01)
+------------------
+
+- Quickfix: newer mkfs.ext4 versions need a '-F' flag to overwrite
+  filesystems (#14920).
+
+
+0.7.5 (2015-07-01)
+------------------
+
+- Spawn individual VM actions usings multiprocessing. Wait until all migrations
+  are done (#14920).
+- Increase allowed migration downtime to keep migration time for busy VMs in
+  bounds (#14920).
+- Fix exception handling errors during Consul event processing (#14920).
+- Give udev mapping a bit to settle.
+- Improve log readability.
+
+
+0.7.4 (2015-06-02)
+------------------
+
+- Rectify brown-bag release.
+- Fix some unnoticed, arbitrary test failures.
+
+
+0.7.3 (2015-06-02)
+------------------
+
+- Make event processing from consul fork for each VM and return the
+  master process early to avoid blocking the consul agent.
+
+- More logging related to migrations.
+
+
+0.7.2 (2015-05-26)
+------------------
+
+- Adapt to QEMU 2.2.1: uses now stdvga by default (#15748).
+
+
+0.7.1 (2015-05-20)
+------------------
+
+- Fix bug with inmigration Consul service registration (#15313).
+- Change KV name name space for nodes from "vm/" to "node/" (#14920).
+
+
+0.7 (2015-05-18)
+----------------
+
+- Consul service registration (#15313).
+- Coordinate migration via Consul (#15313).
+
+
+0.6.4 (2015-02-27)
+------------------
+
+- Tolerate "setup" as an intermediate migration status as encountered in the
+  wild.
+
+
+0.6.3 (2015-02-19)
+------------------
+
+- Improve pid file parser to deal correctly with trailing lines and empty pid
+  files.
+- Ensure that exceptions are properly logged if they occur directly after
+  daemonizing (e.g., in Agent.__init__()) (#13867).
+
+
+0.6.2 (2015-01-22)
+------------------
+
+- Relax PyYaml and psutil version requirements to accommodate to the Flying
+  Circus managed platform.
+
+
+0.6.1 (2015-01-22)
+------------------
+
+- Improve logging and error messages (#13867).
+- Fix unwanted behaviour during error conditions (#13867).
+
+
+0.6 (2015-01-15)
+----------------
+
+- Implement live migration. Use "inmigrate" and "outmigrate" commands
+  to coordinate the process (#13229).
+- Note that the qemu.cfg.in template has changed!
+- Improve test coverage.
+
+
+0.5.1 (2014-11-22)
+------------------
+
+- Bugfix: remove Ceph discard call since it seems to be unstable (#13414).
+- Improve operability by reworking what is logged to fc-qemu.log.
+
+
+0.5 (2014-11-21)
+----------------
+
+- Root filesystem shrink during VM start (#13414).
+- Add 'force-unlock' action to break stale locks (e.g., after a VM host went
+  down).
+
+
+0.4.3 (2014-11-13)
+------------------
+
+- Read Qemu config file template from `/etc/qemu/qemu.vm.cfg.in`.
+- Fix tests and documentation.
+
+
+0.4.2 (2014-11-12)
+------------------
+
+- Rate limit entropy transfer from host to guest (#13751).
+- Add 'restart' command to simplify VM restarts.
+
+
+0.4.1 (2014-09-24)
+------------------
+
+- Do not require the PID to match the machine name for determining
+  online status. This caused issues for VMs with names longer than 11
+  characters: http://status.flyingcircus.io/incidents/3j8wsrszlx2w
+
+
+0.4 (2014-09-16)
+----------------
+
+- Allow selecting the specific command line to call for creating a VM
+  using a config file + formatting syntax.
+
+- Add test coverage to show that we gracefully recover from crashed VMs
+  upon a subsequent 'ensure'.
+
+0.3 (2014-09-13)
+----------------
+
+- Refactor and rename to 'fc.qemu'.
+  Integrate most functionality that was previously placed in our
+  init scripts and localconfig (fc.agent) utilities.
+
+- Add a lot of test coverage.
+
+
+0.2.6 (2014-08-21)
+------------------
+
+- Fix incoming VM detection for an already locked _and_ started VM.
+
+
+0.2.5 (2014-08-20)
+------------------
+
+* Implement a safety-belt to prohibit migrating VMs that have not
+  yet been started with the supported /run/kvm.*.cfg.in format.
+
