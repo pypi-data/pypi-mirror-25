@@ -1,0 +1,45 @@
+{# Article page #}
+
+{% extends 'base/base.html' %}
+{% load staticfiles %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'wheatgrass_blog/css/components/article.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'wheatgrass_blog/css/components/article-page.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+
+        <h1>{{ article.title }}</h1>
+        <div class="article-meta">
+            <span class="date-time" title="{{ article.time_created|timesince }} ago">{{ article.time_created }}</span>
+            {% if not article.visible %}
+                <span class="article-hidden">Hidden</span>
+            {% endif %}
+        </div>
+        <hr class="article-title" />
+
+        <div class="article-content">
+            {{ article.content|safe }}
+        </div>
+
+    </div>
+
+    {% if request.user.is_staff %}
+    <div class="card">
+        <a class="btn btn-primary" href="{% url 'article_edit' article.id %}">Edit</a>
+        <div class="btn-group">
+            <a class="btn btn-primary" href="{% url 'admin:wheatgrass_blog_article_change' article.id %}">Django Admin</a>
+            <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+                <span class="sr-only">Toggle Dropdown</span>
+            </a>
+            <ul class="dropdown-menu">
+                <li><a href="{% url 'admin:wheatgrass_blog_article_change' article.id %}">Edit</a></li>
+                <li><a href="{% url 'admin:wheatgrass_blog_article_delete' article.id %}">Delete</a></li>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

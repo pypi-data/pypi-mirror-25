@@ -1,0 +1,87 @@
+{# Article list #}
+
+{% extends 'base/base.html' %}
+{% load staticfiles %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'wheatgrass_blog/css/components/article.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'wheatgrass_blog/css/components/article-list.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <h1>All articles</h1>
+        <p>All public articles on RichiezhangBlog. Articles are sorted by newest first.</p>
+    </div>
+    <div class="card no-padding">
+        {% for article in articles %}
+            <div class="media article-list-item">
+                <div class="media-left">
+                    <a href="{% url 'article' id_=article.id %}">
+                        {% if article.thumbnail %}
+                            <img class="media-object" src="{{ article.thumbnail }}" alt="Article Thumbnail" />
+                        {% else %}
+                            <img class="media-object" src="{% static 'wheatgrass_blog/img/article-thumbnail-placeholder.png' %}" alt="Article Thumbnail Placeholder" />
+                        {% endif %}
+                    </a>
+                </div>
+                <div class="media-body">
+                    <div class="article-meta">
+                        <span class="date-time" title="{{ article.time_created|timesince }} ago">{{ article.time_created }}</span>
+                        {% if not article.visible %}
+                            <span class="article-hidden">Hidden</span>
+                        {% endif %}
+                    </div>
+                    <span><a class="media-heading" href="{% url 'article' id_=article.id %}">{{ article.title }}</a></span>
+                </div>
+            </div>
+        {% empty %}
+            <p>There are no articles yet.</p>
+        {% endfor %}
+    </div>
+    <div class="card">
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <li class="{% if not articles.has_previous %}disabled{% endif %}">
+                    <a href="?page=1" aria-label="First">
+                        <span aria-hidden="true">
+                            <i class="fa fa-angle-double-left" aria-hidden="true"></i>
+                        </span>
+                    </a>
+                </li>
+                <li class="{% if not articles.has_previous %}disabled{% endif %}">
+                    <a href="{% if articles.has_previous %}?page={{ articles.previous_page_number }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">
+                            <i class="fa fa-angle-left" aria-hidden="true"></i>
+                        </span>
+                    </a>
+                </li>
+
+                {% for page in pagination.surrounding.before %}
+                    <li><a href="?page={{ page }}">{{ page }}</a></li>
+                {% endfor %}
+
+                <li class="active"><a href="?page={{ articles.number }}">{{ articles.number }} <span class="sr-only">(current)</span></a></li>
+
+                {% for page in pagination.surrounding.after %}
+                    <li><a href="?page={{ page }}">{{ page }}</a></li>
+                {% endfor %}
+
+                <li class="{% if not articles.has_next %}disabled{% endif %}">
+                    <a href="{% if articles.has_next %}?page={{ articles.next_page_number }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">
+                            <i class="fa fa-angle-right" aria-hidden="true"></i>
+                        </span>
+                    </a>
+                </li>
+                <li class="{% if not articles.has_next %}disabled{% endif %}">
+                    <a href="?page={{ articles.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">
+                            <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+{% endblock %}
