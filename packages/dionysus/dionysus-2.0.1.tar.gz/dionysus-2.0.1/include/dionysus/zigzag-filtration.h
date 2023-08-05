@@ -1,0 +1,11 @@
+#ifndef DIONYSUS_ZIGZAG_FILTRATION_H
+#define DIONYSUS_ZIGZAG_FILTRATION_H
+
+
+class ZigzagFiltration
+{
+
+};
+
+
+#endif // DIONYSUS_ZIGZAG_FILTRATION_H
