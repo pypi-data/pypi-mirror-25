@@ -1,0 +1,109 @@
+{% extends base %}
+{% from 'macro.html' import breadcrumbs with context %}
+{% block content %}
+<div class="row">
+    <div class="span12">
+        {{- breadcrumbs([
+            [url_for('author.info'), 'Кабинет автора'],
+            [url_for('story.edit', pk=(story or chapter.story).id), 'Редактирование «{}»'.format((story or chapter.story).title)]
+        ]) }}
+    </div>
+    <div class="span12">
+        {% if not chapter -%}
+            {{ html_block('chapter_add') }}
+        {%- else -%}
+            <h1>{{ page_title }}</h1>
+        {%- endif %}
+        <form method="POST" enctype="multipart/form-data" name="search" id="searchform" class="form-horizontal">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="older_md5" value="{{ chapter.text_md5 }}" />
+            {% if saved %}<div class="alert-mini green">Изменения сохранены</div><br/>{% endif %}
+            {% if not_saved %}<div class="alert-mini alert-error">Изменения не сохранены, проверьте форму</div><br/>{% endif %}
+            <fieldset>
+                <!-- Название -->
+                <div class="control-group{% if form.title.errors %} error{% endif %}">
+                    {{ form.title.label(class_='control-label') }}
+                    <div class="controls">{{ form.title }}
+                        {% if form.title.errors %}
+                            {% for error in form.title.errors %}
+                            <span class="help-inline">{{ error }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="help-inline small">{{ form.title.description }}</span>
+                        {% endif %}
+                      </div>
+                </div>
+                <!-- Заметки к главе -->
+                <div class="control-group{% if form.notes.errors %} error{% endif %}">
+                    {{ form.notes.label(class_='control-label', for='id_text') }}
+                    <div class="controls">{{ form.notes }}
+                        {% if form.notes.errors %}
+                            {% for error in form.notes.errors %}
+                            <span class="help-inline">{{ error }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="help-inline small">{{ form.notes.description }}</span>
+                        {% endif %}
+                      </div>
+                </div>
+                <!-- Текст главы -->
+                <div class="control-group{% if form.text.errors %} error{% endif %}">
+                    {{ form.text.label(class_='control-label', for='id_text') }}
+                    <div class="controls">{{ form.text }}
+                        {% if form.text.errors %}
+                            {% for error in form.text.errors %}
+                            <span class="help-inline">{{ error }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <!--<span class="help-inline small">-->{{ form.text.description }}<!--</span>-->
+                        {% endif %}
+                        {% if diff_html %}
+                            <pre class="editlog-chapter-diff">{{ diff_html|safe }}</pre>
+                        {% endif %}
+                      </div>
+                </div>
+                <div class="form-actions notop">
+                {%- if not edit %}
+                    {% if not story.published %}
+                        <button type="submit" name="act" value="publish" class="btn btn-primary">{{ _('Add') }}</button>
+                    {% else %}
+                        <button type="submit" name="act" value="publish" class="btn btn-primary">
+                            {%- if unpublished_chapters_count > 0 -%}
+                                {{- ngettext('Add and publish %(num)s chapter', 'Add and publish %(num)s chapters', unpublished_chapters_count + 1) -}}
+                            {%- else -%}
+                                {{ _('Add and publish') }}
+                            {%- endif -%}
+                        </button>
+                        <button type="submit" name="act" value="draft" class="btn">{{ _('Add as draft') }}</button>
+                    {% endif %}
+
+                {%- else %}
+                    <button type="submit" name="act" value="save" class="btn btn-primary">{{ _('Save changes') }}</button>
+                {%- endif %}
+
+                <button type="submit" name="act" value="preview" class="btn" id="chapter-preview-btn">{{ _('Preview') }}</button>
+                <button disabled type="submit" name="act" value="preview" class="btn" id="chapter-preview-selected-btn">{{ _('Preview selected') }}</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
+    <div style="text-align: center">
+        <img src="{{ url_for('static', filename='i/ajax-loader.gif') }}" alt="" id="chapter-preview-loading-img" style="display: none;" />
+    </div>
+    <div id="chapter-preview">
+    {%- if preview_html -%}
+        {%- include 'chapter_preview.html' -%}
+    {%- elif chapter -%}
+        {%- with story=chapter.story, chapter_edit_mode=True %}{% include "includes/chapter_single.html" %}{% endwith -%}
+    {%- endif -%}
+    </div>
+
+    <div class="span12">
+        {{- breadcrumbs([
+            [url_for('author.info'), 'Кабинет автора'],
+            [url_for('story.edit', pk=(story or chapter.story).id), 'Редактирование «{}»'.format((story or chapter.story).title)]
+        ]) }}
+    </div>
+</div>
+{% endblock %}

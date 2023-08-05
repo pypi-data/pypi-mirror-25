@@ -1,0 +1,25 @@
+{
+    "page_content": {
+        "v": {{ (config.get('STATIC_V') or '')|tojson_raw|safe }},
+        "csrftoken": {{ csrf_token()|tojson_raw|safe }},
+        "title": {% filter safe %}{% filter tojson_raw -%}
+            {%- block fulltitle -%}
+                {% block title %}{{ page_title }}{% endblock %} &mdash; {{ SITE_NAME }}
+            {%- endblock fulltitle -%}
+            {%- endfilter %}{% endfilter %},
+        {# Это полноценное модальное окно, которое заменяет адресную строку и всё содержимое data #}
+        "modal": null,
+        {# А это просто всплывашка поверх страницы #}
+        "modal_content": {% filter safe %}{% filter tojson_raw -%}
+            {%- block modal %}{% endblock %}
+            {%- endfilter %}{% endfilter %},
+        "data": {
+            "nav-main": {% filter safe %}{% filter tojson_raw -%}
+                {% include 'includes/nav.html' %}
+                {%- endfilter %}{% endfilter %},
+            "content": {% filter safe %}{% filter tojson_raw -%}
+                {%- block content %}{% endblock %}
+                {%- endfilter %}{% endfilter %}
+        }
+    }
+}

@@ -1,0 +1,50 @@
+{% extends base %}
+{% from 'macro.html' import breadcrumbs with context %}
+
+{% block extrahead %}
+    {{- super() }}
+    {% if prev_chapter -%}
+        <link rel="prev" href="{{ url_for('chapter.view', story_id=story.id, chapter_order=prev_chapter.order, _external=True) }}" />
+    {%- endif %}
+    {% if next_chapter -%}
+        <link rel="next" href="{{ url_for('chapter.view', story_id=story.id, chapter_order=next_chapter.order, _external=True) }}" />
+    {%- endif %}
+    <meta name="description" content="{% if allchapters %}{{ chapters[0].text_preview }}{% else %}{{ chapter.text_preview }}{% endif %}" />
+{% endblock %}
+
+{% block content %}
+<div class="row" id="story_{{ story.id }}">
+    <div class="span12">
+    {{- breadcrumbs(
+        [[url_for('story.view', pk=story.id), story.title]],
+        current='Все главы' if allchapters else chapter.autotitle
+    ) }}
+    </div>
+    {% if allchapters %}
+        <div class="span12 story-chapter-page">
+            {% include "includes/story_panel.html" %}
+            <h1>{{ story.title }}</h1>
+            {% for chapter in chapters %}
+                {% include "includes/chapter_single.html" %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="span12 story-chapter-page">
+            {% include "includes/story_panel.html" %}
+            {% include "includes/chapter_single.html" %}
+        </div>
+    {% endif %}
+    <div class="span12">
+    {{- breadcrumbs(
+        [[url_for('story.view', pk=story.id), story.title]],
+        current='Все главы' if allchapters else chapter.autotitle
+    ) }}
+    </div>
+</div>
+{% endblock %}
+
+{%- block modal -%}
+    {%- if story.nsfw and not current_user.nsfw -%}
+        {%- include 'includes/nsfw_modal.html' -%}
+    {%- endif -%}
+{%- endblock -%}
