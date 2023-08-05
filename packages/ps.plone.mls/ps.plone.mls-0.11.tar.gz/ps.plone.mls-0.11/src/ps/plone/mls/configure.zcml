@@ -1,0 +1,40 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="ps.plone.mls">
+
+  <!-- Register i18n support. -->
+  <!-- ====================== -->
+  <i18n:registerTranslations directory="locales" />
+
+
+  <!-- Include package dependencies. -->
+  <!-- ============================= -->
+  <includeDependencies package="." />
+  <include package=".browser" />
+  <include package=".content" />
+  <include package=".vocabularies" />
+  <include file="profiles.zcml" />
+
+
+  <!-- Add local MLS settings marker interface. -->
+  <!-- ======================================== -->
+  <configure zcml:condition="installed Products.Archetypes">
+    <!-- Add marker interface to all Archetype content types. -->
+    <class class="Products.Archetypes.BaseObject.BaseObject">
+      <implements interface="ps.plone.mls.interfaces.IPossibleDevelopmentCollection" />
+      <implements interface="ps.plone.mls.interfaces.IPossibleListingSearchBanner" />
+    </class>
+  </configure>
+
+  <configure zcml:condition="installed plone.dexterity">
+    <!-- Add marker interface to all dexterity content types. -->
+    <class class="plone.dexterity.content.DexterityContent">
+      <implements interface="ps.plone.mls.interfaces.IPossibleDevelopmentCollection" />
+      <implements interface="ps.plone.mls.interfaces.IPossibleListingSearchBanner" />
+    </class>
+  </configure>
+
+</configure>

@@ -1,0 +1,174 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="ps.plone.mls">
+
+  <!-- GenericSetup Profiles. -->
+  <!-- ====================== -->
+
+  <!-- Installation: Plone 4. -->
+  <genericsetup:registerProfile
+      zcml:condition="not-have plone-5"
+      description="Plone 4 support for the Propertyshelf MLS."
+      directory="profiles/plone4"
+      name="default"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      title="ps.plone.mls"
+      />
+
+  <!-- Installation: Plone 5. -->
+  <genericsetup:registerProfile
+      zcml:condition="have plone-5"
+      description="Plone 5 support for the Propertyshelf MLS."
+      directory="profiles/plone5"
+      name="default"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      title="ps.plone.mls"
+      />
+
+  <!-- Uninstall: Plone 4 & 5. -->
+  <genericsetup:registerProfile
+      description="A Plone uninstall profile for ps.plone.mls."
+      directory="profiles/uninstall"
+      name="uninstall"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      title="ps.plone.mls - uninstall"
+      />
+
+  <!-- Test fixtures. -->
+  <genericsetup:registerProfile
+      description="This fixture creates generic content to be used in tests."
+      directory="profiles/testfixture"
+      name="testfixture"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      title="ps.plone.mls - testfixture"
+      />
+
+
+  <!-- GenericSetup Import Steps. -->
+  <!-- ========================== -->
+  <genericsetup:importStep
+      description="Install additional available add-ons."
+      handler=".setuphandlers.install_add_ons"
+      name="ps.plone.mls.addons"
+      title="ps.plone.mls add-ons">
+    <depends name="toolset" />
+  </genericsetup:importStep>
+
+
+  <!-- GenericSetup Upgrade Steps. -->
+  <!-- =========================== -->
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Adds developer MLS functionality."
+      source="1000"
+      destination="1001"
+      handler=".migration.migrate_to_1001"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Updates developments-embedding css"
+      source="1001"
+      destination="1002"
+      handler=".migration.migrate_to_1002"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Upgrade CSS"
+      source="1002"
+      destination="1003"
+      handler=".migration.migrate_css"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Upgrade CSS"
+      source="1002"
+      destination="1004"
+      handler=".migration.migrate_css"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Upgrade CSS"
+      source="1003"
+      destination="1004"
+      handler=".migration.migrate_css"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Ensure all needed addons and styles are active"
+      source="1004"
+      destination="1005"
+      handler=".migration.migrate_to_1005"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Upgrade CSS"
+      source="1005"
+      destination="1006"
+      handler=".migration.migrate_css"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Upgrade meta description viewlet"
+      source="1006"
+      destination="1007"
+      handler=".migration.migrate_to_1007"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Update JS settings"
+      source="1007"
+      destination="1008"
+      handler=".migration.migrate_to_1008"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade ps.plone.mls"
+      description="Update portal actions."
+      source="1008"
+      destination="1009"
+      handler=".migration.migrate_to_1009"
+      sortkey="1"
+      profile="ps.plone.mls:default"
+      />
+
+
+  <!-- GenericSetup utilities. -->
+  <!-- ======================= -->
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="ps.plone.mls-hiddenprofiles"
+      />
+
+  <subscriber
+    handler=".setuphandlers.handle_profile_imported_event"
+      />
+
+</configure>
