@@ -1,0 +1,490 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>The HMAC activation workflow &mdash; django-registration 2.3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="django-registration 2.3 documentation" href="index.html"/>
+        <link rel="next" title="The one-step workflow" href="one-step-workflow.html"/>
+        <link rel="prev" title="Quick start guide" href="quickstart.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> django-registration
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation and configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick start guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Built-in registration workflows</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The HMAC activation workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#behavior-and-configuration">Behavior and configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#views">Views</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparison-to-the-model-activation-workflow">Comparison to the model-activation workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#security-considerations">Security considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="one-step-workflow.html">The one-step workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model-workflow.html">The model-based activation workflow</a></li>
+</ul>
+<p class="caption"><span class="caption-text">For developers</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Base view classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forms.html">Base form classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom-user.html">Custom user models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validators.html">Validation utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Custom settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signals.html">Signals used by django-registration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Other documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade.html">Upgrading from previous versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently-asked questions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">django-registration</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>The HMAC activation workflow</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/hmac.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-registration.backends.hmac"><span id="hmac-workflow"></span></span><div class="section" id="the-hmac-activation-workflow">
+<h1>The HMAC activation workflow<a class="headerlink" href="#the-hmac-activation-workflow" title="Permalink to this headline">¶</a></h1>
+<p>The HMAC workflow, found in <code class="docutils literal"><span class="pre">registration.backends.hmac</span></code>, implements
+a two-step registration process (signup, followed by activation), but
+unlike the older <a class="reference internal" href="model-workflow.html#model-workflow"><span class="std std-ref">model-based activation workflow</span></a> uses no models and does not store its activation
+key; instead, the activation key sent to the user is a timestamped,
+<a class="reference external" href="https://en.wikipedia.org/wiki/Hash-based_message_authentication_code">HMAC</a>-verified
+value.</p>
+<p>Unless you need to maintain compatibility in an existing install of
+django-registration which used the model-based workflow, it’s
+recommended you use the HMAC activation workflow for two-step signup
+processes.</p>
+<div class="section" id="behavior-and-configuration">
+<h2>Behavior and configuration<a class="headerlink" href="#behavior-and-configuration" title="Permalink to this headline">¶</a></h2>
+<p>Since this workflow does not make use of any additional models beyond
+the user model (either Django’s default
+<code class="docutils literal"><span class="pre">django.contrib.auth.models.User</span></code>, or <a class="reference internal" href="custom-user.html#custom-user"><span class="std std-ref">a custom user model</span></a>), <em>do not</em> add <code class="docutils literal"><span class="pre">registration</span></code> to your
+<code class="docutils literal"><span class="pre">INSTALLED_APPS</span></code> setting.</p>
+<p>You will need to configure URLs, however. A default URLconf is
+provided, which you can <code class="docutils literal"><span class="pre">include()</span></code> in your URL configuration; that
+URLconf is <code class="docutils literal"><span class="pre">registration.backends.hmac.urls</span></code>. For example, to place
+user registration under the URL prefix <code class="docutils literal"><span class="pre">/accounts/</span></code>, you could place
+the following in your root URLconf:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django.conf.urls</span> <span class="kn">import</span> <span class="n">include</span><span class="p">,</span> <span class="n">url</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># Other URL patterns ...</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^accounts/&#39;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s1">&#39;registration.backends.hmac.urls&#39;</span><span class="p">)),</span>
+    <span class="c1"># More URL patterns ...</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>That URLconf also sets up the views from <code class="docutils literal"><span class="pre">django.contrib.auth</span></code>
+(login, logout, password reset, etc.), though if you want those views
+at a different location, you can <code class="docutils literal"><span class="pre">include()</span></code> the URLconf
+<code class="docutils literal"><span class="pre">registration.auth_urls</span></code> to place only the <code class="docutils literal"><span class="pre">django.contrib.auth</span></code>
+views at a specific location in your URL hierarchy.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p><strong>URL patterns for activation</strong></p>
+<p>Although the actual value used in the activation key is the new
+user account’s username, the URL pattern for
+<code class="xref py py-class docutils literal"><span class="pre">ActivationView</span></code> does not
+need to match all possible legal characters in a username. The
+activation key that will be sent to the user (and thus matched in
+the URL) is produced by <code class="docutils literal"><span class="pre">django.core.signing.dumps()</span></code>, which
+base64-encodes its output. Thus, the only characters this pattern
+needs to match are those from <a class="reference external" href="http://tools.ietf.org/html/rfc4648#section-5">the URL-safe base64 alphabet</a>, plus the colon
+(“<code class="docutils literal"><span class="pre">:</span></code>”) which is used as a separator.</p>
+<p class="last">The default URL pattern for the activation view in
+<code class="docutils literal"><span class="pre">registration.backends.hmac.urls</span></code> handles this for you.</p>
+</div>
+<p>This workflow makes use of up to three settings (click for details on
+each):</p>
+<ul class="simple">
+<li><a class="reference internal" href="settings.html#django.conf.settings.ACCOUNT_ACTIVATION_DAYS" title="django.conf.settings.ACCOUNT_ACTIVATION_DAYS"><code class="xref py py-data docutils literal"><span class="pre">ACCOUNT_ACTIVATION_DAYS</span></code></a></li>
+<li><a class="reference internal" href="settings.html#django.conf.settings.REGISTRATION_OPEN" title="django.conf.settings.REGISTRATION_OPEN"><code class="xref py py-data docutils literal"><span class="pre">REGISTRATION_OPEN</span></code></a></li>
+<li><a class="reference internal" href="settings.html#django.conf.settings.REGISTRATION_SALT" title="django.conf.settings.REGISTRATION_SALT"><code class="xref py py-data docutils literal"><span class="pre">REGISTRATION_SALT</span></code></a> (see also <a class="reference internal" href="#salt-security"><span class="std std-ref">note
+below</span></a>)</li>
+</ul>
+<p>By default, this workflow uses
+<a class="reference internal" href="forms.html#registration.forms.RegistrationForm" title="registration.forms.RegistrationForm"><code class="xref py py-class docutils literal"><span class="pre">registration.forms.RegistrationForm</span></code></a> as its form class for
+user registration; this can be overridden by passing the keyword
+argument <code class="docutils literal"><span class="pre">form_class</span></code> to the registration view.</p>
+</div>
+<div class="section" id="views">
+<h2>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h2>
+<p>Two views are provided to implement the signup/activation
+process. These subclass <a class="reference internal" href="views.html#views"><span class="std std-ref">the base views of django-registration</span></a>, so anything that can be overridden/customized there can
+equally be overridden/customized here. There are some additional
+customization points specific to the HMAC implementation, which are
+listed below.</p>
+<p>For an overview of the templates used by these views (other than those
+specified below), and their context variables, see <a class="reference internal" href="quickstart.html#quickstart"><span class="std std-ref">the quick
+start guide</span></a>.</p>
+<dl class="class">
+<dt id="registration.backends.hmac.views.RegistrationView">
+<em class="property">class </em><code class="descclassname">registration.backends.hmac.views.</code><code class="descname">RegistrationView</code><a class="headerlink" href="#registration.backends.hmac.views.RegistrationView" title="Permalink to this definition">¶</a></dt>
+<dd><p>A subclass of <a class="reference internal" href="views.html#registration.views.RegistrationView" title="registration.views.RegistrationView"><code class="xref py py-class docutils literal"><span class="pre">registration.views.RegistrationView</span></code></a>
+implementing the signup portion of this workflow.</p>
+<p>Important customization points unique to this class are:</p>
+<dl class="method">
+<dt id="registration.backends.hmac.views.RegistrationView.create_inactive_user">
+<code class="descname">create_inactive_user</code><span class="sig-paren">(</span><em>form</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.backends.hmac.views.RegistrationView.create_inactive_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns an inactive user account, and calls
+<a class="reference internal" href="#registration.backends.hmac.views.RegistrationView.send_activation_email" title="registration.backends.hmac.views.RegistrationView.send_activation_email"><code class="xref py py-meth docutils literal"><span class="pre">send_activation_email()</span></code></a> to send the email with the
+activation key. The argument <code class="docutils literal"><span class="pre">form</span></code> is a valid registration
+form instance passed from
+<a class="reference internal" href="views.html#registration.views.RegistrationView.register" title="registration.views.RegistrationView.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.backends.hmac.views.RegistrationView.get_activation_key">
+<code class="descname">get_activation_key</code><span class="sig-paren">(</span><em>user</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.backends.hmac.views.RegistrationView.get_activation_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an instance of the user model, generates and returns an
+activation key (a string) for that user account.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.backends.hmac.views.RegistrationView.get_email_context">
+<code class="descname">get_email_context</code><span class="sig-paren">(</span><em>activation_key</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.backends.hmac.views.RegistrationView.get_email_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of values to be used as template context
+when generating the activation email.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.backends.hmac.views.RegistrationView.send_activation_email">
+<code class="descname">send_activation_email</code><span class="sig-paren">(</span><em>user</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.backends.hmac.views.RegistrationView.send_activation_email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an inactive user account, generates and sends the
+activation email for that account.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="registration.backends.hmac.views.RegistrationView.email_body_template">
+<code class="descname">email_body_template</code><a class="headerlink" href="#registration.backends.hmac.views.RegistrationView.email_body_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string specifying the template to use for the body of the
+activation email. Default is
+<code class="docutils literal"><span class="pre">&quot;registration/activation_email.txt&quot;</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="registration.backends.hmac.views.RegistrationView.email_subject_template">
+<code class="descname">email_subject_template</code><a class="headerlink" href="#registration.backends.hmac.views.RegistrationView.email_subject_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string specifying the template to use for the subject of the
+activation email. Default is
+<code class="docutils literal"><span class="pre">&quot;registration/activation_email_subject.txt&quot;</span></code>. Note that, to
+avoid header-injection vulnerabilities, the result of rendering
+this template will be forced into a single line of text,
+stripping newline characters.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="registration.backends.hmac.views.ActivationView">
+<em class="property">class </em><code class="descclassname">registration.backends.hmac.views.</code><code class="descname">ActivationView</code><a class="headerlink" href="#registration.backends.hmac.views.ActivationView" title="Permalink to this definition">¶</a></dt>
+<dd><p>A subclass of <a class="reference internal" href="views.html#registration.views.ActivationView" title="registration.views.ActivationView"><code class="xref py py-class docutils literal"><span class="pre">registration.views.ActivationView</span></code></a>
+implementing the activation portion of this workflow.</p>
+<p>Important customization points unique to this class are:</p>
+<dl class="method">
+<dt id="registration.backends.hmac.views.ActivationView.get_user">
+<code class="descname">get_user</code><span class="sig-paren">(</span><em>username</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.backends.hmac.views.ActivationView.get_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a username (determined by the activation key), look up and
+return the corresponding instance of the user model. Returns
+<code class="docutils literal"><span class="pre">None</span></code> if no such instance exists. In the base implementation,
+will include <code class="docutils literal"><span class="pre">is_active=False</span></code> in the query to avoid
+re-activation of already-active accounts.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.backends.hmac.views.ActivationView.validate_key">
+<code class="descname">validate_key</code><span class="sig-paren">(</span><em>activation_key</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.backends.hmac.views.ActivationView.validate_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the activation key, verifies that it carries a valid
+signature and a timestamp no older than the number of days
+specified in the setting <code class="docutils literal"><span class="pre">ACCOUNT_ACTIVATION_DAYS</span></code>, and
+returns the username from the activation key. Returns <code class="docutils literal"><span class="pre">None</span></code>
+if the activation key has an invalid signature or if the
+timestamp is too old.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<p>When a user signs up, the HMAC workflow creates a new <code class="docutils literal"><span class="pre">User</span></code>
+instance to represent the account, and sets the <code class="docutils literal"><span class="pre">is_active</span></code> field to
+<code class="docutils literal"><span class="pre">False</span></code>. It then sends an email to the address provided during
+signup, containing a link to activate the account. When the user
+clicks the link, the activation view sets <code class="docutils literal"><span class="pre">is_active</span></code> to <code class="docutils literal"><span class="pre">True</span></code>,
+after which the user can log in.</p>
+<p>The activation key is the username of the new account, signed
+using <a class="reference external" href="https://docs.djangoproject.com/en/stable/topics/signing/">Django’s cryptographic signing tools</a>
+(specifically, <code class="docutils literal"><span class="pre">signing.dumps()</span></code> is used, to produce a
+guaranteed-URL-safe value). The activation process includes
+verification of the signature prior to activation, as well as
+verifying that the user is activating within the permitted window (as
+specified in the setting <code class="docutils literal"><span class="pre">ACCOUNT_ACTIVATION_DAYS</span></code>, mentioned
+above), through use of Django’s <code class="docutils literal"><span class="pre">TimestampSigner</span></code>.</p>
+</div>
+<div class="section" id="comparison-to-the-model-activation-workflow">
+<h2>Comparison to the model-activation workflow<a class="headerlink" href="#comparison-to-the-model-activation-workflow" title="Permalink to this headline">¶</a></h2>
+<p>The primary advantage of the HMAC activation workflow is that it
+requires no persistent storage of the activation key. However, this
+means there is no longer an automated way to differentiate accounts
+which have been purposefully deactivated (for example, as a way to ban
+a user) from accounts which failed to activate within a specified
+window. Additionally, it is possible a user could, if manually
+deactivated, re-activate their account if still within the activation
+window; for this reason, when using the <code class="docutils literal"><span class="pre">is_active</span></code> field to “ban” a
+user, it is best to also set the user’s password to an unusable value
+(i.e., by calling <a class="reference external" href="https://docs.djangoproject.com/en/stable/ref/contrib/auth/#django.contrib.auth.models.User.set_unusable_password">set_unusable_password()</a>
+for that user). Calling <code class="docutils literal"><span class="pre">set_unusable_password()</span></code> will also make it
+easier to query for manually-deactivated users, as their passwords
+will (when using Django’s default <code class="docutils literal"><span class="pre">User</span></code> implementation) begin with
+the exclamation mark (<code class="docutils literal"><span class="pre">!</span></code>) character.</p>
+<p>Since the HMAC activation workflow does not use any models, it also
+does not make use of the admin interface and thus does not offer a
+convenient way to re-send an activation email. Users who have
+difficulty receiving the activation email can be manually activated by
+a site administrator.</p>
+<p>However, the reduced overhead of not needing to store the activation
+key makes this generally preferable to <a class="reference internal" href="model-workflow.html#model-workflow"><span class="std std-ref">the model-based workflow</span></a>.</p>
+</div>
+<div class="section" id="security-considerations">
+<h2>Security considerations<a class="headerlink" href="#security-considerations" title="Permalink to this headline">¶</a></h2>
+<p>The activation key emailed to the user in the HMAC activation workflow
+is a value obtained by using Django’s cryptographic signing tools.</p>
+<p>In particular, the activation key is of the form:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">encoded_username</span><span class="p">:</span><span class="n">timestamp</span><span class="p">:</span><span class="n">signature</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal"><span class="pre">encoded_username</span></code> is the username of the new account,
+(URL-safe) base64-encoded, <code class="docutils literal"><span class="pre">timestamp</span></code> is a base62-encoded timestamp
+of the time the user registered, and <code class="docutils literal"><span class="pre">signature</span></code> is a (URL-safe)
+base64-encoded HMAC of the username and timestamp.</p>
+<p>Django’s implementation uses the value of the <code class="docutils literal"><span class="pre">SECRET_KEY</span></code> setting
+as the key for HMAC; additionally, it permits the specification of a
+salt value which can be used to “namespace” different uses of HMAC
+across a Django-powered site.</p>
+<p id="salt-security">The HMAC activation workflow will use the value (a string) of the
+setting <a class="reference internal" href="settings.html#django.conf.settings.REGISTRATION_SALT" title="django.conf.settings.REGISTRATION_SALT"><code class="xref py py-data docutils literal"><span class="pre">REGISTRATION_SALT</span></code></a> as the salt,
+defaulting to the string <code class="docutils literal"><span class="pre">&quot;registration&quot;</span></code> if that setting is not
+specified. This value does <em>not</em> need to be kept secret (only
+<code class="docutils literal"><span class="pre">SECRET_KEY</span></code> does); it serves only to ensure that other parts of a
+site which also produce signed values from user input could not be
+used as a way to generate activation keys for arbitrary usernames (and
+vice-versa).</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="one-step-workflow.html" class="btn btn-neutral float-right" title="The one-step workflow" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="quickstart.html" class="btn btn-neutral" title="Quick start guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2007-2016, James Bennett.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

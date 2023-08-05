@@ -1,0 +1,579 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>The model-based activation workflow &mdash; django-registration 2.3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="django-registration 2.3 documentation" href="index.html"/>
+        <link rel="next" title="Base view classes" href="views.html"/>
+        <link rel="prev" title="The one-step workflow" href="one-step-workflow.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> django-registration
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation and configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick start guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Built-in registration workflows</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="hmac.html">The HMAC activation workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="one-step-workflow.html">The one-step workflow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The model-based activation workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#default-behavior-and-configuration">Default behavior and configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-account-data-is-stored-for-activation">How account data is stored for activation</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">For developers</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Base view classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forms.html">Base form classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom-user.html">Custom user models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validators.html">Validation utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Custom settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signals.html">Signals used by django-registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecations.html">Feature and API deprecation cycle</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Other documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade.html">Upgrading from previous versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently-asked questions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">django-registration</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>The model-based activation workflow</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/model-workflow.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-registration.backends.model_activation"><span id="model-workflow"></span></span><div class="section" id="the-model-based-activation-workflow">
+<h1>The model-based activation workflow<a class="headerlink" href="#the-model-based-activation-workflow" title="Permalink to this headline">¶</a></h1>
+<p>This workflow implements a two-step – registration, followed by
+activation – process for user signup.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p><strong>Use of the model-based workflow is discouraged</strong></p>
+<p>The model-based activation workflow was originally the <em>only</em>
+workflow built in to django-registration, and later was the
+default one. However, it no longer represents the best practice for
+registration with modern versions of Django, and so it continues to
+be included only for backwards compatibility with existing
+installations of django-registration.</p>
+<p>If you’re setting up a new installation and want a two-step process
+with activation, it’s recommended you use <a class="reference internal" href="hmac.html#hmac-workflow"><span class="std std-ref">the HMAC activation
+workflow</span></a> instead.</p>
+<p class="last">Also, note that this workflow was previously found in
+<code class="docutils literal"><span class="pre">registration.backends.default</span></code>, and imports from that location
+still function in django-registration 2.3 but now raise
+deprecation warnings. The correct location going forward is
+<code class="docutils literal"><span class="pre">registration.backends.model_activation</span></code>.</p>
+</div>
+<div class="section" id="default-behavior-and-configuration">
+<h2>Default behavior and configuration<a class="headerlink" href="#default-behavior-and-configuration" title="Permalink to this headline">¶</a></h2>
+<p>To make use of this workflow, add <code class="docutils literal"><span class="pre">registration</span></code> to your
+<code class="docutils literal"><span class="pre">INSTALLED_APPS</span></code>, run <code class="docutils literal"><span class="pre">manage.py</span> <span class="pre">migrate</span></code> to install its model,
+and include the URLconf
+<code class="docutils literal"><span class="pre">registration.backends.model_activation.urls</span></code> at whatever location
+you choose in your URL hierarchy. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django.conf.urls</span> <span class="kn">import</span> <span class="n">include</span><span class="p">,</span> <span class="n">url</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># Other URL patterns ...</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^accounts/&#39;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s1">&#39;registration.backends.model_activation.urls&#39;</span><span class="p">)),</span>
+    <span class="c1"># More URL patterns ...</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>This workflow makes use of the following settings:</p>
+<ul class="simple">
+<li><a class="reference internal" href="settings.html#django.conf.settings.ACCOUNT_ACTIVATION_DAYS" title="django.conf.settings.ACCOUNT_ACTIVATION_DAYS"><code class="xref py py-data docutils literal"><span class="pre">ACCOUNT_ACTIVATION_DAYS</span></code></a></li>
+<li><a class="reference internal" href="settings.html#django.conf.settings.REGISTRATION_OPEN" title="django.conf.settings.REGISTRATION_OPEN"><code class="xref py py-data docutils literal"><span class="pre">REGISTRATION_OPEN</span></code></a></li>
+</ul>
+<p>By default, this workflow uses
+<a class="reference internal" href="forms.html#registration.forms.RegistrationForm" title="registration.forms.RegistrationForm"><code class="xref py py-class docutils literal"><span class="pre">registration.forms.RegistrationForm</span></code></a> as its form class for
+user registration; this can be overridden by passing the keyword
+argument <code class="docutils literal"><span class="pre">form_class</span></code> to the registration view.</p>
+<p>Two views are provided:
+<code class="docutils literal"><span class="pre">registration.backends.model_activation.views.RegistrationView</span></code> and
+<code class="docutils literal"><span class="pre">registration.backends.model_activation.views.ActivationView</span></code>. These
+views subclass django-registration’s base
+<a class="reference internal" href="views.html#registration.views.RegistrationView" title="registration.views.RegistrationView"><code class="xref py py-class docutils literal"><span class="pre">RegistrationView</span></code></a> and
+<a class="reference internal" href="views.html#registration.views.ActivationView" title="registration.views.ActivationView"><code class="xref py py-class docutils literal"><span class="pre">ActivationView</span></code></a>, respectively, and
+implement the two-step registration/activation process.</p>
+<p>Upon successful registration – not activation – the user will be
+redirected to the URL pattern named <code class="docutils literal"><span class="pre">registration_complete</span></code>.</p>
+<p>Upon successful activation, the user will be redirected to the URL
+pattern named <code class="docutils literal"><span class="pre">registration_activation_complete</span></code>.</p>
+<p>This workflow uses the same templates and contexts as <a class="reference internal" href="hmac.html#hmac-workflow"><span class="std std-ref">the HMAC
+activation workflow</span></a>, which is covered in <a class="reference internal" href="quickstart.html#default-templates"><span class="std std-ref">the
+quick-start guide</span></a>. Refer to the quick-start guide
+for documentation on those templates and their contexts.</p>
+</div>
+<div class="section" id="how-account-data-is-stored-for-activation">
+<h2>How account data is stored for activation<a class="headerlink" href="#how-account-data-is-stored-for-activation" title="Permalink to this headline">¶</a></h2>
+<p>During registration, a new instance of the user model (by default,
+Django’s <code class="docutils literal"><span class="pre">django.contrib.auth.models.User</span></code> – see <a class="reference internal" href="custom-user.html#custom-user"><span class="std std-ref">the custom
+user documentation</span></a> for notes on using a different
+model) is created to represent the new account, with the <code class="docutils literal"><span class="pre">is_active</span></code>
+field set to <code class="docutils literal"><span class="pre">False</span></code>. An email is then sent to the email address of
+the account, containing a link the user must click to activate the
+account; at that point the <code class="docutils literal"><span class="pre">is_active</span></code> field is set to <code class="docutils literal"><span class="pre">True</span></code>, and
+the user may log in normally.</p>
+<p>Activation is handled by generating and storing an activation key in
+the database, using the following model:</p>
+<dl class="class">
+<dt id="registration.models.RegistrationProfile">
+<em class="property">class </em><code class="descclassname">registration.models.</code><code class="descname">RegistrationProfile</code><a class="headerlink" href="#registration.models.RegistrationProfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>A representation of the information needed to activate a new user
+account. This is <strong>not</strong> a user profile; it just provides a place
+to temporarily store the activation key and determine whether a
+given account has been activated.</p>
+<p>Has the following fields:</p>
+<dl class="attribute">
+<dt id="registration.models.RegistrationProfile.user">
+<code class="descname">user</code><a class="headerlink" href="#registration.models.RegistrationProfile.user" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="docutils literal"><span class="pre">OneToOneField</span></code> to the user model, representing the user
+account for which activation information is being stored.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="registration.models.RegistrationProfile.activation_key">
+<code class="descname">activation_key</code><a class="headerlink" href="#registration.models.RegistrationProfile.activation_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>A 40-character <code class="docutils literal"><span class="pre">CharField</span></code>, storing the activation key for the
+account. Initially, the activation key is the hex digest of a
+SHA1 hash; after activation, this is reset to <a class="reference internal" href="#registration.models.RegistrationProfile.ACTIVATED" title="registration.models.RegistrationProfile.ACTIVATED"><code class="xref py py-attr docutils literal"><span class="pre">ACTIVATED</span></code></a>.</p>
+</dd></dl>
+
+<p>Additionally, one class attribute exists:</p>
+<dl class="attribute">
+<dt id="registration.models.RegistrationProfile.ACTIVATED">
+<code class="descname">ACTIVATED</code><a class="headerlink" href="#registration.models.RegistrationProfile.ACTIVATED" title="Permalink to this definition">¶</a></dt>
+<dd><p>A constant string used as the value of <a class="reference internal" href="#registration.models.RegistrationProfile.activation_key" title="registration.models.RegistrationProfile.activation_key"><code class="xref py py-attr docutils literal"><span class="pre">activation_key</span></code></a>
+for accounts which have been activated.</p>
+</dd></dl>
+
+<p>And the following methods:</p>
+<dl class="method">
+<dt id="registration.models.RegistrationProfile.activation_key_expired">
+<code class="descname">activation_key_expired</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#registration.models.RegistrationProfile.activation_key_expired" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines whether this account’s activation key has expired,
+and returns a boolean (<code class="docutils literal"><span class="pre">True</span></code> if expired, <code class="docutils literal"><span class="pre">False</span></code>
+otherwise). Uses the following algorithm:</p>
+<ol class="arabic simple">
+<li>If <a class="reference internal" href="#registration.models.RegistrationProfile.activation_key" title="registration.models.RegistrationProfile.activation_key"><code class="xref py py-attr docutils literal"><span class="pre">activation_key</span></code></a> is <a class="reference internal" href="#registration.models.RegistrationProfile.ACTIVATED" title="registration.models.RegistrationProfile.ACTIVATED"><code class="xref py py-attr docutils literal"><span class="pre">ACTIVATED</span></code></a>, the account
+has already been activated and so the key is considered to
+have expired.</li>
+<li>Otherwise, the date of registration (obtained from the
+<code class="docutils literal"><span class="pre">date_joined</span></code> field of <a class="reference internal" href="#registration.models.RegistrationProfile.user" title="registration.models.RegistrationProfile.user"><code class="xref py py-attr docutils literal"><span class="pre">user</span></code></a>) is compared to the
+current date; if the span between them is greater than the
+value of the setting <code class="docutils literal"><span class="pre">ACCOUNT_ACTIVATION_DAYS</span></code>, the key is
+considered to have expired.</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.models.RegistrationProfile.send_activation_email">
+<code class="descname">send_activation_email</code><span class="sig-paren">(</span><em>site</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.models.RegistrationProfile.send_activation_email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends an activation email to the address of the account.</p>
+<p>The activation email will make use of two templates:
+<code class="docutils literal"><span class="pre">registration/activation_email_subject.txt</span></code> and
+<code class="docutils literal"><span class="pre">registration/activation_email.txt</span></code>, which are used for the
+subject of the email and the body of the email,
+respectively. Each will receive the following context:</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">activation_key</span></code></dt>
+<dd>The value of <a class="reference internal" href="#registration.models.RegistrationProfile.activation_key" title="registration.models.RegistrationProfile.activation_key"><code class="xref py py-attr docutils literal"><span class="pre">activation_key</span></code></a>.</dd>
+<dt><code class="docutils literal"><span class="pre">expiration_days</span></code></dt>
+<dd>The number of days the user has to activate, taken from the
+setting <code class="docutils literal"><span class="pre">ACCOUNT_ACTIVATION_DAYS</span></code>.</dd>
+<dt><code class="docutils literal"><span class="pre">user</span></code></dt>
+<dd>The user registering for the new account.</dd>
+<dt><code class="docutils literal"><span class="pre">site</span></code></dt>
+<dd>An object representing the site on which the account was
+registered; depending on whether <code class="docutils literal"><span class="pre">django.contrib.sites</span></code> is
+installed, this may be an instance of either
+<code class="docutils literal"><span class="pre">django.contrib.sites.models.Site</span></code> (if the sites
+application is installed) or
+<code class="docutils literal"><span class="pre">django.contrib.sites.models.RequestSite</span></code> (if
+not). Consult <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/contrib/sites/">the documentation for the Django sites
+framework</a>
+for details regarding these objects’ interfaces.</dd>
+</dl>
+<p>Note that, to avoid header-injection vulnerabilities, the
+rendered output of <code class="docutils literal"><span class="pre">registration/activation_email_subject.txt</span></code>
+will be forcibly condensed to a single line.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>site</strong> (<code class="docutils literal"><span class="pre">django.contrib.sites.models.Site</span></code> or
+<code class="docutils literal"><span class="pre">django.contrib.sites.models.RequestSite</span></code>) – An object representing the site on which account
+was registered.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<p>Additionally, <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a> has a custom manager
+(accessed as <code class="docutils literal"><span class="pre">RegistrationProfile.objects</span></code>):</p>
+<dl class="class">
+<dt id="registration.models.RegistrationManager">
+<em class="property">class </em><code class="descclassname">registration.models.</code><code class="descname">RegistrationManager</code><a class="headerlink" href="#registration.models.RegistrationManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>This manager provides several convenience methods for creating and
+working with instances of <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a>:</p>
+<dl class="method">
+<dt id="registration.models.RegistrationManager.activate_user">
+<code class="descname">activate_user</code><span class="sig-paren">(</span><em>activation_key</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.models.RegistrationManager.activate_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validates <code class="docutils literal"><span class="pre">activation_key</span></code> and, if valid, activates the
+associated account by setting its <code class="docutils literal"><span class="pre">is_active</span></code> field to
+<code class="docutils literal"><span class="pre">True</span></code>. To prevent re-activation of accounts, the
+<a class="reference internal" href="#registration.models.RegistrationProfile.activation_key" title="registration.models.RegistrationProfile.activation_key"><code class="xref py py-attr docutils literal"><span class="pre">activation_key</span></code></a> of the
+<a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a> for the account will be set to
+<a class="reference internal" href="#registration.models.RegistrationProfile.ACTIVATED" title="registration.models.RegistrationProfile.ACTIVATED"><code class="xref py py-attr docutils literal"><span class="pre">RegistrationProfile.ACTIVATED</span></code></a> after successful
+activation.</p>
+<p>Returns the user instance representing the account if
+activation is successful, <code class="docutils literal"><span class="pre">False</span></code> otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>activation_key</strong> (<em>string</em><em>, </em><em>a 40-character SHA1 hexdigest</em>) – The activation key to use for the
+activation.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#registration.models.RegistrationProfile.user" title="registration.models.RegistrationProfile.user">user</a> or bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.models.RegistrationManager.expired">
+<code class="descname">expired</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#registration.models.RegistrationManager.expired" title="Permalink to this definition">¶</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 2.3: </span>This method is <a class="reference internal" href="deprecations.html#deprecations"><span class="std std-ref">deprecated</span></a> and scheduled
+to be removed in django-registration 3.0.</p>
+</div>
+<p>Return instances of <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a> corresponding
+to expired users. A user is considered to be “expired” if:</p>
+<ul class="simple">
+<li>The activation key of the user’s <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a>
+is not set to <a class="reference internal" href="#registration.models.RegistrationProfile.ACTIVATED" title="registration.models.RegistrationProfile.ACTIVATED"><code class="xref py py-attr docutils literal"><span class="pre">RegistrationProfile.ACTIVATED</span></code></a>, and</li>
+<li>The user’s <code class="docutils literal"><span class="pre">is_active</span></code> field of is <code class="docutils literal"><span class="pre">False</span></code>, and</li>
+<li>The user’s <code class="docutils literal"><span class="pre">date_joined</span></code> field is more than
+<a class="reference internal" href="settings.html#django.conf.settings.ACCOUNT_ACTIVATION_DAYS" title="django.conf.settings.ACCOUNT_ACTIVATION_DAYS"><code class="xref py py-data docutils literal"><span class="pre">ACCOUNT_ACTIVATION_DAYS</span></code></a> in the
+past.</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal"><span class="pre">QuerySet</span></code> of <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.models.RegistrationManager.delete_expired_users">
+<code class="descname">delete_expired_users</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#registration.models.RegistrationManager.delete_expired_users" title="Permalink to this definition">¶</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 2.3: </span>This method is <a class="reference internal" href="deprecations.html#deprecations"><span class="std std-ref">deprecated</span></a> and scheduled
+to be removed in django-registration 3.0, as is the
+referenced <code class="docutils literal"><span class="pre">cleanupregistration</span></code> management command.</p>
+</div>
+<p>Removes expired instances of <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a>, and
+their associated user accounts, from the database. This is
+useful as a periodic maintenance task to clean out accounts
+which registered but never activated.</p>
+<p>A custom management command is provided which will execute this
+method, suitable for use in cron jobs or other scheduled
+maintenance tasks: <code class="docutils literal"><span class="pre">manage.py</span> <span class="pre">cleanupregistration</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.models.RegistrationManager.create_inactive_user">
+<code class="descname">create_inactive_user</code><span class="sig-paren">(</span><em>form</em>, <em>site</em>, <em>send_email=True</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.models.RegistrationManager.create_inactive_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new, inactive user account and an associated instance
+of <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a>, sends the activation email and
+returns the new <code class="docutils literal"><span class="pre">User</span></code> object representing the account.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>form</strong> – A bound instance of a subclass of
+<a class="reference internal" href="forms.html#registration.forms.RegistrationForm" title="registration.forms.RegistrationForm"><code class="xref py py-class docutils literal"><span class="pre">RegistrationForm</span></code></a> representing
+the (already-validated) data the user is trying to register
+with.</li>
+<li><strong>site</strong> – An object representing the site on which the
+account is being registered.  :type site:
+<code class="docutils literal"><span class="pre">django.contrib.sites.models.Site</span></code> or
+<code class="docutils literal"><span class="pre">django.contrib.sites.models.RequestSite</span></code> :param
+send_email: If <code class="docutils literal"><span class="pre">True</span></code>, the activation email will be sent to
+the account (by calling
+<a class="reference internal" href="#registration.models.RegistrationProfile.send_activation_email" title="registration.models.RegistrationProfile.send_activation_email"><code class="xref py py-meth docutils literal"><span class="pre">RegistrationProfile.send_activation_email()</span></code></a>). If
+<code class="docutils literal"><span class="pre">False</span></code>, no email will be sent (but the account will still
+be inactive).  :type send_email: bool :rtype: user</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="registration.models.RegistrationManager.create_profile">
+<code class="descname">create_profile</code><span class="sig-paren">(</span><em>user</em><span class="sig-paren">)</span><a class="headerlink" href="#registration.models.RegistrationManager.create_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns a <a class="reference internal" href="#registration.models.RegistrationProfile" title="registration.models.RegistrationProfile"><code class="xref py py-class docutils literal"><span class="pre">RegistrationProfile</span></code></a> instance for
+the account represented by <code class="docutils literal"><span class="pre">user</span></code>.</p>
+<p>The <code class="docutils literal"><span class="pre">RegistrationProfile</span></code> created by this method will have its
+<a class="reference internal" href="#registration.models.RegistrationProfile.activation_key" title="registration.models.RegistrationProfile.activation_key"><code class="xref py py-attr docutils literal"><span class="pre">activation_key</span></code></a> set to a SHA1 hash
+generated from a combination of the account’s username and a
+random salt.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user</strong> (<code class="docutils literal"><span class="pre">User</span></code>) – The user account; an instance of
+<code class="docutils literal"><span class="pre">django.contrib.auth.models.User</span></code>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal"><span class="pre">RegistrationProfile</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="views.html" class="btn btn-neutral float-right" title="Base view classes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="one-step-workflow.html" class="btn btn-neutral" title="The one-step workflow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2007-2016, James Bennett.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

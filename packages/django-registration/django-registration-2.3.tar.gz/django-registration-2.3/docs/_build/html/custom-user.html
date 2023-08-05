@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Custom user models &mdash; django-registration 2.3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="django-registration 2.3 documentation" href="index.html"/>
+        <link rel="next" title="Validation utilities" href="validators.html"/>
+        <link rel="prev" title="Base form classes" href="forms.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> django-registration
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation and configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick start guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Built-in registration workflows</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hmac.html">The HMAC activation workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="one-step-workflow.html">The one-step workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model-workflow.html">The model-based activation workflow</a></li>
+</ul>
+<p class="caption"><span class="caption-text">For developers</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="views.html">Base view classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forms.html">Base form classes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Custom user models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#determining-compatibility-of-a-custom-user-model">Determining compatibility of a custom user model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="validators.html">Validation utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Custom settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signals.html">Signals used by django-registration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Other documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade.html">Upgrading from previous versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently-asked questions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">django-registration</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Custom user models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/custom-user.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="custom-user-models">
+<span id="custom-user"></span><h1>Custom user models<a class="headerlink" href="#custom-user-models" title="Permalink to this headline">¶</a></h1>
+<p>When django-registration was first developed, Django’s
+authentication system supported only its own built-in user model,
+<code class="docutils literal"><span class="pre">django.contrib.auth.models.User</span></code>. More recent versions of Django
+have introduced support for <a class="reference external" href="https://docs.djangoproject.com/en/stable/topics/auth/customizing/#substituting-a-custom-user-model">custom user models</a>.</p>
+<p>Older versions of django-registration did not generally support
+custom user models due to the additional complexity required; as of
+version 2.3, however, django-registration now can support
+custom user models. Depending on how significantly your custom user
+model differs from Django’s default, you may need to change only a few
+lines of code; custom user models significantly different from the
+default model may require more work to support.</p>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The primary issue when using django-registration with a custom
+user model will be
+<a class="reference internal" href="forms.html#registration.forms.RegistrationForm" title="registration.forms.RegistrationForm"><code class="xref py py-class docutils literal"><span class="pre">RegistrationForm</span></code></a>. <code class="docutils literal"><span class="pre">RegistrationForm</span></code> is
+a subclass of Django’s built-in <code class="docutils literal"><span class="pre">UserCreationForm</span></code>, which in turn is
+a <code class="docutils literal"><span class="pre">ModelForm</span></code> with its model set to
+<code class="docutils literal"><span class="pre">django.contrib.auth.models.User</span></code>. The only changes made by
+django-registration are to apply the reserved name validator
+(<a class="reference internal" href="validators.html#registration.validators.ReservedNameValidator" title="registration.validators.ReservedNameValidator"><code class="xref py py-class docutils literal"><span class="pre">registration.validators.ReservedNameValidator</span></code></a>) and make the
+<code class="docutils literal"><span class="pre">email</span></code> field required (by default, Django’s user model makes this
+field optional; it is required in <code class="docutils literal"><span class="pre">RegistrationForm</span></code> because two of
+the three built-in workflows of django-registration require an
+email address in order to send account-activation instructions to the
+user). As a result, you will always be required to supply a custom
+form class when using django-registration with a custom user
+model.</p>
+<p>In the case where your user model is compatible with the default
+behavior of django-registration, (see below) you will be able to
+subclass <code class="docutils literal"><span class="pre">RegistrationForm</span></code>, set it to use your custom user model as
+the model, and then configure the views in django-registration to use
+your form subclass. For example, you might do the following (in a
+<code class="docutils literal"><span class="pre">forms.py</span></code> module somewhere in your codebase – do <strong>not</strong> directly
+edit django-registration’s code):</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">registration.forms</span> <span class="kn">import</span> <span class="n">RegistrationForm</span>
+
+<span class="kn">from</span> <span class="nn">mycustomuserapp.models</span> <span class="kn">import</span> <span class="n">MyCustomUser</span>
+
+
+<span class="k">class</span> <span class="nc">MyCustomUserForm</span><span class="p">(</span><span class="n">RegistrationForm</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">MyCustomUser</span>
+</pre></div>
+</div>
+<p>You will also need to specify the fields to include in the form, via
+the <code class="docutils literal"><span class="pre">fields</span></code> declaration.</p>
+<p>And then in your URL configuration (example here uses the HMAC
+activation workflow):</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django.conf.urls</span> <span class="kn">import</span> <span class="n">include</span><span class="p">,</span> <span class="n">url</span>
+
+<span class="kn">from</span> <span class="nn">registration.backends.hmac.views</span> <span class="kn">import</span> <span class="n">RegistrationView</span>
+
+<span class="kn">from</span> <span class="nn">mycustomuserapp.forms</span> <span class="kn">import</span> <span class="n">MyCustomUserForm</span>
+
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># ... other URL patterns here</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^accounts/register/$&#39;</span><span class="p">,</span>
+        <span class="n">RegistrationView</span><span class="o">.</span><span class="n">as_view</span><span class="p">(</span>
+            <span class="n">form_class</span><span class="o">=</span><span class="n">MyCustomUserForm</span>
+        <span class="p">),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;registration_register&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">url</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^accounts/&#39;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s1">&#39;registration.backends.hmac.urls&#39;</span><span class="p">)),</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>If your custom user model is not compatible with the built-in
+workflows of django-registration (see next section), you will
+probably need to subclass the provided views (either the base
+registration views, or the views of the workflow you want to use) and
+make the appropriate changes for your user model.</p>
+</div>
+<div class="section" id="determining-compatibility-of-a-custom-user-model">
+<h2>Determining compatibility of a custom user model<a class="headerlink" href="#determining-compatibility-of-a-custom-user-model" title="Permalink to this headline">¶</a></h2>
+<p>The built-in workflows and other code of django-registration do as
+much as is possible to ensure compatibility with custom user models;
+<code class="docutils literal"><span class="pre">django.contrib.auth.models.User</span></code> is never directly imported or
+referred to, and all code in django-registration instead uses
+<code class="docutils literal"><span class="pre">settings.AUTH_USER_MODEL</span></code> or
+<code class="docutils literal"><span class="pre">django.contrib.auth.get_user_model()</span></code> to refer to the user model,
+and <code class="docutils literal"><span class="pre">USERNAME_FIELD</span></code> when access to the username is required.</p>
+<p>However, there are still some specific requirements you’ll want to be
+aware of.</p>
+<p>The two-step activation workflows – both <a class="reference internal" href="hmac.html#hmac-workflow"><span class="std std-ref">HMAC</span></a>-
+and <a class="reference internal" href="model-workflow.html#model-workflow"><span class="std std-ref">model</span></a>-based – require that your user
+model have the following fields:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">email</span></code> – a textual field (<code class="docutils literal"><span class="pre">EmailField</span></code>, <code class="docutils literal"><span class="pre">CharField</span></code> or
+<code class="docutils literal"><span class="pre">TextField</span></code>) holding the user’s email address. Note that this
+field is required by <code class="docutils literal"><span class="pre">RegistrationForm</span></code>, which is a difference
+from Django’s default <code class="docutils literal"><span class="pre">UserCreationForm</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">is_active</span></code> – a <code class="docutils literal"><span class="pre">BooleanField</span></code> indicating whether the user’s
+account is active.</li>
+</ul>
+<p>You also <em>must</em> specify the attribute <code class="docutils literal"><span class="pre">USERNAME_FIELD</span></code> on your user
+model to denote the field used as the username. Additionally, your
+user model must implement the <code class="docutils literal"><span class="pre">email_user</span></code> method for sending email
+to the user.</p>
+<p>The model-based activation workflow requires one additional field:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">date_joined</span></code> – a <code class="docutils literal"><span class="pre">DateField</span></code> or <code class="docutils literal"><span class="pre">DateTimeField</span></code> indicating
+when the user’s account was registered.</li>
+</ul>
+<p><a class="reference internal" href="one-step-workflow.html#one-step-workflow"><span class="std std-ref">The one-step workflow</span></a> requires that your
+user model set <code class="docutils literal"><span class="pre">USERNAME_FIELD</span></code>, and requires that it define a field
+named <code class="docutils literal"><span class="pre">password</span></code> for storing the user’s password (it will expect to
+find this value in the <code class="docutils literal"><span class="pre">password1</span></code> field of the registration form);
+the combination of <code class="docutils literal"><span class="pre">USERNAME_FIELD</span></code> and <code class="docutils literal"><span class="pre">password</span></code> must be
+sufficient to log a user in. Also note that <code class="docutils literal"><span class="pre">RegistrationForm</span></code>
+requires the <code class="docutils literal"><span class="pre">email</span></code> field, so either provide that field on your
+model or subclass <code class="docutils literal"><span class="pre">RegistrationForm</span></code>.</p>
+<p>If your custom user model defines additional fields beyond the minimum
+requirements, you’ll either need to ensure that all of those fields
+are optional (i.e., can be <code class="docutils literal"><span class="pre">NULL</span></code> in your database, or provide a
+suitable default value defined in the model), or you’ll need to
+specify the full list of fields to display in the <code class="docutils literal"><span class="pre">fields</span></code> option of
+your <code class="docutils literal"><span class="pre">RegistrationForm</span></code> subclass.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="validators.html" class="btn btn-neutral float-right" title="Validation utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="forms.html" class="btn btn-neutral" title="Base form classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2007-2016, James Bennett.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Signals used by django-registration &mdash; django-registration 2.3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="django-registration 2.3 documentation" href="index.html"/>
+        <link rel="next" title="Upgrading from previous versions" href="upgrade.html"/>
+        <link rel="prev" title="Custom settings" href="settings.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> django-registration
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation and configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick start guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Built-in registration workflows</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hmac.html">The HMAC activation workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="one-step-workflow.html">The one-step workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model-workflow.html">The model-based activation workflow</a></li>
+</ul>
+<p class="caption"><span class="caption-text">For developers</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="views.html">Base view classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forms.html">Base form classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom-user.html">Custom user models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validators.html">Validation utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Custom settings</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Signals used by django-registration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Other documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade.html">Upgrading from previous versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently-asked questions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">django-registration</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Signals used by django-registration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/signals.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-registration.signals"><span id="signals"></span></span><div class="section" id="signals-used-by-django-registration">
+<h1>Signals used by django-registration<a class="headerlink" href="#signals-used-by-django-registration" title="Permalink to this headline">¶</a></h1>
+<p>Much of django-registration’s customizability comes through the
+ability to write and use different workflows for user
+registration. However, there are many cases where only a small bit of
+additional logic needs to be injected into the registration process,
+and writing a custom workflow to support this represents an
+unnecessary amount of work. A more lightweight customization option is
+provided through two custom signals which the built-in registration
+workflows send, and custom workflows are encouraged to send, at
+specific points during the registration process; functions listening
+for these signals can then add whatever logic is needed.</p>
+<p>For general documentation on signals and the Django dispatcher,
+consult <a class="reference external" href="http://docs.djangoproject.com/en/stable/topics/signals/">Django’s signals documentation</a>. This
+documentation assumes that you are familiar with how signals work and
+the process of writing and connecting functions which will listen for
+signals.</p>
+<dl class="data">
+<dt id="registration.signals.user_activated">
+<code class="descclassname">registration.signals.</code><code class="descname">user_activated</code><a class="headerlink" href="#registration.signals.user_activated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sent when a user account is activated (not applicable to all
+workflows). Provides the following arguments:</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">sender</span></code></dt>
+<dd>The <a class="reference internal" href="views.html#registration.views.ActivationView" title="registration.views.ActivationView"><code class="xref py py-class docutils literal"><span class="pre">ActivationView</span></code></a> subclass used
+to activate the user.</dd>
+<dt><code class="docutils literal"><span class="pre">user</span></code></dt>
+<dd>A user-model instance representing the activated account.</dd>
+<dt><code class="docutils literal"><span class="pre">request</span></code></dt>
+<dd>The <code class="docutils literal"><span class="pre">HttpRequest</span></code> in which the account was activated.</dd>
+</dl>
+<p>This signal is automatically sent for you by the base
+<a class="reference internal" href="views.html#registration.views.ActivationView" title="registration.views.ActivationView"><code class="xref py py-class docutils literal"><span class="pre">ActivationView</span></code></a>, so unless you’ve
+overridden its <code class="docutils literal"><span class="pre">get()</span></code> method in a subclass you should not need
+to explicitly send it.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="registration.signals.user_registered">
+<code class="descclassname">registration.signals.</code><code class="descname">user_registered</code><a class="headerlink" href="#registration.signals.user_registered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sent when a new user account is registered. Provides the following
+arguments:</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">sender</span></code></dt>
+<dd>The <a class="reference internal" href="views.html#registration.views.RegistrationView" title="registration.views.RegistrationView"><code class="xref py py-class docutils literal"><span class="pre">RegistrationView</span></code></a> subclass used
+to register the account.</dd>
+<dt><code class="docutils literal"><span class="pre">user</span></code></dt>
+<dd>A user-model instance representing the new account.</dd>
+<dt><code class="docutils literal"><span class="pre">request</span></code></dt>
+<dd>The <code class="docutils literal"><span class="pre">HttpRequest</span></code> in which the new account was registered.</dd>
+</dl>
+<p>This signal is <strong>not</strong> automatically sent for you by the base
+<a class="reference internal" href="views.html#registration.views.RegistrationView" title="registration.views.RegistrationView"><code class="xref py py-class docutils literal"><span class="pre">RegistrationView</span></code></a>. It is sent by the
+subclasses implemented for the three included registration
+workflows, but if you write your own subclass of
+<code class="docutils literal"><span class="pre">RegistrationView</span></code>, you’ll need to send this signal as part of
+the implementation of the
+<a class="reference internal" href="views.html#registration.views.RegistrationView.register" title="registration.views.RegistrationView.register"><code class="xref py py-meth docutils literal"><span class="pre">register()</span></code></a> method.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="upgrade.html" class="btn btn-neutral float-right" title="Upgrading from previous versions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="settings.html" class="btn btn-neutral" title="Custom settings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2007-2016, James Bennett.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
