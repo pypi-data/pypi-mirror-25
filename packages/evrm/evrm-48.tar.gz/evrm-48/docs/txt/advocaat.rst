@@ -1,0 +1,50 @@
+.. title:: De gif toedieningen zijn de foltering !!
+
+.. image:: ../jpg/bewijsgif4.jpg
+    :width: 100%
+
+.. _advocaat:
+
+advocaat
+########
+
+Geachte advocaat,
+
+Ik ben Bart Thate, een 49 jarige schizofrenie patient. Het is voor mij niet mogelijk gebleken om :ref:`aangifte <aangifte>` te doen van mishandeling als de psychiater zijn patient met medicijnen mishandelt.
+
+De IGZ treft geen structurele :ref:`onzorgvuldigheid <igz>` in de afhandeling van klachten bij GGZ-NHN aan.
+De :ref:`Hoge Raad <hogeraad>` concludeert dat het geen verantwoordelijkheid heeft en verwijst naar het Openbaar Ministerie, dat niet reageert.
+Daarna heb ik het Europeese Hof voor de Rechten van de Mens aangeschreven om een :ref:`klacht <greffe>` tegen Nederland in te dienen. 
+De klacht betreft problemen met de invoering van de :ref:`(F)ACT <fact>` methodiek in Nederland. De :ref:`Koningin <beuker>` kan hier geen verder tussenkomst verlenen.
+:ref:`Uitspraak <uitspraak>` is niet-ontvankelijk.
+
+Pas na een gang langs het EVRM reageert Het :ref:`Openbaar Ministerie <om>` wel en verwijst naar de IGZ, die de klacht melding al heeft afgesloten. 
+
+Ik concludeer hier uit dat het in Nederland voor de GGZ patient niet mogelijk is om aangifte te doen voor een strafbaar feit als een arts met gif mishandelt.
+
+Geen toegang tot de rechter zou een argument kunnen zijn om het EVRM tot wel ontvankelijk te doen laten komen.
+
+Er is bewijs dat antipsychotica gif zijn:
+
+1) haloperiodol (haldol) - https://echa.europa.eu/substance-information/-/substanceinfo/100.000.142
+2) clozapine (leponex) - https://echa.europa.eu/substance-information/-/substanceinfo/100.024.831
+3) olanzapine (zyprexa) - https://echa.europa.eu/substance-information/-/substanceinfo/100.125.320
+4) aripriprazole (abilify) https://echa.europa.eu/substance-information/-/substanceinfo/100.112.532
+
+Omdat het hier gif betreft is er een vermoeden dat er in deze "zorg" strafbare feiten gepleegd worden:
+
+Er is bewijs dat antipsychotica hersenweefsel verlies veroorzaken:
+
+1) http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3476840/ 
+
+Aangezien de GGZ patient mishandelt word met gif, zou men kunnen proberen het "de gif toedieningen zijn de foltering" argument bij het EVRM te kunnen bepleiten.
+
+Een advocaat die mij daartoe zou kunnen bij staan is de advocaat die ik zoek.
+
+Hoogachtend,
+
+.. raw:: html
+
+    <br>
+
+Bart Thate - :ref:`teksten <teksten>`, :ref:`bewijs <bewijs2>`, ':ref:`Wet <wet2>`
