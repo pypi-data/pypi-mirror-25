@@ -1,0 +1,139 @@
+{% extends "base_basic.html" %}
+{% block title %}Descuento{% endblock %}
+
+<!-- CSS Code -->
+{% block style_css %}
+<link rel="stylesheet" href="{{STATIC_URL}}css/django_microsip_consultaprecio/base.css">
+{% endblock %}
+
+<!-- JavaScript Code -->
+{% block js_code %}
+<script type="text/javascript">
+$("#id_clave").focus();
+$("#id_clave").val("");	
+
+$(document).ready(function(){
+	$("#empresa").hide();
+});
+
+var timeoutId = setTimeout(esconder,6000);
+function esconder(){
+
+	$("#limpiar").hide();
+	$("#empresa").show();
+	$("#id_clave").focus();
+	
+}
+
+</script>
+{% endblock %}
+
+{% block breadcrumb %}{{ block.super }} {% endblock %}
+{% block content %}
+<div align="center">
+	{% if msg%}
+		<div class="col-md-12 col-xs-12 col-sm-12" >
+			<div class="row text-left">
+				<a href="/precios/">Inicio</a>
+			</div>
+			<label class="errorMessage">{{msg}}</label>
+			<!-- IMAGENES -->
+			<div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+				<!-- Indicators -->
+				<ol class="carousel-indicators">
+				{% for r in range %}
+				<li data-target="#carousel-example-generic" data-slide-to="{{i}}" {% if r == 0 %}class="active"{% endif %}></li>
+				{% endfor %}
+				</ol>
+
+				<!-- Wrapper for slides -->
+				<div class="carousel-inner">
+				{% for r in imagenes %}
+				<div class="item {% if r == imagenes.0 %}active{% endif %}" width="100%">
+				  <img src="{{MEDIA_URL}}{{r.imagen}}" alt="..." style="height:400px; border-radius:10px;" >
+				</div>
+				{% endfor %}
+				</div>
+
+				<!-- Controls -->
+				<a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
+				<span class="glyphicon glyphicon-chevron-left"></span>
+				</a>
+				<a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
+				<span class="glyphicon glyphicon-chevron-right"></span>
+				</a>
+			</div>
+			<!-- FIN DE IMAGENES -->
+			<!-- 
+			<h1><label style=" color: rgb(71,71,71);" for="">{{nombre_empresa}}</label></h1>
+			<h2><label style=" color: rgb(114, 156, 218);" for="">{{slogan}}</label></h2>
+			-->
+		</div>
+	{%else%}
+
+	<div id="empresa" class="col-md-12 col-xs-12 col-sm-12" >
+			<div class="row text-left">
+				<a href="/precios/">Inicio</a>
+			</div>
+			<!-- IMAGENES -->
+			<div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+				<!-- Indicators -->
+				<ol class="carousel-indicators">
+				{% for r in range %}
+				<li data-target="#carousel-example-generic" data-slide-to="{{i}}" {% if r == 0 %}class="active"{% endif %}></li>
+				{% endfor %}
+				</ol>
+
+				<!-- Wrapper for slides -->
+				<div class="carousel-inner">
+				{% for r in imagenes %}
+				<div class="item {% if r == imagenes.0 %}active{% endif %}" width="100px">
+				  <img src="{{MEDIA_URL}}{{r.imagen}}" alt="..." style="height:400px; border-radius:0px;" >
+				</div>
+				{% endfor %}
+				</div>
+
+				<!-- Controls -->
+				<a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
+				<span class="glyphicon glyphicon-chevron-left"></span>
+				</a>
+				<a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
+				<span class="glyphicon glyphicon-chevron-right"></span>
+				</a>
+			</div>
+			<!-- FIN DE IMAGENES -->
+			<!-- 
+			<h1><label style=" color: rgb(71,71,71);" for="">{{nombre_empresa}}</label></h1>
+			<h2><label style=" color: rgb(114, 156, 218);" for="">{{slogan}}</label></h2>
+			-->
+	</div>
+
+	<div id="limpiar">
+		<div class="row">
+			<label class="articuloNombre">{{Articulo.nombre}}</label>
+		</div>
+		{%if precio_original != precio_actual%}
+			<div class="row">
+				<label class='precioOriginal' for=""> $ {{precio_original}}</label>
+			</div>
+		{% endif %}
+		<div class="row">
+			{% if precio_actual != 0 %}
+				<label class='precioActual'>$ {{precio_actual}}</label>
+			{% endif %}
+		</div>
+		{% if Ahorro %}
+		<div class="row">
+			<h1><label  class='suAhorro'for="">Su Ahorro $ {{Ahorro}}</label> <br></h1>
+		</div>
+		{% endif %}
+	</div>
+	<br style="clear:both">
+
+	{%endif%}
+	<form action="" method="post" enctype="multipart/form-data">{%csrf_token%}
+		{{form.errors}}
+		{{form.clave}}
+	</form>
+</div>
+{% endblock %}
