@@ -1,0 +1,163 @@
+Metadata-Version: 1.1
+Name: nrk-api
+Version: 0.0.5
+Summary: API for NRK, also includes a cli tool to download series or programs from NRK.
+Home-page: https://github.com/Hellowlol/nrk_api
+Author: hellowlol
+Author-email: hellowlol1@gmail.com
+License: GPL3
+Description: nrk\_api
+        ========
+        
+        |Travis Status| |Cov| |GitHub Releases| |PyPI version|
+        
+        API for NRK. (Norsk rikskringkasting) (Originally intended to support a
+        CLI)
+        
+        CLI Usage
+        ---------
+        
+        In addition you will need ```ffmpeg`` <https://ffmpeg.org/>`__, e.g.
+        ``apt-get install ffmpeg`` (Ubuntu), ``brew install ffmpeg`` (macOs)
+        
+        ::
+        
+            usage: nrkdl [-h] [-s keyword] [-d] [-b] [-sub] [-dr] [-sp SAVE_PATH] [-u URL]
+                     [-ea EXPIRES_AT]
+        
+            CLI tool to download video from NRK.
+        
+            optional arguments:
+              -h, --help            show this help message and exit
+        
+              -s keyword, --search keyword
+                                    Search nrk for a show and download files
+        
+              -d, --description     Print verbose program description in console
+              -b, --browse          Builds a menu where you can choose popular categories
+              -sub, --subtitle      Download subtitle for this program too.
+              -dr, --dry_run        Dry run, dont download any files.
+              -sp SAVE_PATH, --save_path SAVE_PATH
+                                Set a save path
+              -u URL, --url URL     Use NRK URL as source. Comma separated e.g. "url1, url2"
+              -ea EXPIRES_AT, --expires_at EXPIRES_AT
+                                Get all files that looses access rights between two
+                                dates or a date
+        
+        Search
+        ------
+        
+        ::
+        
+            > nrkdl -s "brannma"
+              2: Brannmann i seks knop
+              1: Brannmann
+              0: Brannmann Sam
+        
+            Select a number or use slice notation
+            0
+        
+              .....
+              .....
+              4: Brannmann Sam S03E29
+              3: Brannmann Sam S03E30
+              2: Brannmann Sam S03E32
+              1: Brannmann Sam S03E33
+              0: Brannmann Sam S05E25
+        
+            Select a number or use slice notation
+            ::
+        
+            Downloads starting soon.. 23 downloads to go
+            100%|############################################################################| 23/23 [03:57<00:00, 79.09s/it]
+        
+        URL
+        ---
+        
+        ::
+        
+            > nrkdl -u "http://tv.nrksuper.no/serie/bernt-og-erling-paa-nye-eventyr http://tv.nrksuper.no/serie/bertine-paa-besoek"
+            100%|####################################################################################| 2/2 [00:21<00:00, 13.63s/it]
+        
+        Module
+        ------
+        
+        ::
+        
+            nrk = NRK()
+            s = await nrk.search("lille jack", strict=True)[0]
+            for e in await s.episodes():
+                await e.download()
+        
+            all_downloads = nrk.downloads()
+        
+            # How many files are we gonna download
+            print(len(nrk.downloads()))
+            # Start downloading
+            await all_downloads.start()
+        
+        See example and source file for more examples
+        
+        Using Docker
+        ------------
+        
+        To use ``nrkdl`` in a self-contained docker container, the provieded
+        ``Dockerfile`` should get you going for a minimalistic install. If you
+        want to combine this into a standalone command, something like this will
+        be what you want.
+        
+        .. code:: sh
+        
+            #!/bin/sh
+        
+            # export DATA="/mnt/multimedia/tmp" # Set if you don't want downloads to go to your ${HOME}/downloads
+            cd ${HOME}/Projects/programming/nrkdl  # Path where we can find a checkout of this repository
+            docker run -it -v ${DATA:-${HOME}/downloads}:/nrkdl/downloads $(docker build -q .) $*
+        
+            # Open data-path if we are on osx
+            # [[ $? == 0 ]] && ( open ${DATA} )
+        
+        You can now run it using example ``nrkdl -s "brannma"``.
+        
+        Install
+        -------
+        
+        pip install nrk\_api
+        
+        Why should you use this library?
+        --------------------------------
+        
+        -  Easy to download entire shows
+        -  Browsing features
+        -  Fixes up tvshows fucked up naming so it can be parsed by
+           kodi/plex/emby
+        -  Pretty fast, maxes my 500 mbit connection.
+        
+        Similar tools
+        -------------
+        
+        -  `If you need a gui <https://bitbucket.org/snippsat/wx_nrk>`__
+        -  `Other cli tool <https://github.com/kvolden/nrk_download>`__
+        -  `nrk written in php <https://github.com/AndKe/nrk>`__
+        -  `nrk-tv-downloader written in
+           bash <https://github.com/odinuge/nrk-tv-downloader>`__
+        -  `nrk-download cli tool <https://github.com/marhoy/nrk-download>`__
+        -  Use the search there is loads of nrk options.
+        
+        .. |Travis Status| image:: https://travis-ci.org/Hellowlol/nrk_api.svg?branch=master
+           :target: https://travis-ci.org/Hellowlol/nrk_api
+        .. |Cov| image:: https://codecov.io/gh/hellowlol/nrk_api/branch/master/graph/badge.svg
+           :target: https://codecov.io/gh/hellowlol/nrk_api/branch/master
+        .. |GitHub Releases| image:: https://img.shields.io/github/tag/hellowlol/nrk_api.svg?label=github+release
+           :target: https://github.com/hellowlol/nrk_api/releases
+        .. |PyPI version| image:: https://badge.fury.io/py/nrk-api.svg
+           :target: https://pypi.python.org/pypi/nrk-api
+        
+Keywords: nrk api download
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Environment :: Console
+Classifier: Topic :: Multimedia :: Video
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Programming Language :: Python :: 3.6
