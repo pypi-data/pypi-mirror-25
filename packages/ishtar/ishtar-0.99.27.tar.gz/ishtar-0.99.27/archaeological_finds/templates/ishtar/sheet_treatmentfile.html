@@ -1,0 +1,60 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_field from_dict link_to_window window_tables window_ope_tables window_header humanize %}
+{% load url from future %}
+
+{% block head_title %}{% trans "Treatment request" %}{% endblock %}
+{% block content %}
+{% window_nav item window_id 'show-treatmentfile' 'treatmentfile_modify' 'show-historized-treatmentfile' 'revert-treatmentfile' previous next 1 %}
+
+<p class="window-refs">{{ item.name|default:"" }}</p>
+{% if item.internal_reference %}
+<p class="window-refs">{{ item.internal_reference }}</p>{% endif %}
+<p class="window-refs">{{ item.year }} - {{ item.index }}</p>
+{% if item.external_id %}
+<p class="window-refs">{{ item.external_id }}</p>{% endif %}
+{% if item.end_date %}
+<p class="window-refs">{% trans "Closed" context "Treatment request" %} ({{item.end_date}})</p>
+{% else %}
+<p class="window-refs">{% trans "Active" context "Treatment request" %}</p>
+{% endif %}
+
+<ul class='form-flex'>
+    {% field_li "Type" item.type %}
+    {% field_li_detail "Responsible" item.in_charge %}
+    {% field_li "Creation date" item.creation_date %}
+    {% field_li "Reception date" item.reception_date %}
+    {% field_li "Closing date" item.end_date %}
+</ul>
+{% field "Comment" item.comment "<pre>" "</pre>" %}
+
+{% if item.applicant %}
+<h3>{% trans "Applicant" %}</h3>
+<ul class='form-flex'>
+    {% field_li_detail "Name" item.applicant %}
+</ul>
+{% field "Contact" item.applicant.address_lbl %}
+{% endif %}
+{% if item.applicant_organisation %}
+<h3>{% trans "Applicant organisation" %}</h3>
+<ul class='form-flex'>
+    {% field_li_detail "Name" item.applicant_organisation %}
+</ul>
+{% field "Contact" item.applicant.address_lbl %}
+{% endif %}
+
+{% if item.treatments.count %}
+{% trans "Treatments" as treatments %}
+{% dynamic_table_document treatments 'treatments' 'file' item.pk '' output '' 'treatment' %}
+{% endif %}
+
+{% if item.source.count %}
+{% trans "Associated documents" as associated_docs %}
+{% dynamic_table_document associated_docs 'treatmentfiles_docs' 'treatment_file' item.pk '' output %}
+{% endif %}
+
+{% if item.administrative_act.count %}
+{% trans "Administrative acts" as admact_lbl %}
+{% table_administrativact admact_lbl item.administrative_act.all %}
+{% endif %}
+
+{% endblock %}

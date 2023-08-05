@@ -1,0 +1,57 @@
+{% load url from future %}
+{% load i18n %}
+{% if previous or next %}
+  <div class='tool-right'>
+    {% if previous %}
+    <a class='history-nav' href="#" onclick='load_window("{% url histo_url item.pk previous|date:"c"%}");$("#{{window_id}}").hide();return false;' title="{%trans 'Previous version'%}">
+    <span class="fa-stack">
+      <i class="fa fa-circle fa-stack-2x"></i>
+      <i class="fa fa-step-backward fa-stack-1x fa-inverse"></i>
+    </span>
+    <br/>{{previous}}
+    </a>
+    {% else %}
+    <span class='history-nav'> </span>
+    {% endif %}
+    {% if next %}
+    <a class='history-nav' title="{% trans 'Restore this version' %}" href="#" onclick='if(confirm("{%trans 'Are you sure to restore to this version? All changes made since this version will be lost.' %}")){load_url("{% url revert_url item.pk item.history_date|date:"c"%}");closeAllWindows();load_window("{% url show_url item.pk None %}");}'>
+    <span class="fa-stack fa-lg">
+      <i class="fa fa-circle fa-stack-2x"></i>
+      <i class="fa fa-history fa-stack-1x fa-inverse"></i>
+    </span>
+    <br/>{% trans "Restore" %}
+    </a>
+    <a class='history-nav' href="#" onclick='load_window("{% url histo_url item.pk next|date:"c" %}");$("#{{window_id}}").hide();return false;' title="{%trans 'Next version'%}">
+    <span class="fa-stack">
+      <i class="fa fa-circle fa-stack-2x"></i>
+      <i class="fa fa-step-forward fa-stack-1x fa-inverse"></i>
+    </span>
+    <br/>{{next}}
+    </a>
+    {% else %}
+    <span class='history-nav'> </span>
+    <span class='history-nav'> </span>
+    {% endif %}
+  </div>
+{% endif %}
+<div class='tool-left'>
+  {% block extra_actions %}{% endblock %}
+  {% if modify_url %}<a href='{% url modify_url item.pk %}' title="{% trans 'Modify' %}">
+  <span class="fa-stack fa-lg">
+    <i class="fa fa-circle fa-stack-2x"></i>
+    <i class="fa fa-pencil fa-stack-1x fa-inverse"></i>
+  </span>
+  </a>{% endif %}
+  {% if pin_action and item.SLUG %}
+  <span class='pin-action' onclick='$.get("{% url 'pin' item.SLUG item.pk %}", function(){load_shortcut_menu(); display_info("{% trans 'Item pined in your shortcut menu.' %}")});' title="{% trans 'Pin' %}">
+  <span class="fa-stack fa-lg">
+    <i class="fa fa-circle fa-stack-2x"></i>
+    <i class="fa fa-thumb-tack fa-stack-1x fa-inverse"></i>
+  </span>
+  </span>{% endif %}
+  <a class='badge' href='{% url show_url item.pk "odt" %}' title='{% trans "Export as OpenOffice.org file"%}'>ODT</a> <a class='badge' href='{% url show_url item.pk "pdf" %}' title='{% trans "Export as PDF file"%}'>PDF</a>
+</div>
+<hr class='clear'>
+{% if next %}
+    <p class='info-box'><i class="fa fa-info-circle" aria-hidden="true"></i> <em>{% trans "Relation between items are not historized." %}</em></p>
+{% endif %}

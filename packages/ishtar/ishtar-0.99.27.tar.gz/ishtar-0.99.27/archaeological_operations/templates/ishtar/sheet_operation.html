@@ -1,0 +1,239 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_tables window_header window_ope_tables window_field from_dict %}
+
+{% block head_title %}{% trans "Operation" %}{% endblock %}
+
+{% block content %}
+{% window_nav item window_id 'show-operation' 'operation_modify' 'show-historized-operation' 'revert-operation' previous next 1 %}
+
+{% if item.image %}
+<a href='{{item.image.url}}' rel="prettyPhoto" title="{{item.label}}" class='photo'><img src='{{item.thumbnail.url}}'/></a>
+{% endif%}
+
+{% if item.virtual_operation %}
+<p class='alert'><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> {% trans "This operation is virtual." %}</p>
+{% endif %}
+{% if not item.code_patriarche %}
+<p class='alert'><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> {%trans "Patriarche OA code not yet recorded!"%}</p>
+{% endif %}
+
+<p class='window-refs'>{% if item.year or item.operation_code %}{{item.year|default:''}}-{{item.operation_code|default:''}}{% endif %}{% if item.code_patriarche %} &ndash; OA{{item.code_patriarche}}{% endif %}
+</p>
+<p class='window-refs' title="{% trans 'Name' %}">{{item.common_name|default:''}}</p>
+<p class='window-refs' title="{% trans 'Address' %}">{{item.address|default:''}}</p>
+{% include "ishtar/blocks/sheet_external_id.html" %}
+
+<h3>{% trans "General"%}</h3>
+<ul class='form-flex'>
+  {% field_li "Old code" item.old_code %}
+  {% include "ishtar/blocks/sheet_creation_section.html" %}
+  {% trans "Begining date" as begining_date_label %}
+  {% field_li begining_date_label item.start_date %}
+  {% field_li "Excavation end date" item.excavation_end_date|default:"-" %}
+  {% field_li_detail "Head scientist" item.scientist %}
+  {% field_li_detail "In charge" item.in_charge %}
+  {% field_li_multiple "Collaborators" item.collaborators %}
+  {% field_li_detail "Operator" item.operator %}
+<li><label>{%trans "State:"%}</label> <span class='value'>{% if item.is_active %}{%trans "Active file"%}</span></p>
+{% else %}{%trans "Closed operation"%}</span></li> {% endif %}
+{% if item.closing.date %}<li><label>{%trans "Closing date"%}</label> <span class='value'>{{ item.closing.date }} <strong>{%trans "by" %}</strong> {{ item.closing.user }}</span></li>{% endif %}
+{% field_li "Type" item.operation_type %}
+{% if item.surface  %}<li><label>{%trans "Surface"%}</label> <span class='value'>{{ item.surface }} m<sup>2</sup> ({{ item.surface_ha }} ha)</span></li>{% endif %}
+{% if item.cost %}<li><label>{%trans "Cost"%}</label> <span class='value'>{{ item.cost }} &euro;{% if item.cost_by_m2 %}, ({{ item.cost_by_m2 }} &euro;/m<sup>2</sup>){%endif%}</span></li>{%endif%}
+{% if item.duration %}<li><label>{%trans "Duration"%}</label> <span class='value'>{{ item.duration }} {%trans "Day"%}s</span></li>{%endif%}
+{% field_li_multiple "Remains" item.remains %}
+{% field_li_multiple "Periods" item.periods %}
+{% if item.QUALITY_DICT %}{% field_li "Record quality" item.record_quality|from_dict:item.QUALITY_DICT %}{% endif %}
+{% if item.history_object and item.history_object.QUALITY_DICT %}{% field_li "Record quality" item.record_quality|from_dict:item.history_object.QUALITY_DICT %}{% endif %}
+{% field_li "Report delivery date" item.report_delivery_date %}
+{% field_li "Report processing" item.report_processing %}
+{% field_li "Deadline for submission of the documentation" item.documentation_deadline %}
+{% field_li "Documentation received" item.documentation_received %}
+{% field_li "Deadline for submission of the finds" item.finds_deadline %}
+{% field_li "Finds received" item.finds_received %}
+{% field_li_detail "Associated file" item.associated_file %}
+{% field_li "Responsible for planning service" item.associated_file.responsible_town_planning_service.full_address %}
+{% if item.associated_file.town_planning_service %}
+  {% field_li "Planning service organization" item.associated_file.town_planning_service.full_address %}
+{% else %}
+  {% field_li "Planning service organization" item.associated_file.responsible_town_planning_service.attached_to.full_address %}
+{% endif %}
+{% field_li "Permit type" item.associated_file.permit_type %}
+{% field_li "Permit reference" item.associated_file.permit_reference %}
+{% field_li "General contractor" item.associated_file.general_contractor.full_address %}
+{% if item.associated_file.corporation_general_contractor %}
+  {% field_li "General contractor organization" item.associated_file.corporation_general_contractor.full_address %}
+{% else%}
+  {% field_li "General contractor organization" item.associated_file.general_contractor.attached_to.full_address %}
+{% endif %}
+</ul>
+{% field "Comment" item.comment "<pre>" "</pre>" %}
+{% field "Abstract" item.abstract "<pre>" "</pre>" %}
+{% field "Comment about scientific documentation" item.scientific_documentation_comment "<pre>" "</pre>" %}
+
+{% if not next %}
+{% if item.towns.count %}
+<h3>{% trans "Localisation"%}</h3>
+<ul class='form-flex'>
+{% field_li "Towns" item.towns_codes|join:" ; "  %}
+{% field_li "Main address" item.associated_file.address %}
+{% field_li "Complement" item.associated_file.address_complement %}
+{% field_li "Postal code" item.associated_file.postal_code %}
+</ul>
+{% endif %}
+
+{% if item.right_relations.count %}
+<h3>{% trans "Relations"%}</h3>
+{% for rel in item.right_relations.all %}
+{% ifchanged rel.relation_type %}
+{% if forloop.counter0 %}</ul>{% endif %}
+<h4>{{rel.relation_type}}</h4><ul>{% endifchanged %}
+<li><a href="#" onclick="load_window('/show-operation/{{rel.right_record.pk}}/');" class="display_details"><i class="fa fa-info-circle" aria-hidden="true"></i></a> {{rel.right_record}}</li>
+{% if forloop.last %}</ul>{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if item.archaeological_sites.count %}
+{% trans "Archaeological sites" as archaeologicalsites_label %}
+{% table_archaeologicalsites archaeologicalsites_label item.archaeological_sites.all %}
+{% endif %}
+
+{% trans "Associated parcels" as parcels_label %}
+{% include "ishtar/blocks/window_tables/parcels.html" %}
+
+{% if item.administrative_act %}
+<h3>{% trans "Administrative acts" %}</h3>
+{% table_administrativact "" item.administrative_act.all %}
+{% endif %}
+
+{% trans "Document from this operation" as operation_docs %}
+{% if item.source.count %}
+{% dynamic_table_document operation_docs 'operation_docs' 'operation' item.pk '' output %}
+{% endif %}
+
+{% if item.context_record.count %}
+{% trans "Context records" as cr_lab %}
+{% dynamic_table_document cr_lab 'context_records_for_ope' 'operation' item.pk 'TABLE_COLS_FOR_OPE' output %}
+{% endif %}
+
+{% if item.context_record_relations_q.count %}
+{% trans "Context record relations" as cr_rels %}
+{% dynamic_table_document cr_rels 'context_records_relations_detail' 'left_record__operation' item.pk '' output %}
+{% endif %}
+
+{% if item.context_record_docs_q.count %}
+{% trans "Documents from associated context records" as cr_docs %}
+{% dynamic_table_document cr_docs 'context_records_docs' 'context_record__operation' item.pk '' output %}
+{% endif %}
+
+{% if item.finds %}
+{% trans "Finds" as finds %}
+{% dynamic_table_document finds 'finds_for_ope' 'base_finds__context_record__operation' item.pk 'TABLE_COLS_FOR_OPE' output %}
+{% endif %}
+
+{% if item.find_docs_q.count %}
+{% trans "Documents from associated finds" as finds_docs %}
+{% dynamic_table_document finds_docs 'finds_docs' 'find__base_finds__context_record__operation' item.pk '' output %}
+{% endif %}
+
+{% if item.containers_q.count %}
+{% trans "Associated containers" as containers_lbl %}
+{% dynamic_table_document containers_lbl 'containers' 'finds__base_finds__context_record__operation' item.pk '' output %}
+{% endif %}
+
+<h3>{% trans "Statistics" %}</h3>
+<small class="centered"><em>{% trans "These numbers are updated hourly" %}</em></small>
+
+<h4>{% trans "Administrative acts" %}</h4>
+<ul class='form-flex'>
+{% field_li "Number of administrative acts" item.nb_acts %}
+{% field_li "Number of indexed administrative acts" item.nb_indexed_acts %}
+</ul>
+
+<h4>{% trans "Parcels" %}</h4>
+<ul class='form-flex'>
+{% field_li "Number of parcels" item.nb_parcels %}
+</ul>
+
+<h4>{% trans "Context records" %}</h4>
+<ul class='form-flex'>
+{% field_li "Number of context records" item.nb_context_records %}
+</ul>
+<ul class='form-flex'>
+{% if item.nb_context_records_by_type %}
+<li><table class='clean-table small'>
+  <tr><th>{% trans "Type" %}</th><th>{% trans "Number" %}</th></tr>
+{% for label, nb in item.nb_context_records_by_type %}
+  <tr><td>{{label}}</td><td>{{nb}}</td></tr>
+{% endfor %}
+</table></li>
+{% endif %}
+{% if item.nb_context_records_by_periods %}
+<li><table class='clean-table small'>
+  <tr><th>{% trans "Period" %}</th><th>{% trans "Number" %}</th></tr>
+{% for label, nb in item.nb_context_records_by_periods %}
+  <tr><td>{{label}}</td><td>{{nb}}</td></tr>
+{% endfor %}
+</table></li>
+{% endif %}
+</ul>
+
+<h4>{% trans "Finds" %}</h4>
+<ul class='form-flex'>
+{% field_li "Number of finds" item.nb_finds %}
+</ul>
+<ul class='form-flex'>
+{% if item.nb_finds_by_material_type %}
+<li><table class='clean-table small'>
+  <tr><th>{% trans "Material type" %}</th><th>{% trans "Number" %}</th></tr>
+{% for label, nb in item.nb_finds_by_material_type %}
+  <tr><td>{{label}}</td><td>{{nb}}</td></tr>
+{% endfor %}
+</table></li>
+{% endif %}
+{% if item.nb_finds_by_types %}
+<li><table class='clean-table small'>
+  <tr><th>{% trans "Object type" %}</th><th>{% trans "Number" %}</th></tr>
+{% for label, nb in item.nb_finds_by_types %}
+  <tr><td>{{label}}</td><td>{{nb}}</td></tr>
+{% endfor %}
+</table></li>
+{% endif %}
+{% if item.nb_finds_by_periods %}
+<li><table class='clean-table small'>
+  <tr><th>{% trans "Period" %}</th><th>{% trans "Number" %}</th></tr>
+{% for label, nb in item.nb_finds_by_periods %}
+  <tr><td>{{label}}</td><td>{{nb}}</td></tr>
+{% endfor %}
+</table></li>
+{% endif %}
+</ul>
+
+<h4>{% trans "Sources" %}</h4>
+<ul class='form-flex'>
+{% field_li "Number of sources" item.nb_documents %}
+</ul>
+<ul class='form-flex'>
+{% if item.nb_documents_by_types %}
+<li><table class='clean-table small'>
+  <tr><th>{% trans "Type" %}</th><th>{% trans "Number" %}</th></tr>
+{% for label, nb in item.nb_documents_by_types %}
+  <tr><td>{{label}}</td><td>{{nb}}</td></tr>
+{% endfor %}
+</table></li>
+{% endif %}
+</ul>
+
+{% if item.nb_stats_finds_by_ue %}
+<h4>{% trans "Finds by context records" %}</h4>
+<ul class='form-flex'>
+{% field_li "Mean" item.nb_stats_finds_by_ue.mean %}
+{% field_li "Min" item.nb_stats_finds_by_ue.min %}
+{% field_li "Max" item.nb_stats_finds_by_ue.max %}
+{% field_li "Mode" item.nb_stats_finds_by_ue.mode %}
+</ul>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

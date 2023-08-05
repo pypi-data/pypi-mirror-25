@@ -1,0 +1,46 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_header window_field %}
+
+{% block head_title %}{% trans "Administrative act" %}{% endblock %}
+
+{% block content %}
+{% if item.operation %}
+{% window_nav item window_id 'show-administrativeact' 'operation_administrativeactop_modify' %}
+{% endif %}
+{% if item.associated_file %}
+{% window_nav item window_id 'show-administrativeact' 'file_administrativeactfile_modify' %}
+{% endif %}
+{% if item.treatment %}
+{% window_nav item window_id 'show-administrativeact' 'treatment_administrativeacttreatment_modify' %}
+{% endif %}
+{% if item.treatment_file %}
+{% window_nav item window_id 'show-administrativeact' 'treatmentfile_administrativeacttreatmentfile_modify' %}
+{% endif %}
+
+<h3>{% trans "General"%}</h3>
+<ul class='form-flex'>
+    {% field_li "Year" item.year %}
+    {% field_li "Index" item.index %}
+    {% field_li "Internal reference" item.ref_sra %}
+    {% field_li "Type" item.act_type %}
+    {% field_li "Object" item.act_object %}
+    {% field_li "Signature date" item.signature_date %}
+    {% field_li "In charge" item.in_charge %}
+    {% field_li "Archaeological preventive operator" item.operator %}
+    {% field_li_detail "Associated file" item.associated_file %}
+    {% field_li_detail "Operation" item.operation %}
+    {% field_li_detail "Treatment" item.treatment %}
+    {% field_li_detail "Treatment request" item.treatment_file %}
+
+    {% if item.operation and item.operation.surface %}
+    <li><label>{% trans "Surface"%}</label> <span class='value'>{{ item.operation.surface }} m<sup>2</sup> ({{ item.operation.surface_ha }} ha)</span></li>
+    {% endif %}
+    {% field_li_detail "Created by" item.history_creator.ishtaruser.person %}
+{% comment %}{% if item.general_contractor.attached_to %}<p>
+    <label>{% trans "General contractor organisation"%}</label>
+    <span class='value'>{{ item.general_contractor.attached_to }}</span></p>{% endif %} <!-- Contractor's organisation displayed as concat of Name/Adress/postal_code/city -->
+{% if item.general_contractor %}<p><label>{%trans "General contractor"%}</label> <span class='value'>{{ item.general_contractor.full_label }}</span></p>{% endif %}
+{% endcomment %}
+</ul>
+
+{% endblock %}

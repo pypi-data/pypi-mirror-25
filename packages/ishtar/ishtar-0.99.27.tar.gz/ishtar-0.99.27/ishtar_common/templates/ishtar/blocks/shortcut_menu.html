@@ -1,0 +1,45 @@
+{% load i18n %}
+{% load url from future%}
+{% if current_menu %}
+<form method="post" action="{% url 'update-current-item' %}">
+<fieldset id="shortcut-menu">
+<span class="fa-stack short-menu-close">
+  <i class="fa fa-circle fa-stack-2x"></i>
+  <i class="fa fa-times fa-stack-1x fa-inverse"></i>
+</span>
+<span class="fa-stack short-menu-open">
+  <i class="fa fa-circle fa-stack-2x"></i>
+  <i class="fa fa-plus fa-stack-1x fa-inverse"></i>
+</span>
+<div class="short-menu-buttons btn-group" role="group">
+  <button type="button" class="btn btn-selected" id='short-menu-simple' title="{% trans 'Simple menu limited to your own items. Be careful only the last 100 items are displayed.' %}">{% trans "simple" %}</button>
+  <button type="button" class="btn" id='short-menu-advanced' title="{% trans 'Advanced menu' %}">{% trans "advanced" %}</button>
+</div>
+<div>
+<i class="icon fa fa-thumb-tack fa-2x" aria-hidden="true" title="{% trans 'Pin an item in order to constrain default searches with this item. By default only your items are displayed. New created and modified items are auto-pin.' %}"></i>
+<table id='current_items'>
+{% for lbl, model_name, main_cls, items in current_menu %}
+<tr>
+    <td><label for="current_{{model_name}}">{{lbl}}</label></td>
+    <td>
+      <select class='{{main_cls}} chosen-select' id='current_{{model_name}}'>
+        <option class='normal' value=''>--</option>
+        {% for val, label, selected, cls in items %}<option{% if cls %} class='{{cls}}'{% endif %} value='{{val}}'{% if selected %} selected="selected"{% endif %}>{% ifequal cls 'basket' %}&#xf291; {% endifequal %}{% ifequal cls 'green' %}&#xf058; {% endifequal %}{% ifequal cls 'orange' %}&#xf06a; {% endifequal %}{% ifequal cls 'red' %}&#xf071; {% endifequal %}{{label}}</option>
+      {% endfor %}</select>
+    </td>{% with 'show-'|add:model_name as model_url%}
+    <td><a href='#' onclick='load_current_window("{% url model_url 0 %}", "{{model_name}}");' class='display_details'><i class="fa fa-info-circle" aria-hidden="true"></i></a></td>
+    <td><span class='pin-action' onclick='$.get("{% url 'unpin' model_name %}", function(){load_shortcut_menu();});' title="{% trans 'Unpin' %}">
+            <i class="fa fa-times"></i>
+    </span></td>
+    {% endwith %}
+</tr>
+{% endfor %}
+</table>
+</div>
+</fieldset>
+</form>
+<script type='text/javascript'>var advanced_menu = false;
+{% if SHORTCUT_SHOW == 'off' %}var shortcut_menu_hide = true;
+{% else %}var shortcut_menu_hide = false;{% endif %}
+</script>
+{% endif %}

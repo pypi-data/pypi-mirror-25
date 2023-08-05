@@ -1,0 +1,255 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_field from_dict link_to_window window_tables window_header humanize %}
+{% load url from future %}
+
+{% block head_title %}{% trans "Find" %}{% endblock %}
+{% block content %}
+{% window_nav item window_id 'show-find' 'find_modify' 'show-historized-find' 'revert-find' previous next 1 %}
+
+{% if item.image %}
+<a href='{{item.image.url}}' rel="prettyPhoto" title="{{item.label}}" class='photo'><img src='{{item.thumbnail.url}}'/></a>
+{% endif%}
+{% if item.downstream_treatment %}
+<p class='alert'><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+  {% trans "This sheet has a downstream treatment: it is related to an old version of the find." %}</p>
+{% endif %}
+
+<p class="window-refs" title="{% trans 'Free ID' %}">{{ item.label|default:"" }}</p>
+<p class='window-refs' title="{% trans 'Base find - Complete ID' %}">{% for base_find in item.base_finds.all %}{% if forloop.counter0 %} &ndash; {% endif %}{{base_find.complete_id}}{% endfor %}</p>
+<p class='window-refs' title="{% trans 'Base find - Short ID' %}">{% for base_find in item.base_finds.all %}{% if forloop.counter0 %} &ndash; {% endif %}{{base_find.short_id}}{% endfor %}</p>
+<p class="window-refs" title="{% trans 'Find - Administrative ID' %}">{{ item.administrative_index|default:"" }}</p>
+{% include "ishtar/blocks/sheet_external_id.html" %}
+
+
+<ul class='form-flex'>
+  {% field_li "Previous ID" item.previous_id %}
+
+  {% include "ishtar/blocks/sheet_creation_section.html" %}
+  {% trans "Administrative index" as admin_index_label %}
+  {% field_li admin_index_label item.administrative_index %}
+{% field_li_multiple "Material types" item.material_types %}
+{% field_li "Dating" item.dating %}
+{% field_li "Length (cm)" item.length %}
+{% field_li "Width (cm)" item.width %}
+{% field_li "Height (cm)" item.height %}
+{% field_li "Diameter (cm)" item.diameter %}
+{% field_li "Thickness (cm)" item.thickness %}
+{% field_li "Volume (l)" item.volume %}
+{% field_li "Weight" item.weight_string %}
+{% if item.dimensions_comment %}
+</ul>
+{% field "Dimensions comment" item.dimensions_comment "<pre>" "</pre>" %}
+<ul class='form-flex'>
+{% endif %}
+
+{% field_li "Find number" item.find_number %}
+{% field_li "Minimum number of individuals (MNI)" item.min_number_of_individuals %}
+{% field_li "Conservatory state" item.conservatory_state %}
+{% if item.conservatory_comment %}
+</ul>
+{% field "Conservatory comment" item.conservatory_comment "<pre>" "</pre>" %}
+<ul class='form-flex'>
+{% endif %}
+{% field_li_multiple "Type of preservation to consider" item.preservation_to_considers %}
+{% field_li_multiple "Object types" item.object_types %}
+{% field_li_multiple "Integrity / interest" item.integrities %}
+{% field_li_multiple "Remarkability" item.remarkabilities %}
+{% field_li "Estimated value" item.estimated_value|default_if_none:''|intcomma '' ' '|add:CURRENCY %}
+{% if item.CHECK_DICT %}
+{% field_li "Checked" item.checked|from_dict:item.CHECK_DICT %}
+{% endif%}
+{% if item.history_object and item.history_object.CHECK_DICT %}
+{% field_li "Checked" item.checked|from_dict:item.history_object.CHECK_DICT %}
+{% endif%}
+</ul>
+
+{% field "Description" item.description "<pre>" "</pre>" %}
+{% field "Comment" item.comment "<pre>" "</pre>" %}
+
+{% if item.container %}
+<h3>{% trans "Warehouse"%}</h3>
+{% field_detail "Container" item.container %}
+{% field_detail "Responsible warehouse" item.container.responsible %}
+{% field_detail "Location (warehouse)" item.container.location %}
+{% field "Precise localisation" item.container.divisions_lbl %}
+{% endif %}
+
+{% if item.upstream_treatment or item.downstream_treatment %}
+<h3>{% trans "Treatments"%}</h3>
+
+{% if item.upstream_treatment %}
+<h4>{% trans "Upstream treatment" %}</h4>
+<div class='clean-table'>
+<div class='clean-table-wrap'>
+<table id='{{window_id}}-upstream'>
+  <tr>
+    <th>&nbsp;</th>
+    <th>{% trans "Year - index" %}</th>
+    <th>{% trans "Label" %}</th>
+    <th>{% trans "Type" %}</th>
+    <th>{% trans "State" %}</th>
+    <th>{% trans "Related finds (max. 15 displayed)" %}</th>
+    <th>{% trans "Doer" %}</th>
+    <th>{% trans "Container" %}</th>
+    <th>{% trans "Start date" %}</th>
+    <th>{% trans "End date" %}</th>
+  </tr>
+  {% for items, treatment in item.limited_upstream_treatments %}
+  <tr>
+    <td>
+      <a class="display_details" href="#"
+         onclick="load_window('{% url 'show-treatment' treatment.id %}/');">
+        <i class="fa fa-info-circle" aria-hidden="true"></i>
+      </a>
+    </td>
+    <td class='string'>{{ treatment.year }} - {{treatment.index}}</td>
+    <td class='string'>{{ treatment.label|default_if_none:"-" }}</td>
+    <td class='string'>{{ treatment.treatment_types_lbl }}</td>
+    <td class='string'>{{ treatment.treatment_state|default_if_none:"-" }}</td>
+    <td class='item-list'>{% for item in items %}<span>{{item}} {{ item|link_to_window}}</span>{% endfor %}</td>
+    <td class='string'>{{ treatment.person|default_if_none:"-" }}</td>
+    <td class='string'>{{ treatment.container|default_if_none:"-" }}</td>
+    <td class='string'>{{ treatment.start_date|default_if_none:"-" }}</td>
+    <td class='string'>{{ treatment.end_date|default_if_none:"-" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+</div>
+<p class='tool'><a class='badge' href="{% url 'get-upstreamtreatment' 'csv' %}?submited=1&amp;find_id={{item.pk}}" target="_blank" title='{% trans "Export as CSV"%}'>{% trans "CSV" %}</a> ({{ENCODING}})</p>
+{% endif %}
+
+{% if item.downstream_treatment %}
+<h4>{% trans "Downstream treatment" %}</h4>
+<div class='clean-table'>
+<div class='clean-table-wrap'>
+<table id='{{window_id}}-downstream'>
+  <tr>
+    <th>&nbsp;</th>
+    <th>{% trans "Year - index" %}</th>
+    <th>{% trans "Label" %}</th>
+    <th>{% trans "Type" %}</th>
+    <th>{% trans "State" %}</th>
+    <th>{% trans "Related finds (max. 15 displayed)" %}</th>
+    <th>{% trans "Doer" %}</th>
+    <th>{% trans "Container" %}</th>
+    <th>{% trans "Start date" %}</th>
+    <th>{% trans "End date" %}</th>
+  </tr>
+  {% for items, treatment in item.limited_downstream_treatments %}
+  <tr>
+    <td>
+      <a class="display_details" href="#"
+         onclick="load_window('{% url 'show-treatment' treatment.id %}/');">
+        <i class="fa fa-info-circle" aria-hidden="true"></i>
+      </a>
+    </td>
+    <td class='string'>{{ treatment.year }} - {{treatment.index}}</td>
+    <td class='string'>{{ treatment.label|default_if_none:"-" }}</td>
+    <td class='string'>{{ treatment.treatment_types_lbl }}</td>
+    <td class='string'>{{ treatment.treatment_state|default_if_none:"-" }}</td>
+    <td class='item-list'>{% for item in items %}<span>{{item}} {{ item|link_to_window}}</span>{% endfor %}</td>
+    <td class='string'>{{ treatment.person|default_if_none:"" }}</td>
+    <td class='string'>{{ treatment.container|default_if_none:"-" }}</td>
+    <td class='string'>{{ treatment.start_date|default_if_none:"" }}</td>
+    <td class='string'>{{ treatment.end_date|default_if_none:"" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+</div>
+
+<p class='tool'><a class='badge' href="{% url 'get-downstreamtreatment' 'csv' %}?submited=1&amp;find_id={{item.pk}}" target="_blank">{% trans "CSV" %}</a> ({{ENCODING}})</p>
+{% endif %}
+
+{% endif %}
+
+<h3>{% trans "Associated base finds"%}</h3>
+
+{% for base_find in item.base_finds.all %}
+<p class='window-refs'>{{base_find.complete_id }}</p>
+<p class='window-refs'>{{base_find.short_id }}</p>
+{% if base_find.external_id %}
+<p class='window-refs external-id'>
+  <small title="{% trans 'Internal ID' %}">
+    <i class="fa fa-key" aria-hidden="true"></i>
+    {{base_find.external_id|default:''}}
+  </small>
+</p>{% endif %}
+<ul class='form-flex'>
+{% with item.history_creation_date|date:"SHORT_DATETIME_FORMAT" as creation_date %}
+{% with item.history_creator.ishtaruser.full_label|add:"<br/><i>"|add:creation_date|add:"</i>" as creator %}
+{% field_li "Created by" creator|safe %}
+{% endwith %}
+{% endwith %}
+{% if item.history_creation_date != item.last_edition_date %}
+{% with item.last_edition_date|date:"SHORT_DATETIME_FORMAT" as edition_date %}
+{% with item.history_modifier.ishtaruser.full_label|add:"<br/><i>"|add:edition_date|add:"</i>" as modifier %}
+{% field_li "Last modified by" modifier|safe %}
+{% endwith %}
+{% endwith %}
+{% endif %}
+{% field_li "Batch/object" base_find.batch %}
+{% if base_find.history_object and base_find.history_object.IS_ISOLATED_DICT %}
+{% field_li "Batch/object" base_find.batch|from_dict:base_find.history_object.IS_ISOLATED_DICT %}
+{% endif %}
+
+{% field_li "Discovery date" base_find.discovery_date %}
+{% field_li "Special interest" base_find.special_interest %}
+{% field_li_detail "Context record" base_find.context_record %}
+{% field_li "Town" base_find.context_record.parcel.town %}
+{% field_li "Parcel" base_find.context_record.parcel %}
+{% field_li_detail "Operation" base_find.context_record.operation %}
+{% field_li "Point of topographic reference" base_find.topographic_localisation %}
+
+{% if base_find.x or base_find.y %}
+  <li><label>{% trans "Coordinates" %}</label>
+  <span class="value">
+    {% trans "X"%} {{base_find.x|default_if_none:"-"}},
+    {% trans "Y"%} {{base_find.y|default_if_none:"-"}},
+    {% trans "Z"%} {{base_find.z|default_if_none:"-"}}
+    {% if base_find.spatial_reference_system %}
+    ({{base_find.spatial_reference_system.label}}{% if base_find.spatial_reference_system.srid %} -
+     {% trans "SRID"%} {{base_find.spatial_reference_system.srid}}{% endif %})
+    {% endif %}
+  </span>
+{% endif %}
+</ul>
+
+{% field "Description" base_find.description "<pre>" "</pre>" %}
+{% field "Comment" base_find.comment "<pre>" "</pre>" %}
+{% if forloop.counter0 %}<hr/>{% endif %}
+{% endfor %}
+
+{% if item.source.count %}
+<h3>{% trans "Documents"%}</h3>
+<table id='{{window_id}}-docs'>
+  <caption>{%trans "Documents"%}</caption>
+  <tr>
+    <th>&nbsp;</th>
+    <th>{% trans "Title" %}</th>
+    <th>{% trans "Type" %}</th>
+    <th>{% trans "Authors" %}</th>
+    <th>{% trans "Link" %}</th>
+  </tr>
+  {% for doc in item.source.all %}
+  <tr>
+    <td><a class="display_details" href="#"
+         onclick="load_window('{% url 'show-findsource' doc.id %}/');"><i class="fa fa-info-circle" aria-hidden="true"></i>
+      </a></td>
+    <td class='string'>{{ doc.title }}</td>
+    <td class='string'>{{ doc.source_type }}</td>
+    <td class='string'>{{ doc.authors.all|join:", " }}</td>
+    <td class='string'>{% if doc.associated_url  %}<a href='{{doc.associated_url}}' target="_blank">{{doc.associated_url}}</a>{% endif %}</td>
+  </tr>
+  {% empty %}
+  {% endfor %}
+</table>
+
+<script type='text/javascript'>
+tableToGrid('#{{window_id}}-docs', {
+    width: null, shrinkToFit: false});
+</script>
+{% endif %}
+
+{% endblock %}

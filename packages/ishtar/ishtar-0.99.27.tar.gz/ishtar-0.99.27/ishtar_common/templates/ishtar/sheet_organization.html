@@ -1,0 +1,45 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_header window_tables %}
+
+{% block head_title %}{% trans "Organization" %}{% endblock %}
+
+{% block content %}
+{% window_nav item window_id 'show-organization' 'organization_modify' %}
+<p><label>{% trans "Name" %}</label> <span class='value'>{{item.name}}</span></p>
+<p><label>{%trans "Created by:"%}</label> <span class='value'>{{ item.history_creator.ishtaruser.person }}</span></p>
+{% include "ishtar/blocks/sheet_address_section.html" %}
+{% if item.phone %}<p><label>{% trans "Phone" %}</label> <span class='value'>{{item.phone}}</span></p> {% endif %}
+{% if item.mobile_phone %}<p><label>{% trans "Mobile phone" %}</label> <span class='value'>{{item.mobile_phone}}</span></p> {% endif %}
+
+
+<table class='simple'>
+  <caption>{%trans "Person in the organization"%}</caption>
+  <tr>
+    <th>{% trans "Name" %}</th>
+    <th>{% trans "Surname" %}</th>
+    <th>{% trans "Type" %}</th>
+    <th class='link'>&nbsp;</th>
+  </tr>
+  {% for person in item.members.all %}
+  <tr>
+    <td class='string'>{{person.name|default:""}}</td>
+    <td class='string'>{{person.surname|default:""}}</td>
+    <td>{% for type in person.person_types.all %}{% if forloop.counter0 %}, {% endif %}{{type.label}}{% endfor %}</td>
+    <td class='link'><a class='display_details' href="#" onclick='load_window("{%url show-person person.pk ''%}")'><i class="fa fa-info-circle" aria-hidden="true"></i></a></td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="8" class='no_items'>{% trans "No person in this organization" %}</td></tr>
+  {% endfor %}
+</table>
+
+{% trans "General contractor organization of archaeological files" as af %}
+{% if item.general_contractor_files.count %}
+{% dynamic_table_document af 'files' 'corporation_general_contractor' item.pk '' output %}
+{% endif %}
+
+{% trans "Planning service of archaeological files" as af %}
+{% if item.planning_service_files.count %}
+{% dynamic_table_document af 'files' 'planning_service' item.pk '' output %}
+{% endif %}
+
+{% endblock %}

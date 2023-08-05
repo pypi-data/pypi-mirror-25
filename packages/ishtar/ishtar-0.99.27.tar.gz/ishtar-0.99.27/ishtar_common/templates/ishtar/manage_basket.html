@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n inline_formset %}
+{% load url from future %}
+{% block content %}
+<h2>{{page_name}}{% trans ":"%} {{basket}}</h2>
+<form enctype="multipart/form-data" action="." method="post">{% csrf_token %}
+<div class='form'>
+<p class='alert'>
+    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+    {% trans 'Checking "Select all" only selects the current page.' %}
+</p>
+{{form}}
+<button id='add_to' onclick='return false'>{% trans "Add" %}</button>
+<h3>{% trans "Basket content" %}</h3>
+<div id='basket-content' style='text-align:left'>
+</div>
+    {% block "footer" %}
+    <div id="footer">
+        <div id='validation-bar'>
+            <a href="{% url 'display-findbasket' basket.id %}"
+               id="validate-button"
+               class='button'>{% trans "Close" %}</a>
+        </div>
+        {% include 'ishtar/blocks/footer.html' %}
+    </div>
+    {% endblock %}
+</div>
+</form>
+<script type='text/javascript' language='javascript'>
+
+function load_list(data){
+    $('#basket-content').html(data);
+}
+
+$('#add_to').click(function(){
+    var selected_items = jQuery("#grid_pk").getGridParam('selarrrow');
+    if(!selected_items) return false;
+    for (i = 0, n = selected_items.length; i < n; i++) {
+        var selected_item = selected_items[i];
+        $.ajax({
+            type: "POST",
+            url: '{{add_url}}',
+            data: {
+                basket_id: {{basket.pk}},
+                item_id: selected_item
+            },
+            success: load_list
+        });
+    }
+    return false;
+});
+jQuery(document).ready(function(){
+    $.get('{{list_url}}', load_list);
+});
+</script>
+{% endblock %}

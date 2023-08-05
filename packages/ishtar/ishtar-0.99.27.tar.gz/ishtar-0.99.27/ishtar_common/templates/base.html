@@ -1,0 +1,138 @@
+{% load i18n %}{% load url from future %}<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{{LANGUAGE_CODE}}" lang="{{LANGUAGE_CODE}}">
+
+<head>
+    <link rel="shortcut icon" href="{{STATIC_URL}}/media/images/favicon.png"/>
+    <title>{% block title %}Ishtar{% if APP_NAME %} - {{APP_NAME}}{%endif%}{% endblock %}
+    </title>
+    <script language="javascript" type="text/javascript">
+        var url_path = "{{URL_PATH}}";
+    </script>
+    <script language="javascript" type="text/javascript" src="{{JQUERY_URL}}?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{JQUERY_UI_URL}}jquery-ui.js?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{JQUERY_UI_URL}}ui/i18n/jquery.ui.datepicker-{{COUNTRY}}.js?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/chosen/chosen.jquery.min.js?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/prettyPhoto/js/jquery.prettyPhoto.js?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/i18n/grid.locale-{{COUNTRY}}.js?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/jquery.jqGrid.min.js?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/grid.tbltogrid.js?ver={{VERSION}}"></script>
+    <script language="javascript" type="text/javascript" src="{{STATIC_URL}}js/ishtar.js?ver={{VERSION}}"></script>
+    <link type="text/css" href="{{JQUERY_UI_URL}}jquery-ui.css?ver={{VERSION}}" rel="stylesheet" />
+    <link type="text/css" href="{{STATIC_URL}}js/chosen/chosen.min.css?ver={{VERSION}}" rel="stylesheet" />
+    <link rel="stylesheet" href="{{STATIC_URL}}font-awesome/css/font-awesome.min.css?ver={{VERSION}}" />
+    <link rel="stylesheet" href="{{STATIC_URL}}js/prettyPhoto/css/prettyPhoto.css?ver={{VERSION}}" />
+    <link rel="stylesheet" href="{{STATIC_URL}}media/ui.jqgrid.css?ver={{VERSION}}" />
+    <link rel="stylesheet" href="{{STATIC_URL}}media/style.css?ver={{VERSION}}" />
+    {% for url_css in JQGRID_CSS %}<link rel="stylesheet" href="{{url_css}}?ver={{VERSION}}" />{% endfor %}
+    {% include "blocks/extra_head.html" %}
+    {% block extra_head %}
+    {% endblock %}
+    {% if raw_css %}<style media="screen" type="text/css">{{raw_css|safe}}
+    </style>{% endif %}
+    <script type='text/javascript'>
+    var shortcut_url = '{% url "shortcut-menu" %}';
+    var get_file_url = '{% url "get-file-shortcut" %}';
+    var get_operation_url = '{% url "get-operation-shortcut" %}';
+    var get_contextrecord_url = '{% url "get-contextrecord-shortcut" %}';
+    var get_find_url = '{% url "get-find-shortcut" %}';
+    var activate_all_search_url = '{% url "activate-all-search" %}';
+    var activate_own_search_url = '{% url "activate-own-search" %}';
+    var activate_all_search_msg = "{% trans 'Searches in the shortcut menu deal with all items.' %}";
+    var activate_own_search_msg = "{% trans 'Searches in the shortcut menu deal with only your items.' %}";
+    </script>
+</head>
+<body{% if current_theme%} id='{{current_theme}}'{%endif%}>
+    <div id="header">
+        {% block header %}
+        {% if user.is_authenticated %}
+        {% trans "Logged in" %}: {{ user.username }}
+        (<a href="{% url 'auth_logout' %}">{% trans "Log out" %}</a> |
+        <a href="{% url 'auth_password_change' %}">{% trans "Change password" %}</a>)
+        {% else %}
+        <strong><a href="{% url 'auth_login' %}">{% trans "Log in" %}</a></strong>
+        {% endif %}
+        {% if LANGUAGES|length > 1 %}
+        <div id="language_form_div">
+            <form action="/i18n/setlang/" method="post" id='language_form'>
+                {% csrf_token %}
+                {% comment %}<label for='language_selector'>{% trans "Lang" %}{% trans ":"%} </label>{% endcomment %}
+                <select name="language" id='language_selector'>
+                    <option value="">----------</option>
+                {% for lang in LANGUAGES %}
+                    <option value="{{ lang.0 }}"{% ifequal LANGUAGE_CODE lang.0 %} selected='selected'{% endifequal %}>{{ lang.1 }}</option>
+                {% endfor %}
+                </select>
+            </form>
+        </div>{% endif %}
+        {% endblock %}
+    </div>
+    <div class="nav-button ui-state-default ui-corner-all" id="to_bottom_arrow">
+        <i class="fa fa-arrow-circle-down" aria-hidden="true"></i>
+    </div>
+    <div class="nav-button ui-state-default ui-corner-all" id="to_top_arrow">
+        <i class="fa fa-arrow-circle-up" aria-hidden="true"></i>
+    </div>
+    <div id="window"></div>
+    <a href='{% url "start" %}' id="logo">
+{% if APP_NAME %}<p id="app_name">{{APP_NAME}}</p>{%endif%}
+    </a>
+    {% if not reminders %}<div id="context_menu"></div>
+    {% else %}<fieldset id='reminder'><legend>{% trans "Current items" %}</legend>
+{% for lbl, value in reminders %}
+<p><strong class='lbl'>{{lbl}}{% trans ":"%}</strong> <span class='value'>{{value}}</span></p>
+{% endfor %}
+</fieldset>{%endif%}
+    <div id="main_menu">
+    <ul>
+      {% for section in MENU.childs %}
+      {% if section.available %}
+        <li id='section-{{section.idx}}'{% if section.css %} class="{{section.css}}"{% endif %}>
+            {{section.label}}
+      <ul>
+          {% for menu_item in section.childs %}{%if menu_item.available%}
+          {% if menu_item.childs %}<li id='subsection-{{menu_item.idx}}'{% if menu_item.css %} class="{{menu_item.css}}"{% endif %}>{{menu_item.label}}
+            <ul>
+                {% for menu_subitem in menu_item.childs %}{% if menu_subitem.available %}
+                {% url 'action' menu_subitem.idx as item_url %}
+                <li id='{{menu_subitem.idx}}'{% if item_url in CURRENT_PATH %} class='selected'{% endif %}><a
+                        href='{{item_url}}'>{{menu_subitem.label}}</a></li>
+            {%endif%}{% endfor %}</ul></li>
+        {% else %}
+          {% url 'action' menu_item.idx as item_url %}
+        <li id='{{menu_item.idx}}'
+            class="{% if item_url in CURRENT_PATH %}selected{% endif %} {% if menu_item.css %}{{menu_item.css}}{% endif %}"><a href="{{item_url}}">{{menu_item.label}}</a></li>
+        {%endif%}{% endif %}{% endfor %}
+      </ul>
+      </li>{%endif%}
+      {% endfor %}
+    </ul>
+    </div>
+    <div id="content">
+        {% if warnings %}
+        <ul class="alert">{% for warning in warnings %}
+            <li>{{warning}}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block footer %}
+    <div id="footer">
+        {% include 'ishtar/blocks/footer.html' %}
+    </div>
+    {% endblock %}
+    <div id="progress">
+        <div id='progress-content'>
+            <p class='progress-detail progress-1'>{% trans "Processing..." %}</p>
+            <p class='progress-detail progress-2'>{% trans "This can be long." %}</p>
+            <p class='progress-detail progress-3'>{% trans "Time to take a coffee?" %} <i class="fa fa-coffee" aria-hidden="true"></i></p>
+            <p class='progress-detail progress-4'>{% trans "Time to take another coffee?" %} <i class="fa fa-coffee" aria-hidden="true"></i></p>
+        </div>
+    </div>
+    <div id='message'>
+        <div class='information'><i class="fa fa-info-circle" aria-hidden="true"></i> <span class='content'></span></div>
+    </div>
+</body>
+
+</html>

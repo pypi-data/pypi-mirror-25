@@ -1,0 +1,50 @@
+{% load i18n %}
+{% load url from future%}
+{% if menu %}
+<form method="post" action="{% url 'update-current-item' %}">
+<fieldset id='shortcut-menu'>
+<span class="fa-stack short-menu-close">
+  <i class="fa fa-circle fa-stack-2x"></i>
+  <i class="fa fa-times fa-stack-1x fa-inverse"></i>
+</span>
+<span class="fa-stack short-menu-open">
+  <i class="fa fa-circle fa-stack-2x"></i>
+  <i class="fa fa-plus fa-stack-1x fa-inverse"></i>
+</span>
+<div class="short-menu-buttons btn-group" role="group">
+  <button type="button" class="btn" id='short-menu-simple' title="{% trans 'Simple menu limited to your own items. Be careful only the last 100 items are displayed.' %}">{% trans "simple" %}</button>
+  <button type="button" class="btn btn-selected" id='short-menu-advanced' title="{% trans 'Advanced menu' %}">{% trans "advanced" %}</button>
+</div>
+<div id='action_current_items'>
+<p><i class="icon fa fa-thumb-tack fa-2x" aria-hidden="true" title="{% trans 'Pin an item in order to constrain default searches with this item. By default only your items are displayed. New created and modified items are auto-pin.' %}"></i></p>
+<p>
+<a href='' onclick='return activate_own_search();' class='activate_own_search{% if SHORTCUT_SEARCH == 'all' %} disabled{% endif %}'><i class="icon fa fa-user" aria-hidden="true" title="{% trans 'Search within my items' %}"></i></a>
+<a href='' class='activate_all_search{% if SHORTCUT_SEARCH == 'own' %} disabled{% endif %}' onclick='return activate_all_search();'><i class="icon fa fa-users" aria-hidden="true" title="{% trans 'Search within all items' %}"></i></a>
+</p>
+<p>
+<a href='' onclick='return load_shortcut_menu();' class='disabled'><i class="icon fa fa-2x fa-refresh" aria-hidden="true" title="{% trans 'Refresh menu' %}"></i></a>
+</p>
+</div>
+<table id='current_items'>
+{% for lbl, model_name, current, widget in menu %}
+<tr>
+    <td><label for="current_{{model_name}}">{{lbl}}</label></td>
+    <td>
+        {{widget|safe}}
+    </td>{% with 'show-'|add:model_name as model_url%}
+    <td><a href='#' onclick='load_current_window("{% url model_url current %}", "{{model_name}}");' class='display_details'><i class="fa fa-info-circle" aria-hidden="true"></i></a></td>
+    <td><span class='disabled pin-action' onclick='$.get("{% url 'unpin' model_name %}", function(){load_shortcut_menu();});' title="{% trans 'Unpin' %}">
+            <i class="fa fa-times"></i>
+    </span></td>
+    {% endwith %}
+</tr>
+{% endfor %}
+</table>
+</fieldset>
+</form>
+<script type='text/javascript'>
+var advanced_menu = true;
+{% if SHORTCUT_SHOW == 'off' %}var shortcut_menu_hide = true;
+{% else %}var shortcut_menu_hide = false;{% endif %}
+</script>
+{% endif %}

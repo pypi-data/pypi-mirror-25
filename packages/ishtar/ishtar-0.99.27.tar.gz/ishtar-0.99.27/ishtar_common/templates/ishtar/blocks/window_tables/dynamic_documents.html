@@ -1,0 +1,48 @@
+{% load i18n %}
+
+<h4>{{caption}}</h4>
+<table id='grid_{{name}}' class='jqgrid'></table>
+<div id='pager_{{name}}'></div>
+
+<div id='foot_{{name}}' class='gridfooter'>
+{% if source_full %}
+<a class="badge" href='{{simple_source}}csv{{ source_attrs|safe }}' target='_blank' title="{% trans 'Export as CSV' %}">{% trans "CSV" %}</a>
+<a class="badge" href='{{source_full}}csv{{ source_attrs|safe }}' target='_blank' title="{% trans 'Export as CSV - full' %}">{% trans "CSV full" %}</a>
+{% else %}
+<a class="badge" href="{{simple_source}}csv{{ source_attrs|safe }}" target="_blank" title="{% trans 'Export as CSV' %}">CSV</a>
+{% endif %} {{encoding}}
+</div>
+
+<script type="text/javascript" language='javascript'>
+
+setTimeout(
+    function(){
+      $("#grid_{{name}}").jqGrid({
+        url:'{{source|safe}}',
+        datatype: "json",
+        mtype: 'GET',
+        colNames:['id', '', {{col_names|safe}}],
+        colModel:[
+          {name:'id', index:'id', hidden:true},
+          {name:'link', index:'link', width:30},
+          {{extra_cols|safe}}
+        ],
+        sortname: '__default__',
+        viewrecords: true,
+        sortorder: "asc",
+        emptyrecords: "{{no_result}}",
+        loadtext: "{{loading}}",
+        pager: '#pager_{{name}}',
+        width: null,
+        shrinkToFit: false,
+        rowNum:20,
+        jsonReader : {repeatitems: false},
+        loadError: function (jqXHR, textStatus, errorThrown) {
+            alert("{% trans "An error as occured during search. Check your query fields." %}");
+        }
+      });
+      {% if large %}jQuery("#grid_{{name}}").jqGrid('setGridHeight', 272);{% endif %}
+}, 200);
+
+</script>
+

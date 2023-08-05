@@ -1,0 +1,69 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_field from_dict link_to_window window_tables window_ope_tables window_header humanize %}
+{% load url from future %}
+
+{% block head_title %}{% trans "Treatment" %}{% endblock %}
+{% block content %}
+{% window_nav item window_id 'show-treatment' 'treatment_modify' 'show-historized-treatment' 'revert-treatment' previous next 1 %}
+
+{% if item.image %}
+<a href='{{item.image.url}}' rel="prettyPhoto" title="{{item.label}}" class='photo'><img src='{{item.thumbnail.url}}'/></a>
+{% endif%}
+
+<p class="window-refs">{{ item.label|default:"" }}</p>
+{% if item.other_reference %}
+<p class="window-refs">{{ item.other_reference }}</p>{% endif %}
+<p class="window-refs">{{ item.year }} - {{ item.index }}</p>
+{% if item.external_id %}
+<p class="window-refs">{{ item.external_id }}</p>{% endif %}
+{% if item.end_date %}
+<p class="window-refs">{% trans "Closed" context "Treatment" %} ({{item.end_date}})</p>
+{% else %}
+<p class="window-refs">{% trans "Active" context "Treatment" %}</p>
+{% endif %}
+
+<ul class='form-flex'>
+    {% field_li_multiple "Treatment type" item.treatment_types %}
+    {% field_li "State" item.treatment_state %}
+    {% field_li_detail "Associated request" item.file %}
+    {% field_li "Location" item.location %}
+    {% field_li "Container" item.container %}
+    {% field_li "Responsible" item.person %}
+    {% field_li "Organization" item.organization %}
+    {% field_li "Start date" item.start_date %}
+    {% field_li "Closing date" item.end_date %}
+    {% field_li "Estimated cost" item.estimated_cost|intcomma '' " "|add:CURRENCY %}
+    {% field_li "Quoted cost" item.quoted_cost|intcomma '' " "|add:CURRENCY %}
+    {% field_li "Realized cost" item.realized_cost|intcomma '' " "|add:CURRENCY %}
+    {% field_li "Insurance cost" item.insurance_cost|intcomma '' " "|add:CURRENCY %}
+</ul>
+{% if item.description or item.comment or item.goal %}
+{% field "Comment" item.comment "<pre>" "</pre>" %}
+{% field "Description" item.description "<pre>" "</pre>" %}
+{% field "Goal" item.goal "<pre>" "</pre>" %}
+{% endif %}
+
+{% trans "Upstream finds" as finds %}
+{% if item.upstream.count %}
+{% dynamic_table_document finds 'finds_for_treatment' 'downstream_treatment' item.pk 'TABLE_COLS_FOR_OPE' output %}
+{% endif %}
+
+{% trans "Downstream finds" as finds %}
+{% if item.downstream.count %}
+{% dynamic_table_document finds 'finds_for_treatment' 'upstream_treatment' item.pk 'TABLE_COLS_FOR_OPE' output %}
+{% endif %}
+
+{% trans "Related operations" as related_operations %}
+{% dynamic_table_document related_operations 'operations' 'related_treatment' item.pk 'TABLE_COLS' output %}
+
+{% if item.source.count %}
+{% trans "Associated documents" as associated_docs %}
+{% dynamic_table_document associated_docs 'treatments_docs' 'treatment' item.pk '' output %}
+{% endif %}
+
+{% if item.administrative_act.count %}
+{% trans "Administrative acts" as admact_lbl %}
+{% table_administrativact admact_lbl item.administrative_act.all %}
+{% endif %}
+
+{% endblock %}

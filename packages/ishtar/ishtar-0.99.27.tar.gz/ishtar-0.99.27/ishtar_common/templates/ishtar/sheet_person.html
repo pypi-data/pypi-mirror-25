@@ -1,0 +1,116 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_field window_tables window_header %}
+
+{% block head_title %}{% trans "Person"%}{% endblock %}
+{% block content %}
+{% window_nav item window_id 'show-person' 'person_modify' %}
+<h3>{% trans "Identity" %}</h3>
+
+<ul class='form-flex'>
+{% field_li "Title" item.full_title %}
+{% field_li "Name" item.name %}
+{% field_li "Surname" item.surname %}
+{% field_li "Raw name" item.raw_name %}
+{% field_li_detail "Created by" item.history_creator.ishtaruser.person %}
+{% field_li "Email" item.email %}
+{% field_li "Type(s)" item.person_types_list %}
+</ul>
+
+{% if item.phone or item.phone2 or item.phone3 or item.mobile_phone %}
+<table class='formset table-form'>
+  <caption>{% trans "Phone" %}</caption>
+  <tr>
+    <th>{% trans "Phone type" %}</th>
+    <th>{% trans "Number" %}</th>
+  </tr>
+  {% if item.phone or item.phone_desc %}<tr>
+    <td>{% if item.phone_desc %}{{item.phone_desc}}{% else %}&ndash;{% endif %}</td>
+    <td>{% if item.phone %}{{item.phone}}{% else %}&ndash;{% endif %}</td>
+  </tr>{% endif %}
+  {% if item.phone2 or item.phone_desc2 %}<tr>
+    <td>{% if item.phone_desc2 %}{{item.phone_desc2}}{% else %}&ndash;{% endif %}</td>
+    <td>{% if item.phone2 %}{{item.phone2}}{% else %}&ndash;{% endif %}</td>
+  </tr>{% endif %}
+  {% if item.phone3 or item.phone_desc3 %}<tr>
+    <td>{% if item.phone_desc3 %}{{item.phone_desc3}}{% else %}&ndash;{% endif %}</td>
+    <td>{% if item.phone3 %}{{item.phone3}}{% else %}&ndash;{% endif %}</td>
+  </tr>{% endif %}
+  {% if item.mobile_phone %}<tr>
+    <td>{% trans "Mobile phone" %}</td>
+    <td>{{item.mobile_phone}}</td>
+  </tr>{% endif %}
+</table>
+{% endif %}
+
+{% if item.address or item.postal_code or item.town %}
+<h3>{% trans "Business address" %}</h3>
+<ul class='form-flex'>
+    {% field_li "Address" item.address %}
+    {% field_li "Address complement" item.address_complement %}
+    {% field_li "Postal code" item.postal_code %}
+    {% field_li "Town" item.town %}
+</ul>{% endif %}
+
+{% if item.alt_address or item.alt_postal_code or item.alt_town %}
+<h3>{% trans "Other address" %}</h3>
+<ul class='form-flex'>
+    {% field_li "Address" item.alt_address %}
+    {% field_li "Address complement" item.alt_address_complement %}
+    {% field_li "Postal code" item.alt_postal_code %}
+    {% field_li "Town" item.alt_town %}
+</ul>{% endif %}
+
+
+{% if item.attached_to %}<h3>{% trans "Associated organization"%}</h3>
+<ul class='form-flex'>
+    {% field_li_detail "Name" item.attached_to %}
+    {% field_li "Address" item.attached_to.address %}
+    {% field_li "Address complement" item.attached_to.address_complement %}
+    {% field_li "Postal code" item.attached_to.postal_code %}
+    {% field_li "Town" item.attached_to.town %}
+    {% field_li "Phone" item.attached_to.phone %}
+    {% field_li "Mobile phone" item.attached_to.mobile_phone %}
+</ul>{% endif %}
+
+
+{% trans "Associated operations as scientist" as ao %}
+{% if item.operation_scientist_responsability.count %}
+{% dynamic_table_document ao 'operations' 'scientist' item.pk '' output %}
+{% endif %}
+{% trans "Associated operations as responsible" as ao %}
+{% if item.operation_responsability.count %}
+{% dynamic_table_document ao 'operations' 'in_charge' item.pk '' output %}
+{% endif %}
+
+{% trans "In charge of archaeological files" as af %}
+{% if item.file_responsability.count %}
+{% dynamic_table_document af 'files' 'in_charge' item.pk '' output %}
+{% endif %}
+
+{% trans "General contractor of archaeological files" as af %}
+{% if item.general_contractor_files.count %}
+{% dynamic_table_document af 'files' 'general_contractor' item.pk '' output %}
+{% endif %}
+
+{% trans "Responsible for planning service of archaeological files" as af %}
+{% if item.responsible_town_planning_service_files.count %}
+{% dynamic_table_document af 'files' 'responsible_town_planning_service' item.pk '' output %}
+{% endif %}
+
+{% if item.operation_docs_q.count %}
+{% trans "Documents associated to operations" as operation_docs %}
+{% dynamic_table_document operation_docs 'operation_docs' 'person' item.pk '' output %}
+{% endif %}
+
+{% if item.contextrecord_docs_q.count %}
+{% trans "Documents associated to context records" as context_records %}
+{% dynamic_table_document context_records 'context_records_docs' 'person' item.pk '' output %}
+{% endif %}
+
+{% if item.find_docs_q.count %}
+{% trans "Documents associated to finds" as finds_docs %}
+{% dynamic_table_document finds_docs 'finds_docs' 'person' item.pk '' output %}
+{% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "ishtar/sheet.html" %}
+{% load i18n window_field window_header window_tables %}
+
+{% block head_title %}{% trans "Context Record" %}{% endblock %}
+
+{% block content %}
+{% window_nav item window_id 'show-contextrecord' 'record_modify' 'show-historized-contextrecord' 'revert-contextrecord' previous next 1 %}
+
+{% if item.image %}
+<a href='{{item.image.url}}' rel="prettyPhoto" title="{{item.label}}" class='photo'><img src='{{item.thumbnail.url}}'/></a>
+{% endif%}
+
+<p class='window-refs'>{{ item.parcel.short_label }}</p>
+<p class="window-refs">{{ item.label|default:"" }}</p>
+{% include "ishtar/blocks/sheet_external_id.html" %}
+
+<ul class='form-flex'>
+<li><label>{% if item.operation.code_patriarche %}{%trans "Complete ID"%}{% else %}{%trans "Temporary ID"%}{% endif %}</label><span class='value'>{{item.full_label}}</span></li>
+
+    {% include "ishtar/blocks/sheet_creation_section.html" %}
+
+    {% field_li "Type" item.unit %}
+    {% field_li "Excavation technic" item.excavation_technic %}
+    {% field_li_multiple "Chronology" item.datings %}
+    {% field_li "Town" item.parcel.town %}
+    {% field_li_multiple "Documentation" item.documentations %}
+    {% field_li "Opening date" item.opening_date %}
+    {% field_li "Closing date" item.closing_date %}
+</ul>
+{% field "Comment on datings" item.datings_comment "<pre>" "</pre>" %}
+
+{% if item.diameter or item.depth_of_appearance or item.documentations.count or item.description or item.lenght or item.width or item.depth or item.thickness or item.comment %}
+<h3>{% trans "Description"%}</h3>
+{% field "Description" item.description "<pre>" "</pre>" %}
+{% field "Comment" item.comment "<pre>" "</pre>" %}
+<ul class='form-flex'>
+    {% field_li "Length (m)" item.lenght %}
+    {% field_li "Width (m)" item.width %}
+    {% field_li "Diameter (m)" item.diameter %}
+    {% field_li "Depth (m)" item.depth %}
+    {% field_li "Thickness (m)" item.thickness %}
+    {% field_li "Depth of appearance (m)" item.depth_of_appearance %}
+</ul>
+{% endif %}
+
+{% if item.activity or item.identification or item.interpretation %}
+<h3>{% trans "Interpretation"%}</h3>
+
+<ul class='form-flex'>
+    {% field_li_multiple "Documentation" item.documentations %}
+    {% field_li "Activity" item.activity %}
+    {% field_li "Identification" item.identification %}
+</ul>
+{% field "Filling" item.filling "<pre>" "</pre>" %}
+{% field "Interpretation" item.interpretation "<pre>" "</pre>" %}
+{% endif %}
+
+{% if item.taq or item.taq_estimated or item.tpq or item.tpq_estimated %}
+<h3>{% trans "Datations"%}</h3>
+<ul class='form-flex'>
+{% field_li "TAQ" item.taq %}
+{% field_li "Estimated TAQ" item.taq_estimated %}
+{% field_li "TPQ" item.tpq %}
+{% field_li "Estimated TPQ" item.tpq_estimated %}
+</ul>
+{% endif %}
+
+{% trans "Context record relations" as cr_rels %}
+{% if item.right_relations.count %}
+{% dynamic_table_document cr_rels 'context_records_relations' 'left_record_id' item.pk '' output %}
+{% endif %}
+
+
+{% if item.operation %}
+<h3>{% trans "Operation summary"%}</h3>
+{% if not item.operation.code_patriarche %}
+<p class='alert'><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> <label>{%trans "Patriarche OA code not yet recorded!"%}</label></p>
+{% endif %}
+<ul class='form-flex'>
+{% field_li "Year" item.operation.year %}
+    {% trans "Numerical reference" as num_ref_label %}
+    {% field_li num_ref_label item.operation.operation_code %}
+{% field_li "Patriarche OA code" item.operation.code_patriarche %}
+{% field_li_detail "Head scientist" item.operation.scientist %}
+<li><label>{%trans "State"%}</label><span class='value'>{% if item.operation.is_active %}{% trans "Active file" %}{% else %}{%trans "Closed operation" %}{% endif %}</span></li>
+{% if not item.operation.is_active %}
+<li><label>{%trans "Closing date"%}</label> <span class='value'>{{ item.operation.closing.date }} <strong>{%trans "by" %}</strong> {{ item.operation.closing.user }}</span></li>
+{% endif %}
+{% field_li "Type" item.operation.operation_type %}
+{% field_li_multiple "Remains" item.operation.remains %}
+{% field_li_multiple "Periods" item.operation.periods %}
+</ul>
+{% field "Comment" item.operation.comment "<pre>" "</pre>" %}
+
+<h3>{% trans "Localisation"%}</h3>
+<p><label>{%trans "Towns"%}</label> <span class='value'>{{ item.operation.towns.all|join:", " }}</span></p>
+<p><label>{%trans "Related operation"%}</label>
+<span class='value'><a href="#" onclick='load_window("{% url show-operation item.operation.pk ''%}");'>{{ item.operation }}</a></span></p>
+{% else %}<p class='alert'><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> <label>{%trans "No operation linked to this context unit!"%}</label></p>
+{% endif %}
+
+{% trans "Document from this context record" as cr_docs %}
+{% if item.source.count %}
+{% dynamic_table_document cr_docs 'context_records_docs' 'context_record' item.pk '' output %}
+{% endif %}
+
+{% trans "Finds" as finds %}
+{% if item.base_finds.count %}
+{% dynamic_table_document finds 'finds_for_ope' 'base_finds__context_record' item.pk 'TABLE_COLS_FOR_OPE' output %}
+{% endif %}
+
+{% trans "Documents from associated finds" as finds_docs %}
+{% if item.find_docs_q.count %}
+{% dynamic_table_document finds_docs 'finds_docs' 'find__base_finds__context_record' item.pk '' output %}
+{% endif %}
+
+{% endblock %}

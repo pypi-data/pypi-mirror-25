@@ -1,0 +1,81 @@
+{% load i18n %}
+{% block main_head %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <title>{% block title %}Ishtar{% if APP_NAME %} - {{APP_NAME}}{%endif%}{% endblock %}
+    </title>
+    {% block header %}
+    <link rel="stylesheet" href="{{STATIC_URL}}/media/style.css?ver={{VERSION}}" />
+    {% endblock %}
+</head>
+<body>
+{% endblock %}
+<div class="sheet" id='{{window_id}}'>
+{% block head_sheet %}
+<script type="text/javascript">var last_window='{{window_id}}';</script>
+
+<div class="head">
+
+<a href='#' class='previous_page'>
+<span class="fa-stack fa-lg">
+  <i class="fa fa-circle fa-stack-2x"></i>
+  <i class="fa fa-arrow-left fa-stack-1x fa-inverse"></i>
+</span>
+</a>
+<div class='close-buttons'>
+<a href='#' onclick='$("#{{window_id}}").hide("slow")' title="{% trans 'Close' %}">
+<span class="fa-stack">
+  <i class="fa fa-circle fa-stack-2x"></i>
+  <i class="fa fa-times fa-stack-1x fa-inverse"></i>
+</span>
+</a>
+<a href='#' onclick='closeAllWindows();' title="{% trans "Close all windows" %}">
+<span class="fa-stack">
+  <i class="fa fa-files-o fa-stack-2x"></i>
+  <i class="fa fa-circle fa-stack-15x"></i>
+  <i class="fa fa-times fa-stack-1x fa-inverse"></i>
+</span>
+</a>
+</div>
+<a href='#' class='next_page'>
+<span class="fa-stack fa-lg">
+  <i class="fa fa-circle fa-stack-2x"></i>
+  <i class="fa fa-arrow-right fa-stack-1x fa-inverse"></i>
+</span>
+</a>
+
+<h1>{% block head_title %}{% endblock %}</h1>
+</div>
+
+<script type="text/javascript" language='javascript'>
+jQuery(document).ready(function(){
+    if (! get_next_table_id({{item.pk}})){
+        jQuery('.next_page').hide();
+    }
+    if (! get_previous_table_id({{item.pk}})){
+        jQuery('.previous_page').hide();
+    }
+    jQuery(".next_page").click(function() {
+        load_window("{{current_window_url}}" + get_next_table_id({{item.pk}}) + "/",
+                    '', function(){$("#{{window_id}}").hide();});
+    });
+    jQuery(".previous_page").click(function() {
+        load_window("{{current_window_url}}" + get_previous_table_id({{item.pk}}) + "/",
+                    '', function(){$("#{{window_id}}").hide();});
+    });
+});
+</script>
+{% endblock %}
+{% block header_title %}{% endblock %}
+<div class="body">
+{% block toolbar %}{% endblock %}
+{% block content %}
+{% endblock %}
+</div>
+</div>
+{%block main_foot%}
+</body>
+</html>
+{%endblock%}
