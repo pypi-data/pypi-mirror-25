@@ -1,0 +1,73 @@
+router id 192.0.2.31;
+
+log "/var/log/bird.log" all;
+log syslog all;
+debug protocols all;
+
+protocol device { }
+
+protocol static own_prefixes {
+	route {{ data.AS3_blacklist1 }} reject;
+        route {{ data.AS3_cc_AS1only }} reject;
+	route {{ data.AS3_cc_not_AS1 }} reject;
+	route {{ data.AS3_cc_none }} reject;
+	route {{ data.AS3_prepend1any }} reject;
+	route {{ data.AS3_prepend2any }} reject;
+	route {{ data.AS3_prepend3any }} reject;
+	route {{ data.AS3_prepend1_AS1 }} reject;
+	route {{ data.AS3_prepend2_AS2 }} reject;
+	route {{ data.AS3_prep3AS1_1any }} reject;
+	route {{ data.AS3_noexport_any }} reject;
+	route {{ data.AS3_noexport_AS1 }} reject;
+	route {{ data.Default_route }} reject;
+}
+
+filter to_rs {
+	if net = {{ data.AS3_cc_AS1only }} then {
+		bgp_community.add((65501,1));
+		bgp_community.add((0,999));
+	}
+	if net = {{ data.AS3_cc_not_AS1 }} then {
+		bgp_community.add((0,1));
+	}
+	if net = {{ data.AS3_cc_none }} then {
+		bgp_community.add((0,999));
+	}
+	if net = {{ data.AS3_prepend1any }} then {
+		bgp_community.add((999,65501));
+	}
+	if net = {{ data.AS3_prepend2any }} then {
+		bgp_community.add((999,65502));
+	}
+	if net = {{ data.AS3_prepend3any }} then {
+		bgp_community.add((999,65503));
+	}
+	if net = {{ data.AS3_prepend1_AS1 }} then {
+		bgp_community.add((65504,1));
+	}
+	if net = {{ data.AS3_prepend2_AS2 }} then {
+		bgp_community.add((65505,2));
+	}
+	if net = {{ data.AS3_prep3AS1_1any }} then {
+		bgp_community.add((65506,1));
+		bgp_community.add((999,65501));
+	}
+	if net = {{ data.AS3_noexport_any }} then {
+		bgp_community.add((65507,999));
+	}
+	if net = {{ data.AS3_noexport_AS1 }} then {
+		bgp_community.add((65509,1));
+		bgp_community.add((65506,2));
+	}
+	accept;
+}
+protocol bgp the_rs {
+	local as 3;
+	neighbor {{ data.rs_IPAddress }} as 999;
+	passive on;
+	add paths rx;
+	import all;
+	export filter to_rs;
+	connect delay time 1;
+	connect retry time 1;
+}
