@@ -1,0 +1,482 @@
+Metadata-Version: 1.1
+Name: ansible-tower-cli
+Version: 3.1.8
+Summary: A CLI tool for Ansible Tower.
+Home-page: https://github.com/ansible/tower-cli
+Author: Luke Sneeringer
+Author-email: lsneeringer@ansible.com
+License: Apache 2.0
+Description-Content-Type: UNKNOWN
+Description: |Build Status| |Coverage Status| |Version| |Downloads| |License|
+        |Supported Python Versions|
+        
+        Welcome to tower-cli
+        ====================
+        
+        **tower-cli** is a command line tool for Ansible Tower. It allows Tower
+        commands to be easily run from the Unix command line. It can also be
+        used as a client library for other python apps, or as a reference for
+        others developing API interactions with Tower's REST API.
+        
+        About Tower
+        -----------
+        
+        `Ansible Tower <https://www.ansible.com/tower>`__ is a GUI and REST interface
+        for Ansible that supercharges it by adding RBAC, centralized logging,
+        autoscaling/provisioning callbacks, graphical inventory editing, and
+        more.
+        
+        Tower is free to use for up to 30 days or 10 nodes. Beyond this, `a
+        license is required <https://www.ansible.com/pricing>`__.
+        
+        Capabilities
+        ------------
+        
+        This command line tool sends commands to the Tower API. It is capable of
+        retrieving, creating, modifying, and deleting most objects within Tower.
+        
+        A few potential uses include:
+        
+        -  Launching playbook runs (for instance, from Jenkins, TeamCity,
+           Bamboo, etc)
+        -  Checking on job statuses
+        -  Rapidly creating objects like organizations, users, teams, and more
+        
+        Installation
+        ------------
+        
+        Tower CLI is available as a package on
+        `PyPI <https://pypi.python.org/pypi/ansible-tower-cli>`__.
+        
+        The preferred way to install is through pip:
+        
+        .. code:: bash
+        
+            $ pip install ansible-tower-cli
+        
+        The main branch of this project may also be consumed directly from
+        source.
+        
+        Configuration
+        -------------
+        
+        Configuration can be set in several places: ``tower-cli`` can edit its
+        own configuration, or users can directly edit the configuration file.
+        
+        Set configuration with tower-cli config.
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        The preferred way to set configuration is with the ``tower-cli config``
+        command. The syntax is:
+        
+        .. code:: bash
+        
+            $ tower-cli config key value
+        
+        By issuing ``tower-cli config`` with no arguments, you can see a full
+        list of configuration options and where they are set.
+        
+        In most cases, you must set at least three configuration
+        options--\ ``host``, ``username``, and ``password``--which correspond to
+        the location of your Ansible Tower instance and your credentials to
+        authenticate to Tower.
+        
+        .. code:: bash
+        
+            $ tower-cli config host tower.example.com
+            $ tower-cli config username leeroyjenkins
+            $ tower-cli config password myPassw0rd
+        
+        Write to the config files directly.
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        The configuration file can also be edited directly. A configuration file
+        is a simple file with keys and values, separated by a colon (``:``) or by
+        the equality sign (``=``):
+        
+        .. code:: yaml
+        
+            host: tower.example.com
+            username: admin
+            password: p4ssw0rd
+        
+        The locations searched for the configuration file are given below.
+        
+        File Locations
+        ~~~~~~~~~~~~~~
+        
+        The order of precedence for configuration file locations is as follows,
+        from least to greatest:
+        
+        -  internal defaults
+        -  ``/etc/tower/tower_cli.cfg`` (written using
+           ``tower-cli config --global``)
+        -  ``~/.tower_cli.cfg`` (written using ``tower-cli config``)
+        -  run-time paramaters
+        
+        Usage
+        -----
+        
+        CLI invocation generally follows this format:
+        
+        .. code:: bash
+        
+            $ tower-cli {resource} {action} ...
+        
+        The "resource" is a type of object within Tower (a noun), such as
+        ``user``, ``organization``, ``job_template``, etc.; resource names are
+        always singular in Tower CLI (so it is ``tower-cli user``, never
+        ``tower-cli users``).
+        
+        The "action" is the thing you want to do (a verb). Most Tower CLI
+        resources have the following actions--\ ``get``, ``list``, ``create``,
+        ``modify``, and ``delete``--and have options corresponding to fields on
+        the object in Tower.
+        
+        Some examples:
+        
+        .. code:: bash
+        
+            # List all users.
+            $ tower-cli user list
+        
+            # List all non-superusers
+            $ tower-cli user list --is-superuser=false
+        
+            # Get the user with the ID of 42.
+            $ tower-cli user get 42
+        
+            # Get the user with the given username.
+            $ tower-cli user get --username=guido
+        
+            # Create a new user.
+            $ tower-cli user create --username=guido --first-name=Guido \
+                                    --last-name="Van Rossum" --email=guido@python.org \
+                                    --password=password1234
+        
+            # Modify an existing user.
+            # This would modify the first name of the user with the ID of "42" to "Guido".
+            $ tower-cli user modify 42 --first-name=Guido
+        
+            # Modify an existing user, lookup by username.
+            # This would use "username" as the lookup, and modify the first name.
+            # Which fields are used as lookups vary by resource, but are generally
+            # the resource's name.
+            $ tower-cli user modify --username=guido --first-name=Guido
+        
+            # Delete a user.
+            $ tower-cli user delete 42
+        
+            # Launch a job.
+            $ tower-cli job launch --job-template=144
+        
+            # Monitor a job.
+            $ tower-cli job monitor 95
+        
+        When in doubt, help is available!
+        
+        .. code:: bash
+        
+            $ tower-cli # help
+            $ tower-cli user --help # resource specific help
+            $ tower-cli user create --help # command specific help
+        
+        Specify extra variables.
+        ~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        There are a number of ways to pass extra variables to the Tower server
+        when launching a job:
+        
+        -  Pass data in a file using the flag ``--extra-vars="@filename.yml"``
+        -  Include yaml data at runtime with the flag
+           ``--extra-vars="var: value"``
+        -  A command-line editor automatically pops up when the job template is
+           marked to prompt on launch
+        -  If the job template has extra variables, these are not over-ridden
+        
+        These methods can also be combined. For instance, if you give the flag
+        multiple times on the command line, specifying a file in addition to
+        manually giving extra variables, these two sources are combined and sent
+        to the Tower server.
+        
+        .. code:: bash
+        
+            # Launch a job with extra variables from filename.yml, and also a=5
+            $ tower-cli job launch --job-template=1 --extra-vars="a=5 b=3" \
+                                                    --extra-vars="@filename.yml"
+        
+            # Create a job template with that same set of extra variables
+            $ tower-cli job_template create --name=test_job_template --project=1 \
+                                            --inventory=1 --playbook=helloworld.yml \
+                                            --machine-credential=1 --extra-vars="a=5 b=3" \
+                                            --extra-vars="@filename.yml"
+        
+        You may not combine multiple sources when modifying a job template.
+        Whitespace can be used in strings like
+        ``--extra-vars="a='white space'"``, and list-valued parameters can be
+        sent as JSON or YAML, but not key=value pairs. For instance,
+        ``--extra-vars="a: [1, 2, 3, 4, 5]"`` sends the parameter "a" with that
+        list as its value.
+        
+        SSL warnings
+        ~~~~~~~~~~~~
+        
+        By default tower-cli will raise an error if the SSL certificate of the
+        Tower server cannot be verified. To allow unverified SSL connections,
+        set the config variable ``verify_ssl`` to true. To allow it for a single
+        command, add the --insecure flag.
+        
+        .. code:: bash
+        
+            # Disable insecure connection warnings permanently
+            $ tower-cli config verify_ssl false
+        
+            # Disable insecure connection warnings for just this command
+            $ tower-cli job_template list --insecure
+        
+        Bash script example
+        ~~~~~~~~~~~~~~~~~~~
+        
+        If you want an example for a particular case that this README does not
+        cover, the development distribution of tower-cli includes a script that
+        populates the Tower server with fake data using tower-cli commands.
+        These attempt to cover most of the available features and can be found
+        in the folder `/docs/examples/ <https://github.com/ansible/tower-cli/tree/master/docs/examples>`__.
+        
+        License
+        -------
+        
+        While Tower is commercially licensed software, *tower-cli* is an open
+        source project, and contributions are highly encouraged. Specifically,
+        this CLI project is licensed under the Apache 2.0 license. Pull requests
+        and tickets filed in GitHub are welcome.
+        
+        \(C) 2016, Ansible Tower by Red Hat 
+        
+        .. |Build Status| image:: https://img.shields.io/travis/ansible/tower-cli.svg
+           :target: https://travis-ci.org/ansible/tower-cli
+        .. |Coverage Status| image:: https://img.shields.io/coveralls/ansible/tower-cli.svg
+           :target: https://coveralls.io/r/ansible/tower-cli
+        .. |Version| image:: https://img.shields.io/pypi/v/ansible-tower-cli.svg
+           :target: https://pypi.python.org/pypi/ansible-tower-cli/
+        .. |Downloads| image:: https://img.shields.io/pypi/dm/ansible-tower-cli.svg
+           :target: https://pypi.python.org/pypi/ansible-tower-cli/
+        .. |License| image:: https://img.shields.io/pypi/l/ansible-tower-cli.svg
+           :target: https://pypi.python.org/pypi/ansible-tower-cli/
+        .. |Supported Python Versions| image:: https://img.shields.io/pypi/pyversions/ansible-tower-cli.svg
+           :target: https://pypi.python.org/pypi/ansible-tower-cli/
+        
+        
+        Release History
+        ===============
+        
+        3.1.8 (2017-08-21)
+        ------------------
+        
+        - Fix bug of incomplete role membership lookup, preventing granting of roles
+        - New method of installing tower-cli-v1, specific to API v1 use
+        - Combine click parameters from multiple base classes in metaclass
+        - Fix unicode bug in human display format
+        - Add new page_size parameter to list view
+        - Add scm_update_cache_timeout field to project resource
+        - Begin process to deprecate python 2.6
+        
+        3.1.7 (2017-08-07)
+        ------------------
+        
+        - Follow up 3.1.6 by duplicating exceptions.py to support `import tower_cli.utils.exceptions` syntax.
+        
+        3.1.6 (2017-07-18)
+        ------------------
+        
+        - Fix a usage compatibility issue for Ansible Tower modules.
+        
+        3.1.5 (2017-07-12)
+        ------------------
+        
+        - Major code base file structure refactor. Now all click-related logics are moved to `tower_cli/cli/` directory,
+          and `exceptions.py` as well as `compat.py` are moved out of utils directory into base directory.
+        - Categorize help text options for resource action commands (like `update`) to increase readability.
+        - Behavior change of workflow schema command. Now schema will both create new nodes and delete existing nodes when
+          needed to make the resulting workflow topology exactly the same as described in schema file.
+        - Add command `job_template callback` to enable conducting provisioning callback via Tower CLI.
+        - Add new format option to just echo id.
+        - Expand some resource fields, including hipchat rooms for notification template and allow_simultaneous for job
+          templates.
+        - Lookup related inventory sources with "starts with" logic if its name is not fully qualified.
+        - Fixed a python 3.5 compatibility issue that causes job monitor traceback.
+        - Minor typo and help text updates.
+        
+        3.1.4 (2017-06-07)
+        ------------------
+        
+        - Support resource copy subcommand.
+        - Support auth-token-based authentication for Tower CLI requests.
+        - Support managing workflow roles, labels and notifications via Tower CLI.
+        - Several fixes on RPM spec file.
+        - Name change from 'foreman' to 'satellite6' in credential kind choices.
+        - Fixed a bug where creating job templates with --extra-vars did not work after
+          3.1.0 upgrade.
+        - Fixed traceback when launching job with --use-job-endpoint.
+        - Enhanced json library usage to prevent traceback when using earlier python 2.6
+          versions.
+        - Prevent throwing unnecessary warning when reading from global configuration file.
+        
+        3.1.3 (2017-03-22)
+        ------------------
+        
+        - Fixed a bug where extra_vars were dropped in some commands.
+        
+        3.1.2 (2017-03-21)
+        ------------------
+        
+        - Fixed a bug where global flags are not added to some commands.
+        
+        3.1.1 (2017-03-13)
+        ------------------
+        
+        - Fixed a bug which blocks named resources from using runtime configure settings.
+        - Fixed a bug in 3.1.0 which sometimes causes traceback when `pk` value is given.
+        
+        3.1.0 (2017-03-09)
+        ------------------
+        
+        - Improved job monitoring functionality to enable standard out streaming, which
+          displays real-time job output on command line.
+        - Added workflow, workflow_job and node endpoints to manipulate workflow graph
+          and manage workflow job resources. Reflecting workflows feature of Tower 3.1.
+        - Added settings command to manage Tower settings via Tower CLI. Reflecting
+          Configure Tower in Tower (CTiT) feature of Tower 3.1.
+        - Included timeout option to certain unified job template resources. Reflecting
+          job timeout feature of Tower 3.1.
+        - Added unicode support to extra_vars and variable types.
+        - Several minor bug fixes to improve user experience.
+        
+        3.0.3 (2017-02-07)
+        ------------------
+        
+        - Expose custom inventory script resource to the user
+        - Include tests and docs in the release tarball
+        - Added job template skip_tags prompting support
+        - Added job template callback support
+        
+        3.0.2 (2016-12-08)
+        ------------------
+        
+        - Enable configuring tower-cli via environment variables
+        
+        3.0.1 (2016-09-22)
+        ------------------
+        
+        - Added custom SSL certificate support
+        
+        3.0.0 (2016-08-05)
+        ------------------
+        
+        - Added text indicator for resource change
+        - Allow hosts, inventory, and groups to use variables from the command line
+          and denote a file by starting with "@"
+        - Added resource role for tower3.0 and permission for previous tower versions
+        - Added notification templates
+        - Added labels
+        - Added description display option
+        - Added deprecation warnings
+        - Help text upgrades
+        - Give indication of "changed" apart from color
+        - New credential fields to support openstack-v2, networking and azure
+        - New options for inventory source/group. Add implicit resource inventory
+          script.
+        - credential updates (no longer require user/team)
+        - Added support for system auditors
+        - projects (do not post to organizations/N/projects)
+        - prompt-for JT fields + job launch options (allow blank inventory too)
+        - Update the POST protocol for associate and disassociate actions
+        - New job launch option for backwards compatibility
+        - New tower-cli option to display tower-cli version
+        - Enhanced debug log format (support multi-line debug log)
+        
+        2.3.2 (2016-07-21)
+        ------------------
+        
+        - Add RPM specfile and Makefile
+        - Tower compatibility fixes
+        - Allow scan JTs as an option for "job_type"
+        - Add ability to create group as subgroup of another group
+        - Add YAML output format against JSON and humanized output formats
+        - Add SSL corner case error handling and suggestion
+        - Allow resource disassociation with "null"
+        
+        2.3.1 (2015-12-10)
+        ------------------
+        
+        - Fixed bug affecting force-on-exists and fail_on_found options
+        - Changed extra_vars behavior to be more compliant by re-parsing vars,
+          even when only one source exists
+        - Fixed group modify bug, avoid sending unwanted fields in modify requests
+        
+        2.3.0 (2015-10-20)
+        ------------------
+        
+        -  Fixed an issue where the settings file could be world readable
+        -  Added the ability to associate a project with an organization
+        -  Added setting "verify\_ssl" to disallow insecure connections
+        -  Added support for additional cloud credentials
+        -  Exposed additional options for a cloud inventory source
+        -  Combined " launch-time extra\_vars" with " job\_template extra\_vars"
+           for older Tower versions
+        -  Changed the extra\_vars parameters to align with Ansible parameter
+           handling
+        -  Added the ability to run ad hoc commands
+        -  Included more detail when displaying job information
+        -  Added an example bash script to demonstrate tower-cli usage
+        
+        2.1.1 (2015-01-27)
+        ------------------
+        
+        -  Added tests for Python versions 2.6 through 3.4
+        -  Added shields for github README
+        -  Added job\_tags on job launches
+        -  Added option for project local path
+        
+        2.1.0 (2015-01-21)
+        ------------------
+        
+        -  Added the ability to customize the set of fields used as options for
+           a resource
+        -  Expanded monitoring capability to include projects and inventory
+           sources
+        -  Added support for new job\_template job launch endpoint
+        
+        2.0.2 (2014-10-02)
+        ------------------
+        
+        -  Added ability to set local scope for config file
+        -  Expanded credential resource to allow options for cloud credentials
+        
+        2.0.1 (2014-07-18)
+        ------------------
+        
+        -  Updated README and error text
+        
+        2.0.0 (2014-07-15)
+        ------------------
+        
+        -  Pluggable resource architecture built around click
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Topic :: System :: Software Distribution
+Classifier: Topic :: System :: Systems Administration
+Provides: tower_cli
