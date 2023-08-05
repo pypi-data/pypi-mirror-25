@@ -1,0 +1,56 @@
+class RequestType:
+    create_bot = "CreateBot"
+
+    get_file_download_url = "GetFileDownloadUrl"
+    get_file_upload_url = "GetFileUploadUrl"
+
+    create_group = "CreateGroup"
+    get_group_api_full_struct = "GetGroupApiFullStruct"
+    get_group_api_struct = "GetGroupApiStruct"
+    invite_user = "InviteUser"
+
+    delete_value = "DeleteValue"
+    get_keys = "GetKeys"
+    get_value = "GetValue"
+    set_value = "SetValue"
+
+    send_message = "SendMessage"
+    send_message_by_phone = "SendMessageByPhone"
+    update_message_content = "UpdateMessageContent"
+
+    get_count_of_bot_dialogs = "GetCountOfBotDialogs"
+    unwatch_bot = "UnWatchBot"
+    watch_bot = "WatchBot"
+
+    get_difference = "GetDifference"
+
+    change_pack_name = "ChangesPackName"
+    create_sticker_pack = "CreateStickerPack"
+    delete_sticker = "DeleteSticker"
+    delete_sticker_pack = "DeleteStickerPack"
+    make_sticker_pack_default = "MakeStickerPackDefault"
+    show_sticker_packs = "ShowStickerPacks"
+    unmake_sticker_pack_default = "UnmakeStickerPackDefault"
+    show_stickers = "ShowStickers"
+    add_sticker = "AddSticker"
+
+    add_slash_command = "AddSlashCommand"
+    add_user_ext_bool = "AddUserExtBool"
+    add_user_ext_string = "AddUserExtString"
+    change_user_about = "ChangeUserAbout"
+    change_user_avatar = "ChangeUserAvatar"
+    change_user_name = "ChangeUserName"
+    change_user_nickname = "ChangeUserNickname"
+    find_channel = "FindChannel"
+    find_user = "FindUser"
+    find_user_phone = "FindUserPhone"
+    get_user_api_full_struct = "GetUserApiFullStruct"
+    get_user_api_struct = "GetUserApiStruct"
+    is_admin = "IsAdmin"
+    remove_slash_command = "RemoveSlashCommand"
+    remove_user_ext = "RemoveUserExt"
+    get_token = "GetToken"
+    revoke_token = "RevokeToken"
+
+    get_webhooks = "GetHooks"
+    register_webhook = "RegisterHook"
