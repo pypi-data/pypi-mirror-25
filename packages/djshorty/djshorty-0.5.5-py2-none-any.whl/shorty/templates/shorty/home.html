@@ -1,0 +1,139 @@
+{% extend 'nuit/base.html' topbar=True %}
+{% load shorty %}
+{% load static %}
+
+{% block title %}URL Shortener{% endblock %}
+
+{% block css %}
+    <link rel='stylesheet' type='text/css' href='{% static 'shorty.css' %}' />
+{% endblock %}
+
+{% block scripts %}
+
+<script src='https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.8/clipboard.min.js'></script>
+<script src='{% static 'shorty.js' %}'></script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class='row'>
+
+    <div class='columns small-12 medium-6 medium-push-3'>
+
+        <form method='post' class='new'>
+            <div class='row'>
+                <div class='columns'>
+                    <h2>Shorten a URL</h2>
+                </div>
+            </div>
+            {% if request.previous_short_urls %}
+            <div class='row'>
+                <div class='columns'>
+                    <div class='panel callout alert'>
+                        <p><i class='fi-alert'></i> That URL has already been shortened to:</p>
+                        <ul>
+                            {% for url in request.previous_short_urls %}
+                                <li><a href='{% build_short_url url.path %}'>{% build_short_url url.path %}</a> (created by {{ url.user }})</li>
+                            {% endfor %}
+                        </ul>
+                        <p>Are you sure you wish to create a new short URL?</p>
+                        <input type='submit' class='button postfix expand' value='Yes, create a new short URL.' />
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class='row'>
+                <div class='columns form-wrapper'>
+                    {% if EXTERNAL_FLAG %}
+                        {% foundation_form form %}
+                            redirect {'show_label': False}
+                            path {'show_label': False, 'prefix': '{{redirect_base}}', 'prefix_small': 6, 'small': 12, 'medium': 9}; external {'switch': True}
+                        {% end_foundation_form %}
+                    {% else %}
+                        {% foundation_form form %}
+                            redirect {'show_label': False}
+                            path {'show_label': False, 'prefix': '{{redirect_base}}', 'prefix_small': 6}
+                        {% end_foundation_form %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class='row'>
+                <div class='columns'>
+                    <input type='submit' class='button postfix expand' value='Shorten' />
+                </div>
+            </div>
+        </form>
+
+        <div class='row'>
+            <div class='columns'>
+
+        {% if path %}
+            <div class='alert-box success'>Your URL has been shortened!</div>
+            <div class='row'>
+                <div class='columns small-11'>
+                    <input type='text' value='{{path}}' id='id_url' />
+                </div>
+                <div class='columns small-1'>
+                    <button class='clipboard button postfix' data-clipboard-target='#id_url' data-tooltip title='Copy to clipboard'><i class='fi-paperclip'></i></button>
+                </div>
+            </div>
+            <br />
+        {% endif %}
+
+        <p>Showing only your URLs. <a href='{% url 'all' %}'>View all URLs.</a></p>
+
+        {% if request.user.short_urls.exists %}
+        <table>
+            <thead>
+                <tr>
+                    <th colspan='2'>Short URL</th>
+                    <th>Created</th>
+                    {% if EXTERNAL_FLAG %}<th class='icon'>Available Externally</th>{% endif %}
+                    <th class='icon'>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for url in short_urls %}
+                <tr>
+                    <td class='icon'>
+                        <button class='clipboard icon tiny radius button' data-clipboard-text='{% build_short_url url.path %}' data-tooltip title='Copy to clipboard'><i class='fi-paperclip'></i></button>
+                    </td>
+                    <td>
+                        <a href='{% url 'redirect' slug=url.path %}'>{% build_short_url url.path %}</a>
+                        <br /><small title='{{url.redirect}}'>
+                            {{url.redirect|truncatechars:60}}
+                        </small>
+                    </td>
+                    <td>
+                        {{url.created|date:'d/m/Y'}} {{url.created|time:'H:i'}}
+                    </td>
+                    {% if EXTERNAL_FLAG %}
+                    <td>
+                        <i class='fi fi-{% if url.external %}check{% else %}x{% endif %}'></i>
+                    </td>
+                    {% endif %}
+                    <td class='icon'>
+                        <form method='post' action='{% url 'delete' %}'>
+                            {% csrf_token %}
+                            <input type='hidden' name='id_short_url' value='{{url.pk}}' />
+                            <button class='icon tiny radius button alert delete'><i class='fi-x'></i></button>
+                    </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% pagination_menu short_urls %}
+
+        {% endif %}
+
+    </div>
+</div>
+
+    </div>
+
+</div>
+
+{% endblock %}
