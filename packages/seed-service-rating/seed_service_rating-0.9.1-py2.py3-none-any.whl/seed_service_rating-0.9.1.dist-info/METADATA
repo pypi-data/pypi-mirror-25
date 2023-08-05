@@ -1,0 +1,54 @@
+Metadata-Version: 2.0
+Name: seed-service-rating
+Version: 0.9.1
+Summary: Seed Service Ratings mircoservice
+Home-page: http://github.com/praekelt/seed-service-rating
+Author: Praekelt.org
+Author-email: dev@praekelt.org
+License: BSD
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Framework :: Django
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: Django (==1.9.12)
+Requires-Dist: celery (==3.1.24)
+Requires-Dist: dj-database-url (==0.3.0)
+Requires-Dist: django-celery (==3.1.17)
+Requires-Dist: django-filter (==0.12.0)
+Requires-Dist: django-rest-hooks (==1.3.1)
+Requires-Dist: djangorestframework (==3.3.2)
+Requires-Dist: drfdocs (==0.0.11)
+Requires-Dist: freezegun (==0.3.7)
+Requires-Dist: psycopg2 (==2.7.1)
+Requires-Dist: pytz (==2015.7)
+Requires-Dist: raven (==5.32.0)
+Requires-Dist: redis (==2.10.5)
+Requires-Dist: seed-services-client (>=0.29.0)
+Requires-Dist: whitenoise (==2.0.6)
+
+===================
+Seed Service Rating
+===================
+
+Service Rating is built around two models: Invites and Ratings.
+
+If you want the user to rate the service they received, you first create an Invite for them. The user then gets sent a message to invite them to rate the service they received.
+
+When the user rates the service they received, the feedback they provide is stored in Ratings. A Rating is created for each question they answered, and it stores the question and the answer in the model.
+
+Invite creation typically happens via a POST request to the :code:`/invite` endpoint.
+
+When a user has completed their service rating by answering all the questions, their Invite field :code:`completed` should be set to True to prevent sending additional invitations.
+
+A special endpoint :code:`/invite/send` should be hit in order to send all the invites that need to go out. Hitting this endpoint activates the SendInviteMessages task, which in turn activates the task that sends out the individual invite messages. This can be automated by adding a schedule to the scheduler that hits the endpoint at predetermined times (typically it could hit the endpoint once every weekday)
+
+Some environment variables to take note of (see settings.py):
+
+* TOTAL_INVITES_TO_SEND: The number of messages that will be sent to invite users to rate their service.
+* DAYS_BETWEEN_INVITES: The number of days to wait between sending invite messages to users.
+* INVITE_TEXT: The invite message to be sent to the user.
+
+
