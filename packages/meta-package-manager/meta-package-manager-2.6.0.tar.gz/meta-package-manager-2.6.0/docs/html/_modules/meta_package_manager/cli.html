@@ -1,0 +1,586 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>meta_package_manager.cli &mdash; Meta Package Manager 2.4.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Meta Package Manager 2.4.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Meta Package Manager
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.4.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../falsehoods.html">Falsehoods Programmers Believe About Package Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bitbar.html">BitBar Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../todolist.html">Todo list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Meta Package Manager</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>meta_package_manager.cli</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for meta_package_manager.cli</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2016-2017 Kevin Deldycke &lt;kevin@deldycke.com&gt;</span>
+<span class="c1">#                         and contributors.</span>
+<span class="c1"># All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is Free Software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU General Public License</span>
+<span class="c1"># as published by the Free Software Foundation; either version 2</span>
+<span class="c1"># of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License</span>
+<span class="c1"># along with this program; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">json</span> <span class="k">import</span> <span class="n">dumps</span> <span class="k">as</span> <span class="n">json_dumps</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">itemgetter</span>
+
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">click_log</span>
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="k">import</span> <span class="n">tabulate</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">__version__</span><span class="p">,</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="n">CLI_FORMATS</span><span class="p">,</span> <span class="n">CLIError</span><span class="p">,</span> <span class="n">PackageManager</span>
+<span class="kn">from</span> <span class="nn">.managers</span> <span class="k">import</span> <span class="n">pool</span>
+<span class="kn">from</span> <span class="nn">.platform</span> <span class="k">import</span> <span class="n">os_label</span>
+
+<span class="c1"># Output rendering modes. Sorted from most machine-readable to fanciest</span>
+<span class="c1"># human-readable.</span>
+<span class="n">RENDERING_MODES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;json&#39;</span><span class="p">:</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span>
+    <span class="c1"># Mapping of table formating options to tabulate&#39;s parameters.</span>
+    <span class="s1">&#39;plain&#39;</span><span class="p">:</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;simple&#39;</span><span class="p">:</span> <span class="s1">&#39;simple&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fancy&#39;</span><span class="p">:</span> <span class="s1">&#39;fancy_grid&#39;</span><span class="p">}</span>
+
+
+<span class="c1"># Pre-rendered UI-elements.</span>
+<span class="n">OK</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">style</span><span class="p">(</span><span class="s1">u&#39;✓&#39;</span><span class="p">,</span> <span class="n">fg</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
+<span class="n">KO</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">style</span><span class="p">(</span><span class="s1">u&#39;✘&#39;</span><span class="p">,</span> <span class="n">fg</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="json"><a class="viewcode-back" href="../../api/cli.html#meta_package_manager.cli.json">[docs]</a><span class="k">def</span> <span class="nf">json</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Utility function to render data structure into pretty printed JSON. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json_dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">))</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click_log</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+<span class="nd">@click_log</span><span class="o">.</span><span class="n">simple_verbosity_option</span><span class="p">(</span>
+    <span class="n">default</span><span class="o">=</span><span class="s1">&#39;INFO&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;LEVEL&#39;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Either CRITICAL, ERROR, WARNING, INFO or DEBUG. Defaults to INFO.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--manager&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="n">pool</span><span class="p">()),</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Restrict sub-command to one package manager. Defaults to all.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-format&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="n">RENDERING_MODES</span><span class="p">),</span>
+    <span class="n">default</span><span class="o">=</span><span class="s1">&#39;fancy&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Rendering mode of the output. Defaults to fancy.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">version_option</span><span class="p">(</span><span class="n">__version__</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span> <span class="nf">cli</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">manager</span><span class="p">,</span> <span class="n">output_format</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; CLI for multi-package manager upgrades. &quot;&quot;&quot;</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">click_log</span><span class="o">.</span><span class="n">get_level</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">level_to_name</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">_levelToName</span>
+    <span class="c1"># Fallback to pre-Python 3.4 internals.</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">level_to_name</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">_levelNames</span>
+    <span class="n">level_name</span> <span class="o">=</span> <span class="n">level_to_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Verbosity set to </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">level_name</span><span class="p">))</span>
+
+    <span class="c1"># Print help screen and exit if no sub-commands provided.</span>
+    <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">invoked_subcommand</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_help</span><span class="p">())</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+    <span class="c1"># Filters out the list of considered managers depending on user choices.</span>
+    <span class="n">target_managers</span> <span class="o">=</span> <span class="p">{</span><span class="n">manager</span><span class="p">:</span> <span class="n">pool</span><span class="p">()[</span><span class="n">manager</span><span class="p">]}</span> <span class="k">if</span> <span class="n">manager</span> <span class="k">else</span> <span class="n">pool</span><span class="p">()</span>
+
+    <span class="c1"># Silent all log message in JSON rendering mode unless it&#39;s at debug level.</span>
+    <span class="n">rendering</span> <span class="o">=</span> <span class="n">RENDERING_MODES</span><span class="p">[</span><span class="n">output_format</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">rendering</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span> <span class="ow">and</span> <span class="n">level_name</span> <span class="o">!=</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">:</span>
+        <span class="n">click_log</span><span class="o">.</span><span class="n">set_level</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Load up global options to the context.</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;target_managers&#39;</span><span class="p">:</span> <span class="n">target_managers</span><span class="p">,</span>
+        <span class="s1">&#39;rendering&#39;</span><span class="p">:</span> <span class="n">rendering</span><span class="p">}</span>
+
+
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">short_help</span><span class="o">=</span><span class="s1">&#39;List supported package managers and their location.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span> <span class="nf">managers</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; List all supported package managers and their presence on the system.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target_managers</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;target_managers&#39;</span><span class="p">]</span>
+    <span class="n">rendering</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;rendering&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Machine-friendly data rendering.</span>
+    <span class="k">if</span> <span class="n">rendering</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;supported&#39;</span><span class="p">,</span> <span class="s1">&#39;cli_path&#39;</span><span class="p">,</span> <span class="s1">&#39;exists&#39;</span><span class="p">,</span> <span class="s1">&#39;executable&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;version_string&#39;</span><span class="p">,</span> <span class="s1">&#39;fresh&#39;</span><span class="p">,</span> <span class="s1">&#39;available&#39;</span><span class="p">]</span>
+        <span class="c1"># JSON mode use echo to output data because the logger is disabled.</span>
+        <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="n">json</span><span class="p">({</span>
+            <span class="n">manager_id</span><span class="p">:</span> <span class="p">{</span><span class="n">fid</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">fid</span><span class="p">)</span> <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">manager</span> <span class="ow">in</span> <span class="n">target_managers</span><span class="o">.</span><span class="n">items</span><span class="p">()}))</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Human-friendly content rendering.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">manager</span> <span class="ow">in</span> <span class="n">target_managers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+        <span class="c1"># Build up the OS column content.</span>
+        <span class="n">os_infos</span> <span class="o">=</span> <span class="n">OK</span> <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">supported</span> <span class="k">else</span> <span class="n">KO</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">supported</span><span class="p">:</span>
+            <span class="n">os_infos</span> <span class="o">+=</span> <span class="s2">&quot;  </span><span class="si">{}</span><span class="s2"> only&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span>
+                <span class="n">os_label</span><span class="p">(</span><span class="n">os_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">os_id</span> <span class="ow">in</span> <span class="n">manager</span><span class="o">.</span><span class="n">platforms</span><span class="p">])))</span>
+
+        <span class="c1"># Build up the CLI path column content.</span>
+        <span class="n">cli_infos</span> <span class="o">=</span> <span class="n">OK</span> <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">exists</span> <span class="k">else</span> <span class="n">KO</span>
+        <span class="n">cli_infos</span> <span class="o">+=</span> <span class="s2">&quot;  </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">cli_path</span><span class="p">)</span>
+
+        <span class="c1"># Build up the version column content.</span>
+        <span class="n">version_infos</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">executable</span><span class="p">:</span>
+            <span class="n">version_infos</span> <span class="o">=</span> <span class="n">OK</span> <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">fresh</span> <span class="k">else</span> <span class="n">KO</span>
+            <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">version</span><span class="p">:</span>
+                <span class="n">version_infos</span> <span class="o">+=</span> <span class="s2">&quot;  </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">version_string</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">fresh</span><span class="p">:</span>
+                    <span class="n">version_infos</span> <span class="o">+=</span> <span class="s2">&quot; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">requirement</span><span class="p">)</span>
+
+        <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span>
+            <span class="n">manager</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">manager_id</span><span class="p">,</span>
+            <span class="n">os_infos</span><span class="p">,</span>
+            <span class="n">cli_infos</span><span class="p">,</span>
+            <span class="n">OK</span> <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">executable</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">version_infos</span><span class="p">])</span>
+
+    <span class="n">table</span> <span class="o">=</span> <span class="p">[[</span>
+        <span class="s1">&#39;Package manager&#39;</span><span class="p">,</span> <span class="s1">&#39;ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Supported&#39;</span><span class="p">,</span> <span class="s1">&#39;CLI&#39;</span><span class="p">,</span> <span class="s1">&#39;Executable&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Version&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">rendering</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;firstrow&#39;</span><span class="p">))</span>
+
+
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">short_help</span><span class="o">=</span><span class="s1">&#39;Sync local package info.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span> <span class="nf">sync</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Sync local package metadata and info from external sources. &quot;&quot;&quot;</span>
+    <span class="n">target_managers</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;target_managers&#39;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">manager</span> <span class="ow">in</span> <span class="n">target_managers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+        <span class="c1"># Filters-out inactive managers.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Skip unavailable </span><span class="si">{}</span><span class="s1"> manager.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager_id</span><span class="p">))</span>
+            <span class="k">continue</span>
+
+        <span class="n">manager</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+
+
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">short_help</span><span class="o">=</span><span class="s1">&#39;List installed packages.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; List installed packages installed on the system from all managers. &quot;&quot;&quot;</span>
+    <span class="n">target_managers</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;target_managers&#39;</span><span class="p">]</span>
+    <span class="n">rendering</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;rendering&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Build-up a global list of installed packages per manager.</span>
+    <span class="n">installed</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">manager</span> <span class="ow">in</span> <span class="n">target_managers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+        <span class="c1"># Filters-out inactive managers.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Skip unavailable </span><span class="si">{}</span><span class="s1"> manager.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager_id</span><span class="p">))</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Force a sync to get the freshest upgrades.</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">manager</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">CLIError</span> <span class="k">as</span> <span class="n">expt</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">expt</span><span class="o">.</span><span class="n">error</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+        <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">manager</span><span class="o">.</span><span class="n">installed</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;installed_version&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;installed_version&#39;</span><span class="p">]})</span>
+
+        <span class="n">installed</span><span class="p">[</span><span class="n">manager_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">manager_id</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">manager</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;packages&#39;</span><span class="p">:</span> <span class="n">packages</span><span class="p">,</span>
+            <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error</span><span class="p">}</span>
+
+    <span class="c1"># Machine-friendly data rendering.</span>
+    <span class="k">if</span> <span class="n">rendering</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
+        <span class="c1"># JSON mode use echo to output data because the logger is disabled.</span>
+        <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="n">json</span><span class="p">(</span><span class="n">installed</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Human-friendly content rendering.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">installed_pkg</span> <span class="ow">in</span> <span class="n">installed</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">table</span> <span class="o">+=</span> <span class="p">[[</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+            <span class="n">manager_id</span><span class="p">,</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;installed_version&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;installed_version&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;?&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">installed_pkg</span><span class="p">[</span><span class="s1">&#39;packages&#39;</span><span class="p">]]</span>
+
+    <span class="k">def</span> <span class="nf">sort_method</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Force sorting of table.</span>
+
+<span class="sd">        By lower-cased package name and ID first, then manager ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">line</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="c1"># Sort and print table.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;Package name&#39;</span><span class="p">,</span> <span class="s1">&#39;ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Manager&#39;</span><span class="p">,</span> <span class="s1">&#39;Installed version&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">sort_method</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">rendering</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;firstrow&#39;</span><span class="p">))</span>
+    <span class="c1"># Print statistics.</span>
+    <span class="n">manager_stats</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]:</span> <span class="nb">len</span><span class="p">(</span><span class="n">infos</span><span class="p">[</span><span class="s1">&#39;packages&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">infos</span> <span class="ow">in</span> <span class="n">installed</span><span class="o">.</span><span class="n">values</span><span class="p">()}</span>
+    <span class="n">total_installed</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">manager_stats</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">per_manager_totals</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> from </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">manager_stats</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="k">if</span> <span class="n">v</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">per_manager_totals</span><span class="p">:</span>
+        <span class="n">per_manager_totals</span> <span class="o">=</span> <span class="s1">&#39; (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">per_manager_totals</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> installed package</span><span class="si">{}</span><span class="s1"> found</span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">total_installed</span><span class="p">,</span>
+        <span class="s1">&#39;s&#39;</span> <span class="k">if</span> <span class="n">total_installed</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="n">per_manager_totals</span><span class="p">))</span>
+
+
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">short_help</span><span class="o">=</span><span class="s1">&#39;List outdated packages.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;--cli-format&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="n">CLI_FORMATS</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Format of CLI fields in JSON output. Defaults to plain.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span> <span class="nf">outdated</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">cli_format</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; List available package upgrades and their versions for each manager.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target_managers</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;target_managers&#39;</span><span class="p">]</span>
+    <span class="n">rendering</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;rendering&#39;</span><span class="p">]</span>
+
+    <span class="n">render_cli</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">PackageManager</span><span class="o">.</span><span class="n">render_cli</span><span class="p">,</span> <span class="n">cli_format</span><span class="o">=</span><span class="n">cli_format</span><span class="p">)</span>
+
+    <span class="c1"># Build-up a global list of outdated packages per manager.</span>
+    <span class="n">outdated</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">manager</span> <span class="ow">in</span> <span class="n">target_managers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+        <span class="c1"># Filters-out inactive managers.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Skip unavailable </span><span class="si">{}</span><span class="s1"> manager.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager_id</span><span class="p">))</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Force a sync to get the freshest upgrades.</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">manager</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">CLIError</span> <span class="k">as</span> <span class="n">expt</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">expt</span><span class="o">.</span><span class="n">error</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+        <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">manager</span><span class="o">.</span><span class="n">outdated</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;installed_version&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;installed_version&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;latest_version&#39;</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;latest_version&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;upgrade_cli&#39;</span><span class="p">:</span> <span class="n">render_cli</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">upgrade_cli</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]))})</span>
+
+        <span class="n">outdated</span><span class="p">[</span><span class="n">manager_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">manager_id</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">manager</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;packages&#39;</span><span class="p">:</span> <span class="n">packages</span><span class="p">,</span>
+            <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error</span><span class="p">}</span>
+
+        <span class="c1"># Do not include the full-upgrade CLI if we did not detect any outdated</span>
+        <span class="c1"># package.</span>
+        <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">outdated</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">upgrade_all_cli</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">upgrade_all_cli</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
+                <span class="c1"># Fallback on mpm itself which is capable of simulating a full</span>
+                <span class="c1"># upgrade.</span>
+                <span class="n">upgrade_all_cli</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mpm&#39;</span><span class="p">,</span> <span class="s1">&#39;--manager&#39;</span><span class="p">,</span> <span class="n">manager_id</span><span class="p">,</span> <span class="s1">&#39;upgrade&#39;</span><span class="p">]</span>
+            <span class="n">outdated</span><span class="p">[</span><span class="n">manager_id</span><span class="p">][</span><span class="s1">&#39;upgrade_all_cli&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">render_cli</span><span class="p">(</span>
+                <span class="n">upgrade_all_cli</span><span class="p">)</span>
+
+    <span class="c1"># Machine-friendly data rendering.</span>
+    <span class="k">if</span> <span class="n">rendering</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
+        <span class="c1"># JSON mode use echo to output data because the logger is disabled.</span>
+        <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="n">json</span><span class="p">(</span><span class="n">outdated</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Human-friendly content rendering.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">outdated_pkg</span> <span class="ow">in</span> <span class="n">outdated</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">table</span> <span class="o">+=</span> <span class="p">[[</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+            <span class="n">manager_id</span><span class="p">,</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;installed_version&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;installed_version&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;?&#39;</span><span class="p">,</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;latest_version&#39;</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">outdated_pkg</span><span class="p">[</span><span class="s1">&#39;packages&#39;</span><span class="p">]]</span>
+
+    <span class="k">def</span> <span class="nf">sort_method</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Force sorting of table.</span>
+
+<span class="sd">        By lower-cased package name and ID first, then manager ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">line</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="c1"># Sort and print table.</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="p">[[</span>
+        <span class="s1">&#39;Package name&#39;</span><span class="p">,</span> <span class="s1">&#39;ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Manager&#39;</span><span class="p">,</span> <span class="s1">&#39;Installed version&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Latest version&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">sort_method</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">rendering</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;firstrow&#39;</span><span class="p">))</span>
+    <span class="c1"># Print statistics.</span>
+    <span class="n">manager_stats</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]:</span> <span class="nb">len</span><span class="p">(</span><span class="n">infos</span><span class="p">[</span><span class="s1">&#39;packages&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">infos</span> <span class="ow">in</span> <span class="n">outdated</span><span class="o">.</span><span class="n">values</span><span class="p">()}</span>
+    <span class="n">total_outdated</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">manager_stats</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">per_manager_totals</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> from </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">manager_stats</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="k">if</span> <span class="n">v</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">per_manager_totals</span><span class="p">:</span>
+        <span class="n">per_manager_totals</span> <span class="o">=</span> <span class="s1">&#39; (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">per_manager_totals</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> outdated package</span><span class="si">{}</span><span class="s1"> found</span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">total_outdated</span><span class="p">,</span>
+        <span class="s1">&#39;s&#39;</span> <span class="k">if</span> <span class="n">total_outdated</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="n">per_manager_totals</span><span class="p">))</span>
+
+
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">short_help</span><span class="o">=</span><span class="s1">&#39;Upgrade all packages.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--dry-run&#39;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Do not actually perform any upgrade, just simulate CLI calls.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span> <span class="nf">upgrade</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Perform a full package upgrade on all available managers. &quot;&quot;&quot;</span>
+    <span class="n">target_managers</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;target_managers&#39;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">manager_id</span><span class="p">,</span> <span class="n">manager</span> <span class="ow">in</span> <span class="n">target_managers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+        <span class="c1"># Filters-out inactive managers.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Skip unavailable </span><span class="si">{}</span><span class="s1"> manager.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager_id</span><span class="p">))</span>
+            <span class="k">continue</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s1">&#39;Updating all outdated packages from </span><span class="si">{}</span><span class="s1">...&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">manager_id</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">upgrade_all</span><span class="p">(</span><span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CLIError</span> <span class="k">as</span> <span class="n">expt</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">expt</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      Last updated on 2017-01-28.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+    <div role="contentinfo">
+        <p>
+            &copy; Copyright 2016-2017, <a href='https://kevin.deldycke.com'>Kevin Deldycke</a> and <a href='https://github.com/kdeldycke/meta-package-manager/graphs/contributors'>contributors</a>.
+        </p>
+    </div>
+
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'2.4.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

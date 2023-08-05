@@ -1,0 +1,1047 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>boltons.cacheutils &mdash; Meta Package Manager 2.4.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Meta Package Manager 2.4.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Meta Package Manager
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.4.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../falsehoods.html">Falsehoods Programmers Believe About Package Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bitbar.html">BitBar Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../todolist.html">Todo list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Meta Package Manager</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>boltons.cacheutils</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for boltons.cacheutils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;``cacheutils`` contains consistent implementations of fundamental</span>
+<span class="sd">cache types. Currently there are two to choose from:</span>
+
+<span class="sd">  * :class:`LRI` - Least-recently inserted</span>
+<span class="sd">  * :class:`LRU` - Least-recently used</span>
+
+<span class="sd">Both caches are :class:`dict` subtypes, designed to be as</span>
+<span class="sd">interchangeable as possible, to facilitate experimentation. A key</span>
+<span class="sd">practice with performance enhancement with caching is ensuring that</span>
+<span class="sd">the caching strategy is working. If the cache is constantly missing,</span>
+<span class="sd">it is just adding more overhead and code complexity. The standard</span>
+<span class="sd">statistics are:</span>
+
+<span class="sd">  * ``hit_count`` - the number of times the queried key has been in</span>
+<span class="sd">    the cache</span>
+<span class="sd">  * ``miss_count`` - the number of times a key has been absent and/or</span>
+<span class="sd">    fetched by the cache</span>
+<span class="sd">  * ``soft_miss_count`` - the number of times a key has been absent,</span>
+<span class="sd">    but a default has been provided by the caller, as with</span>
+<span class="sd">    :meth:`dict.get` and :meth:`dict.setdefault`. Soft misses are a</span>
+<span class="sd">    subset of misses, so this number is always less than or equal to</span>
+<span class="sd">    ``miss_count``.</span>
+
+<span class="sd">Additionally, ``cacheutils`` provides :class:`ThresholdCounter`, a</span>
+<span class="sd">cache-like bounded counter useful for online statistics collection.</span>
+
+<span class="sd">Learn more about `caching algorithms on Wikipedia</span>
+<span class="sd">&lt;https://en.wikipedia.org/wiki/Cache_algorithms#Examples&gt;`_.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># TODO: TimedLRI</span>
+<span class="c1"># TODO: support 0 max_size?</span>
+
+
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">attrgetter</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">threading</span> <span class="k">import</span> <span class="n">RLock</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">RLock</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+        <span class="s1">&#39;Dummy reentrant lock for builds without threads&#39;</span>
+        <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exctype</span><span class="p">,</span> <span class="n">excinst</span><span class="p">,</span> <span class="n">exctb</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">boltons.typeutils</span> <span class="k">import</span> <span class="n">make_sentinel</span>
+    <span class="n">_MISSING</span> <span class="o">=</span> <span class="n">make_sentinel</span><span class="p">(</span><span class="n">var_name</span><span class="o">=</span><span class="s1">&#39;_MISSING&#39;</span><span class="p">)</span>
+    <span class="n">_KWARG_MARK</span> <span class="o">=</span> <span class="n">make_sentinel</span><span class="p">(</span><span class="n">var_name</span><span class="o">=</span><span class="s1">&#39;_KWARG_MARK&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">_MISSING</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+    <span class="n">_KWARG_MARK</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">xrange</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="c1"># py3</span>
+    <span class="n">xrange</span> <span class="o">=</span> <span class="nb">range</span>
+    <span class="n">unicode</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">basestring</span> <span class="o">=</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span>
+
+<span class="n">PREV</span><span class="p">,</span> <span class="n">NEXT</span><span class="p">,</span> <span class="n">KEY</span><span class="p">,</span> <span class="n">VALUE</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>   <span class="c1"># names for the link fields</span>
+<span class="n">DEFAULT_MAX_SIZE</span> <span class="o">=</span> <span class="mi">128</span>
+
+
+<span class="k">class</span> <span class="nc">LRU</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The ``LRU`` is :class:`dict` subtype implementation of the</span>
+<span class="sd">    *Least-Recently Used* caching strategy.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        max_size (int): Max number of items to cache. Defaults to ``128``.</span>
+<span class="sd">        values (iterable): Initial values for the cache. Defaults to ``None``.</span>
+<span class="sd">        on_miss (callable): a callable which accepts a single argument, the</span>
+<span class="sd">            key not present in the cache, and returns the value to be cached.</span>
+
+<span class="sd">    &gt;&gt;&gt; cap_cache = LRU(max_size=2)</span>
+<span class="sd">    &gt;&gt;&gt; cap_cache[&#39;a&#39;], cap_cache[&#39;b&#39;] = &#39;A&#39;, &#39;B&#39;</span>
+<span class="sd">    &gt;&gt;&gt; from pprint import pprint as pp</span>
+<span class="sd">    &gt;&gt;&gt; pp(dict(cap_cache))</span>
+<span class="sd">    {&#39;a&#39;: &#39;A&#39;, &#39;b&#39;: &#39;B&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; [cap_cache[&#39;b&#39;] for i in range(3)][0]</span>
+<span class="sd">    &#39;B&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cap_cache[&#39;c&#39;] = &#39;C&#39;</span>
+<span class="sd">    &gt;&gt;&gt; print(cap_cache.get(&#39;a&#39;))</span>
+<span class="sd">    None</span>
+
+<span class="sd">    This cache is also instrumented with statistics</span>
+<span class="sd">    collection. ``hit_count``, ``miss_count``, and ``soft_miss_count``</span>
+<span class="sd">    are all integer members that can be used to introspect the</span>
+<span class="sd">    performance of the cache. (&quot;Soft&quot; misses are misses that did not</span>
+<span class="sd">    raise :exc:`KeyError`, e.g., ``LRU.get()`` or ``on_miss`` was used to</span>
+<span class="sd">    cache a default.</span>
+
+<span class="sd">    &gt;&gt;&gt; cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count</span>
+<span class="sd">    (3, 1, 1)</span>
+
+<span class="sd">    Other than the size-limiting caching behavior and statistics,</span>
+<span class="sd">    ``LRU`` acts like its parent class, the built-in Python :class:`dict`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">DEFAULT_MAX_SIZE</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">on_miss</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">max_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expected max_size &gt; 0, not </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">max_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hit_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">miss_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">soft_miss_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span> <span class="o">=</span> <span class="n">max_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">RLock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_ll</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">on_miss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">on_miss</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;expected on_miss to be a callable&#39;</span>
+                            <span class="s1">&#39; (or None), not </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">on_miss</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_miss</span> <span class="o">=</span> <span class="n">on_miss</span>
+
+        <span class="k">if</span> <span class="n">values</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="c1"># TODO: fromkeys()?</span>
+
+    <span class="c1"># linked list manipulation methods.</span>
+    <span class="c1">#</span>
+    <span class="c1"># invariants:</span>
+    <span class="c1"># 1) &#39;anchor&#39; is the sentinel node in the doubly linked list.  there is</span>
+    <span class="c1">#    always only one, and its KEY and VALUE are both _MISSING.</span>
+    <span class="c1"># 2) the most recently accessed node comes immediately before &#39;anchor&#39;.</span>
+    <span class="c1"># 3) the least recently accessed node comes immediately after &#39;anchor&#39;.</span>
+    <span class="k">def</span> <span class="nf">_init_ll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">anchor</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">anchor</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">anchor</span><span class="p">,</span> <span class="n">anchor</span><span class="p">,</span> <span class="n">_MISSING</span><span class="p">,</span> <span class="n">_MISSING</span><span class="p">]</span>
+        <span class="c1"># a link lookup table for finding linked list links in O(1)</span>
+        <span class="c1"># time.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_link_lookup</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_anchor</span> <span class="o">=</span> <span class="n">anchor</span>
+
+    <span class="k">def</span> <span class="nf">_print_ll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_anchor</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;***&#39;</span><span class="p">)</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">link</span><span class="p">[</span><span class="n">KEY</span><span class="p">],</span> <span class="n">link</span><span class="p">[</span><span class="n">VALUE</span><span class="p">])</span>
+            <span class="n">link</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="n">NEXT</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">link</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">_anchor</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;***&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">_get_link_and_move_to_front_of_ll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="c1"># find what will become the newest link. this may raise a</span>
+        <span class="c1"># KeyError, which is useful to __getitem__ and __setitem__</span>
+        <span class="n">newest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_link_lookup</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># splice out what will become the newest link.</span>
+        <span class="n">newest</span><span class="p">[</span><span class="n">PREV</span><span class="p">][</span><span class="n">NEXT</span><span class="p">]</span> <span class="o">=</span> <span class="n">newest</span><span class="p">[</span><span class="n">NEXT</span><span class="p">]</span>
+        <span class="n">newest</span><span class="p">[</span><span class="n">NEXT</span><span class="p">][</span><span class="n">PREV</span><span class="p">]</span> <span class="o">=</span> <span class="n">newest</span><span class="p">[</span><span class="n">PREV</span><span class="p">]</span>
+
+        <span class="c1"># move what will become the newest link immediately before</span>
+        <span class="c1"># anchor (invariant 2)</span>
+        <span class="n">anchor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_anchor</span>
+        <span class="n">second_newest</span> <span class="o">=</span> <span class="n">anchor</span><span class="p">[</span><span class="n">PREV</span><span class="p">]</span>
+        <span class="n">second_newest</span><span class="p">[</span><span class="n">NEXT</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor</span><span class="p">[</span><span class="n">PREV</span><span class="p">]</span> <span class="o">=</span> <span class="n">newest</span>
+        <span class="n">newest</span><span class="p">[</span><span class="n">PREV</span><span class="p">]</span> <span class="o">=</span> <span class="n">second_newest</span>
+        <span class="n">newest</span><span class="p">[</span><span class="n">NEXT</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor</span>
+        <span class="k">return</span> <span class="n">newest</span>
+
+    <span class="k">def</span> <span class="nf">_set_key_and_add_to_front_of_ll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># create a new link and place it immediately before anchor</span>
+        <span class="c1"># (invariant 2).</span>
+        <span class="n">anchor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_anchor</span>
+        <span class="n">second_newest</span> <span class="o">=</span> <span class="n">anchor</span><span class="p">[</span><span class="n">PREV</span><span class="p">]</span>
+        <span class="n">newest</span> <span class="o">=</span> <span class="p">[</span><span class="n">second_newest</span><span class="p">,</span> <span class="n">anchor</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">]</span>
+        <span class="n">second_newest</span><span class="p">[</span><span class="n">NEXT</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor</span><span class="p">[</span><span class="n">PREV</span><span class="p">]</span> <span class="o">=</span> <span class="n">newest</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_link_lookup</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">newest</span>
+
+    <span class="k">def</span> <span class="nf">_set_key_and_evict_last_in_ll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># the link after anchor is the oldest in the linked list</span>
+        <span class="c1"># (invariant 3).  the current anchor becomes a link that holds</span>
+        <span class="c1"># the newest key, and the oldest link becomes the new anchor</span>
+        <span class="c1"># (invariant 1).  now the newest link comes before anchor</span>
+        <span class="c1"># (invariant 2).  no links are moved; only their keys</span>
+        <span class="c1"># and values are changed.</span>
+        <span class="n">oldanchor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_anchor</span>
+        <span class="n">oldanchor</span><span class="p">[</span><span class="n">KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="n">oldanchor</span><span class="p">[</span><span class="n">VALUE</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_anchor</span> <span class="o">=</span> <span class="n">anchor</span> <span class="o">=</span> <span class="n">oldanchor</span><span class="p">[</span><span class="n">NEXT</span><span class="p">]</span>
+        <span class="n">evicted</span> <span class="o">=</span> <span class="n">anchor</span><span class="p">[</span><span class="n">KEY</span><span class="p">]</span>
+        <span class="n">anchor</span><span class="p">[</span><span class="n">KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor</span><span class="p">[</span><span class="n">VALUE</span><span class="p">]</span> <span class="o">=</span> <span class="n">_MISSING</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_link_lookup</span><span class="p">[</span><span class="n">evicted</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_link_lookup</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">oldanchor</span>
+        <span class="k">return</span> <span class="n">evicted</span>
+
+    <span class="k">def</span> <span class="nf">_remove_from_ll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="c1"># splice a link out of the list and drop it from our lookup</span>
+        <span class="c1"># table.</span>
+        <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_link_lookup</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">link</span><span class="p">[</span><span class="n">PREV</span><span class="p">][</span><span class="n">NEXT</span><span class="p">]</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="n">NEXT</span><span class="p">]</span>
+        <span class="n">link</span><span class="p">[</span><span class="n">NEXT</span><span class="p">][</span><span class="n">PREV</span><span class="p">]</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="n">PREV</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_link_and_move_to_front_of_ll</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_set_key_and_add_to_front_of_ll</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">evicted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_key_and_evict_last_in_ll</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                    <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__delitem__</span><span class="p">(</span><span class="n">evicted</span><span class="p">)</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">link</span><span class="p">[</span><span class="n">VALUE</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_link_and_move_to_front_of_ll</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">miss_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_miss</span><span class="p">:</span>
+                    <span class="k">raise</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_miss</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ret</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">hit_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">link</span><span class="p">[</span><span class="n">VALUE</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">soft_miss_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">default</span>
+
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__delitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_from_ll</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">_MISSING</span><span class="p">):</span>
+        <span class="c1"># NB: hit/miss counts are bypassed for pop()</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="n">_MISSING</span><span class="p">:</span>
+                    <span class="k">raise</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">default</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_remove_from_ll</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">popitem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">popitem</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_from_ll</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">item</span>
+
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_ll</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">(</span><span class="n">max_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">soft_miss_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+                <span class="k">return</span> <span class="n">default</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="o">**</span><span class="n">F</span><span class="p">):</span>
+        <span class="c1"># E and F are throwback names to the dict() __doc__</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">E</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">setitem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__setitem__</span>
+            <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">E</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">setitem</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">E</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">E</span><span class="p">:</span>
+                    <span class="n">setitem</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">F</span><span class="p">:</span>
+                <span class="n">setitem</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">F</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span> <span class="ow">is</span> <span class="n">other</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">LRU</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">other</span> <span class="o">==</span> <span class="bp">self</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="n">val_map</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">LRU</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__repr__</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(max_size=</span><span class="si">%r</span><span class="s1">, on_miss=</span><span class="si">%r</span><span class="s1">, values=</span><span class="si">%s</span><span class="s1">)&#39;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_miss</span><span class="p">,</span> <span class="n">val_map</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">LRI</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The ``LRI`` implements the basic *Least Recently Inserted* strategy to</span>
+<span class="sd">    caching. One could also think of this as a ``SizeLimitedDefaultDict``.</span>
+
+<span class="sd">    *on_miss* is a callable that accepts the missing key (as opposed</span>
+<span class="sd">    to :class:`collections.defaultdict`&#39;s &quot;default_factory&quot;, which</span>
+<span class="sd">    accepts no arguments.) Also note that, like the :class:`LRU`,</span>
+<span class="sd">    the ``LRI`` is instrumented with statistics tracking.</span>
+
+<span class="sd">    &gt;&gt;&gt; cap_cache = LRI(max_size=2)</span>
+<span class="sd">    &gt;&gt;&gt; cap_cache[&#39;a&#39;], cap_cache[&#39;b&#39;] = &#39;A&#39;, &#39;B&#39;</span>
+<span class="sd">    &gt;&gt;&gt; from pprint import pprint as pp</span>
+<span class="sd">    &gt;&gt;&gt; pp(cap_cache)</span>
+<span class="sd">    {&#39;a&#39;: &#39;A&#39;, &#39;b&#39;: &#39;B&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; [cap_cache[&#39;b&#39;] for i in range(3)][0]</span>
+<span class="sd">    &#39;B&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cap_cache[&#39;c&#39;] = &#39;C&#39;</span>
+<span class="sd">    &gt;&gt;&gt; print(cap_cache.get(&#39;a&#39;))</span>
+<span class="sd">    None</span>
+<span class="sd">    &gt;&gt;&gt; cap_cache.hit_count, cap_cache.miss_count, cap_cache.soft_miss_count</span>
+<span class="sd">    (3, 1, 1)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># In order to support delitem andn .pop() setitem will need to</span>
+    <span class="c1"># popleft until it finds a key still in the cache. or, only</span>
+    <span class="c1"># support popitems and raise an error on pop.</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">DEFAULT_MAX_SIZE</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">on_miss</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LRI</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hit_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">miss_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">soft_miss_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span> <span class="o">=</span> <span class="n">max_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_miss</span> <span class="o">=</span> <span class="n">on_miss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">values</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># TODO: pop support (see above)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">:</span>
+            <span class="n">old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="p">[</span><span class="n">old</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LRI</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="o">**</span><span class="n">F</span><span class="p">):</span>
+        <span class="c1"># E and F are throwback names to the dict() __doc__</span>
+        <span class="k">if</span> <span class="n">E</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">setitem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__setitem__</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">E</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">setitem</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">E</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">E</span><span class="p">:</span>
+                <span class="n">setitem</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">F</span><span class="p">:</span>
+            <span class="n">setitem</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">F</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">(</span><span class="n">max_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LRI</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">LRI</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">miss_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_miss</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_miss</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ret</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hit_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">soft_miss_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">default</span>
+
+    <span class="k">def</span> <span class="nf">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">soft_miss_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+            <span class="k">return</span> <span class="n">default</span>
+
+
+<span class="c1">### Cached decorator</span>
+<span class="c1"># Key-making technique adapted from Python 3.4&#39;s functools</span>
+
+<span class="k">class</span> <span class="nc">_HashedKey</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The _HashedKey guarantees that hash() will be called no more than once</span>
+<span class="sd">    per cached function invocation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="s1">&#39;hash_value&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_value</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_value</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="nb">list</span><span class="o">.</span><span class="n">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">make_cache_key</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                   <span class="n">kwarg_mark</span><span class="o">=</span><span class="n">_KWARG_MARK</span><span class="p">,</span>
+                   <span class="n">fasttypes</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">([</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)])):</span>
+    <span class="sd">&quot;&quot;&quot;Make a generic key from a function&#39;s positional and keyword</span>
+<span class="sd">    arguments, suitable for use in caches. Arguments within *args* and</span>
+<span class="sd">    *kwargs* must be `hashable`_. If *typed* is ``True``, ``3`` and</span>
+<span class="sd">    ``3.0`` will be treated as separate keys.</span>
+
+<span class="sd">    The key is constructed in a way that is flat as possible rather than</span>
+<span class="sd">    as a nested structure that would take more memory.</span>
+
+<span class="sd">    If there is only a single argument and its data type is known to cache</span>
+<span class="sd">    its hash value, then that argument is returned without a wrapper.  This</span>
+<span class="sd">    saves space and improves lookup speed.</span>
+
+<span class="sd">    &gt;&gt;&gt; tuple(make_cache_key((&#39;a&#39;, &#39;b&#39;), {&#39;c&#39;: (&#39;d&#39;)}))</span>
+<span class="sd">    (&#39;a&#39;, &#39;b&#39;, _KWARG_MARK, (&#39;c&#39;, &#39;d&#39;))</span>
+
+<span class="sd">    .. _hashable: https://docs.python.org/2/glossary.html#term-hashable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># key = [func_name] if func_name else []</span>
+    <span class="c1"># key.extend(args)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">sorted_items</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="n">key</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwarg_mark</span><span class="p">)</span>
+        <span class="n">key</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">sorted_items</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">typed</span><span class="p">:</span>
+        <span class="n">key</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">key</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sorted_items</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">in</span> <span class="n">fasttypes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_HashedKey</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+<span class="c1"># for backwards compatibility in case someone was importing it</span>
+<span class="n">_make_cache_key</span> <span class="o">=</span> <span class="n">make_cache_key</span>
+
+
+<span class="k">class</span> <span class="nc">CachedFunction</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This type is used by :func:`cached`, below. Instances of this</span>
+<span class="sd">    class are used to wrap functions in caching logic.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">scoped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                  <span class="ow">and</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;expected cache to be a dict-like object,&#39;</span>
+                            <span class="s1">&#39; or callable returning a dict-like object, not </span><span class="si">%r</span><span class="s1">&#39;</span>
+                            <span class="o">%</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">_get_cache</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span> <span class="o">=</span> <span class="n">_get_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scoped</span> <span class="o">=</span> <span class="n">scoped</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">typed</span> <span class="o">=</span> <span class="n">typed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_func</span> <span class="o">=</span> <span class="n">key</span> <span class="ow">or</span> <span class="n">make_cache_key</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_func</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">typed</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">typed</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoped</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(func=</span><span class="si">%r</span><span class="s2">, scoped=</span><span class="si">%r</span><span class="s2">, typed=</span><span class="si">%r</span><span class="s2">)&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoped</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">typed</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(func=</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">CachedMethod</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Similar to :class:`CachedFunction`, this type is used by</span>
+<span class="sd">    :func:`cachedmethod` to wrap methods in caching logic.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">scoped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span> <span class="o">=</span> <span class="n">attrgetter</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                  <span class="ow">and</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;expected cache to be an attribute name,&#39;</span>
+                            <span class="s1">&#39; dict-like object, or callable returning&#39;</span>
+                            <span class="s1">&#39; a dict-like object, not </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">_get_cache</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span> <span class="o">=</span> <span class="n">_get_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scoped</span> <span class="o">=</span> <span class="n">scoped</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">typed</span> <span class="o">=</span> <span class="n">typed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_func</span> <span class="o">=</span> <span class="n">key</span> <span class="ow">or</span> <span class="n">make_cache_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="n">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">cls</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">typed</span><span class="p">,</span>
+                  <span class="n">scoped</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scoped</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">key_func</span><span class="p">)</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">bound_to</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cache</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">key_args</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span> <span class="o">+</span> <span class="n">args</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoped</span> <span class="k">else</span> <span class="n">args</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_func</span><span class="p">(</span><span class="n">key_args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">typed</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoped</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">typed</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bound_to</span><span class="p">,)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;&lt;</span><span class="si">%s</span><span class="s1"> func=</span><span class="si">%r</span><span class="s1"> scoped=</span><span class="si">%r</span><span class="s1"> typed=</span><span class="si">%r</span><span class="s1"> bound_to=</span><span class="si">%r</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="n">args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(func=</span><span class="si">%r</span><span class="s2">, scoped=</span><span class="si">%r</span><span class="s2">, typed=</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">cached</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">scoped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cache any function with the cache object of your choosing. Note</span>
+<span class="sd">    that the function wrapped should take only `hashable`_ arguments.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cache (Mapping): Any :class:`dict`-like object suitable for</span>
+<span class="sd">            use as a cache. Instances of the :class:`LRU` and</span>
+<span class="sd">            :class:`LRI` are good choices, but a plain :class:`dict`</span>
+<span class="sd">            can work in some cases, as well. This argument can also be</span>
+<span class="sd">            a callable which accepts no arguments and returns a mapping.</span>
+<span class="sd">        scoped (bool): Whether the function itself is part of the</span>
+<span class="sd">            cache key.  ``True`` by default, different functions will</span>
+<span class="sd">            not read one another&#39;s cache entries, but can evict one</span>
+<span class="sd">            another&#39;s results. ``False`` can be useful for certain</span>
+<span class="sd">            shared cache use cases. More advanced behavior can be</span>
+<span class="sd">            produced through the *key* argument.</span>
+<span class="sd">        typed (bool): Whether to factor argument types into the cache</span>
+<span class="sd">            check. Default ``False``, setting to ``True`` causes the</span>
+<span class="sd">            cache keys for ``3`` and ``3.0`` to be considered unequal.</span>
+
+<span class="sd">    &gt;&gt;&gt; my_cache = LRU()</span>
+<span class="sd">    &gt;&gt;&gt; @cached(my_cache)</span>
+<span class="sd">    ... def cached_lower(x):</span>
+<span class="sd">    ...     return x.lower()</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; cached_lower(&quot;CaChInG&#39;s FuN AgAiN!&quot;)</span>
+<span class="sd">    &quot;caching&#39;s fun again!&quot;</span>
+<span class="sd">    &gt;&gt;&gt; len(my_cache)</span>
+<span class="sd">    1</span>
+
+<span class="sd">    .. _hashable: https://docs.python.org/2/glossary.html#term-hashable</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">cached_func_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">CachedFunction</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">scoped</span><span class="o">=</span><span class="n">scoped</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="n">typed</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cached_func_decorator</span>
+
+
+<span class="k">def</span> <span class="nf">cachedmethod</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">scoped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Similar to :func:`cached`, ``cachedmethod`` is used to cache</span>
+<span class="sd">    methods based on their arguments, using any :class:`dict`-like</span>
+<span class="sd">    *cache* object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cache (str/Mapping/callable): Can be the name of an attribute</span>
+<span class="sd">            on the instance, any Mapping/:class:`dict`-like object, or</span>
+<span class="sd">            a callable which returns a Mapping.</span>
+<span class="sd">        scoped (bool): Whether the method itself and the object it is</span>
+<span class="sd">            bound to are part of the cache keys. ``True`` by default,</span>
+<span class="sd">            different methods will not read one another&#39;s cache</span>
+<span class="sd">            results. ``False`` can be useful for certain shared cache</span>
+<span class="sd">            use cases. More advanced behavior can be produced through</span>
+<span class="sd">            the *key* arguments.</span>
+<span class="sd">        typed (bool): Whether to factor argument types into the cache</span>
+<span class="sd">            check. Default ``False``, setting to ``True`` causes the</span>
+<span class="sd">            cache keys for ``3`` and ``3.0`` to be considered unequal.</span>
+<span class="sd">        key (callable): A callable with a signature that matches</span>
+<span class="sd">            :func:`make_cache_key` that returns a tuple of hashable</span>
+<span class="sd">            values to be used as the key in the cache.</span>
+
+<span class="sd">    &gt;&gt;&gt; class Lowerer(object):</span>
+<span class="sd">    ...     def __init__(self):</span>
+<span class="sd">    ...         self.cache = LRI()</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...     @cachedmethod(&#39;cache&#39;)</span>
+<span class="sd">    ...     def lower(self, text):</span>
+<span class="sd">    ...         return text.lower()</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; lowerer = Lowerer()</span>
+<span class="sd">    &gt;&gt;&gt; lowerer.lower(&#39;WOW WHO COULD GUESS CACHING COULD BE SO NEAT&#39;)</span>
+<span class="sd">    &#39;wow who could guess caching could be so neat&#39;</span>
+<span class="sd">    &gt;&gt;&gt; len(lowerer.cache)</span>
+<span class="sd">    1</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">cached_method_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">CachedMethod</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">scoped</span><span class="o">=</span><span class="n">scoped</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="n">typed</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cached_method_decorator</span>
+
+
+<span class="k">class</span> <span class="nc">cachedproperty</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The ``cachedproperty`` is used similar to :class:`property`, except</span>
+<span class="sd">    that the wrapped method is only called once. This is commonly used</span>
+<span class="sd">    to implement lazy attributes.</span>
+
+<span class="sd">    After the property has been accessed, the value is stored on the</span>
+<span class="sd">    instance itself, using the same name as the cachedproperty. This</span>
+<span class="sd">    allows the cache to be cleared with :func:`delattr`, or through</span>
+<span class="sd">    manipulating the object&#39;s ``__dict__``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="k">return</span> <span class="s1">&#39;&lt;</span><span class="si">%s</span><span class="s1"> func=</span><span class="si">%s</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ThresholdCounter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A **bounded** dict-like Mapping from keys to counts. The</span>
+<span class="sd">    ThresholdCounter automatically compacts after every (1 /</span>
+<span class="sd">    *threshold*) additions, maintaining exact counts for any keys</span>
+<span class="sd">    whose count represents at least a *threshold* ratio of the total</span>
+<span class="sd">    data. In other words, if a particular key is not present in the</span>
+<span class="sd">    ThresholdCounter, its count represents less than *threshold* of</span>
+<span class="sd">    the total data.</span>
+
+<span class="sd">    &gt;&gt;&gt; tc = ThresholdCounter(threshold=0.1)</span>
+<span class="sd">    &gt;&gt;&gt; tc.add(1)</span>
+<span class="sd">    &gt;&gt;&gt; tc.items()</span>
+<span class="sd">    [(1, 1)]</span>
+<span class="sd">    &gt;&gt;&gt; tc.update([2] * 10)</span>
+<span class="sd">    &gt;&gt;&gt; tc.get(1)</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; tc.add(5)</span>
+<span class="sd">    &gt;&gt;&gt; 5 in tc</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; len(list(tc.elements()))</span>
+<span class="sd">    11</span>
+
+<span class="sd">    As you can see above, the API is kept similar to</span>
+<span class="sd">    :class:`collections.Counter`. The most notable feature omissions</span>
+<span class="sd">    being that counted items cannot be set directly, uncounted, or</span>
+<span class="sd">    removed, as this would disrupt the math.</span>
+
+<span class="sd">    Use the ThresholdCounter when you need best-effort long-lived</span>
+<span class="sd">    counts for dynamically-keyed data. Without a bounded datastructure</span>
+<span class="sd">    such as this one, the dynamic keys often represent a memory leak</span>
+<span class="sd">    and can impact application reliability. The ThresholdCounter&#39;s</span>
+<span class="sd">    item replacement strategy is fully deterministic and can be</span>
+<span class="sd">    thought of as *Amortized Least Relevant*. The absolute upper bound</span>
+<span class="sd">    of keys it will store is *(2/threshold)*, but realistically</span>
+<span class="sd">    *(1/threshold)* is expected for uniformly random datastreams, and</span>
+<span class="sd">    one or two orders of magnitude better for real-world data.</span>
+
+<span class="sd">    This algorithm is an implementation of the Lossy Counting</span>
+<span class="sd">    algorithm described in &quot;Approximate Frequency Counts over Data</span>
+<span class="sd">    Streams&quot; by Manku &amp; Motwani. Hat tip to Kurt Rose for discovery</span>
+<span class="sd">    and initial implementation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: hit_count/miss_count?</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.001</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expected threshold between 0 and 1, not: </span><span class="si">%r</span><span class="s1">&#39;</span>
+                             <span class="o">%</span> <span class="n">threshold</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thresh_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cur_bucket</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_threshold</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Increment the count of *key* by 1, automatically adding it if it</span>
+<span class="sd">        does not exist.</span>
+
+<span class="sd">        Cache compaction is triggered every *1/threshold* additions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cur_bucket</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">total</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thresh_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                                    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cur_bucket</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cur_bucket</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">elements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an iterator of all the common elements tracked by the</span>
+<span class="sd">        counter. Yields each key as many times as it has been seen.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">repeaters</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">repeaters</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">most_common</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the top *n* keys and counts as tuples. If *n* is omitted,</span>
+<span class="sd">        returns all the pairs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">ret</span>
+        <span class="k">return</span> <span class="n">ret</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_common_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the sum of counts for keys exceeding the configured data</span>
+<span class="sd">        threshold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">count</span> <span class="k">for</span> <span class="n">count</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span><span class="o">.</span><span class="n">itervalues</span><span class="p">()])</span>
+
+    <span class="k">def</span> <span class="nf">get_uncommon_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the sum of counts for keys that were culled because the</span>
+<span class="sd">        associated counts represented less than the configured</span>
+<span class="sd">        threshold. The long-tail counts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_common_count</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_commonality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a float representation of the effective count accuracy. The</span>
+<span class="sd">        higher the number, the less uniform the keys being added, and</span>
+<span class="sd">        the higher accuracy and efficiency of the ThresholdCounter.</span>
+
+<span class="sd">        If a stronger measure of data cardinality is required,</span>
+<span class="sd">        consider using hyperloglog.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_common_count</span><span class="p">())</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">total</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span>
+
+    <span class="k">def</span> <span class="nf">iterkeys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">itervalues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">count_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">count_map</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">count_map</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">itervalues</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">iteritems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">count_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_map</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">count_map</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">count_map</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="s2">&quot;Get count for *key*, defaulting to 0.&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">default</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Like dict.update() but add counts instead of replacing them, used</span>
+<span class="sd">        to add multiple items in one call.</span>
+
+<span class="sd">        Source can be an iterable of keys to add, or a mapping of keys</span>
+<span class="sd">        to integer counts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">iterable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="s1">&#39;iteritems&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">iterable</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="c1"># end cacheutils.py</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      Last updated on 2017-01-28.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+    <div role="contentinfo">
+        <p>
+            &copy; Copyright 2016-2017, <a href='https://kevin.deldycke.com'>Kevin Deldycke</a> and <a href='https://github.com/kdeldycke/meta-package-manager/graphs/contributors'>contributors</a>.
+        </p>
+    </div>
+
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'2.4.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

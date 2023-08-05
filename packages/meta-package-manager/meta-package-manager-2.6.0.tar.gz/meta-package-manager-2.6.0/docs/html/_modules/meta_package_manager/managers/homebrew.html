@@ -1,0 +1,572 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>meta_package_manager.managers.homebrew &mdash; Meta Package Manager 2.4.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Meta Package Manager 2.4.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Meta Package Manager
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.4.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../falsehoods.html">Falsehoods Programmers Believe About Package Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bitbar.html">BitBar Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../todolist.html">Todo list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">Meta Package Manager</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>meta_package_manager.managers.homebrew</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for meta_package_manager.managers.homebrew</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2016-2017 Kevin Deldycke &lt;kevin@deldycke.com&gt;</span>
+<span class="c1">#                         and contributors.</span>
+<span class="c1"># All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is Free Software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU General Public License</span>
+<span class="c1"># as published by the Free Software Foundation; either version 2</span>
+<span class="c1"># of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License</span>
+<span class="c1"># along with this program; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">absolute_import</span><span class="p">,</span>
+    <span class="n">division</span><span class="p">,</span>
+    <span class="n">print_function</span><span class="p">,</span>
+    <span class="n">unicode_literals</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">from</span> <span class="nn">boltons.cacheutils</span> <span class="k">import</span> <span class="n">cachedproperty</span>
+<span class="kn">from</span> <span class="nn">packaging.version</span> <span class="k">import</span> <span class="n">parse</span> <span class="k">as</span> <span class="n">parse_version</span>
+
+<span class="kn">from</span> <span class="nn">..base</span> <span class="k">import</span> <span class="n">PackageManager</span>
+<span class="kn">from</span> <span class="nn">..platform</span> <span class="k">import</span> <span class="n">MACOS</span>
+
+
+<div class="viewcode-block" id="Homebrew"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.Homebrew">[docs]</a><span class="k">class</span> <span class="nc">Homebrew</span><span class="p">(</span><span class="n">PackageManager</span><span class="p">):</span>
+
+    <span class="n">cli_path</span> <span class="o">=</span> <span class="s1">&#39;/usr/local/bin/brew&#39;</span>
+
+    <span class="n">platforms</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="n">MACOS</span><span class="p">])</span>
+
+    <span class="n">requirement</span> <span class="o">=</span> <span class="s1">&#39;&gt;= 1.0.*&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="s2">&quot;brew&quot;</span>
+
+<div class="viewcode-block" id="Homebrew.get_version"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.Homebrew.get_version">[docs]</a>    <span class="k">def</span> <span class="nf">get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetch version from ``brew --version`` output.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;--version&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Homebrew.sync"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.Homebrew.sync">[docs]</a>    <span class="k">def</span> <span class="nf">sync</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Homebrew</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;update&#39;</span><span class="p">])</span></div>
+
+    <span class="nd">@cachedproperty</span>
+    <span class="k">def</span> <span class="nf">installed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetch installed packages from ``brew list`` output.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            This method is shared by ``brew`` and ``cask``, only that the</span>
+<span class="sd">            latter adds its ``cask`` subcommand to the CLI call.</span>
+
+<span class="sd">        Raw CLI output samples:</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew list --versions</span>
+<span class="sd">            ack 2.14</span>
+<span class="sd">            apg 2.2.3</span>
+<span class="sd">            audacity (!) 2.1.2</span>
+<span class="sd">            apple-gcc42 4.2.1-5666.3</span>
+<span class="sd">            atk 2.22.0</span>
+<span class="sd">            bash 4.4.5</span>
+<span class="sd">            bash-completion 1.3_1</span>
+<span class="sd">            boost 1.63.0</span>
+<span class="sd">            c-ares 1.12.0</span>
+<span class="sd">            graphviz 2.40.1 2.40.20161221.0239</span>
+<span class="sd">            quicklook-json latest</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew cask list --versions</span>
+<span class="sd">            aerial 1.2beta5</span>
+<span class="sd">            android-file-transfer latest</span>
+<span class="sd">            audacity (!) 2.1.2</span>
+<span class="sd">            bitbar 1.9.2</span>
+<span class="sd">            firefox 49.0.1</span>
+<span class="sd">            flux 37.7</span>
+<span class="sd">            gimp 2.8.18-x86_64</span>
+<span class="sd">            java 1.8.0_112-b16</span>
+<span class="sd">            tunnelblick 3.6.8_build_4625 3.6.9_build_4685</span>
+<span class="sd">            virtualbox 5.1.8-111374 5.1.10-112026</span>
+
+<span class="sd">        .. todo</span>
+
+<span class="sd">            Use the ``removed`` variable to detect removed packages (which are</span>
+<span class="sd">            reported with a ``(!)`` flag). See:</span>
+<span class="sd">            https://github.com/caskroom/homebrew-cask/blob/master/doc</span>
+<span class="sd">            /reporting_bugs/uninstall_wrongly_reports_cask_as_not_installed.md</span>
+<span class="sd">            and https://github.com/kdeldycke/meta-package-manager/issues/17 .</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">installed</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;list&#39;</span><span class="p">,</span> <span class="s1">&#39;--versions&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+            <span class="n">regexp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">r&#39;(\S+)( \(!\))? (.+)&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">pkg_info</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">pkg_info</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">package_id</span><span class="p">,</span> <span class="n">removed</span><span class="p">,</span> <span class="n">versions</span> <span class="o">=</span> <span class="n">regexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pkg_info</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+
+                <span class="c1"># Guess latest installed version.</span>
+                <span class="n">versions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">versions</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+                <span class="c1"># Discard generic &#39;latest&#39; symbolic version if others are</span>
+                <span class="c1"># available.</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">versions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">versions</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s1">&#39;latest&#39;</span><span class="p">)</span>
+                <span class="c1"># Parse versions to avoid lexicographic sorting gotchas.</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">versions</span><span class="p">:</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">version</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([(</span><span class="n">parse_version</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">])</span>
+
+                <span class="n">installed</span><span class="p">[</span><span class="n">package_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                    <span class="s1">&#39;installed_version&#39;</span><span class="p">:</span> <span class="n">version</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">installed</span>
+
+    <span class="nd">@cachedproperty</span>
+    <span class="k">def</span> <span class="nf">outdated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetch outdated packages from ``brew outdated`` output.</span>
+
+<span class="sd">        Raw CLI output samples:</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew outdated --json=v1</span>
+<span class="sd">            [</span>
+<span class="sd">              {</span>
+<span class="sd">                &quot;name&quot;: &quot;cassandra&quot;,</span>
+<span class="sd">                &quot;installed_versions&quot;: [</span>
+<span class="sd">                  &quot;3.5&quot;</span>
+<span class="sd">                ],</span>
+<span class="sd">                &quot;current_version&quot;: &quot;3.7&quot;</span>
+<span class="sd">              },</span>
+<span class="sd">              {</span>
+<span class="sd">                &quot;name&quot;: &quot;vim&quot;,</span>
+<span class="sd">                &quot;installed_versions&quot;: [</span>
+<span class="sd">                  &quot;7.4.1967&quot;</span>
+<span class="sd">                ],</span>
+<span class="sd">                &quot;current_version&quot;: &quot;7.4.1993&quot;</span>
+<span class="sd">              },</span>
+<span class="sd">              {</span>
+<span class="sd">                &quot;name&quot;: &quot;youtube-dl&quot;,</span>
+<span class="sd">                &quot;installed_versions&quot;: [</span>
+<span class="sd">                  &quot;2016.07.06&quot;</span>
+<span class="sd">                ],</span>
+<span class="sd">                &quot;current_version&quot;: &quot;2016.07.09.1&quot;</span>
+<span class="sd">              }</span>
+<span class="sd">            ]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outdated</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># List available updates.</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;outdated&#39;</span><span class="p">,</span> <span class="s1">&#39;--json=v1&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">pkg_info</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">output</span><span class="p">):</span>
+
+                <span class="c1"># Parse versions to avoid lexicographic sorting gotchas.</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">versions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pkg_info</span><span class="p">[</span><span class="s1">&#39;installed_versions&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">versions</span><span class="p">:</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">version</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([(</span><span class="n">parse_version</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">])</span>
+
+                <span class="n">package_id</span> <span class="o">=</span> <span class="n">pkg_info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                <span class="n">outdated</span><span class="p">[</span><span class="n">package_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                    <span class="s1">&#39;installed_version&#39;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+                    <span class="s1">&#39;latest_version&#39;</span><span class="p">:</span> <span class="n">pkg_info</span><span class="p">[</span><span class="s1">&#39;current_version&#39;</span><span class="p">]}</span>
+
+        <span class="k">return</span> <span class="n">outdated</span>
+
+<div class="viewcode-block" id="Homebrew.upgrade_cli"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.Homebrew.upgrade_cli">[docs]</a>    <span class="k">def</span> <span class="nf">upgrade_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">package_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;upgrade&#39;</span><span class="p">,</span> <span class="s1">&#39;--cleanup&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">package_id</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
+
+<div class="viewcode-block" id="Homebrew.upgrade_all_cli"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.Homebrew.upgrade_all_cli">[docs]</a>    <span class="k">def</span> <span class="nf">upgrade_all_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upgrade_cli</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="HomebrewCask"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.HomebrewCask">[docs]</a><span class="k">class</span> <span class="nc">HomebrewCask</span><span class="p">(</span><span class="n">Homebrew</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Cask is now part of Homebrew&#39;s core and extend it. &quot;&quot;&quot;</span>
+
+    <span class="n">cli_args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;cask&#39;</span><span class="p">]</span>
+
+    <span class="c1"># &#39;cask install&#39; doesn&#39;t upgrade to the latest package version, we need to</span>
+    <span class="c1"># call &#39;cask reinstall&#39; instead since 1.1.0.</span>
+    <span class="n">requirement</span> <span class="o">=</span> <span class="s1">&#39;&gt;= 1.1.*&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="s2">&quot;cask&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Homebrew Cask&quot;</span>
+
+    <span class="c1"># Call homebrew own update: `brew cask update` is just an alias to</span>
+    <span class="c1"># `brew update` and is deprecated. See:</span>
+    <span class="c1"># https://github.com/kdeldycke/meta-package-manager/issues/28</span>
+    <span class="n">sync</span> <span class="o">=</span> <span class="n">Homebrew</span><span class="p">()</span><span class="o">.</span><span class="n">sync</span>
+
+    <span class="nd">@cachedproperty</span>
+    <span class="k">def</span> <span class="nf">outdated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Search for outdated packages among installed one.</span>
+
+<span class="sd">        Cask doesn&#39;t provides an ``outdated`` subcommand contrary to ``brew``.</span>
+<span class="sd">        We have no other alternative but to fetch the list of currently</span>
+<span class="sd">        installed packages and inspect them one by one to search for outdated</span>
+<span class="sd">        ones.</span>
+
+<span class="sd">        Also, `brew cask list` is `not reliable &lt;https://github.com/caskroom</span>
+<span class="sd">        /homebrew-cask/blob/master/doc/reporting_bugs</span>
+<span class="sd">        /brew_cask_list_shows_wrong_information.md&gt;`_.</span>
+
+<span class="sd">        Raw CLI output samples:</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew cask info aerial</span>
+<span class="sd">            aerial: 1.2beta5</span>
+<span class="sd">            https://github.com/JohnCoates/Aerial</span>
+<span class="sd">            /usr/local/Caskroom/aerial/1.2beta5 (18 files, 6.6M)</span>
+<span class="sd">            From: https://github.com/(...)/blob/master/Casks/aerial.rb</span>
+<span class="sd">            ==&gt; Name</span>
+<span class="sd">            Aerial Screensaver</span>
+<span class="sd">            ==&gt; Artifacts</span>
+<span class="sd">            Aerial.saver (screen_saver)</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew cask info firefox</span>
+<span class="sd">            firefox: 50.0.1</span>
+<span class="sd">            https://www.mozilla.org/firefox/</span>
+<span class="sd">            /usr/local/Caskroom/firefox/49.0.1 (107 files, 185.3M)</span>
+<span class="sd">            From: https://github.com/(...)/blob/master/Casks/firefox.rb</span>
+<span class="sd">            ==&gt; Name</span>
+<span class="sd">            Mozilla Firefox</span>
+<span class="sd">            ==&gt; Artifacts</span>
+<span class="sd">            Firefox.app (app)</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew cask info virtualbox</span>
+<span class="sd">            virtualbox: 5.1.10-112026</span>
+<span class="sd">            https://www.virtualbox.org</span>
+<span class="sd">            /usr/local/Caskroom/virtualbox/5.1.8-111374 (3 files, 88.8M)</span>
+<span class="sd">            /usr/local/Caskroom/virtualbox/5.1.10-112026 (3 files, 89.3M)</span>
+<span class="sd">            From: https://github.com/(...)/blob/master/Casks/virtualbox.rb</span>
+<span class="sd">            ==&gt; Name</span>
+<span class="sd">            Oracle VirtualBox</span>
+<span class="sd">            ==&gt; Artifacts</span>
+<span class="sd">            VirtualBox.pkg (pkg)</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew cask info prey</span>
+<span class="sd">            prey: 1.6.3</span>
+<span class="sd">            https://preyproject.com/</span>
+<span class="sd">            Not installed</span>
+<span class="sd">            From: https://github.com/(...)/blob/master/Casks/prey.rb</span>
+<span class="sd">            ==&gt; Name</span>
+<span class="sd">            Prey</span>
+<span class="sd">            ==&gt; Artifacts</span>
+<span class="sd">            prey-mac-1.6.3-x86.pkg (pkg)</span>
+<span class="sd">            ==&gt; Caveats</span>
+<span class="sd">            Prey requires your API key, found in the bottom-left corner of</span>
+<span class="sd">            the Prey web account Settings page, to complete installation.</span>
+<span class="sd">            The API key may be set as an environment variable as follows:</span>
+
+<span class="sd">              API_KEY=&quot;abcdef123456&quot; brew cask install prey</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew cask info ubersicht</span>
+<span class="sd">            ubersicht: 1.0.44</span>
+<span class="sd">            http://tracesof.net/uebersicht/</span>
+<span class="sd">            Not installed</span>
+<span class="sd">            From: https://github.com/(...)/blob/master/Casks/ubersicht.rb</span>
+<span class="sd">            ==&gt; Name</span>
+<span class="sd">            Übersicht</span>
+<span class="sd">            ==&gt; Artifacts</span>
+<span class="sd">            Übersicht.app (app)</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ brew cask info xld</span>
+<span class="sd">            xld: 2016.10.07</span>
+<span class="sd">            http://tmkk.undo.jp/xld/index_e.html</span>
+<span class="sd">            /usr/local/Caskroom/xld/2016.10.07 (45 files, 221.6K)</span>
+<span class="sd">            From: https://github.com/(...)/blob/master/Casks/xld.rb</span>
+<span class="sd">            ==&gt; Names</span>
+<span class="sd">            X Lossless Decoder</span>
+<span class="sd">            XLD</span>
+<span class="sd">            ==&gt; Artifacts</span>
+<span class="sd">            XLD.app (app)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outdated</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">installed_pkg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">installed</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">package_id</span> <span class="o">=</span> <span class="n">installed_pkg</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="n">installed_pkg</span><span class="p">[</span><span class="s1">&#39;installed_version&#39;</span><span class="p">]</span>
+
+            <span class="c1"># Inspect the package closer to evaluate its state.</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">([</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="n">package_id</span><span class="p">])</span>
+
+            <span class="n">latest_version</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># Skip already installed packages.</span>
+            <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="n">latest_version</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Casks are allowed to provide several names. See:</span>
+            <span class="c1"># https://github.com/kdeldycke/meta-package-manager/issues/26 .</span>
+            <span class="n">package_names</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+                <span class="s1">&#39;==&gt; Names?(.*?)(==&gt;|$)&#39;</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">(</span>
+                    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># Choose the longuest name as canonical.</span>
+            <span class="n">package_name</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">package_names</span><span class="p">)</span>
+
+            <span class="n">outdated</span><span class="p">[</span><span class="n">package_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">package_name</span><span class="p">,</span>
+                <span class="s1">&#39;installed_version&#39;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+                <span class="s1">&#39;latest_version&#39;</span><span class="p">:</span> <span class="n">latest_version</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">outdated</span>
+
+<div class="viewcode-block" id="HomebrewCask.upgrade_cli"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.HomebrewCask.upgrade_cli">[docs]</a>    <span class="k">def</span> <span class="nf">upgrade_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">package_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Install a package.</span>
+
+<span class="sd">        .. todo::</span>
+
+<span class="sd">            Wait for https://github.com/caskroom/homebrew-cask/issues/22647</span>
+<span class="sd">            so we can force a cleanup in one go, as we do above with vanilla</span>
+<span class="sd">            Homebrew.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;reinstall&#39;</span><span class="p">,</span> <span class="n">package_id</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="HomebrewCask.upgrade_all_cli"><a class="viewcode-back" href="../../../api/managers/homebrew.html#meta_package_manager.managers.homebrew.HomebrewCask.upgrade_all_cli">[docs]</a>    <span class="k">def</span> <span class="nf">upgrade_all_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Cask has no way to upgrade all outdated packages.</span>
+
+<span class="sd">        See: https://github.com/caskroom/homebrew-cask/issues/4678</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      Last updated on 2017-01-28.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+    <div role="contentinfo">
+        <p>
+            &copy; Copyright 2016-2017, <a href='https://kevin.deldycke.com'>Kevin Deldycke</a> and <a href='https://github.com/kdeldycke/meta-package-manager/graphs/contributors'>contributors</a>.
+        </p>
+    </div>
+
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.4.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

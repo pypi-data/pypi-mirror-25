@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>meta_package_manager.managers.npm &mdash; Meta Package Manager 2.4.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Meta Package Manager 2.4.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Meta Package Manager
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.4.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../falsehoods.html">Falsehoods Programmers Believe About Package Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bitbar.html">BitBar Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../todolist.html">Todo list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">Meta Package Manager</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>meta_package_manager.managers.npm</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for meta_package_manager.managers.npm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2016-2017 Kevin Deldycke &lt;kevin@deldycke.com&gt;</span>
+<span class="c1">#                         and contributors.</span>
+<span class="c1"># All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is Free Software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU General Public License</span>
+<span class="c1"># as published by the Free Software Foundation; either version 2</span>
+<span class="c1"># of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License</span>
+<span class="c1"># along with this program; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">absolute_import</span><span class="p">,</span>
+    <span class="n">division</span><span class="p">,</span>
+    <span class="n">print_function</span><span class="p">,</span>
+    <span class="n">unicode_literals</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">boltons.cacheutils</span> <span class="k">import</span> <span class="n">cachedproperty</span>
+<span class="kn">from</span> <span class="nn">boltons.iterutils</span> <span class="k">import</span> <span class="n">remap</span>
+
+<span class="kn">from</span> <span class="nn">..base</span> <span class="k">import</span> <span class="n">PackageManager</span>
+<span class="kn">from</span> <span class="nn">..platform</span> <span class="k">import</span> <span class="n">MACOS</span>
+
+
+<div class="viewcode-block" id="NPM"><a class="viewcode-back" href="../../../api/managers/npm.html#meta_package_manager.managers.npm.NPM">[docs]</a><span class="k">class</span> <span class="nc">NPM</span><span class="p">(</span><span class="n">PackageManager</span><span class="p">):</span>
+
+    <span class="n">cli_path</span> <span class="o">=</span> <span class="s1">&#39;/usr/local/bin/npm&#39;</span>
+
+    <span class="n">platforms</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="n">MACOS</span><span class="p">])</span>
+
+<div class="viewcode-block" id="NPM.get_version"><a class="viewcode-back" href="../../../api/managers/npm.html#meta_package_manager.managers.npm.NPM.get_version">[docs]</a>    <span class="k">def</span> <span class="nf">get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetch version from ``npm --version`` output.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">,</span> <span class="s1">&#39;--version&#39;</span><span class="p">])</span></div>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Node&#39;s npm&quot;</span>
+
+    <span class="nd">@cachedproperty</span>
+    <span class="k">def</span> <span class="nf">installed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetch installed packages from ``npm list`` output.</span>
+
+<span class="sd">        Raw CLI output samples:</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ npm list -g --json</span>
+<span class="sd">            {</span>
+<span class="sd">              &quot;dependencies&quot;: {</span>
+<span class="sd">                &quot;npm&quot;: {</span>
+<span class="sd">                  &quot;version&quot;: &quot;4.0.5&quot;,</span>
+<span class="sd">                  &quot;dependencies&quot;: {</span>
+<span class="sd">                    &quot;JSONStream&quot;: {</span>
+<span class="sd">                      &quot;version&quot;: &quot;1.2.1&quot;,</span>
+<span class="sd">                      &quot;from&quot;: &quot;JSONStream@latest&quot;,</span>
+<span class="sd">                      &quot;resolved&quot;: &quot;https://(...)/JSONStream-1.2.1.tgz&quot;,</span>
+<span class="sd">                      &quot;dependencies&quot;: {</span>
+<span class="sd">                        &quot;jsonparse&quot;: {</span>
+<span class="sd">                          &quot;version&quot;: &quot;1.2.0&quot;,</span>
+<span class="sd">                          &quot;from&quot;: &quot;jsonparse@&gt;=1.2.0 &lt;2.0.0&quot;,</span>
+<span class="sd">                          &quot;resolved&quot;: &quot;https://(...)/jsonparse-1.2.0.tgz&quot;</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &quot;through&quot;: {</span>
+<span class="sd">                          &quot;version&quot;: &quot;2.3.8&quot;,</span>
+<span class="sd">                          &quot;from&quot;: &quot;through@&gt;=2.2.7 &lt;3.0.0&quot;,</span>
+<span class="sd">                          &quot;resolved&quot;: &quot;https://(...)/through-2.3.8.tgz&quot;</span>
+<span class="sd">                        }</span>
+<span class="sd">                      }</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;abbrev&quot;: {</span>
+<span class="sd">                      &quot;version&quot;: &quot;1.0.9&quot;,</span>
+<span class="sd">                      &quot;from&quot;: &quot;abbrev@1.0.9&quot;,</span>
+<span class="sd">                      &quot;resolved&quot;: &quot;https://(...)/abbrev-1.0.9.tgz&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;ansi-regex&quot;: {</span>
+<span class="sd">                      &quot;version&quot;: &quot;2.0.0&quot;,</span>
+<span class="sd">                      &quot;from&quot;: &quot;ansi-regex@2.0.0&quot;,</span>
+<span class="sd">                      &quot;resolved&quot;: &quot;https://(...)/ansi-regex-2.0.0.tgz&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">            (...)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">installed</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="s1">&#39;-g&#39;</span><span class="p">,</span> <span class="s1">&#39;--json&#39;</span><span class="p">,</span> <span class="s1">&#39;list&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;version&#39;</span><span class="p">:</span>
+                    <span class="n">package_id</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">installed</span><span class="p">[</span><span class="n">package_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                        <span class="s1">&#39;installed_version&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">}</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="n">remap</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="n">visit</span><span class="o">=</span><span class="n">visit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">installed</span>
+
+    <span class="nd">@cachedproperty</span>
+    <span class="k">def</span> <span class="nf">outdated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fetch outdated packages from ``npm outdated`` output.</span>
+
+<span class="sd">        Raw CLI output samples:</span>
+
+<span class="sd">        .. code-block:: shell-session</span>
+
+<span class="sd">            $ npm -g --progress=false --json outdated</span>
+<span class="sd">            {</span>
+<span class="sd">              &quot;my-linked-package&quot;: {</span>
+<span class="sd">                &quot;current&quot;: &quot;0.0.0-development&quot;,</span>
+<span class="sd">                &quot;wanted&quot;: &quot;linked&quot;,</span>
+<span class="sd">                &quot;latest&quot;: &quot;linked&quot;,</span>
+<span class="sd">                &quot;location&quot;: &quot;/Users/...&quot;</span>
+<span class="sd">              },</span>
+<span class="sd">              &quot;npm&quot;: {</span>
+<span class="sd">                &quot;current&quot;: &quot;3.10.3&quot;,</span>
+<span class="sd">                &quot;wanted&quot;: &quot;3.10.5&quot;,</span>
+<span class="sd">                &quot;latest&quot;: &quot;3.10.5&quot;,</span>
+<span class="sd">                &quot;location&quot;: &quot;/Users/...&quot;</span>
+<span class="sd">              }</span>
+<span class="sd">            }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outdated</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="s1">&#39;-g&#39;</span><span class="p">,</span> <span class="s1">&#39;--progress=false&#39;</span><span class="p">,</span> <span class="s1">&#39;--json&#39;</span><span class="p">,</span> <span class="s1">&#39;outdated&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">package_id</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">output</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">values</span><span class="p">[</span><span class="s1">&#39;wanted&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;linked&#39;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">outdated</span><span class="p">[</span><span class="n">package_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">package_id</span><span class="p">,</span>
+                    <span class="s1">&#39;installed_version&#39;</span><span class="p">:</span>
+                        <span class="n">values</span><span class="p">[</span><span class="s1">&#39;current&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;current&#39;</span> <span class="ow">in</span> <span class="n">values</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;latest_version&#39;</span><span class="p">:</span> <span class="n">values</span><span class="p">[</span><span class="s1">&#39;latest&#39;</span><span class="p">]}</span>
+
+        <span class="k">return</span> <span class="n">outdated</span>
+
+<div class="viewcode-block" id="NPM.upgrade_cli"><a class="viewcode-back" href="../../../api/managers/npm.html#meta_package_manager.managers.npm.NPM.upgrade_cli">[docs]</a>    <span class="k">def</span> <span class="nf">upgrade_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">package_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cli_path</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cli_args</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="s1">&#39;-g&#39;</span><span class="p">,</span> <span class="s1">&#39;--progress=false&#39;</span><span class="p">,</span> <span class="s1">&#39;update&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">package_id</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
+
+<div class="viewcode-block" id="NPM.upgrade_all_cli"><a class="viewcode-back" href="../../../api/managers/npm.html#meta_package_manager.managers.npm.NPM.upgrade_all_cli">[docs]</a>    <span class="k">def</span> <span class="nf">upgrade_all_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upgrade_cli</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      Last updated on 2017-01-28.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+    <div role="contentinfo">
+        <p>
+            &copy; Copyright 2016-2017, <a href='https://kevin.deldycke.com'>Kevin Deldycke</a> and <a href='https://github.com/kdeldycke/meta-package-manager/graphs/contributors'>contributors</a>.
+        </p>
+    </div>
+
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.4.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

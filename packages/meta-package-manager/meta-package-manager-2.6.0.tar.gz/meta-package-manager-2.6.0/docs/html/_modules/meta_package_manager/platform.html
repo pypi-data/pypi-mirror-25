@@ -1,0 +1,291 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>meta_package_manager.platform &mdash; Meta Package Manager 2.4.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Meta Package Manager 2.4.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Meta Package Manager
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.4.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../falsehoods.html">Falsehoods Programmers Believe About Package Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bitbar.html">BitBar Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../todolist.html">Todo list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Meta Package Manager</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>meta_package_manager.platform</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for meta_package_manager.platform</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2016-2017 Kevin Deldycke &lt;kevin@deldycke.com&gt;</span>
+<span class="c1">#                         and contributors.</span>
+<span class="c1"># All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is Free Software; you can redistribute it and/or</span>
+<span class="c1"># modify it under the terms of the GNU General Public License</span>
+<span class="c1"># as published by the Free Software Foundation; either version 2</span>
+<span class="c1"># of the License, or (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License</span>
+<span class="c1"># along with this program; if not, write to the Free Software</span>
+<span class="c1"># Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.</span>
+
+<span class="sd">&quot;&quot;&quot; Helpers and utilities to identify and handle platform idiosyncracies. &quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">absolute_import</span><span class="p">,</span>
+    <span class="n">division</span><span class="p">,</span>
+    <span class="n">print_function</span><span class="p">,</span>
+    <span class="n">unicode_literals</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">logger</span>
+
+<span class="c1"># Python version constants.</span>
+<span class="n">PY_VERSION</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span>
+<span class="n">PY2</span> <span class="o">=</span> <span class="n">PY_VERSION</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="n">PY3</span> <span class="o">=</span> <span class="n">PY_VERSION</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+
+
+<span class="n">MACOS</span> <span class="o">=</span> <span class="s1">&#39;macos&#39;</span>
+<span class="sd">&quot;&quot;&quot; Constant used to identify OSes of the macOS family. &quot;&quot;&quot;</span>
+
+<span class="n">LINUX</span> <span class="o">=</span> <span class="s1">&#39;linux&#39;</span>
+<span class="sd">&quot;&quot;&quot; Constant used to identify OSes of the Linux family. &quot;&quot;&quot;</span>
+
+<span class="n">WINDOWS</span> <span class="o">=</span> <span class="s1">&#39;windows&#39;</span>
+<span class="sd">&quot;&quot;&quot; Constant used to identify OSes of the Windows family. &quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="is_linux"><a class="viewcode-back" href="../../api/platform.html#meta_package_manager.platform.is_linux">[docs]</a><span class="k">def</span> <span class="nf">is_linux</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Return `True` only if current platform is of the Linux family. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;linux&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_macos"><a class="viewcode-back" href="../../api/platform.html#meta_package_manager.platform.is_macos">[docs]</a><span class="k">def</span> <span class="nf">is_macos</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Return `True` only if current platform is of the macOS family. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s1">&#39;darwin&#39;</span></div>
+
+
+<div class="viewcode-block" id="is_windows"><a class="viewcode-back" href="../../api/platform.html#meta_package_manager.platform.is_windows">[docs]</a><span class="k">def</span> <span class="nf">is_windows</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Return `True` only if current platform is of the Windows family. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;win32&#39;</span><span class="p">,</span> <span class="s1">&#39;cygwin&#39;</span><span class="p">]</span></div>
+
+
+<span class="c1"># Map OS IDs to evaluation function and OS labels.</span>
+<span class="n">OS_DEFINITIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">MACOS</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;macOS&#39;</span><span class="p">,</span> <span class="n">is_macos</span><span class="p">),</span>
+    <span class="n">LINUX</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Linux&#39;</span><span class="p">,</span> <span class="n">is_linux</span><span class="p">),</span>
+    <span class="n">WINDOWS</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Windows&#39;</span><span class="p">,</span> <span class="n">is_windows</span><span class="p">)}</span>
+
+
+<div class="viewcode-block" id="current_os"><a class="viewcode-back" href="../../api/platform.html#meta_package_manager.platform.current_os">[docs]</a><span class="k">def</span> <span class="nf">current_os</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Return a 2-items `tuple` with ID and label of current OS. &quot;&quot;&quot;</span>
+    <span class="n">platform_id</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Raw platform ID: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">platform_id</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">os_id</span><span class="p">,</span> <span class="p">(</span><span class="n">os_label</span><span class="p">,</span> <span class="n">eval_func</span><span class="p">)</span> <span class="ow">in</span> <span class="n">OS_DEFINITIONS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">eval_func</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">os_id</span><span class="p">,</span> <span class="n">os_label</span>
+    <span class="k">raise</span> <span class="ne">SystemError</span><span class="p">(</span><span class="s2">&quot;Unrecognized </span><span class="si">{}</span><span class="s2"> platform.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">platform_id</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="os_label"><a class="viewcode-back" href="../../api/platform.html#meta_package_manager.platform.os_label">[docs]</a><span class="k">def</span> <span class="nf">os_label</span><span class="p">(</span><span class="n">os_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return platform label for user-friendly output. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">OS_DEFINITIONS</span><span class="p">[</span><span class="n">os_id</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      Last updated on 2017-01-28.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+    <div role="contentinfo">
+        <p>
+            &copy; Copyright 2016-2017, <a href='https://kevin.deldycke.com'>Kevin Deldycke</a> and <a href='https://github.com/kdeldycke/meta-package-manager/graphs/contributors'>contributors</a>.
+        </p>
+    </div>
+
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'2.4.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
