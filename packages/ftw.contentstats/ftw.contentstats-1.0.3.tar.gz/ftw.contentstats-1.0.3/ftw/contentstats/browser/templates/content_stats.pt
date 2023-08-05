@@ -1,0 +1,67 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="context/main_template/macros/master">
+
+    <metal:head fill-slot="head_slot"
+                tal:define="portal_url context/@@plone_portal_state/portal_url">
+        <link href="${portal_url}/++resource++ftw.contentstats/c3.min.css" rel="stylesheet" type="text/css" />
+        <link href="${portal_url}/++resource++ftw.contentstats/content-stats.css" rel="stylesheet" type="text/css" />
+        <script src="${portal_url}/++resource++ftw.contentstats/d3.v3.min.js" charset="utf-8"></script>
+        <script src="${portal_url}/++resource++ftw.contentstats/c3.min.js"></script>
+        <script src="${portal_url}/++resource++ftw.contentstats/content-stats.js"></script>
+    </metal:head>
+
+    <metal:block fill-slot="top_slot"
+                 tal:define="dummy python:request.set('disable_border',1)" />
+
+    <metal:title fill-slot="content-title">
+        <h1 class="documentFirstHeading">Content Stats</h1>
+    </metal:title>
+
+    <metal:content fill-slot="content-core">
+        <p>Content Stats for <strong tal:content="context/title" /></p>
+
+
+        <div class="statistic-wrapper"
+            tal:repeat="stat view/get_all_stats">
+
+            <tal:statistic tal:define="stat_name python: stat[0];
+                                       stat_title python: stat[1]['title'];
+                                       stat_data python: stat[1]['data'];
+                                       stat_data_url python: stat[1]['data_url'];">
+
+                <div tal:attributes="id string:content-stats-data-${stat_name};
+                                     data-stat-name stat_name;
+                                     data-stat-data-url stat_data_url"
+                     class="content-stats-infos">
+
+                    <h2 tal:content="stat_title" />
+
+                    <!-- HTML table for graceful degradation -->
+                    <table class="stats-table" tal:attributes="id string:content-stats-${stat_name}">
+                        <tr tal:repeat="stat_item python:sorted(stat_data.items())" tal:attributes="data-id python:stat_item[0]">
+                            <td><span class="legend-color"/></td>
+                            <td tal:content="python:stat_item[0]">Document</td>
+                            <td tal:content="python:stat_item[1]">27</td>
+                        </tr>
+                    </table>
+
+
+                    <!-- Pie Chart -->
+                    <div class="stats-pie-chart" tal:attributes="id string:pie-chart-${stat_name}"></div>
+
+                    <div style="clear:both"><!-- --></div>
+                    <br/><br/>
+
+                    <!-- Bar Chart -->
+                    <div class="stats-bar-chart" tal:attributes="id string:bar-chart-${stat_name}"></div>
+                    <hr />
+
+                </div>
+            </tal:statistic>
+        </div>
+    </metal:content>
+
+</html>
