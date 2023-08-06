@@ -1,0 +1,40 @@
+Django CMS Section Plugin
+=========================
+
+This is a Django CMS container plugin for creating content sections. Default
+templating relies on Bootstrap 3 and you need to write your own custom styles for
+this plugin to work properly.
+
+Available with pip https://pypi.python.org/pypi/cmsplugin-section-ai
+
+Features
+--------
+
+- Possibility for a title for each section
+- Select the background image or background color for the section:
+
+  - TRANSPARENT, CSS classname ``bg-color-transparent``
+  - LIGHT_GRAY, CSS classname ``bg-color-light-gray``
+  - PRIMARY, CSS classname ``bg-color-primary``
+  - SECONDARY, CSS classname ``bg-color-secondary``
+
+- Define the number of columns:
+
+  - Single column
+  - Two columns
+  - Three columns
+  - Four columns
+
+- Select if the content width should be 100% or "contained" (Bootstrap 3 ``.container-fluid`` or ``.container``)
+- Disable margins of the section
+- Add extra margin for the inner content
+- Select if the text should be centered
+- Possibility to add an html ``id`` value for each section to enable anchor linking
+- Possibility to add buttons with custom URLs and define the button styles:
+
+  - PRIMARY, CSS classname ``btn-primary``
+  - SECONDARY, CSS classname ``btn-secondary``
+  - WHITE, CSS classname ``btn-white``
+  - DARK, CSS classname ``btn-dark``
+
+
