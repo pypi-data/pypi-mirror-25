@@ -1,0 +1,47 @@
+{% load wagtailcore_tags wagtailimages_tags static core_tags tip_tags i18n %}
+{% block content %}
+{% get_your_tip as your_tip %}
+{% if article_tip and your_tip.get_number_of_tips %}
+<div class="yourtips">
+  <h1 class="heading heading--yourtips">
+    {% trans "Tip of the Day" %}
+  </h1>
+  <div class="yourtips-list">
+    <div class="yourtips-list__item">
+      <!--START -->
+      {% if settings.core.SiteSettings.enable_clickable_tags %}
+        {% if article_tip.tags_list|first %}
+        <div class="yourtips__label">
+          {% if article_tip.image %}
+            {% image article_tip.image width-20 jpegquality-70 as yourtips_article_icon %}
+            <img src="{{ yourtips_article_icon.url }}" class="yourtips__article-icon"/>
+          {% endif %}
+          {% for tag in article_tip.tags_list %}
+            {% if forloop.first %}
+              <a class="yourtips__article-anchor">{{tag}}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endif %}
+      <!--END -->
+      {% for block in article_tip.body %}
+        {% if block.block_type == 'paragraph' %}
+          <h3 class="yourtips__description yourtips__description-homepage">
+            {{ block.value }}
+          </h3>
+        {% elif block.block_type == 'heading' %}
+          <p class="yourtips__author">{{ block.value }}</p>
+        {% endif %}
+      {% endfor %}
+      <a href="{% url 'molo.yourtips:tip_entry' your_tip_page_slug %}" class="call-to-action__nav-item">
+        {% trans "Submit a tip" %}
+      </a>
+      <a href="{% url 'molo.yourtips:recent_tips' %}" class="call-to-action__nav-item">
+        {% trans "See more Tips" %}
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

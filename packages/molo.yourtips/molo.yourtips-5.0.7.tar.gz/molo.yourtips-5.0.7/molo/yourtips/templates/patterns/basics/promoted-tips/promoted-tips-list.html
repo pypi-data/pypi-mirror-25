@@ -1,0 +1,28 @@
+{% load wagtailcore_tags wagtailimages_tags core_tags wagtailsettings_tags tip_tags el_pagination_tags likes_inclusion_tags i18n %}
+{% get_settings %}
+<ul class="yourtips-list">
+  {% for each_article in articles %}
+  <li class="yourtips-list__item">
+    <p class="yourtips__posted-date">
+      Posted: {{ each_article.latest_revision_created_at }}</p>
+    {% include "patterns/basics/promoted-tips/yourtips-article-tag.html"  %}
+    {% for block in each_article.body %}
+      {% if block.block_type == 'paragraph' %}
+        <h3 class="yourtips__description">{{ block.value }}</h3>
+      {% elif block.block_type == 'heading' %}
+        <p class="yourtips__author">{{ block.value }}</p>
+      {% endif %}
+    {% endfor %}
+    <div class="yourtips__social-media">
+      {% likes each_article %}
+      {% include "patterns/basics/promoted-tips/social-media.html"  %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+<div class="call-to-action">
+  <a href="{% url 'molo.yourtips:tip_entry' your_tip_page_slug %}" class="call-to-action__nav-item">
+  {% trans "Submit a Tip" %}
+  </a>
+  {% show_more 'See more Tips' %}
+</div>
