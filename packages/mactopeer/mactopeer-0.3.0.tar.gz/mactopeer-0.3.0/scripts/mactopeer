@@ -1,0 +1,145 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2017 Pier Carlo Chiodi
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import logging
+import sys
+
+try:
+    import napalm_base
+except ImportError:
+    print("")
+    print("ERROR: can't load NAPALM library.")
+    print("")
+    print("Please install it by executing a full installation... ")
+    print("")
+    print("   pip install napalm")
+    print("")
+    print("... or a partial installation based on the subset of "
+          "drivers you really need:")
+    print("")
+    print("   pip install napalm-ios napalm-junos")
+    print("")
+    print("Details here: https://napalm.readthedocs.io/en/latest/installation/index.html")
+    print("")
+    sys.exit(1)
+
+from pierky.mactopeer import MACToPeer_JSON, MACToPeer_pmacct
+from pierky.mactopeer.cli import make_parser, build_devices, build_filters
+from pierky.mactopeer.errors import MACToPeerError
+
+logger = logging.getLogger("mac-to-peer")
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+def print_help_devices():
+    s = """
+The JSON file provided via the --devices argument must contain the list of
+devices which data will be fetched from.
+It must respect the following schema:
+[
+  {
+    "hostname": "IP address or hostname",
+    "vendor": "see below",
+    "username": "username",
+    "password": "password",
+    "arp_only": true|false,
+    "use_peeringdb": true|false,
+    "optional_args": {
+      "arg1_name": "arg1_value",
+      "arg2_name": "arg2_value",
+      ...
+    }
+    "pmacct_ip": "IP address
+  }, {
+    <same as above>
+  }
+]
+
+Only "hostname" and "vendor" are mandatory.
+
+- "hostname" is the IP address or hostname used to connect to the device.
+
+- "vendor" is the name of the driver used by NAPALM to identify the type of 
+device: it must be one of the values reported in the "Driver name" row of this
+table:
+http://napalm.readthedocs.io/en/latest/support/index.html
+
+- "username" and "password" are used to authenticating to the device. The
+password can be omitted and provided via CLI by running the program with the
+"--password -" argument.
+
+- "arp_only" (default: false), if set, prevents the program from fetching IPv6
+neighbors table from the devices.
+
+- "use_peeringdb" (default: false), if set to True, allows the program to
+fetch from PeeringDB ASNs of IP addresses that have not a straight BGP
+neighborship on the router, for example in case of multi-lateral peering via
+route servers at an IXP.
+
+- "optional_args" can be used to pass additional arguments to the NAPALM
+driver used to connect to the device. A list of available arguments can be
+found here:
+http://napalm.readthedocs.io/en/latest/support/index.html#optional-arguments
+
+- "pmacct_ip" (default: same as "hostname") is only used when the output
+format is set to "pmacct" ("--format pmacct" argument); its value is used to
+fill the "ip" field of pmacct's "bgp_peer_src_as_map" and it can be used to
+provide an IP address different from the one given in "hostname".
+"""
+    print(s)
+
+def main():
+    parser = make_parser()
+    args = parser.parse_args()
+
+    if args.help_devices:
+        print_help_devices()
+        return 0
+
+    if args.format == "json":
+        mac_to_peer_class = MACToPeer_JSON
+    elif args.format == "pmacct":
+        mac_to_peer_class = MACToPeer_pmacct
+    else:
+        raise NotImplementedError(
+            "Unknown format: {}".format(args.format)
+        )
+
+    try:
+        filters = build_filters(args)
+        devices = build_devices(args)
+        lib = mac_to_peer_class(
+            devices, filters, args.output_file,
+            threads=args.threads,
+            read_from_file=args.read_from_cache,
+            write_to_file=args.write_to_cache
+        )
+        lib.write_output()
+    except MACToPeerError as e:
+        print(str(e))
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("Aborted!")
+        sys.exit(1)
+
+    return 0
+
+main()
