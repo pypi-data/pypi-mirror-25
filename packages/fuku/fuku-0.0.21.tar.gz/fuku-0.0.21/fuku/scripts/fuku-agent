@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import argparse
+import subprocess
+from string import Template
+
+import filelock
+import docker
+
+root = '.'
+lock_fn = os.path.join(root, 'fuku.lock')
+db_fn = os.path.join(root, 'fuku.json')
+client = docker.from_env()
+
+
+def make_response(status='ok', result=None):
+    return json.dumps({
+        'status': status,
+        'result': result
+    })
+
+
+def error(msg):
+    print(make_response('failed', msg))
+    sys.exit(0)
+
+
+try:
+    app = os.environ['FUKU_APP']
+    bucket = os.environ['FUKU_BUCKET']
+    machine = os.environ['FUKU_MACHINE']
+    region = os.environ['FUKU_REGION']
+except KeyError:
+    error('machine is not setup correctly (missing environment)')
+
+
+def run(cmd, capture='json'):
+    output = subprocess.check_output(cmd, shell=True)
+    if capture == 'json':
+        return json.loads(output.decode())
+    return output
+
+
+def get_task(name):
+    full_name = '%s-%s' % (app, name)
+    data = run('aws --region %s ecs describe-task-definition --task-definition %s' % (region, full_name))
+    data = data['taskDefinition']
+    task = {
+        'family': full_name,
+        'containerDefinitions': []
+    }
+    for ctr_def in data['containerDefinitions']:
+        env = {}
+        for pair in ctr_def['environment']:
+            env[pair['name']] = pair['value']
+        ports = {}
+        for pair in ctr_def['portMappings']:
+            ports[pair['containerPort']] = pair['hostPort']
+        task['containerDefinitions'].append({
+            'name': ctr_def['name'],
+            'image': ctr_def['image'],
+            'environment': env,
+            'ports': ports,
+            'links': ctr_def.get('links', [])
+        })
+    return task
+
+
+# def get_tasks():
+#     tasks = run('aws --region %s ecs list-task-definition-families --query \'families\'' % region)
+#     tasks = [t for t in tasks if t.startswith(app + '-')]
+#     result = {}
+#     for task in tasks:
+#         name = task.split('-')[1]
+#         result[name] = get_task(name)
+#     return result
+
+
+def pull_image(image):
+    run('`aws --region {} ecr get-login`'.format(region), capture=None)
+    run('docker pull {}'.format(image), capture=None)
+
+
+def copy_from_s3():
+    run(
+        'aws s3 cp --quiet s3://{}/fuku/{}/machines/{}.json {}'.format(
+            bucket, app, machine, db_fn
+        ),
+        capture=None
+    )
+
+
+def copy_to_s3():
+    run(
+        'aws s3 cp --quiet {} s3://{}/fuku/{}/machines/{}.json'.format(
+            db_fn, bucket, app, machine
+        ),
+        capture=None
+    )
+
+
+def load_db():
+    copy_from_s3()
+    try:
+        with open(db_fn, 'r') as inf:
+            db = json.load(inf)
+    except FileNotFoundError:
+        db = {}
+    return db
+
+
+def save_db(db):
+    with open(db_fn, 'w') as outf:
+        json.dump(db, outf, indent=2)
+    copy_to_s3()
+
+
+# def update_container(ctr, task_name):
+#     task = get_task(task_name)
+#     for name in ('image', 'mem_limit', 'name'):
+#         if val in task:
+#         val = task.get(name, None)
+#         if val is not None:
+#             ctr[name] = val
+#     for name in ('ports', 'links', 'environment', 'volumes'):
+#         val = task.get(name, None)
+#         if val is not None:
+#             cur = ctr.get(name, {})
+#             ctr[name] = cur
+#             ctr[name].update(val)
+
+
+def params_from_task(task_name):
+    task = get_task(task_name)
+    params = {}
+    for ctr_def in task['containerDefinitions']:
+        ctr = {
+            'detach': True,
+            # 'remove': True,
+            'restart_policy': {
+                'Name': 'on-failure'
+            },
+            'networks': ['all']
+        }
+        ctr.update(ctr_def)
+        params[ctr['name']] = ctr
+    return params
+
+
+def get_running_containers():
+    objs = client.containers.list()
+    running = set([o.name for o in objs])
+    return running
+
+
+def container_is_running(name):
+    running = get_running_containers()
+    return name in running
+
+
+def create_network():
+    try:
+        client.networks.get('all')
+        return
+    except docker.errors.NotFound:
+        pass
+    client.networks.create('all', driver='bridge')
+
+
+def run_container(params, name=None, env={}):
+    create_network()
+
+    # Remove the container if it's currently there.
+    obj = None
+    if name:
+        try:
+            obj = client.containers.get(name)
+        except docker.errors.NotFound:
+            pass
+    if obj:
+        obj.remove(force=True)
+    pull_image(params['image'])
+
+    # The 'networks' option has no effect. I think the docker
+    # client may be a little borked. :/
+    # return client.containers.run(**ctr['params'])
+    cmd = 'docker run -d --restart=on-failure --network=all'
+    if name:
+        cmd += ' --name ' + name
+    for k, v in params.get('environment', {}).items():
+        cmd += ' -e "%s=%s"' % (k, Template(v).safe_substitute(env))
+    for k, v in params.get('ports', {}).items():
+        cmd += ' -p %s:%s' % (k, v)
+    cmd += ' ' + params['image']
+    data = run(cmd, capture='text')
+    data = data.decode()[:-1]
+    obj = client.containers.get(data)
+    return obj
+
+
+def run_task(task_family, task_name, restart=False):
+    tasks = db.setdefault('tasks', {})
+    task = tasks.setdefault(task_name, {})
+    ctrs = task.setdefault('containers', {})
+    all_params = params_from_task(task_family)
+    todo = list(all_params.keys())
+    done = {}
+    while len(todo):
+        ctr_name = todo.pop(0)
+        if ctr_name in done:
+            continue
+        params = all_params[ctr_name]
+
+        # Make sure dependencies are done.
+        will_run = False
+        ready = True
+        for link in params['links']:
+            if link not in done:
+                todo.insert(0, link)
+                ready = False
+            elif done[link] == 'restarted':
+                will_run = True
+        if not ready:
+            todo.append(ctr_name)
+            continue
+
+        name = ctrs.get(ctr_name, None)
+        if not will_run:
+            will_run = params['name'] not in ctrs or restart
+        if not will_run:
+            if not container_is_running(ctrs[params['name']]):
+                will_run = True
+        if will_run:
+            obj = run_container(params, name=name, env=ctrs)
+            task['family'] = task_family
+            ctrs[params['name']] = obj.name
+            done[ctr_name] = 'restarted'
+        else:
+            done[ctr_name] = 'done'
+
+
+def handle_run(db, args):
+    # tasks = db.setdefault('tasks', {})
+    # exists = does_task_exist(args.task)
+    # is_running = False if not exists else is_task_running(args.task)
+
+    # Run a new task.
+    if args.task and args.name:
+        # if (args.name and container_is_running(args.name)) and not args.restart:
+        #     error('container with that name already running')
+        # try:
+        #     task = tasks[name]
+        # except KeyError:
+        #     ctr = {
+        #         'family': args.task
+        #     }
+        run_task(args.task, args.name, args.restart)
+
+    # Run an existing task.
+    elif args.name:
+        try:
+            task = db['tasks'][args.name]
+        except KeyError:
+            error('no task by that name')
+        run_task(task['family'], args.name, args.restart)
+
+    # Run all tasks.
+    elif not args.task:
+        for task_name, task in db.get('tasks', {}).items():
+            run_task(task['family'], task_name, args.restart)
+
+    # # Run all existing containers.
+    # if not args.name and not args.task:
+    #     running = get_running_containers()
+    #     for name, ctr in ctrs.items():
+    #         if name in running and not args.restart:
+    #             continue
+    #         ctr['params'] = params_from_task(name, ctr['task'])
+    #         run_container(ctr)
+
+    # # Run existing container with name.
+    # elif name and not task:
+    #     if not container_is_running(name) or args.restart:
+    #         try:
+    #             ctr = ctrs[name]
+    #         except KeyError:
+    #             error('no such container')
+    #         ctr['params'] = params_from_task(name, ctr['task'])
+    #         run_container(ctr)
+    #         ctrs[name] = ctr
+
+    # # Run new container.
+    # else:
+    #     if (name and container_is_running(name)) and not args.restart:
+    #         error('container with that name already running')
+    #     try:
+    #         ctr = ctrs[name]
+    #     except KeyError:
+    #         ctr = {
+    #             'task': task
+    #         }
+    #     ctr['params'] = params_from_task(name, task)
+    #     obj = run_container(ctr, name=name)
+    #     name = obj.name
+    #     ctr['params']['name'] = name
+    #     ctrs[name] = ctr
+
+
+def handle_remove(db, args):
+    tasks = db.setdefault('tasks', {})
+    if args.name:
+        if args.name not in tasks:
+            error('unknown task')
+        to_remove = {
+            args.name: tasks[args.name]
+        }
+    else:
+        to_remove = tasks
+    for task_name, task in to_remove.items():
+        ctrs = task.setdefault('containers', {})
+        for ctr_name in ctrs.values():
+            try:
+                obj = client.containers.get(ctr_name)
+                obj.remove(force=True)
+            except docker.errors.NotFound:
+                pass
+        task['containers'] = {}
+    if args.definition:
+        for task_name in list(to_remove.keys()):
+            del tasks[task_name]
+
+
+def handle_list(db, args):
+    if args.running:
+        running = get_running_containers()
+    result = []
+    for task_name, task in db.get('tasks', {}).items():
+        if args.running:
+            for ctr_name, run_name in task.get('containers', {}).items():
+                if not args.running or run_name in running:
+                    result.append('%s:%s:%s:%s' % (task['family'], task_name, ctr_name, run_name))
+        else:
+            result.append('%s:%s' % (task['family'], task_name))
+    return make_response('ok', result)
+
+
+def handle_pull(db, args):
+    if args.image:
+        to_pull = [args.image]
+    else:
+        to_pull = [i.id for i in client.images.list()]
+    for img in to_pull:
+        pull_image(img)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    subp = parser.add_subparsers()
+
+    p = subp.add_parser('run')
+    p.add_argument('--task', '-t', help='task')
+    p.add_argument('--name', '-n', help='name')
+    p.add_argument('--restart', '-r', action='store_true')
+    p.set_defaults(handler=handle_run)
+
+    p = subp.add_parser('list')
+    p.add_argument('--running', '-r', action='store_true', help='only running')
+    p.set_defaults(handler=handle_list)
+
+    p = subp.add_parser('remove')
+    p.add_argument('name', nargs='?', help='name')
+    p.add_argument('--definition', '-d', action='store_true', help='remove definition')
+    p.set_defaults(handler=handle_remove)
+
+    p = subp.add_parser('pull')
+    p.add_argument('image', nargs='?', help='image')
+    p.set_defaults(handler=handle_pull)
+
+    args = parser.parse_args()
+    handler = args.handler
+
+    lock = filelock.FileLock(lock_fn)
+    with lock:
+        db = load_db()
+        response = handler(db, args)
+        save_db(db)
+    if not response:
+        response = make_response()
+    print(response)
