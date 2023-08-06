@@ -1,0 +1,13 @@
+DUMP_DIRECTORY = '/home/pi/store'
+OFFLINE_DUMP_DIRECTORY = '/Users/leonardolazzaro/store/offline'
+DOT11_NRO_SAVE_PACKETS = 50
+NRO_SAVE_PACKETS = 5000
+RESULTS_DIRECTORY = ''
+LOGGING_LEVEL='INFO'
+AP_RATES='\x0c\x12\x18\x24\x30\x48\x60\x6c'
+RSN='\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x01\x28\x00'
+DEFAULT_DNS = '8.8.8.8'
+LOG_FILENAME = 'wifi_tools.log'
+IW_COMMAND_PATH='/sbin/iw'
+IWCONFIG_COMMAND_PATH='/sbin/iwconfig'
+IWLIST_COMMAND_PATH='/sbin/iwlist'
