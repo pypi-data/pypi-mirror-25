@@ -1,0 +1,71 @@
+<html>
+  <head>
+    <title>Alexa Browser Client</title>
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js"></script>
+  </head>
+  <body>
+    <div id="status-label"></div>
+    <script type="text/javascript">
+
+      function sendAudio(event) {
+        var samples = event.inputBuffer.getChannelData(0);
+        socket.send(samples);
+      }
+
+      function playAudio(samples) {
+        var source = context.createBufferSource();
+        // `decodeAudioData` not work in IE. 
+        context.decodeAudioData(samples, function(audioDataBuffer) {
+          source.buffer = audioDataBuffer;
+          source.connect(context.destination);
+          source.start(0);
+        });
+      }
+
+      function handleGetUserMediaSuccess(stream) {
+        var audioInput = context.createMediaStreamSource(stream);
+        var recorder = context.createScriptProcessor(4096, 1, 1);
+        recorder.onaudioprocess = sendAudio;
+        audioInput.connect(recorder);
+        recorder.connect(context.destination);
+      }
+
+      function handleGetUserMediaFailure() {}
+
+      function handleWebsocketMessage(event) {
+        if (event.data instanceof ArrayBuffer) {
+          playAudio(event.data);
+        } else {
+          var message = JSON.parse(event.data);
+          if (message.type == 'EXPECTING_COMMAND') {
+            statusLabel.innerText = 'Listening...';
+          } else if (message.type == 'EXPECTING_WAKEWORD') {
+            statusLabel.innerText = 'Waiting for wakeword. Say "Alexa"';
+          } else if (message.type == 'CONNECTING') {
+            statusLabel.innerText = 'Connecting to Alexa';
+          }
+        }
+      }
+
+      function createWebsocket(){
+        socket = new WebSocket('{{ websocket_url }}') ;
+        socket.binaryType = 'arraybuffer';
+        socket.onmessage = handleWebsocketMessage;
+      }
+
+      function websocketReconnectionMangaer(){
+        socket.readyState == WebSocket.CLOSED && createWebsocket();
+      }
+
+      var context = new window.AudioContext();
+      var statusLabel = document.getElementById('status-label');
+      var socket;
+      createWebsocket();
+      setInterval(websocketReconnectionMangaer, 1000);
+      navigator.webkitGetUserMedia(
+        {audio:true}, handleGetUserMediaSuccess, handleGetUserMediaFailure
+      );
+
+    </script>
+  </body>
+</html>
