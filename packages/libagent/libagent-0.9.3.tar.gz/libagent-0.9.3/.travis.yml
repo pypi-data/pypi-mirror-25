@@ -1,0 +1,29 @@
+sudo: false
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+before_install:
+  - pip install -U pip wheel
+  - pip install -U setuptools
+  - pip install -U pylint coverage pep8 pydocstyle
+
+install:
+  - pip install -e .
+
+script:
+  - pep8 libagent
+  - pylint --reports=no --rcfile .pylintrc libagent
+  - pydocstyle libagent
+  - coverage run --source libagent/ -m py.test -v
+
+after_success:
+  - coverage report
+
