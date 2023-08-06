@@ -1,0 +1,56 @@
+{% load i18n %}
+
+<button type="button" class="btn btn-default"
+    ng-click="service.forms.sql.toggleDropdown('simbad')"
+    ng-class="{'active': service.forms.sql.dropdown == 'simbad'}">
+
+    {% trans 'Simbad' %} <span class="caret"></span>
+</button>
+
+<div class="daiquiri-query-dropdown" ng-show="service.forms.sql.dropdown == 'simbad'">
+    <div class="daiquiri-query-dropdown-head">
+        <div class="input-group">
+            <input type="text" class="form-control"
+                placeholder="{% trans 'Object name' %}"
+                ng-model="service.dropdowns.simbad.values.query"/>
+            <span class="input-group-btn">
+                <button class="btn btn-default" type="button" ng-click="service.dropdowns.simbad.query()">
+                    {% trans 'Search on SIMBAD' %}
+                </button>
+            </span>
+        </div>
+    </div>
+
+    <div class="daiquiri-query-dropdown-body">
+        <ul class="text-danger list-unstyled">
+            <li ng-repeat="error in service.dropdowns.simbad.errors">{$ error $}</li>
+        </ul>
+
+        <table class="table" ng-show="service.dropdowns.simbad.results.length">
+            <thead>
+                <th>{% trans 'Object' %}</th>
+                <th>{% trans 'Type' %}</th>
+                <th>{% trans 'Coordinates' %}</th>
+            </thead>
+            <tbody>
+                <tr ng-repeat="row in service.dropdowns.simbad.results">
+                    <td>{$ row.object $}</td>
+                    <td>{$ row.type $}</td>
+                    <td>
+                        <a href="" ng-click="service.forms.sql.pasteString(row.ra)"
+                            title="{% trans 'Paste RA to query field' %}">
+                            {$ row.ra $}
+                        </a>
+                        <a href="" ng-click="service.forms.sql.pasteString(row.de)"
+                            title="{% trans 'Paste DE to query field' %}">
+                            {$ row.de $}
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="help-block small">
+        {% trans 'A click will paste a coordinate into the query field.' %}
+    </p>
+</div>
