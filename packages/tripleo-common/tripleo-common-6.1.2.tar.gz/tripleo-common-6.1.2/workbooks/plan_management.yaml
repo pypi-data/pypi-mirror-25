@@ -1,0 +1,320 @@
+---
+version: '2.0'
+name: tripleo.plan_management.v1
+description: TripleO Overcloud Deployment Workflows v1
+
+workflows:
+
+  create_deployment_plan:
+    input:
+      - container
+      - queue_name: tripleo
+      - generate_passwords: true
+    tasks:
+      create_plan:
+        action: tripleo.plan.create container=<% $.container %>
+        on-success:
+          - ensure_passwords_exist: <% $.generate_passwords = true %>
+          - process_templates: <% $.generate_passwords != true %>
+        on-error: create_plan_set_status_failed
+
+      ensure_passwords_exist:
+        action: tripleo.parameters.generate_passwords container=<% $.container %>
+        on-success: process_templates
+        on-error: ensure_passwords_exist_set_status_failed
+
+      process_templates:
+        action: tripleo.templates.process container=<% $.container %>
+        on-success: set_status_success
+        on-error: process_templates_set_status_failed
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(create_plan).result %>
+
+      create_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_plan).result %>
+
+      ensure_passwords_exist_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(ensure_passwords_exist).result %>
+
+      process_templates_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(process_templates).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.create_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  update_deployment_plan:
+    input:
+      - container
+      - queue_name: tripleo
+      - generate_passwords: true
+    tasks:
+      create_swift_rings_backup_plan:
+        workflow: tripleo.swift_rings_backup.v1.create_swift_rings_backup_container_plan
+        on-success: update_plan
+        on-error: create_swift_rings_backup_plan_set_status_failed
+        input:
+          container: <% $.container %>
+          queue_name: <% $.queue_name %>
+          use_default_templates: true
+
+      update_plan:
+        action: tripleo.plan.update container=<% $.container %>
+        on-success:
+          - ensure_passwords_exist: <% $.generate_passwords = true %>
+          - process_templates: <% $.generate_passwords != true %>
+        on-error: update_plan_set_status_failed
+
+      process_templates:
+        action: tripleo.templates.process container=<% $.container %>
+        on-success: set_status_success
+        on-error: process_templates_set_status_failed
+
+      ensure_passwords_exist:
+        action: tripleo.parameters.generate_passwords container=<% $.container %>
+        on-success: process_templates
+        on-error: ensure_passwords_exist_set_status_failed
+
+      set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(update_plan).result %>
+
+      create_swift_rings_backup_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_swift_rings_backup_plan).result %>
+
+      update_plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(update_plan).result %>
+
+
+      process_templates_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(process_templates).result %>
+
+      ensure_passwords_exist_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(ensure_passwords_exist).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.update_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  create_default_deployment_plan:
+    input:
+      - container
+      - queue_name: tripleo
+      - generate_passwords: true
+    tasks:
+
+      verify_container_doesnt_exist:
+        action: swift.head_container container=<% $.container %>
+        on-success: notify_zaqar
+        on-error: verify_environment_doesnt_exist
+        publish:
+          status: FAILED
+          message: "Unable to create plan. The Swift container already exists"
+
+      verify_environment_doesnt_exist:
+        action: mistral.environments_get name=<% $.container %>
+        on-success: notify_zaqar
+        on-error: create_container
+        publish:
+          status: FAILED
+          message: "Unable to create plan. The Mistral environment already exists"
+
+      create_container:
+        action: tripleo.plan.create_container container=<% $.container %>
+        on-success: upload_to_container
+        on-error: container_set_status_failed
+
+      upload_to_container:
+        action: tripleo.templates.upload_default container=<% $.container %>
+        on-success: create_plan
+        on-error: upload_set_status_failed
+
+      create_plan:
+        action: tripleo.plan.create container=<% $.container %>
+        on-success:
+          - ensure_passwords_exist: <% $.generate_passwords = true %>
+          - plan_process_templates: <% $.generate_passwords != true %>
+        on-error: plan_set_status_failed
+
+      ensure_passwords_exist:
+        action: tripleo.parameters.generate_passwords container=<% $.container %>
+        on-success: plan_process_templates
+        on-error: ensure_passwords_exist_set_status_failed
+
+      plan_process_templates:
+        action: tripleo.templates.process container=<% $.container %>
+        on-success: plan_set_status_success
+        on-error: process_templates_set_status_failed
+
+      plan_set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(create_plan).result %>
+
+      plan_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_plan).result %>
+
+      ensure_passwords_exist_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(ensure_passwords_exist).result %>
+
+      process_templates_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(plan_process_templates).result %>
+
+      upload_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(upload_to_container).result %>
+
+      container_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(create_container).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.create_default_deployment_plan
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  get_passwords:
+    description: Retrieves passwords for a given plan
+    input:
+      - container
+      - queue_name: tripleo
+
+    tasks:
+
+      verify_container_exists:
+        action: swift.head_container container=<% $.container %>
+        on-success: verify_environment_exists
+        on-error: verify_container_set_status_failed
+
+      verify_environment_exists:
+        action: mistral.environments_get name=<% $.container %>
+        on-success: get_environement_passwords
+        on-error: verify_environment_set_status_failed
+
+      get_environement_passwords:
+        action: tripleo.parameters.get_passwords container=<% $.container %>
+        on-success: get_passwords_set_status_success
+        on-error: get_passwords_set_status_failed
+
+      get_passwords_set_status_success:
+        on-success: notify_zaqar
+        publish:
+          status: SUCCESS
+          message: <% task(get_environement_passwords).result %>
+
+      get_passwords_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(get_environement_passwords).result %>
+
+      verify_container_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(verify_container_exists).result %>
+
+      verify_environment_set_status_failed:
+        on-success: notify_zaqar
+        publish:
+          status: FAILED
+          message: <% task(verify_environment_exists).result %>
+
+      notify_zaqar:
+        action: zaqar.queue_post
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.plan_management.v1.get_passwords
+              payload:
+                status: <% $.status %>
+                message: <% $.message or '' %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
