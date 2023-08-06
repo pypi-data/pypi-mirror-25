@@ -1,0 +1,25 @@
+language: python
+sudo: false
+python:
+  - 2.7
+  - 3.6
+  - pypy
+  - pypy3
+script:
+  - sphinx-build -b doctest -d docs/_build/doctrees docs docs/_build/html
+  - coverage run -m zope.testrunner --test-path=src
+after_success:
+  - coveralls
+notifications:
+  email: dev-regression-tests@nextthought.com
+
+install:
+  - pip install -U pip
+  - pip install -U setuptools
+  - pip install -U coveralls coverage
+  - pip install -U -e ".[test,docs]"
+
+cache: pip
+
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
