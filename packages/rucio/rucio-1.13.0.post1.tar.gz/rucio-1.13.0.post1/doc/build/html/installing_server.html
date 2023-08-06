@@ -1,0 +1,224 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installing Rucio server &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Server Deployment Model" href="overview_Deployment.html" />
+    <link rel="prev" title="Installing ATLAS Rucio Clients" href="installing_atlas_clients.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="overview_Deployment.html" title="Server Deployment Model"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installing_atlas_clients.html" title="Installing ATLAS Rucio Clients"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installing-rucio-server">
+<h1>Installing Rucio server<a class="headerlink" href="#installing-rucio-server" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>Rucio server runs on Python 2.6, 2.7.</p>
+<p>Platforms: Rucio should run on any Unix-like platform.</p>
+</div>
+<div class="section" id="python-dependencies">
+<h2>Python Dependencies<a class="headerlink" href="#python-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Rucio server needs the following python modules:</p>
+<div class="highlight-default"><div class="highlight"><pre>
+<span class="c"># pip==9.0.1                # PyPA recommended tool for installing Python packages</span>
+<span class="n">SQLAlchemy</span><span class="o">==</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">11</span>          <span class="c"># db backend</span>
+<span class="n">alembic</span><span class="o">==</span><span class="mf">0.9</span><span class="o">.</span><span class="mi">2</span>              <span class="c"># Lightweight database migration tool for SQLAlchemy</span>
+<span class="n">Mako</span><span class="o">==</span><span class="mf">1.0</span><span class="o">.</span><span class="mi">6</span>                 <span class="c"># Templating language</span>
+<span class="n">python</span><span class="o">-</span><span class="n">editor</span><span class="o">==</span><span class="mf">1.0</span><span class="o">.</span><span class="mi">3</span>        <span class="c"># Programmatically open an editor, capture the result</span>
+<span class="n">flup</span><span class="o">==</span><span class="mf">1.0</span><span class="o">.</span><span class="mi">2</span>                 <span class="c"># Needed to deploy web.py in lighthttpd</span>
+</pre></div>
+</div>
+<p>All Dependencies are automatically installed with pip.</p>
+</div>
+<div class="section" id="install-via-puppet">
+<h2>Install via puppet<a class="headerlink" href="#install-via-puppet" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://puppetlabs.com/">puppet</a> is an open and widely configuration management and automation system, for managing the infrastructure.</p>
+<ol class="arabic">
+<li><p class="first">On the target node: start with a clean slate:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; rm -rf /opt/rucio
+</pre></div>
+</div>
+</li>
+<li><p class="first">On the puppet master: install with puppet</p>
+<p>do something like this in /etc/puppet/manifests/nodes.pp:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">node</span> <span class="s">&#39;&lt;hostname&gt;&#39;</span> <span class="n">inherits</span> <span class="n">basenode</span>
+<span class="p">{</span>
+  <span class="n">include</span> <span class="s">&#39;rucio::lighttpd&#39;</span>
+  <span class="n">include</span> <span class="s">&#39;rucio::server-dev&#39;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<blockquote>
+<div><p>then execute and wait:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; puppet kick &lt;hostname&gt;
+</pre></div>
+</div>
+</div></blockquote>
+<ol class="arabic" start="3">
+<li><p class="first">back to the target node: configure:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; cd /opt/rucio/etc
+$&gt; cp rucio.cfg.template rucio.cfg
+$&gt; cd web
+$&gt; cp lighttpd.conf.template lighttpd.conf
+</pre></div>
+</div>
+</li>
+<li><p class="first">startup lighttpd:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; cd /opt/rucio
+$&gt; bin/venv_lighttpd.sh
+</pre></div>
+</div>
+</li>
+<li><p class="first">test:</p>
+<div class="highlight-default"><div class="highlight"><pre>$&gt; curl -vvv -X GET -H &quot;Rucio-Account: ddmlab&quot; -H &quot;Rucio-Username: xxxxx&quot; -H &quot;Rucio-Password: xxxx&quot; https://localhost/auth/userpass
+</pre></div>
+</div>
+</li>
+</ol>
+<p>you should get back an HTTP OK with a X-Rucio-Auth-Token in the HTTP header</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Installing Rucio server</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#python-dependencies">Python Dependencies</a></li>
+<li><a class="reference internal" href="#install-via-puppet">Install via puppet</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installing_atlas_clients.html"
+                        title="previous chapter">Installing ATLAS Rucio Clients</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="overview_Deployment.html"
+                        title="next chapter">Server Deployment Model</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/installing_server.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="overview_Deployment.html" title="Server Deployment Model"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installing_atlas_clients.html" title="Installing ATLAS Rucio Clients"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
