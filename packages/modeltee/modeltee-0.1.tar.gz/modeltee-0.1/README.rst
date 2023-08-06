@@ -1,0 +1,61 @@
+*Modeltee* is a tool to automate software releases.
+
+I find that release time often involves several manual steps:
+remember to update the version number in several places, commit, make a clean
+build, upload, make and push a git tag...
+
+Why a new tool? I could automate all that with a shell script. Modeltee lets you:
+
+- Define a reusable release procedure and subclass that for different projects.
+- Automatically check for required tools before starting a release.
+- Share components which can add checks and information.
+
+You define a release process as a subclass of ``modeltee.ReleaserBase``. There
+are five steps you can control.
+
+1. Automated checks (``check_prereqs``): check that e.g. ``git`` is installed.
+   The base method runs checks from components you're using. If you
+   override it, it's recommended to call it using ``super()``.
+2. Manual confirmation (``user_confirm``): present information to the user,
+   and give them an opportunity to cancel. The base method presents information
+   provided by components you're using.
+3. Steps before release (``before_release``): you might want to set the version
+   number, make a clean build, give the tests a final run...
+4. The release itself (``do_release``): upload and tag the release.
+   This is the one step you *must* define.
+5. Steps after release (``after_release``): e.g. set the version number to
+   x+1.dev.
+
+A simple releaser for a Python package might look like this:
+
+.. code-block:: python
+
+    from modeltee import ReleaserBase, Command, Bumpversion, Git
+    import sys
+
+    class Releaser(ReleaserBase):
+        # These are components: they define checks to run before starting and
+        # info to present, as well as providing shortcuts to use below.
+        git = Git()
+        twine = Command('twine')
+        python = Command(sys.executable)
+        bumpversion = Bumpversion()
+
+        def before_release(self):
+            self.bumpversion('--new-version', self.version, 'minor')
+            self.python('setup.py', 'sdist')
+            self.git('commit', '-am', 'version number -> {}'.format(self.version))
+            self.git('push')
+
+        def do_release(self):
+            self.twine('upload', 'foo-{}.tar.gz'.format(self.version))
+            self.git('tag', str(self.version))
+            self.git('push', '--tags')
+
+    if __name__ == '__main__':
+        Releaser.main()
+
+
+And you'd run it like this::
+
+    ./release.py 1.3
