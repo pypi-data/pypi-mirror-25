@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+
+from scrapy import Item, Field
+from scrapy.loader.processors import *
+
+{% for item in items %}
+class {{ item.name }}(Item):
+    {% for attr, definition in item.attrs.items() -%}
+    {% if definition.value -%}
+    {{ attr }} = '{{ definition.value }}'
+    {% else -%}
+    {{ attr }} = Field({%- if definition.inProcessor -%}input_processor={{ definition.inProcessor }}, {% endif -%}{%- if definition.outProcessor -%}output_processor={{ definition.outProcessor }}{%- endif -%})
+    {% endif -%}
+    {%- endfor -%}
+{% endfor %}
