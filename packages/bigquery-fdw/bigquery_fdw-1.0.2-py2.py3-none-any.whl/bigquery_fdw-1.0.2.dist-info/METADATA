@@ -1,0 +1,218 @@
+Metadata-Version: 2.0
+Name: bigquery-fdw
+Version: 1.0.2
+Summary: BigQuery Foreign Data Wrapper for PostgreSQL
+Home-page: https://github.com/gabfl/bigquery_fdw
+Author: Gabriel Bordeaux
+Author-email: pypi@gab.lc
+License: MIT
+Platform: UNKNOWN
+Classifier: Topic :: Database
+Classifier: Topic :: Database :: Database Engines/Servers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python
+Classifier: Development Status :: 4 - Beta
+Requires-Dist: argparse
+Requires-Dist: google-cloud-bigquery
+
+bigquery\_fdw: BigQuery Foreign Data Wrapper for PostgreSQL
+===========================================================
+
+bigquery\_fdw is a BigQuery foreign data wrapper for PostgreSQL using
+`Multicorn <https://github.com/Kozea/Multicorn>`__.
+
+It allows to write queries in PostgreSQL SQL syntax using a foreign
+table. It supports most of BigQuery's `data
+types <docs/data_types.md>`__ and `operators <docs/operators.md>`__.
+
+Features and limitations
+------------------------
+
+-  Table partitioning is supported. You can use partitions in your SQL
+   queries.
+-  Queries are parameterized when sent to BigQuery
+-  BigQuery's standard SQL support (legacy SQL is not supported)
+-  Authentication works with a "Service Account" Json private key
+
+Requirements
+------------
+
+-  PostgreSQL >= 9.5
+-  Python 3
+
+Dependencies
+------------
+
+Dependencies required to install bigquery\_fdw:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  ``postgresql-server-dev-X.Y``
+-  ``python3-pip``
+-  ``python3-dev``
+-  ``make``
+-  ``gcc``
+
+Major dependencies installed automatically during the installation process:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  `Google Cloud
+   BigQuery <https://pypi.org/project/google-cloud-bigquery/>`__
+-  `Multicorn <https://github.com/Kozea/Multicorn>`__
+
+Installation
+------------
+
+::
+
+    # Install `setuptools` if necessary
+    pip3 install --upgrade setuptools
+
+    # Install Multicorn
+    git clone git://github.com/Kozea/Multicorn.git
+    export PYTHON_OVERRIDE=python3
+    make && make install
+
+    # Install bigquery_fdw
+    pip3 install bigquery-fdw
+
+Usage
+-----
+
+We recommend testing the `BigQuery client
+connectivity <docs/test_client.md>`__ before trying to use the FDW.
+
+With ``psql``:
+
+.. code:: sql
+
+    CREATE EXTENSION multicorn;
+
+    CREATE SERVER bigquery_srv FOREIGN DATA WRAPPER multicorn
+    OPTIONS (
+        wrapper 'bigquery_fdw.fdw.ConstantForeignDataWrapper'
+    );
+
+    CREATE FOREIGN TABLE my_bigquery_table (
+        column1 text,
+        column2 bigint
+    ) SERVER bigquery_srv
+    OPTIONS (
+        fdw_dataset  'my_dataset',
+        fdw_table 'my_table',
+        fdw_key '/opt/bigquery_fdw/user.json'
+    );
+
+Options
+-------
+
+List of options implemented in ``CREATE FOREIGN TABLE`` syntax:
+
++--------+-------+-------+
+| Option | Defau | Descr |
+|        | lt    | iptio |
+|        |       | n     |
++========+=======+=======+
+| ``fdw_ | -     | BigQu |
+| datase |       | ery   |
+| t``    |       | datas |
+|        |       | et    |
+|        |       | name  |
++--------+-------+-------+
+| ``fdw_ | -     | BigQu |
+| table` |       | ery   |
+| `      |       | table |
+|        |       | name  |
++--------+-------+-------+
+| ``fdw_ | -     | Path  |
+| key``  |       | to    |
+|        |       | priva |
+|        |       | te    |
+|        |       | Json  |
+|        |       | key   |
+|        |       | (See  |
+|        |       | `Key  |
+|        |       | stora |
+|        |       | ge    |
+|        |       | recom |
+|        |       | menda |
+|        |       | tions |
+|        |       |  <doc |
+|        |       | s/key |
+|        |       | _stor |
+|        |       | age.m |
+|        |       | d>`__ |
+|        |       | )     |
++--------+-------+-------+
+| ``fdw_ | ``'fa | Set   |
+| verbos | lse'` | to    |
+| e``    | `     | ``'tr |
+|        |       | ue'`` |
+|        |       | to    |
+|        |       | outpu |
+|        |       | t     |
+|        |       | debug |
+|        |       | infor |
+|        |       | matio |
+|        |       | n     |
+|        |       | in    |
+|        |       | Postr |
+|        |       | geSQL |
+|        |       | 's    |
+|        |       | logs  |
++--------+-------+-------+
+| ``fdw_ | ``'st | BigQu |
+| sql_di | andar | ery   |
+| alect` | d'``  | SQL   |
+| `      |       | diale |
+|        |       | ct.   |
+|        |       | Curre |
+|        |       | ntly  |
+|        |       | only  |
+|        |       | ``sta |
+|        |       | ndard |
+|        |       | ``    |
+|        |       | is    |
+|        |       | suppo |
+|        |       | rted. |
++--------+-------+-------+
+
+Table partitioning
+------------------
+
+BigQuery **table partitioning is supported**. When partitioning a table,
+BigQuery creates a pseudo column called ``_PARTITIONTIME``.
+
+To use partitions, you need to add a column ``partition_date`` with the
+type ``date`` in the foreign table definition, for example:
+
+.. code:: sql
+
+    CREATE FOREIGN TABLE my_bigquery_table (
+        column1 text,
+        column2 bigint,
+        partition_date date -- <-- partition!
+    ) SERVER bigquery_srv
+    OPTIONS (
+        fdw_dataset  'my_dataset',
+        fdw_table 'my_table',
+        fdw_key '/opt/bigquery_fdw/user.json'
+    );
+
+You can then use the partition in the ``WHERE`` clause:
+
+.. code:: sql
+
+    SELECT column1, column2
+    FROM my_bigquery_table
+    WHERE column1 = 'abc' AND partition_date = '2017-12-01'
+
+More documentation
+------------------
+
+See `/docs </docs>`__.
+
+
