@@ -1,0 +1,302 @@
+#!/usr/bin/env python
+"""HighlyProbable-cli.
+Command line interface for the HighlyProbable Custom MicroService Architecture.
+
+Usage:
+  hpcli
+  hpcli login
+  hpcli create-project [<project-name>] [<template-type>]
+  hpcli config-project (<project-name>)
+  hpcli update-project add-ipython-templates (<project-name>)
+  hpcli run [<project-name>]
+  hpcli remote deploy [<project-name>]
+  hpcli remote upload [<project-name>]
+  hpcli remote create [<project-name>]
+  hpcli remote start [<project-name>]
+  hpcli remote stop [<project-name>]
+  hpcli remote ping [<project-name>]
+
+Expanded:
+  hpcli login                           login using your HighlyProbable account.
+  hpcli create-project                  make a project.
+  hpcli run [<project-name>]            locally run a project called <project-name>
+  hpcli remote deploy [<project-name>]  deploy your microservice (calls upload, create, start, ping)
+  hpcli remote upload [<project-name>]  upload your project to the HighlyProbable services, nothing else.
+  hpcli remote create [<project-name>]  register your microservice on highlyprobable.com and on the compute cluster
+  hpcli remote start [<project-name>]   start executing your microservice in the HighlyProbable compute cluster
+  hpcli remote stop [<project-name>]    stop executing your microservice in the HighlyProbable compute cluster
+  hpcli remote ping [<project-name>]    ping your microservice
+
+
+Options:
+  -h --help     Show this screen.
+  --use-remote=<use-remote>  Use a remote url for the code source eg: s3://foo.bar.baz [default: None]
+"""
+from docopt import docopt
+from hpcli.hpclilib.common import (DOCKER_REPO_URLS, big_print,
+                                   get_project_root,
+                                   add_to_microservice_defn_file)
+from hpcli.hpclilib.docker import Docker
+from hpcli.hpclilib.templates import copy_template
+from hpcli.hpclilib.login import (load_credentials, interactive_login,
+                                  is_logged_in)
+from hpcli.hpclilib.upload import MicroServiceUploader
+from hpcli.hpclilib.ipython_generate import IPythonGenerate
+from hpcli.sdk.microservice_defn import MicroServiceDefinition
+from hpcli.sdk.microservice_manager import MicroServiceManager
+from hpcli.sdk.base import API, MS_URL_ROOT
+from requests.compat import urljoin
+import time
+import os
+
+
+def panic(reason):
+    print('\033[91m' + reason + '\033[0m')
+    exit(1)
+
+
+def warn(reason, hint=""):
+    print('\033[93m' + reason + '\033[0m')
+    if hint:
+        warn(hint, "")
+
+
+def user_input_choices(input_str, choices):
+    try:
+        while True:
+            print(input_str)
+            for number, choice in enumerate(choices):
+                print("%i) %s" % (number, choice))
+            user_input = input('> ')
+            try:
+                user_input_int = int(user_input)
+                assert(user_input_int in range(len(choices)))
+                return choices[user_input_int]
+            except:
+                warn('Invalid Selection, Please try again')
+    except KeyboardInterrupt:
+        panic('')
+
+
+def user_input_loop(input_str, failure_reason, transform_fn, choices=None):
+    try:
+        while True:
+            user_input = input(input_str)
+            try:
+                transform_fn(user_input)
+                break
+            except:
+                warn(failure_reason)
+        return transform_fn(user_input)
+    except KeyboardInterrupt:
+        panic('')
+
+
+def validate_project_name(project_name):
+    assert(project_name != '')
+    for x in ['%', ':', '/', '#', '@', '!', '&', '*', ' ']:
+        assert(x not in project_name)
+    return project_name
+
+
+def print_templates():
+    counter = 0
+    choices = []
+    for project_type in DOCKER_REPO_URLS:
+        choices.append(project_type)
+        print('%i) %s' % (counter, project_type))
+    return choices
+
+
+def pretty_add_ipython_templates(arguments, config):
+    i = IPythonGenerate(arguments, config)
+    big_print('Copying IPython Templates...')
+    i.write_all()
+
+
+def create_project(arguments, config):
+    if not Docker.docker_is_running(''):
+        panic('Docker must be running to create a project. Please check if docker is running, or you can download docker from here: https://www.docker.com/get-docker')
+
+    if '<template-type>' not in arguments or not arguments['<template-type>']:
+        # choices = print_templates()
+        arguments['<template-type>'] = "python3-generic"
+        # print('To make a Microservice, please choose a template below (0,1,2..):')
+        # arguments['<template-type>'] = user_input_loop(
+        #     '> ', 'Invalid selection, please try again',
+        #     lambda x: choices[int(x)]
+        # )
+    aux_details = {}
+    if '<project-name>' not in arguments or not arguments['<project-name>']:
+        arguments['<project-name>'] = user_input_loop('Lets give that project a name:\n> ',
+                                                      'Project names cannot special characters',
+                                                      validate_project_name)
+    if 'friendly_name' not in arguments:
+        aux_details['friendly_name'] = user_input_loop(
+            'What should we call the project on highlyprobable.com?\n> ',
+            'Website project names should not be empty, longer than 100 character:',
+            lambda x: x if x and len(x) <= 100 else False
+        )
+    if 'category' not in arguments:
+        aux_details['category'] = user_input_choices(
+            'Please choose a category for your project\n>',
+            ['TRIAL::JustTesting', 'NLP::Classifier', 'IMG::Classifier', 'OTHER']
+        )
+
+    if 'description' not in arguments:
+        aux_details['description'] = user_input_loop(
+            'Now all we need is a quick description\n> ',
+            '',
+            lambda x: x if x else ''
+        )
+
+    project_type = arguments['<template-type>']
+
+    if project_type not in DOCKER_REPO_URLS:
+        print('Specified template %s does not exist!' % (project_type))
+        print('Available project templates:')
+        for project_type in DOCKER_REPO_URLS:
+            print('- ' + project_type)
+        return
+    config = load_credentials(
+        get_project_root(arguments), arguments['<project-name>'])
+    config = {**config, **aux_details}
+    Docker(arguments, config).download_image()
+    config['microservice-name'] = arguments['<project-name>']
+    copy_template(arguments, config)
+    pretty_add_ipython_templates(arguments, config)
+    MicroServiceDefinition(arguments, config).write_to_file()
+    big_print('All done! Try it out with `hpcli run %s`' %
+              (arguments['<project-name>']))
+
+
+def run_project(arguments, config):
+    Docker(arguments, config).run()
+
+
+def pretty_create_microservice(arguments, config):
+    m = MicroServiceManager(arguments, config)
+    big_print('Creating Microservice...')
+    res = m.create_microservice()
+    if not res['drf']:
+        return
+    if 'slug_name' not in res['drf']:
+        panic('Unable to authenticate your call. Please login and try again.')
+    to_add = {
+        'backend-slug-name': res['drf']['slug_name'],
+        'backend-url': res['drf']['url'],
+    }
+    add_to_microservice_defn_file(arguments['<project-name>'], to_add)
+
+
+def pretty_ping_service(url, config):
+    if not url and ('id' in config and 'microservice-name' in config):
+        url = urljoin(MS_URL_ROOT, config['id'][0:6]) + '/'
+        url = urljoin(url, config['microservice-name'])
+    elif not url:
+        panic('Cannot find a suitable url, did you start the project?')
+
+    api = API('', config=config, full_url_override=url)
+    attempts = 1
+    print('Checking if service is up (attempt %s)' % (str(attempts)))
+    try:
+        while True:
+            a = api.get({})
+            if a == "200 OK":
+                print("200 OK")
+                break
+            attempts += 1
+            time.sleep(6)
+            print('Checking if service is up (attempt %s)' % (str(attempts)))
+    except KeyboardInterrupt:
+        panic('')
+    big_print(
+        'Your microservice is active! You can access your microservice at %s' %
+        (url))
+
+
+def pretty_start_microservice(arguments, config):
+    m = MicroServiceManager(arguments, config)
+    big_print('Adding Microservice to Cluster...')
+    a = m.start_microservice()
+    url = None
+    if 'path' in a and a['message'] == 'success':
+        url = a['path']
+    big_print('Microservice boot in progress (2 min) (Safe to CTRL+C)...')
+    print('Waiting for service boot (30s)...')
+    time.sleep(30)
+    pretty_ping_service(url, config)
+
+
+def pretty_stop_microservice(arguments, config):
+    m = MicroServiceManager(arguments, config)
+    big_print('Removing the Microservice from the Cluster...')
+    m.stop_microservice()
+
+
+def pretty_upload_microservice(arguments, config):
+    m = MicroServiceUploader(arguments, config)
+    big_print('Uploading Microservice...')
+    print(m.upload())
+    print(m.upload_docs())
+
+def main():
+    arguments = docopt(__doc__, help=True, version='HighlyProbable-cli v0.9')
+    if not any(arguments.values()):
+        print(__doc__)
+        exit(0)
+    try:
+        if arguments['login']:
+            if interactive_login():
+                print('You have successfully logged in!')
+            else:
+                panic('There was an error logging you in. Please try again.')
+            exit(0)
+
+        if not is_logged_in():
+            warn('You must be logged in to use hpcli.',
+                 hint='Hint: you can login with `hpcli login`')
+
+        if arguments['create-project']:
+            create_project(arguments, {})
+
+        config = load_credentials(
+            get_project_root(arguments), arguments['<project-name>'])
+
+        if arguments['add-ipython-templates']:
+            pretty_add_ipython_templates(arguments, config)
+            print('='* 80)
+            exit(0)
+
+        if arguments['run']:
+            run_project(arguments, config)
+
+        if arguments['remote']:
+            if arguments['deploy']:
+                pretty_create_microservice(arguments, config)
+                pretty_upload_microservice(arguments, config)
+                pretty_start_microservice(arguments, config)
+
+            if arguments['create']:
+                pretty_create_microservice(arguments, config)
+
+            if arguments['start']:
+                pretty_start_microservice(arguments, config)
+
+            if arguments['stop']:
+                pretty_stop_microservice(arguments, config)
+
+            if arguments['upload']:
+                pretty_upload_microservice(arguments, config)
+
+            if arguments['ping']:
+                pretty_ping_service(None, config)
+
+            print('=' * 80)
+    except Exception as e:
+        if 'DEV' in os.environ:
+            raise e
+        panic(str(e))
+
+if __name__ == '__main__':
+    main()
