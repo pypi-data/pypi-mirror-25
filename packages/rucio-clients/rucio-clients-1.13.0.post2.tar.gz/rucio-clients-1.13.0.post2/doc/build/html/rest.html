@@ -1,0 +1,389 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>General notes &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="REST API Examples Using Curl" href="api_curl_examples.html" />
+    <link rel="prev" title="ATLAS Rucio Integration Test-bed" href="atlas_integration_testbed.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api_curl_examples.html" title="REST API Examples Using Curl"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="atlas_integration_testbed.html" title="ATLAS Rucio Integration Test-bed"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="general-notes">
+<h1>General notes<a class="headerlink" href="#general-notes" title="Permalink to this headline">¶</a></h1>
+<p>Each resource can be accessed or modified using specially formed URLs and the standard HTTP methods:</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET to read</li>
+<li>POST to create</li>
+<li>PUT to update</li>
+<li>DELETE to remove</li>
+</ul>
+</div></blockquote>
+<p>We require that all requests are done over SSL. The API supports JSON formats. Rucio uses <a class="reference external" href="http://oauth.net/">OAuth</a>
+to authenticate all API requests. The method is to get an authentication token, and use it for the rest of
+the requests. Descriptions of the actions you may perform on each resource can be found below.</p>
+<p><strong>Date format</strong></p>
+<p>All dates returned are in UTC and are strings in the following format (RFC 1123, ex RFC 822):</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Mon</span><span class="p">,</span> <span class="mi">13</span> <span class="n">May</span> <span class="mi">2013</span> <span class="mi">10</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">03</span> <span class="n">UTC</span>
+</pre></div>
+</div>
+<p>In code format, which can be used in all programming languages that support strftime or strptime:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="s">&#39;%a, %d %b %Y %H:%M:%S UTC&#39;</span>
+</pre></div>
+</div>
+<p><strong>SSL only</strong></p>
+<p>We require that all requests(except for the ping) are done over SSL.</p>
+<p><strong>Response formats</strong></p>
+<p>The currently-available response format for all REST endpoints is the string-based format JavaScript Object Notation(<a class="reference external" href="http://www.json.org/">JSON</a>).
+The server answer can be one of the following content-type in the http Header:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">Content</span><span class="o">-</span><span class="nb">type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">json</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">x</span><span class="o">-</span><span class="n">json</span><span class="o">-</span><span class="n">stream</span>
+</pre></div>
+</div>
+<p>In the last case, it corresponds to JSON objects delimited by newlines(streaming JSON for large answer), e.g.:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="p">{</span> <span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;foo&quot;</span><span class="p">:</span> <span class="s">&quot;bar&quot;</span> <span class="p">}</span>
+<span class="p">{</span> <span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;foo&quot;</span><span class="p">:</span> <span class="s">&quot;baz&quot;</span> <span class="p">}</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p><strong>Error handling</strong></p>
+<p>Errors are returned using standard HTTP error code syntax.
+Any additional info is included in the header of the return call, JSON-formatted with the parameters:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">ExceptionClass</span>
+<span class="n">ExceptionMessage</span>
+</pre></div>
+</div>
+<p>Where ExceptionClass refers to <a class="reference internal" href="exception.html#exceptions"><span class="std std-ref">Rucio Exceptions</span></a>.</p>
+<div class="section" id="service">
+<h2>Service<a class="headerlink" href="#service" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-rucio.web.rest.ping"><span id="id1"></span></span><p>Copyright European Organization for Nuclear Research (CERN)</p>
+<p>Licensed under the Apache License, Version 2.0 (the “License”);
+You may not use this file except in compliance with the License.
+You may obtain a copy of the License at <a class="reference external" href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></p>
+<p>Authors:
+- Vincent Garonne, &lt;<a class="reference external" href="mailto:vincent&#46;garonne&#37;&#52;&#48;cern&#46;ch">vincent<span>&#46;</span>garonne<span>&#64;</span>cern<span>&#46;</span>ch</a>&gt;, 2012-2017
+- Thomas Beermann, &lt;<a class="reference external" href="mailto:thomas&#46;beermann&#37;&#52;&#48;cern&#46;ch">thomas<span>&#46;</span>beermann<span>&#64;</span>cern<span>&#46;</span>ch</a>&gt;, 2012
+- Mario Lassnig, &lt;<a class="reference external" href="mailto:mario&#46;lassnig&#37;&#52;&#48;cern&#46;ch">mario<span>&#46;</span>lassnig<span>&#64;</span>cern<span>&#46;</span>ch</a>&gt;, 2014</p>
+<dl class="class">
+<dt id="rucio.web.rest.ping.Ping">
+<em class="property">class </em><code class="descclassname">rucio.web.rest.ping.</code><code class="descname">Ping</code><a class="reference internal" href="_modules/rucio/web/rest/ping.html#Ping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#rucio.web.rest.ping.Ping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">rucio.web.rest.common.RucioController</span></code></p>
+<p>Ping class</p>
+<dl class="method">
+<dt id="rucio.web.rest.ping.Ping.GET">
+<code class="descname">GET</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/rucio/web/rest/ping.html#Ping.GET"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#rucio.web.rest.ping.Ping.GET" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="get">
+<dt id="get--ping">
+<code class="descname">GET </code><code class="descname">/ping</code><a class="headerlink" href="#get--ping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get server version information.</p>
+<p><strong>Example request</strong>:</p>
+<div class="highlight-http"><div class="highlight"><pre><span class="nf">GET</span> <span class="nn">/ping</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Host</span><span class="o">:</span> <span class="l">rucio-server.com</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<p><strong>Example response</strong>:</p>
+<div class="highlight-http"><div class="highlight"><pre> HTTP/1.1 200 OK
+ Vary: Accept
+ Content-Type: application/json
+
+{
+  &quot;version&quot;: &quot;0.2.9&quot;
+ }
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – no error</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – InternalError</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+<ul class="simple">
+<li><a class="reference internal" href="api_curl_examples.html#get-ping"><span class="std std-ref">GET /PING</span></a>: Discover server version information<ul>
+<li>Command: <span class="xref std std-ref">rucio ping</span>, method: <span class="xref std std-ref">ping</span></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="authentication">
+<h2>Authentication<a class="headerlink" href="#authentication" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="api_curl_examples.html#get-auth-userpass"><span class="std std-ref">GET /auth/userpass</span></a>: Retrieve an auth token with an username and password</li>
+<li><a class="reference internal" href="api_curl_examples.html#get-auth-x509"><span class="std std-ref">GET /auth/x509</span></a>: Retrieve an auth token with a x509 certificate</li>
+<li><a class="reference internal" href="api_curl_examples.html#get-auth-x509-proxy"><span class="std std-ref">GET /auth/x509_proxy</span></a>: Retrieve an auth token with a Globus proxy</li>
+<li><a class="reference internal" href="api_curl_examples.html#get-auth-gss"><span class="std std-ref">GET /auth/gss</span></a>: Retrieve an auth token with a gss token</li>
+<li><a class="reference internal" href="api_curl_examples.html#get-auth-validate"><span class="std std-ref">GET /auth/validate</span></a>: Retrieve an auth token with a gss token</li>
+<li><span class="xref std std-ref">DELETE /auth/{token}</span>: Revoke a token</li>
+</ul>
+</div>
+<div class="section" id="rucio-account">
+<h2>Rucio account<a class="headerlink" href="#rucio-account" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">POST /accounts/{account_name}</span>: Create account<ul>
+<li>Command: <span class="xref std std-ref">rucio-admin account add</span>, method: <span class="xref std std-ref">add_account</span></li>
+</ul>
+</li>
+<li><span class="xref std std-ref">GET /accounts/{account_name}</span>: Get account information</li>
+<li><span class="xref std std-ref">PUT /accounts/{account_name}</span>: Update account information</li>
+<li><span class="xref std std-ref">GET /accounts/{account_name}/usage</span>: Get account usage information</li>
+<li><span class="xref std std-ref">GET /accounts/{account_name}/limits</span>: Get limits</li>
+<li><span class="xref std std-ref">PUT /accounts/{account_name}/limits</span>: Set limits for a account and a value</li>
+<li><span class="xref std std-ref">GET /accounts/{account_name}/rules</span>: Get all rules of the account</li>
+<li><span class="xref std std-ref">GET /accounts/whoami</span>: Get information about account whose token is used</li>
+<li><span class="xref std std-ref">GET /accounts/</span>:  List available accounts</li>
+<li><span class="xref std std-ref">DELETE /accounts/{account_name}</span>: Disable account name</li>
+</ul>
+</div>
+<div class="section" id="rse-rucio-storage-element">
+<h2>RSE (Rucio Storage Element)<a class="headerlink" href="#rse-rucio-storage-element" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">POST /rses/(rse_name)</span>: Create a RSE
+- Command: <span class="xref std std-ref">rucio-admin rse add</span>
+- Method: <span class="xref std std-ref">add_rse</span></li>
+<li><span class="xref std std-ref">GET /rses/{rse_name}</span>: Get RSE information</li>
+<li><span class="xref std std-ref">GET /rses/</span>: List available RSEs</li>
+<li><span class="xref std std-ref">DELETE /rses/{rse_name}</span>: Disable a RSE</li>
+<li><span class="xref std std-ref">GET /rses/{rse_name}/usage</span>: Get RSE usage information</li>
+<li><span class="xref std std-ref">GET /rses/{rse_name}/usage/history</span>: Get RSE usage information history</li>
+</ul>
+</div>
+<div class="section" id="rse-attributes">
+<h2>RSE  attributes<a class="headerlink" href="#rse-attributes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">GET /rses/{rse_name}/attr/</span>: List all keys of the RSE with their respective values</li>
+<li><span class="xref std std-ref">GET /rses/{rse_name}/attr/{key}</span>: Get the value of the RSE attribute/key</li>
+<li><span class="xref std std-ref">POST /rses/{rse_name}/attr/{key}</span>: Create an RSE key</li>
+<li><span class="xref std std-ref">PUT /rses/{rse_name}/attr/{key}</span>: Update the value of a key</li>
+<li><span class="xref std std-ref">DELETE /rses/{rse_name}/attr/{key}</span>: Remove a key from a RSE</li>
+</ul>
+</div>
+<div class="section" id="identity">
+<h2>Identity<a class="headerlink" href="#identity" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">POST /accounts/{account_name}/identities/{userpass|x509|gss|proxy}/{identityString}</span>: Grant a {userpass|x509|gss|proxy} identity access to an account</li>
+<li><span class="xref std std-ref">GET /accounts/{account_name}/identities</span>: List all identities on an account</li>
+<li><span class="xref std std-ref">GET /identities/{userpass|x509|gss|proxy}/{identityString}/accounts/</span>: List all account memberships of an identity</li>
+<li><span class="xref std std-ref">DELETE /accounts/{account_name}/identities/{userpass|x509|gss|proxy}/{identityString}</span>:  Revoke a {userpass|x509|gss|proxy} identity’s access to an account</li>
+</ul>
+</div>
+<div class="section" id="scope">
+<h2>Scope<a class="headerlink" href="#scope" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">POST /accounts/{account_name}/scopes/{scope_name}</span>: Create a scope</li>
+<li><span class="xref std std-ref">GET /accounts/{account_name}/scopes/</span>: List available scopes for an account</li>
+<li><span class="xref std std-ref">GET /scopes/</span>: List/query all scopes with filter parameter lists</li>
+<li><span class="xref std std-ref">DELETE /accounts/{account_name}/scopes/{scope_name}</span>: Delete a scope from an account</li>
+</ul>
+</div>
+<div class="section" id="data-identifiers">
+<h2>Data identifiers<a class="headerlink" href="#data-identifiers" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">GET /dids/</span>: Search data identifiers over all scopes with filter parameters</li>
+<li><span class="xref std std-ref">POST /dids/{scope_name}/{did}</span>: Create a new data identifier</li>
+<li><span class="xref std std-ref">GET /dids/{scope_name}/</span>: List all data identifiers in a scope</li>
+<li><span class="xref std std-ref">DELETE /dids/{scope_name}/{did}</span>: Obsolete a data identifier</li>
+<li><span class="xref std std-ref">GET /dids/{scope_name}/{did}/rses/</span>: List replicas for a data identifier</li>
+<li><span class="xref std std-ref">GET /dids/{scope_name}/{did}/</span>: List content of data identifier</li>
+<li><span class="xref std std-ref">PUT /dids/{scope_name}/{did}/status</span>: Update data identifier status</li>
+<li><span class="xref std std-ref">GET /dids/{scope_name}/{did}/status</span>: Get data identifier status</li>
+<li><span class="xref std std-ref">GET /dids/{scope_name}/{did}/rules</span>: List all rules of this did</li>
+<li><span class="xref std std-ref">GET /dids/{scope_name}/{did}/meta/</span>: List all keys of the data identifier with their respective values</li>
+<li><span class="xref std std-ref">GET /dids/{scope_name}/{did}/meta/{key}</span>: Retrieve the selected key value pair for the given data identifier</li>
+<li><span class="xref std std-ref">PUT /dids/{scope_name}/{did}/meta/{key}</span>: Set the value of the key to NULL ?</li>
+<li><span class="xref std std-ref">DELETE /dids/{scope_name}/{did}/meta/{key}</span>: Remove a key from a data identifier</li>
+<li><span class="xref std std-ref">PUT /dids/{scope_name}/{did}/meta/{key}</span>:  Set the value of the key of a data identifier</li>
+<li><span class="xref std std-ref">POST /dids/{scope_name}/{did_super}/{did_sub}</span>: Add “sub” data identifier into “super” data identifier</li>
+</ul>
+</div>
+<div class="section" id="metadata">
+<h2>Metadata<a class="headerlink" href="#metadata" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">POST /meta/{key}</span>: Create a new allowed key (value is NULL)</li>
+<li><span class="xref std std-ref">GET /meta/</span>: List all allowed keys with their default values</li>
+<li><span class="xref std std-ref">POST /meta/{key}</span>: Create a new allowed key with a default value</li>
+<li><span class="xref std std-ref">DELETE /meta/{key}</span>:  Delete an allowed key</li>
+<li><span class="xref std std-ref">DELETE /meta/{key}/{defaultvalue}</span>: Delete the default value of a key (change the value to NULL)</li>
+</ul>
+</div>
+<div class="section" id="replication-rule">
+<h2>Replication rule<a class="headerlink" href="#replication-rule" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">POST /rules/</span>: Create a rule on a data identifier</li>
+<li><span class="xref std std-ref">GET /rules/{rule_id}</span>: Get all the rules associated to a data identifier</li>
+<li><span class="xref std std-ref">DELETE /rules/{rule_id}</span>: Delete a rule</li>
+</ul>
+</div>
+<div class="section" id="subscriptions">
+<h2>Subscriptions<a class="headerlink" href="#subscriptions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><span class="xref std std-ref">POST /subscriptions/{account_name}/</span>: Register a subscription</li>
+<li><span class="xref std std-ref">DELETE /subscriptions/{subscription_id}</span>: Delete a subscription</li>
+<li><span class="xref std std-ref">GET /subscriptions/{subscription_id}</span>: Get subscription info</li>
+<li><span class="xref std std-ref">GET /subscriptions/</span>: List all subscriptions</li>
+<li><span class="xref std std-ref">GET /subscriptions/{subscription_id}/rules</span>: Get all rules of this subscription</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">General notes</a><ul>
+<li><a class="reference internal" href="#service">Service</a></li>
+<li><a class="reference internal" href="#authentication">Authentication</a></li>
+<li><a class="reference internal" href="#rucio-account">Rucio account</a></li>
+<li><a class="reference internal" href="#rse-rucio-storage-element">RSE (Rucio Storage Element)</a></li>
+<li><a class="reference internal" href="#rse-attributes">RSE  attributes</a></li>
+<li><a class="reference internal" href="#identity">Identity</a></li>
+<li><a class="reference internal" href="#scope">Scope</a></li>
+<li><a class="reference internal" href="#data-identifiers">Data identifiers</a></li>
+<li><a class="reference internal" href="#metadata">Metadata</a></li>
+<li><a class="reference internal" href="#replication-rule">Replication rule</a></li>
+<li><a class="reference internal" href="#subscriptions">Subscriptions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="atlas_integration_testbed.html"
+                        title="previous chapter">ATLAS Rucio Integration Test-bed</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api_curl_examples.html"
+                        title="next chapter">REST API Examples Using Curl</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/rest.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api_curl_examples.html" title="REST API Examples Using Curl"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="atlas_integration_testbed.html" title="ATLAS Rucio Integration Test-bed"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
