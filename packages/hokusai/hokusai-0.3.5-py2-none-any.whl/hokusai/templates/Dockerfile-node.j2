@@ -1,0 +1,30 @@
+FROM {{ base_image }}
+
+# Install packages
+{%- if 'alpine' in base_image %}
+RUN apk update && apk upgrade && apk add alpine-sdk && apk add linux-headers
+{%- else %}
+RUN apt-get update -qq && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+{%- endif %}
+
+# Set up working directory
+RUN mkdir /app
+
+# Set up node modules
+WORKDIR /tmp
+ADD package.json package.json
+ADD npm-shrinkwrap.json npm-shrinkwrap.json
+RUN npm install --production
+RUN cp -a /tmp/node_modules /app/
+
+# Finally, add the rest of our app's code
+# (this is done at the end so that changes to our app's code
+# don't bust Docker's cache)
+ADD . /app
+WORKDIR /app
+
+ENV PORT {{ target_port }}
+EXPOSE {{ target_port }}
+
+CMD {{ command }}
+
