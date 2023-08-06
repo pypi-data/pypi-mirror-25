@@ -1,0 +1,292 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "UNSONIC" "1" "Oct 08, 2017" "0.1" "Unsonic"
+.SH NAME
+unsonic \- Unsonic Documentation
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+Unsonic, the un\-Subsonic music server.
+.SH PYPI
+.sp
+\fI\%Latest Version\fP
+\fI\%Project Status\fP
+\fI\%License\fP
+\fI\%Supported Python Versions\fP
+.SH BUILDS
+.sp
+\fI\%Build Status\fP
+\fI\%Coverage Status\fP
+\fI\%Updates\fP
+.sp
+Unsonic is a free drop in replacement for the Subsonic music server. It follows
+the Subsonic API and is usable with existing Subsonic clients without requiring
+any adjustment to them.
+.sp
+Unsonic strives to be better at handling music files tags, playing of those
+songs and use less system resources.
+.sp
+These are the clients that are known to work well:
+.INDENT 0.0
+.IP \(bu 2
+DSub (Android)
+.IP \(bu 2
+JamStash (web)
+.UNINDENT
+.sp
+These clients sort of work with isues:
+.INDENT 0.0
+.IP \(bu 2
+Clementine (Linux desktop)
+.UNINDENT
+.SH TLDR: THE UBER SHORT VERSION
+.INDENT 0.0
+.IP \(bu 2
+make run
+.UNINDENT
+.SH THE LONGER VERSION
+.SS Development build
+.INDENT 0.0
+.IP \(bu 2
+make devel
+.IP \(bu 2
+make devel\-db
+.IP \(bu 2
+make devel\-run
+.UNINDENT
+.SS Release build
+.INDENT 0.0
+.IP \(bu 2
+make release
+.IP \(bu 2
+make release\-db
+.IP \(bu 2
+make release\-run
+.UNINDENT
+.SS Tests
+.INDENT 0.0
+.IP \(bu 2
+make tests
+.UNINDENT
+.SH MANUAL INSTALLATION
+.SH BUILDING
+.INDENT 0.0
+.IP \(bu 2
+make
+.UNINDENT
+.SH RUNNING
+.INDENT 0.0
+.IP \(bu 2
+\&./bin/unsonic \-c <config.ini> sync
+.IP \(bu 2
+\&./bin/unsonic \-c <config.ini> adduser name pass
+.IP \(bu 2
+\&./bin/unsonic \-c <config.ini> serve [\-\-reload]
+.UNINDENT
+.SH MANUAL TESTING
+.INDENT 0.0
+.IP \(bu 2
+\&./test/bin/tester getArtists
+.UNINDENT
+.SH INSTALLING A WEB CLIENT
+.INDENT 0.0
+.IP \(bu 2
+Download/clone Jamstash from https://github.com/tsquillario/Jamstash
+.IP \(bu 2
+Edit your config.ini so that the unsonic.ui path points to jamstash/dist
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[unsonic]
+ui = ../Jamstash/dist
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+With Unsonic running, point your browser at the url printed out, normally
+something like http://localhost:6543 and your will be redirected to the load
+Jamstash.
+.IP \(bu 2
+Jamstash is very picky about the server URL in it\(aqs configuration. Make sure
+there is no trailing \(aq/\(aq character otherwise Jamstash will not be able to
+build the path correctly.
+.UNINDENT
+.SH DOCKER INSTALLATION
+.sp
+Docker files are located in the ./docker directory. The Makefile contains some
+convenience targets but the specific \fBdocker\fP and/or \fBdocker\-compose\fP cmmands
+are also shown.
+.sp
+To build the Unsonic Docker image:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ docker build ./docker
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Or using docker\-compose:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ docker\-compose \-f ./docker/docker\-compose.yml build
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The docker\-compose file defines 3 containers, each is geared toward a development/test setup; a
+production Docker should only use these as a reference. The containers defined are of PostgreSQL,
+and an Unsonic serve based on PostgreSQL and SQLite. The Unsonic containers requires a music
+directory to volume mount so one must be specified.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ MUSIC_DIR=~/music/ docker\-compose \-f ./docker/docker\-compose.yml create
+$ MUSIC_DIR=~/music/ docker\-compose \-f ./docker/docker\-compose.yml up Unsonic\-postgres
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Or using the Makefile to simplify all of the above.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ make MUSIC_DIR=~/music/ docker\-sqlite
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+See docker/Dockerfile for details about the \fBunsonic\fP image. The container details are
+defined \fBdocker/docker\-compose.yml\fP\&. The files \fBdocker/config.ini\fP and \fBdocker/unsonic\-init\fP
+can be used to tweak the Unsonic process itself.
+.SH ADJUSTING THE CONFIGURATION
+.sp
+The main configuration settings are the location of the database
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[mishmash]
+sqlalchemy.url = sqlite:///%(here)s/build/development.sqlite
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+and the location of the music libraries
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[library:Music]
+paths = ~/music
+sync = true
+
+[library:More Music]
+paths = /data/music
+sync = true
+
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Adjust them to fit your deployment needs. The mishmash.paths can have multiple
+music directories, one per line. %(here)s refers to the location of the
+configuration file itself.
+.SH RUNNING WITH TLS
+.sp
+Unsonic itself doesn\(aqt handle TLS, but can easily be run behind a reverse proxy
+that does. The following example shows how to configure nginx to reverse proxy
+to a local Unsonic instance. Replace example.com with your domain name/IP. You
+may change the path portion of the url from "unsonic" to whatever you wish, or
+remove it completely.
+.sp
+This would go into your /etc/nginx/nginx.conf or its own file in
+/etc/nginx/sites\-available depending on how your distro is setup.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+server {
+    listen       80;
+    server_name  example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen       443 ssl http2;
+    server_name  example.com;
+
+    ssl config...
+
+    # Your Unsonic is located on https://example.com/
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X\-Real\-IP $remote_addr;
+        proxy_set_header X\-Forwarded\-For $proxy_add_x_forwarded_for;
+        proxy_set_header X\-Forwarded\-Proto $scheme;
+        proxy_buffers 16 4k;
+        proxy_buffer_size 2k;
+        proxy_pass http://localhost:6543;
+        proxy_read_timeout 90;
+    }
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH LICENSE
+.sp
+Unsonic is licensed under the GPL v2 license. See the COPYING file for details or
+http://www.gnu.org/licenses/gpl\-2.0.html#SEC1
+.SH AUTHOR
+Chris Newton
+.SH COPYRIGHT
+2017, Chris Newton
+.\" Generated by docutils manpage writer.
+.
