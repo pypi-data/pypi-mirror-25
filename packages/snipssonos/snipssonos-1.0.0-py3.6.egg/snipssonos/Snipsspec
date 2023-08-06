@@ -1,0 +1,38 @@
+package_name: snipssonos
+class_name: SnipsSonos
+description: Sonos skill for Snips
+parameters: ["spotify_client_id", "spotify_client_secret", "spotify_refresh_token"]
+intents:
+  - intent: AllumeRadio
+    action: >
+      {%
+      if intent.radioName != None:
+        skill.turn_on_radio(intent.radioName)
+      %}
+  - intent: EteinsRadio
+    action: "stop_sonos"
+  - intent: MonteSon
+    action: >
+      {% skill.volume_up(intent.monteSonNiveau) %}
+  - intent: BaisseSon
+    action: >
+      {% skill.volume_down(intent.baisseSonNiveau) %}
+  - intent: LanceMinuteur
+    action: >
+      {% skill.set_alarm(intent.minuteurDuree) %}
+  - intent: JouePlaylist
+    action: >
+      {%
+      playlist_name = intent.playlistName
+      if playlist_name == 'discoveur ouikly':
+          playlist_name = 'discover weekly'
+      shuffle = intent.playlistModeLecture is not None and intent.playlistModeLecture == "sheufeule"
+      skill.play_playlist(intent.playlistName, _shuffle=shuffle)
+      %}
+  - intent: JoueArtiste
+    action: >
+      {% skill.play_artist(intent.artiste) %}
+  - intent: ChansonSuivante
+    action: "play_next_item_in_queue"
+  - intent: ChansonPrecedente
+    action: "play_previous_item_in_queue"
