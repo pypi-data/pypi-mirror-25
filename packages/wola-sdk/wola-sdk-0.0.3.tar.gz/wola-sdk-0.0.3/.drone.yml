@@ -1,0 +1,32 @@
+---
+pipeline:
+  build:
+    image: python:${PYTHON_VERSION}
+    commands:
+      - pip install -r requirements/test.txt
+      - make coverage
+
+  flake8:
+    image: mongkok/flake8
+
+  slack:
+    image: plugins/slack
+    channel: devops
+    username: drone
+    webhook: ${SLACK_WEBHOOK}
+    when:
+      status:
+        - failure
+        - success
+    secrets:
+      - slack_webhook
+
+matrix:
+  PYTHON_VERSION:
+    - 3.4
+    - 3.5
+    - 3.6
+
+branches:
+  exclude:
+    - release
