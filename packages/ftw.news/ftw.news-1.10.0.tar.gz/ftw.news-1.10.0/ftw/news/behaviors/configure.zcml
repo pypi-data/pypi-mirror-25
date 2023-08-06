@@ -1,0 +1,70 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="ftw.news">
+
+    <include package="plone.behavior" file="meta.zcml" />
+
+    <plone:behavior
+        title="News on homepage"
+        description="Mark news items to show up on the homepage"
+        provides=".show_on_homepage.news.IShowOnHomepageSchema"
+        factory=".show_on_homepage.news.ShowOnHomepage"
+        marker=".show_on_homepage.news.IShowOnHomepageBehaviorMarker"
+        for="ftw.news.interfaces.INews"
+        />
+
+    <plone:behavior
+        title="News listing block on homepage"
+        description="Mark news listing block to render news on homepage"
+        provides=".show_on_homepage.news_listing_block.INewsOnHomepage"
+        for="ftw.news.interfaces.INewsListingBlock"
+        />
+
+    <plone:behavior
+        title="Mopage trigger configuration"
+        description="Provides fields for configuring a mopage trigger (ftw.publisher)."
+        provides="ftw.news.behaviors.mopage.IPublisherMopageTrigger"
+        for="ftw.news.interfaces.INewsFolder"
+        marker="ftw.news.behaviors.mopage.IPublisherMopageTriggerSupport"
+        factory="ftw.news.behaviors.mopage.PublisherMopageTrigger"
+        />
+
+    <plone:behavior
+        title="External URL (for mobile app)"
+        description="Provides an additional URL field for mobile apps"
+        provides=".external_url.INewsExternalUrl"
+        for="ftw.news.interfaces.INews"
+        />
+
+    <configure zcml:condition="have ftw.news:mopage_publisher_receiver">
+
+        <subscriber
+            for="*
+                 ftw.publisher.receiver.interfaces.IAfterCreatedEvent"
+            handler=".mopage.trigger_mopage_refresh" />
+
+        <subscriber
+            for="*
+                 ftw.publisher.receiver.interfaces.IAfterUpdatedEvent"
+            handler=".mopage.trigger_mopage_refresh" />
+
+        <browser:page
+            name="taskqueue_news_trigger_mopage_refresh"
+            for="Products.CMFPlone.interfaces.siteroot.IPloneSiteRoot"
+            layer="collective.taskqueue.interfaces.ITaskQueueLayer"
+            class=".mopage.TriggerMopageRefreshTaskQueueWorker"
+            permission="zope2.View"
+            />
+
+        <adapter
+            for="ftw.news.interfaces.INews"
+            provides="ftw.news.behaviors.mopage.IMopageModificationDate"
+            factory="ftw.news.behaviors.mopage.MopageModificationDate"
+            />
+
+    </configure>
+
+</configure>
