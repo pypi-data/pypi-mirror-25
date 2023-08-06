@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?> 
+<!DOCTYPE html>
+<html
+    xmlns='http://www.w3.org/1999/xhtml'
+    xmlns:tal='http://xml.zope.org/namespaces/tal'
+    xmlns:metal='http://xml.zope.org/namespaces/metal'
+    lang='en'
+    xml:lang='en'
+    metal:use-macro='load:edrn.labcas.ui:templates/master.pt'>
+    <head>
+        <title>Upload Metadata</title>
+        <!--
+            provided names:
+            - form: rendered form of metadata
+            - widgetResources: dict of css + js resources to support form rendering
+        -->
+        <metal:style-slot fill-slot='style_slot'>
+            <link rel='stylesheet' type='text/css' href='#'
+                tal:attributes='href python:request.static_url("edrn.labcas.ui:static/custom/nist-custom.css")'/>
+            <tal:repeat repeat='url python:widgetResources["css"]'>
+                <link rel='stylesheet' type='text/css' href='#'
+                    tal:attributes='href python:request.static_url(url)'/>
+            </tal:repeat>
+        </metal:style-slot>
+        <metal:javascript fill-slot='javascript_head_slot'>
+            <script type='text/javascript' src='#'
+                tal:attributes='src python:request.static_url("edrn.labcas.ui:static/custom/nist-custom.js")'></script>
+            <script type='text/javascript'>
+                //initialize radio button combinations for NIST workflow
+                $.getJSON("${request.static_url('edrn.labcas.ui:static/custom/metadata_combinations.json')}", function(json) {
+                    combos = json;
+                });
+            </script>
+            <tal:repeat repeat='url python:widgetResources["js"]'>
+                <script type='text/javascript' src='#' tal:attributes='src python:request.static_url(url)'></script>
+            </tal:repeat>
+        </metal:javascript>
+    </head>
+    <body>
+        <div metal:fill-slot='content'>
+            <div class='container'>
+                <h1>Upload Metadata</h1>
+                <p>
+                    We'll need just a few details before we can accept your data.
+                    <small>🔴 indicates required fields.</small>
+                </p>
+                <form action='#' tal:replace='structure python:form'>
+                    Metadata form here.
+                </form>
+                <script type='text/javascript'>
+                    deform.load()
+                </script>
+            </div>
+        </div>
+    </body>
+</html>
