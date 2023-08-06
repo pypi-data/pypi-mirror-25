@@ -1,0 +1,207 @@
+# ----------------------------------------------------------------------------------------------------------------------
+# Declare here the units in which you want to specify lengths and angles. The length unit has no influence on the
+# calculations and can be chosen arbitrarily. This field is mainly there to remind the user that all lengths have to be
+# specified in consistent units. In addition, it is used for the axis annotation of output plots.
+# The angle units can be 'degree', otherwise radians are assumed.
+# ----------------------------------------------------------------------------------------------------------------------
+
+length unit: nm
+
+angle unit: degree
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Vacuum wavelength of the electromagnetic field, in the specified length unit:
+# ----------------------------------------------------------------------------------------------------------------------
+
+vacuum wavelength: 550
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Define the background geometry of the layered medium. A layer system consists of N layers, counted from bottom to top.
+# Each layer is characterized by its thickness as well as its (real) refractive index and extinction coefficient (the
+# latter is equivalent to the imaginary part of the complex refractive index). Provide the thickness information in the
+# form of [d_0, d_1, d_2, ..., d_N], where d_i is the thickness of the i-th layer. As the outermost layers are
+# infinitely thick, specify them with a thickness of 0. Analogously, provide the refractive indices and extinction
+# coefficients in the form of [n0, ..., nN] and [k0, ..., kN].
+# ----------------------------------------------------------------------------------------------------------------------
+
+layer system:
+  thicknesses: [0, 500, 0]
+  refractive indices: [1.5, 1.9, 1]
+  extinction coefficients: [0, 0, 0]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Specify the ensemble of scattering particles inside the layered medium by modifying the below example particle specs.
+# The coordinate system for position data is such that the interface between the first two layers defines the plane z=0.
+# ----------------------------------------------------------------------------------------------------------------------
+
+scattering particles:
+- shape: sphere
+  radius: 100
+  refractive index: 2.4
+  extinction coefficient: 0.05
+  position: [0, 100, 150]
+  l_max: 3
+  m_max: 3
+- shape: finite cylinder
+  cylinder radius: 120
+  cylinder height: 150
+  refractive index: 2.7
+  extinction coefficient: 0
+  position: [350, -100, 250]
+  euler angles: [0, 0, 0]
+  l_max: 4
+  m_max: 4
+  use discrete sources: true
+  nint: 200
+  nrank: 8
+- shape: spheroid
+  semi axis c: 80
+  semi axis a: 140
+  refractive index: 2.5
+  extinction coefficient: 0.05
+  position: [-350, 50, 350]
+  euler angles: [0, 0, 0]
+  l_max: 3
+  m_max: 3
+  use discrete sources: true
+  nint: 200
+  nrank: 8
+
+# The multipole truncation degree l_max and order m_max should be chosen with reference to the desired
+# accuracy and to the particle size parameter and refractive index contrast, see for example
+# https://arxiv.org/ftp/arxiv/papers/1202/1202.5904.pdf
+# A larger value leads to higher accuracy, but also to longer computation time. lmax is a positive integer and mmax is a
+# non-negative integer not greater than lmax.
+
+# The parameters 'use discrete sources', 'nint' and 'nrank' can be used to set the behavior of the NFM-DS algorithm that
+# computes the T-matrix of the non-spherical particles. 'use discrete sources' = true is in general a good choice.
+# 'nrank' is equivalent to l_max and can be set to a slightly larger value than l_max to ensure the accuracy of the
+# T-matrix (default: l_max + 2). 'nint' determines how fine the resolution in the numerical evaluation of certain
+# integrals is set (default = 200). See the NFM-DS manual for further information on the meaning of these parameters.
+
+# Alternatively, the scattering particles can be specified in a separate file, which needs to be located in the SMUTHI
+# project folder. This is more convenient for large particle numbers. In that case, specify the filename of the
+# particles parameters file, for example:
+
+# scattering particles: smuthi/data/example_particle_specs.dat
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Specify the initial field in the following section by modifying the examplary initial field specs.
+# Currently, plane waves and beams with Gaussian transverse cross-section are implemented, as well as single or multiple
+# electric point dipole sources.
+# ----------------------------------------------------------------------------------------------------------------------
+
+# comment if not using plane wave >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+initial field:
+  type: plane wave
+  angle units: degree 
+  polar angle: 0
+  azimuthal angle: 0
+  polarization: TE
+  amplitude: 1
+  reference point: [0, 0, 0]
+
+# Polar and azimuthal angle refer to the corresponding spherical coordinates of the plane wave's wave vector. Angle
+# units can be 'degree' (otherwise, radians are used). If the polar is between 0 and 90 degree, the k-vector has a
+# positive z-component and consequently, the plane wave is incident from the bottom side. If the polar angle is between
+# 90 and 180 degree, then the plane wave is incident from the top. For polarization, select either TE or TM. The
+# reference point specifies the location where the incident wave would have zero phase, i.e., the electric field of the
+# incident wave is proportional to E(r) = A * exp(j k.(r-r0)) where A is the amplitude and r0 is the reference point.
+
+
+# uncomment if using Gaussian beam >>>>>>>>>>>>>>>>>>>>
+#initial field:
+#  type: Gaussian beam
+#  angle units: degree
+#  polar angle: 0
+#  azimuthal angle: 0
+#  polarization: TE
+#  amplitude: 1
+#  focus point: [0, 0, 0]
+#  beam waist: 1000
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+# The Gaussian beam amplitude corresponds to the electric field value at the focus point. The beam waist parameter 
+# describes the transverse width of the beam near the focus point.  
+
+
+# uncomment if using single dipole source >>>>>>>>>>>>>
+#initial field:
+#  type: dipole source
+#  position: [100, 10, 350]
+#  dipole moment: [3e7, 3e7, 0]
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+# uncomment if using multiple dipole sources >>>>>>>>>>
+#initial field:
+#  type: dipole collection
+#  dipoles:
+#  - position: [150, -100, 90]
+#    dipole moment: [1.5e7, 1.5e7, 0]
+#  - position: [-100, 100, 290]
+#    dipole moment: [0, 1.5e7, 1.5e7]
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Specify the parameters that determine the resolution and the truncation of plane wave expansions, as well as complex 
+# Sommerfeld contour-integrals.
+# ----------------------------------------------------------------------------------------------------------------------
+
+n_effective resolution: 1e-3
+
+max n_effective: 3
+
+n_effective imaginary deflection: 5e-2 
+
+angular resolution: 1
+
+# 'n_effective resolution' determines the sampling of the expansion/contour, where n_effective = k_parallel / omega 
+# refers to the effective refractive index of the partial wave (default=1e-2). A smaller value leads to more precise 
+# results and to a longer computation time.
+# 'max n_effective' specifies where the expansion is truncated. It should be chosen somewhere above the maximal 
+# refractive index of the layers (default=max(refractive indices)+1).
+# 'n_effective imaginary deflection' determines how much the contour is deflected into the lower complex half plane to 
+# avoid the vicinity of waveguide or branch point singularities (default=5e-2).
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Define what output you want to generate by modifying the following example output specs.
+# ----------------------------------------------------------------------------------------------------------------------
+
+post processing:
+- task: evaluate far field
+  show plots: true
+  save plots: true
+  save data: false
+- task: evaluate near field
+  show plots: true
+  save plots: true
+  save animations: true
+  save data: false
+  quantities to plot: [E_y, norm(E), E_scat_y, norm(E_scat), E_init_y, norm(E_init)]
+  xmin: -800
+  xmax: 800
+  zmin: -400
+  zmax: 900
+  spatial resolution: 50
+  interpolation spatial resolution: 5
+  maximal field strength: 1.2
+
+# If the initial field is a plane wave, far field quantities are interpreted in terms of differential cross sections. 
+# Otherwise, they are interpreted as intensity distributions.
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Specify the output folder. This will create a new folder with a time stamp including a log file and all file output
+# from the simulation. Tell smuthi also if the simulation object shall be saved after running.
+# ----------------------------------------------------------------------------------------------------------------------
+
+output folder: smuthi_output
+
+save simulation: true
