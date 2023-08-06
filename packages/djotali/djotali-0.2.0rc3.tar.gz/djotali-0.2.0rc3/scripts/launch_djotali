@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+waitforit --host=db --port=5432 --timeout=15 && waitforit --host=redis --port=6379 --timeout=10
+
+manage.py migrate && manage.py bootstrap
+
+if [ -z ${POPULATE_DB+x} ]; then
+    echo "Not populating the DB, running the migration"
+else
+    echo "Populating the DB, data will be dropped and recreated beforehand"
+    manage.py seed
+fi
+
+gunicorn --bind 0.0.0.0:8000 djotali.wsgi:application

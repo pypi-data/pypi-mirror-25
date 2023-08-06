@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Créer un compte{% endblock %}
+{% block body %}
+    <section id="wrapper" class="login-register">
+        <div class="login-box">
+            <div class="white-box">
+                <form class="form-horizontal form-material" id="signupform" method="POST" action="{% url 'account_signup' %}"
+                      onsubmit="return warnIfNewOrganizationBeforeValidate(this);">
+                    <h3 class="box-title m-b-20">Créer un compte</h3>
+                    {% csrf_token %}
+                    {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                    {% endif %}
+                    {% include "account/snippets/errors.html" %}
+                    <div class="form-group ">
+                        <div class="col-xs-12">
+                            <input type="hidden" name="email" id="id_email" required>
+                            <input type="email" id="id_username" name="username" placeholder="Email" onchange="copyValueTo('id_email', this)"
+                                   class="form-control" autofocus="autofocus" minlength="1" maxlength="150" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input id="id_organization" name="organization" type="text" class="form-control" placeholder="Nom de l'entreprise">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-xs-12">
+                            <input id="id_password1" name="password1" type="password" class="form-control" required placeholder="Mot de passe">
+                        </div>
+                    </div>
+                    <div class="form-group text-center m-t-20">
+                        <div class="col-xs-12">
+                            <button class="btn btn-info btn-lg btn-block text-uppercase waves-effect waves-light" type="submit">
+                                Créer le compte
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="{{ settings_axios_lib }}"></script>
+    <script src="{% static 'plugins/sweetalert/sweetalert.min.js' %}"></script>
+    <script src="{% static 'plugins/sweetalert/jquery.sweet-alert.custom.js' %}"></script>
+    <script>
+        function warnIfNewOrganizationBeforeValidate(signupForm) {
+            var organizationName = document.getElementById('id_organization').value;
+            axios.get("/api/organizations/" + encodeURIComponent(organizationName))
+                 .then(function () {
+                     // Le nom d'entreprise est pris, on peut procéder sur l'enregistrement
+                     swal({
+                              title: "Nom déjà utilisé",
+                              text: "<p>Attention, le nom d'entreprise que vous souhaitez utiliser existe déjà.</p>" +
+                                    "<p>Nous contacter si vous avez le moindre souci.</p>",
+                              html: true,
+                              type: "warning",
+                          });
+                 })
+                 .catch(function (error) {
+                     if (error.response && error.response.status === 404) {
+                         // Le nom d'entreprise n'est pas pris, on peut procéder sur l'enregistrement
+                         swal({
+                                  title: "Bienvenue",
+                                  text: "<p>En confirmant, vous créez un nouveau compte associé à une nouvelle entreprise dont vous serez " +
+                                        "l'administrateur dans l'application.</p>" +
+                                        "<p>Bienvenue dans Djotali.</p>",
+                                  html: true,
+                              },
+                              function () {
+                                  signupForm.submit();
+                              });
+                     }
+                 });
+            return false;
+        }
+    </script>
+    <link href="{% static 'css/sweetalert.css' %}" rel="stylesheet" type="text/css">
+{% endblock %}

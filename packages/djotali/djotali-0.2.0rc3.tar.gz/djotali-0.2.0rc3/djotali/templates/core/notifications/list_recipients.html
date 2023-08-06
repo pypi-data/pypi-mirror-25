@@ -1,0 +1,71 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    {% include 'core/partials/flash_messages.html' %}
+
+    <div class="row">
+        <div class="col-lg-6">
+            <h2>{{ campaign.name }}</h2>
+        </div>
+        <div class="col-lg-6">
+            <a href="{% url 'campaigns:campaign_notify' campaign.id %}" class="btn btn-outline-success pull-right">
+                <i class="ion-paper-airplane"></i>
+                Notify contacts
+            </a>
+        </div>
+    </div>
+
+
+    <table class="table table-condensed">
+        <thead class="thead-default">
+        <tr>
+            <th>Name</th>
+            <th>Sent ?</th>
+            <th>Sent Date</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for n in notifications %}
+            <tr>
+                <td>{{ n.contact }}</td>
+
+                <td>
+
+                    {% if n.status == -1 or not n.contact.enabled %}
+                        <i title="Failed"
+                           class="sent__status text-danger fa ion-ios-close-outline help force-text-left"></i>
+                    {% elif n.status == 1 %}
+                        <i title="Sent"
+                           class="sent__status text-success force-text-left is-success fa ion-ios-checkmark-outline"></i>
+                    {% else %}
+                        <i title="Processing..."
+                           class=" text-default sent__status text-primary fa ion-ionic fa-spin help force-text-left"></i>
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if n.status == 1 %}
+                        {{ n.send_date | date:'d-m-Y h:i:s' }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if n.sendable %}
+                        <a href="{% url 'core:core_notify' n.id %}">
+                            <i class="fa fa-send-o fa-lg"></i>
+                        </a>
+                    {% endif %}
+                    {% comment %} |
+                        {% if n.status == -1 %}
+                            <a title="Retry" href="{% url 'core:core_notify' n.id %}">
+                                <i class="fa fa-repeat"></i>
+                            </a>
+                        {% endif %}{% endcomment %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Utilisateurs{% endblock %}
+
+{% block content %}
+    <div class="row bg-title">
+        <!-- .page title -->
+        <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+            <h4 class="page-title">Utilisateurs</h4>
+        </div>
+        <!-- /.page title -->
+        <!-- .breadcrumb -->
+        <div class="col-lg-8 col-sm-8 col-md-8 col-xs-12">
+            <ol class="breadcrumb">
+                <li><a>Profil</a></li>
+                <li class="active">
+                    Utilisateurs
+                </li>
+            </ol>
+        </div>
+        <!-- /.breadcrumb -->
+    </div>
+    <!-- .row -->
+    <div class="row">
+        <div class="col-md-12">
+            {% include 'core/partials/flash_messages.html' %}
+            <div class="white-box">
+                <form action="{% url 'profile:invite-users' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="offset-1 col-lg-9">
+                            <div class="form-group ">
+                                <input id="id_email" name="email" type="email" class="form-control" placeholder="Saisir l'email de l'utilisateur que vous voulez inviter">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 form-group">
+                            <input type="submit" class="btn btn-success" value="Inviter"/>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% if users %}
+                <div class="white-box">
+                    <h3 class="box-title m-b-0">Activer ou désactiver vos utilisateurs</h3>
+                    <form action="{% url 'profile:activate-users' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="offset-1 col-lg-9 bt-switch">
+                                {% for user in users %}
+                                    <div class="row m-t-20">
+                                        <div class="col-lg-12 form-group">
+                                            <input name="activate_{{ user.id }}" id="id_activate_{{ user.id }}"
+                                                    {% if user.is_active %} checked {% endif %}
+                                                   type="checkbox" data-on-color="success" data-off-color="danger" data-size="normal">
+                                            <label for="id_activate_{{ user.id }}" style="margin-left: 5em">{{ user }}</label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-lg-2 form-group">
+                                <input type="submit" class="btn btn-sticky btn-success" value="Valider"/>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap-switch/bootstrap-switch.min.css' %}">
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static 'plugins/bootstrap-switch/bootstrap-switch.min.js' %}"></script>
+    <script>
+        $(document).ready(function () {
+            // Activate button switches
+            $(".bt-switch input[type='checkbox'], .bt-switch input[type='radio']").bootstrapSwitch();
+        });
+    </script>
+{% endblock %}
