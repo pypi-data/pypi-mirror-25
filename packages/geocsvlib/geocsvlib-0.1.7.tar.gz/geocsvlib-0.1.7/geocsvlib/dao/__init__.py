@@ -1,0 +1,22 @@
+"""Data Access Objects Package
+
+
+Poem of the Module
+------------------
+
+A Dream Within A Dream
+
+Take this kiss upon the brow!
+And, in parting from you now,
+Thus much let me avow--
+You are not wrong, who deem
+That my days have been a dream;
+Yet if hope has flown away
+In a night, or in a day,
+In a vision, or in none,
+Is it therefore the less gone?
+All that we see or seem
+Is but a dream within a dream
+
+- Edgar Allan Poe
+"""
