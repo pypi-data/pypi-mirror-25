@@ -1,0 +1,1 @@
+'pip install -U --upgrade-strategy=only-if-needed ngtsio' will update it without updating already fulfilled dependencies.
