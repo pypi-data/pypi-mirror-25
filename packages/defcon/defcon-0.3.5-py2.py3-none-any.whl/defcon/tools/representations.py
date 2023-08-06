@@ -1,0 +1,58 @@
+from __future__ import absolute_import
+from fontTools.pens.areaPen import AreaPen
+from fontTools.pens.boundsPen import ControlBoundsPen, BoundsPen
+from fontTools.misc.arrayTools import unionRect
+
+# -----
+# Glyph
+# -----
+
+def glyphBoundsRepresentationFactory(glyph):
+    pen = BoundsPen(glyph.layer)
+    glyph.draw(pen)
+    return pen.bounds
+
+def glyphControlPointBoundsRepresentationFactory(glyph):
+    pen = ControlBoundsPen(glyph.layer)
+    glyph.draw(pen)
+    return pen.bounds
+
+# -------
+# Contour
+# -------
+
+# bounds
+
+def contourBoundsRepresentationFactory(obj):
+    pen = BoundsPen(None)
+    obj.draw(pen)
+    return pen.bounds
+
+def contourControlPointBoundsRepresentationFactory(obj):
+    pen = ControlBoundsPen(None)
+    obj.draw(pen)
+    return pen.bounds
+
+# winding direction
+
+def contourClockwiseRepresentationFactory(contour):
+    pen = AreaPen()
+    pen.endPath = pen.closePath
+    contour.draw(pen)
+    return pen.value < 0
+
+# ---------
+# Component
+# ---------
+
+# bounds
+
+def componentBoundsRepresentationFactory(obj):
+    pen = BoundsPen(obj.layer)
+    obj.draw(pen)
+    return pen.bounds
+
+def componentPointBoundsRepresentationFactory(obj):
+    pen = ControlBoundsPen(obj.layer)
+    obj.draw(pen)
+    return pen.bounds
