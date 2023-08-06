@@ -1,0 +1,53 @@
+- name: run Jenkins global config
+  jenkins_script:
+    url: "{{ _jenkins_url }}"
+    script: "{{ item.script }}"
+    validate_certs: false
+    user: "{{ jenkins_admin.nickname }}"
+    password: "{{ admin_api_key | default('') }}"
+  register: script_output
+  changed_when: "(script_output.output|default('')).find('CHANGED') != -1"
+  # Since the jenkins_script module doesn't support check_mode, we disable it
+  # here so that we can handle check mode inside of the Groovy scripts.
+  check_mode: false
+  # We cannot use 'with_file' here because the templates won't be rendered
+  # correctly.
+  # These scripts are run in the order listed below, so please edit this list
+  # using the desired execution order.
+  with_items:
+    - script: "{{ lookup('template', role_path + '/templates/set_usebrowser.groovy') }}"
+    - script: "{{ lookup('template', role_path + '/templates/set_slaveport.groovy') }}"
+    - script: "{{ lookup('template', role_path + '/templates/user.groovy') }}"
+    - script: "{{ lookup('template', role_path + '/templates/setenvvars.groovy') }}"
+    - script: "{{ lookup('template', role_path + '/templates/jenkins_root_url.groovy') }}"
+      when: "{{ jenkins_security_enabled }}"
+    - script: "{{ lookup('template', role_path + '/templates/roles_and_ldap_auth.groovy') }}"
+      when: "{{ jenkins_security_enabled }}"
+    - script: "{{ lookup('template', role_path + '/templates/enable-kerberos-sso.groovy') }}"
+      when: "{{ jenkins_security_enabled }}"
+    # This option will disable security, rather than avoid touching it when
+    # jenkins_security_enabled is false
+    - script: "{{ lookup('template', role_path + '/templates/basic_security.groovy') }}"
+      when: "{{ not jenkins_security_enabled }}"
+  become: true
+  become_user: "{{ jenkins_user }}"
+  # The "when" clause on a task gets evaluated separately for each element in
+  # an item list. Some of the elements in our list should not always be run
+  # while others should. So this logic will run any elements that are in the
+  # with_items without any attached conditionasl, but will evaluate the separate
+  # "when" clause attached to each item if one is given. This allows individual
+  # scripts to have their own script logic for when they should be executed
+  when: (item.when is not defined or item.when) | bool
+  tags:
+    - skip_ansible_lint
+    - jenkins_check_mode
+
+- name: configure user as CLI user
+  jenkins_cli_user:
+    jenkins_home: "{{ jenkins_home }}"
+    jenkins_user: "{{ item }}"
+    key_file: "{{ jenkins_cli_shell_user_home }}/.ssh/id_rsa.pub"
+    state: present
+  become: true
+  notify: restart Jenkins
+  with_items: "{{ [jenkins_admin.nickname] + jenkins_cli_users }}"

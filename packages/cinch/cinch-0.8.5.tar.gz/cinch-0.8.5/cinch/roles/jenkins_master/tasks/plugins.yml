@@ -1,0 +1,54 @@
+- name: wait for Jenkins
+  include: ensure_up.yml
+
+- name: run update center configure script
+  jenkins_update_center:
+    update_center_id: "{{ item.id }}"
+    update_center_url: "{{ item.url }}"
+  with_items: "{{ update_centers }}"
+  notify: restart Jenkins
+  become_user: jenkins
+  become: true
+
+- name: create cert path
+  file:
+    dest: "{{ jenkins_home }}/update-center-rootCAs"
+    state: directory
+    owner: jenkins
+    group: jenkins
+
+- name: copy cert file
+  copy:
+    src: "{{ update_center_certificate }}"
+    dest: "{{ jenkins_home }}/update-center-rootCAs/update-center.crt"
+    owner: jenkins
+    group: jenkins
+  notify: restart Jenkins
+  when: update_center_certificate is defined
+
+- name: force handlers
+  meta: flush_handlers
+
+- name: wait for jenkins master
+  include: ensure_up.yml
+
+- name: perform plugin install
+  jenkins_plugin:
+    url: "{{ _jenkins_url }}"
+    name: "{{ item.1.split('=')[0] }}"
+    state: present
+    version: "{{ item.1.split('=')[2] | default(omit) }}"
+    validate_certs: false
+    url_username: "{{ jenkins_admin.nickname }}"
+    url_password: "{{ admin_api_key | default('') }}"
+    updates_url: "{{ item.0.url | default(omit) }}"
+  register: plugin_install
+  retries: 3
+  until: not plugin_install|failed
+  with_subelements:
+    - "{{ jenkins_plugins }}"
+    - plugins
+  notify: restart Jenkins
+
+- name: flush handlers
+  meta: flush_handlers
