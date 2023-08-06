@@ -1,0 +1,366 @@
+Metadata-Version: 1.1
+Name: observablePy
+Version: 0.1.0
+Summary: Enable observable behavior to an element, so subscribed observers will receive any changes.
+Home-page: https://github.com/fredericklussier/ObservablePy
+Author: Frederick Lussier
+Author-email: frederick.lussier@hotmail.com
+License: MIT
+Download-URL: https://github.com/fredericklussier/ObservablePy/0.1.0
+Description-Content-Type: UNKNOWN
+Description: ObservablePy
+        ================
+        .. image:: https://travis-ci.org/fredericklussier/ObservablePy.svg?branch=master
+            :target: https://travis-ci.org/fredericklussier/ObservablePy
+        
+        .. image:: https://coveralls.io/repos/github/fredericklussier/ObservablePy/badge.svg?branch=master
+            :target: https://coveralls.io/github/fredericklussier/ObservablePy?branch=master
+        
+        
+        Enable observable behavior to an element, so subscribed observers will receive any changes.  
+        
+        Status
+        ------
+        In development.
+        
+        Features
+        --------
+        * Use decoration to set an observable element
+        * Use decoration to set an observer
+        * Actual value as weel as previous value
+        * Add and remove observable element dynamically
+        * Possibilty to observer multiple observable elements or all of them
+        * No external dependencies.
+        * Tested on Python 3.6.
+        
+        Installation
+        ------------
+        
+        .. code-block:: batch
+        
+            pip install observablePy
+        
+        If you want all, please read https://help.github.com/articles/cloning-a-repository/
+        
+        Working on (developping)
+        -------------------------
+        * Having an option for logging.
+        * When observe multiple element, knowing the element that change.
+        * Differing changes (diffuse all changes once a job is done.)
+        
+        Concepts
+        --------
+        * Observable: Observable implementation to a class.
+        * Observable Element: Is an element that diffuse changes to observers. It can be a property using @observable_property decorator or added using a function.
+        * State: All observable elements in the class. 
+        * Observer: An Observer is a function that will be called, when the specified observable element change.
+        * Diffusing: is the action to call all observers of a changed observable element.
+        
+        Bassically, when using property, observable will diffuse changes to subscribed observer when the property setter or deleter is executed. 
+        
+        When observable is not a property, you diffuse changes when you want in your flow.
+        
+        Usage
+        -----
+        Defining the observable class
+        
+        .. code-block:: python
+        
+            from observablePy import Observable, observable_property
+        
+            class Battery(Observable):
+            def __init__(self):
+                super().__init__()
+                self.__voltage = 0
+                self.__level = 0.0
+        
+                self.addObservableElement("startup")
+        
+            @observable_property
+            def voltage(self):
+                return self.__voltage
+        
+            @voltage.setter
+            def voltage(self, value):
+                self.__voltage = value
+        
+            @voltage.deleter
+            def voltage(self):
+                self.__voltage = None
+        
+            @observable_property
+            def level(self):
+                return self.__level
+        
+            @level.setter
+            def level(self, value):
+                self.__level = value
+            
+            def boot(self):
+                ...
+                self.diffuse("startup", false, true)
+        
+        Defining an observer
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+        
+            @self.battery.observeField("voltage")
+            def voltageHandle(previousValue, actualValue):
+                print("voltage is {0}".format(actualValue))
+            
+            def levelHandle(previousValue, actualValue):
+                print("Power level is {0}".format(actualValue))
+        
+            self.battery.observeField("level", levelHandle)
+        
+        Detailled description:
+        ----------------------
+        
+        Observe one element
+        ~~~~~~~~~~~~~~~~~~
+        When you observe one observable element, just named it. 
+        When this element change you will receive it.
+        
+        * previousValue : The value before the change
+        * actualValue : The actual value in the instance
+        
+        using the decoration:
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+        
+            @self.battery.observeElement("voltage")
+            def changeVoltagehandle(previousValue, actualValue):
+                print(actualValue)
+            
+        using code
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+        
+            def changeVoltagehandle(previousValue, actualValue):
+                print(actualValue)
+            
+            self.battery.observeElement("voltage", changeVoltagehandle)
+        
+        Observe multiple elements
+        ~~~~~~~~~~~~~~~~~~~~~~~
+        To observe multiple elements, just named them in an array. 
+        When one of them change, you will reveive a dict of 
+        elements and value of each of them.
+        
+        * previousValue (dict(field:Value)): The values before the change
+            exemple = {"voltage": 0, "level": 0.0}
+        * actualValue (dict(field:Value)): The actual values in the instance
+            exemple = {"voltage": 3254, "level": 0.0}
+        
+        using the decoration:
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+        
+            @self.battery.observeElements(["voltage", "level"])
+            def changeStatushandle(previousValue, actualValue):
+                print(actualValue["voltage"], actualValue["level"])
+            
+        using code
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+        
+            def changeStatushandle(previousValue, actualValue):
+                print(actualValue["voltage"], actualValue["level"])
+            
+            self.battery.observeElements(["voltage", "level"], changeStatushandle)
+        
+        Observe state
+        ~~~~~~~~~~~~~
+        If you want to observe all observable elements.
+        When one of them change, you will reveive a dict of 
+        elements and value of each of them.
+        
+        * previousValue (dict(field:Value)): The values before the change
+            exemple = {"voltage": 0, "level": 0.0, "plugged": 0}
+        * actualValue (dict(field:Value)): The actual values in the instance
+            exemple = {"voltage": 3524, "level": 0.0, "plugged": 0}
+        
+        using the decoration:
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+        
+            @self.battery.observeState()
+            def changeStatehandle(previousValue, actualValue):
+                print(actualValue["voltage"], actualValue["level"])
+            
+        using code
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+        
+            def changeStatehandle(previousValue, actualValue):
+                print(actualValue["voltage"], actualValue["level"])
+            
+            self.battery.observeState(changeStatehandle)
+        
+        Controlling observables and diffusion
+        -------------------------------------
+        You can add an observable element dynamically 
+        without using the properties as well as remove it. 
+        And you have the control of when to diffuse changes.
+        
+        The way to observe them does not change.
+        
+        Declaring an observable elements dynamically:
+        
+        .. code-block:: python
+        
+            class Battery(Observable):
+            def __init__(self):
+                super().__init__()
+                ...
+                self.addObservableElement("startup")
+        
+            def __del__():
+                self.removeObservableElement("startup")
+        
+            def startUp():
+                ...
+                self.diffuse("startup", false, true)
+        
+        Diffussing changes
+        ~~~~~~~~~~~~~~~~~~
+        Diffusing is the action to diffuse the change of an observable element to its observer.
+        
+        * what (str): the observable element name to diffuse 
+        * previousValue (any): the previous value before the observable element change
+        * actualValue (any): The actual values the observable element
+        
+        .. code-block:: python
+        
+            self.diffuse(what, previousValue, value)
+        
+        
+        Informationnal methods
+        ----------------------
+        Get a list of overvable elements
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        get the list of properties that have observable decoration
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+            print(self.battery.getObservableElements())
+        
+        .. code-block:: batch
+        
+            ["voltage", "level"]
+        
+        Does the class has observable element(s)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Mention if class has observable element.
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+            print(self.battery.hasObservableElements())
+        
+        result:
+        
+        .. code-block:: batch
+        
+            True
+        
+        Is this is an observable element
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Mention if an element is an observable element.
+        
+        * Element (str): the element name to evaluate
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+            print(self.battery.isObservableElement("temperature"))
+        
+        result:
+        
+        .. code-block:: batch
+        
+            False
+        
+        Does it has observer(s)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Mention if the instance of the class has observer.
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+            print(self.battery.hasObservers())
+        
+        result:
+        
+        .. code-block:: batch
+        
+            True
+        
+        Get the observer(s)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Get the list of observers ot the instance of the class.
+        
+        .. code-block:: python
+        
+            from Battery import Battery
+        
+            self.battery = Battery()
+            print(self.battery.getObservers())
+        
+        result:
+        
+        .. code-block:: batch
+        
+            [{"voltage": ["changeStatehandle"]},{"level": []}]
+        
+        
+        License
+        -------
+        Distributed under the MIT license: https://opensource.org/licenses/MIT
+        
+        Copyright (c) 2017 Frédérick Lussier (www.linkedin.com/in/frederick-lussier-757b849)
+        
+Keywords: observable,observer,observer-pattern
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: MIT License
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Natural Language :: English
