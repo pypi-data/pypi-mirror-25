@@ -1,0 +1,61 @@
+language: python
+
+python:
+{%- if cookiecutter.py36 == "yes" %}
+  - "3.6"
+{%- endif %}
+{%- if cookiecutter.py27 == "yes" %}
+  - "2.7"
+{%- endif %}
+{%- if cookiecutter.py35 == "yes" %}
+  - "3.5"
+{%- endif %}
+{%- if cookiecutter.py34 == "yes" %}
+  - "3.4"
+{%- endif %}
+{%- if cookiecutter.py33 == "yes" %}
+  - "3.3"
+{%- endif %}
+{%- if cookiecutter.py37 == "yes" %}
+  - "3.7-dev"
+{%- endif %}
+{%- if cookiecutter.py26 == "yes" %}
+  - "2.6"
+{%- endif %}
+{%- if cookiecutter.pypy3 == "yes" %}
+  - "pypy3"
+{%- endif %}
+{%- if cookiecutter.pypy == "yes" %}
+  - "pypy"
+{%- endif %}
+
+cache:
+    pip: true
+
+install:
+    - pip install -U -r requirements.txt
+    - pip install -U -r requirements/test.txt
+    - pip install coveralls
+    - pip install -e .
+
+# command to run tests
+script: make coverage
+
+after_success:
+  - coveralls
+
+{% if cookiecutter.use_pypi_deployment_with_travis == "yes" -%}
+# FIXME: untested and never used
+# After you create the Github repo and add it to Travis, run the
+# travis_pypi_setup.py script to finish PyPI deployment setup
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: {{ cookiecutter.pypi_username }}
+  password:
+    secure: PLEASE_REPLACE_ME
+  on:
+    tags: true
+    repo: {{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}
+    condition: $TOXENV == py27
+{%- endif %}
