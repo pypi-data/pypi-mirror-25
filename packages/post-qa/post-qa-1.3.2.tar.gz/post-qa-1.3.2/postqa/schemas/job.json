@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title" : "SQUASH Job upload schema",
+  "description" : "This JSON schema applies POST https://squash.lsst.codes/api/jobs.",
+
+  "definitions": {
+    "measurements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["metric", "value", "metadata"],
+        "additionalProperties": false,
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    },
+
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "git_url", "git_commit", "build_version"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "git_url": {"type": "string", "format": "uri"},
+          "git_commit": {"type": "string"},
+          "git_branch": {"type": "string"},
+          "build_version": {"type": "string"}
+        }
+      }
+    }
+  },
+
+  "type": "object",
+  "required": [
+    "measurements",
+    "packages",
+    "date",
+    "ci_id",
+    "ci_name",
+    "ci_dataset",
+    "ci_label",
+    "ci_url",
+    "status",
+    "blobs"],
+  "additionalProperties": false,
+  "properties": {
+    "measurements": {"$ref": "#/definitions/measurements"},
+    "packages": {"$ref": "#/definitions/packages"},
+    "date": {"type": "string", "format": "date-time"},
+    "ci_id": {"type": "string"},
+    "ci_name": {"type": "string"},
+    "ci_dataset": {"type": "string"},
+    "ci_label": {"type": "string"},
+    "ci_url": {"type": "string", "format": "uri"},
+    "status": {"type": "integer", "enum": [0, 1]},
+    "blobs": {"type": "array"}
+  }
+}
