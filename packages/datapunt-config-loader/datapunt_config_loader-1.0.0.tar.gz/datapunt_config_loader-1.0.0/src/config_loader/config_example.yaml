@@ -1,0 +1,46 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+postgres:
+  host: ${DB_HOST:-localhost}
+  port: ${DB_PORT:-5432}
+  user: ${DB_USER:-dbuser}
+  password: ${DB_PASS}
+  name: ${DB_DATABASE:-dbname}
+
+logging:
+  version: 1
+  formatters:
+    default:
+      format: '%(asctime)s authz_admin %(levelname)-8s %(module)s:%(lineno)d: %(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: default
+    aiohttp.access:
+      class: logging.StreamHandler
+  loggers:
+    authz_admin:
+      level: ${LOGLEVEL:-DEBUG}
+      handlers: [console]
+      propagate: false
+    aiohttp.access:
+      level: ${LOGLEVEL:-DEBUG}
+      handlers: [aiohttp.access]
+      propagate: false
+    aiohttp:
+      propagate: true
+#    aiohttp.*:
+#      propagate: true
+    rest_utils:
+      level: ${LOGLEVEL:-DEBUG}
+      handlers: [console]
+      propagate: false
+    config_loader:
+      level: ${LOGLEVEL:-DEBUG}
+      handlers: [console]
+      propagate: false
+  root:
+    level: ${LOGLEVEL:-WARNING}
+    handlers: [console]
