@@ -1,0 +1,292 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Setting up a Rucio development environment &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Naming convention for the Rucio database objects" href="naming_convention_db.html" />
+    <link rel="prev" title="Development Guidelines" href="development_guidelines.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="naming_convention_db.html" title="Naming convention for the Rucio database objects"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="development_guidelines.html" title="Development Guidelines"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="setting-up-a-rucio-development-environment">
+<h1>Setting up a Rucio development environment<a class="headerlink" href="#setting-up-a-rucio-development-environment" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="contributing-patches-code-review">
+<h2>Contributing patches &amp; code review<a class="headerlink" href="#contributing-patches-code-review" title="Permalink to this headline">¶</a></h2>
+<p>Rucio follows a next/master development scheme: two protected branches called “next” and “master” track all features and patches. Contributors create their own private development branches to do their work, and once finished and code reviewed, these branches are merged into next and/or master.</p>
+<p>The hosting is at GitLab, and the upstream is at:</p>
+<blockquote>
+<div><a class="reference external" href="https://gitlab.cern.ch/rucio01/rucio">https://gitlab.cern.ch/rucio01/rucio</a></div></blockquote>
+</div>
+<div class="section" id="first-setup">
+<h2>First setup<a class="headerlink" href="#first-setup" title="Permalink to this headline">¶</a></h2>
+<p>Go to the GitLab web-interface mentioned above, and login with your CERN account. It will give you the option to fork the rucio01/rucio repository into your private account (upper left corner). Do this.</p>
+<p>Afterwards, switch to your private account and clone it, for example:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ git clone https://gitlab.cern.ch/&lt;cern_username&gt;/rucio.git
+</pre></div>
+</div>
+<p>Setup your git environment. You must provide a valid e-mail address and ask Developer access to the project Rucio in Gitlab:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ git config ---global user.name=&#39;Joaquin Bogado&#39;
+$ git config ---global user.name=&#39;joaquin.bogado@cern.ch&#39;
+</pre></div>
+</div>
+<p>The repository hooks and upstream are installed by executing the script tools/configure_git.sh:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ cd rucio
+$ ./tools/configure_git.sh
+</pre></div>
+</div>
+<p>Verify that everything is alright. You should see both push/pull remotes for origin (your private account) and upstream (official rucio repository):</p>
+<div class="highlight-default"><div class="highlight"><pre>$ git remote -v
+ origin  ssh://git@gitlab.cern.ch:7999/jbogadog/rucio.git (fetch)
+ origin  ssh://git@gitlab.cern.ch:7999/jbogadog/rucio.git (push)
+ upstream        https://gitlab.cern.ch/rucio01/rucio.git (fetch)
+ upstream        xxx (push)
+</pre></div>
+</div>
+<p>Also, it’s necessary to create the file .gitlabkey with the development key provided by the GitLab interface (<a class="reference external" href="https://gitlab.cern.ch/profile/account">gitlabkey</a>) in the local directory.</p>
+</div>
+<div class="section" id="installing-dependencies">
+<h2>Installing dependencies<a class="headerlink" href="#installing-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Rucio maintains three lists of dependencies:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ tools/pip-requires
+$ tools/pip-requires-client
+$ tools/pip-requires-test
+</pre></div>
+</div>
+<p>The first is the list of dependencies needed for running rucio,
+the second list includes dependencies used for the rucio python clients and CLIs and
+the third list is for active development and testing of rucio itself.</p>
+<p>These depdendencies can be installed from <a class="reference external" href="http://pypi.python.org/">PyPi</a> using the python tool <a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a> or by using
+the tools/install_venv.py script as described in the next section.</p>
+<p>However, your system <em>may</em> need additional dependencies that <cite>pip</cite> (and by
+extension, PyPi) cannot satisfy. These dependencies should be installed
+prior to using <cite>pip</cite>, and the installation method may vary depending on
+your platform.</p>
+</div>
+<div class="section" id="pypi-packages-and-virtualenv">
+<h2>PyPi Packages and VirtualEnv<a class="headerlink" href="#pypi-packages-and-virtualenv" title="Permalink to this headline">¶</a></h2>
+<p>We recommend establishing a virtualenv to run rucio within. Virtualenv limits the python environment
+to just what you’re installing as dependencies, useful to keep a clean environment for working on
+rucio. The tools directory in rucio has a script already created to make this very simple:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ python tools/install_venv.py
+</pre></div>
+</div>
+<p>This will create a local virtual environment in the directory <code class="docutils literal"><span class="pre">.venv</span></code>.</p>
+<p>If you need to develop only the clients and have a default configuration:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ python tools/install_venv.py --atlas-clients
+</pre></div>
+</div>
+<p>Once created, you can activate this virtualenv for your current shell using:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ source .venv/bin/activate
+</pre></div>
+</div>
+<p>The virtual environment can be disabled using the command:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ deactivate
+</pre></div>
+</div>
+<p>You can also use <code class="docutils literal"><span class="pre">tools\with_venv.sh</span></code> to prefix commands so that they run
+within the virtual environment. For more information on virtual environments,
+see <a class="reference external" href="http://www.virtualenv.org/">virtualenv</a>.</p>
+<p>Lastly you have to create a symbolic link from the virtual environments python directory to the rucio source directory:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ cd .venv/lib/python2.7/site-packages/
+$ ln PATH_TO_INSTALL_DIRECTORY/lib/rucio/ rucio -s
+</pre></div>
+</div>
+</div>
+<div class="section" id="developing-a-feature">
+<h2>Developing a feature<a class="headerlink" href="#developing-a-feature" title="Permalink to this headline">¶</a></h2>
+<p>Features are scheduled for the next Rucio release and are collected from the protected “next” branch. Create a new feature branch with:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ tools/create-feature-branch &lt;ticketnumber&gt; &lt;branch description&gt;
+</pre></div>
+</div>
+<p>and do your development there. When done, push the branch into origin (your private account) for code review:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ tools/submit-merge
+</pre></div>
+</div>
+</div>
+<div class="section" id="developing-a-patch">
+<h2>Developing a patch<a class="headerlink" href="#developing-a-patch" title="Permalink to this headline">¶</a></h2>
+<p>A patch works exactly the same, but is branched off the “master”. Create a new patch branch with:</p>
+<div class="highlight-default"><div class="highlight"><pre>$ tools/create-patch-branch &lt;ticketnumber&gt; &lt;branch description&gt;
+</pre></div>
+</div>
+<p>and do your development there. When done, push the branch into origin (your private account) for code review::</p>
+<div class="highlight-default"><div class="highlight"><pre>$ tools/submit-merge
+</pre></div>
+</div>
+</div>
+<div class="section" id="code-review-and-merging-a-patch">
+<h2>Code review and merging a patch<a class="headerlink" href="#code-review-and-merging-a-patch" title="Permalink to this headline">¶</a></h2>
+<p>Two rules must be obeyed:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Feature branches must be merged into “next”</li>
+<li>Patch branches must be merged into “master” and “next”</li>
+</ol>
+</div></blockquote>
+<p>(For now, step 2 is manual, we will automate it in the future.) Click the “Merge request” button in the web-interface and select the (potentially two) appropriate destination branches, e.g., from youraccount/featurebranch to rucio/next. Don’t forget that patch branches need two merge requests, both into “next” and “master”. (In the future, this will be automated. It is also possible to do this via CLI only, no web interface is actually needed.)</p>
+<p>The merge request will enable the code review. After successful code review, the responsible can merge the patch on the web interface.</p>
+<p><em>If something is weird, ask for help on rucio-dev&#64;cern.ch :-D</em></p>
+</div>
+<div class="section" id="ticketing-system">
+<h2>Ticketing system<a class="headerlink" href="#ticketing-system" title="Permalink to this headline">¶</a></h2>
+<p>For Rucio we are using Jira to manage the development of the project:</p>
+<blockquote>
+<div><a class="reference external" href="https://its.cern.ch/jira/browse/RUCIO">https://its.cern.ch/jira/browse/RUCIO</a></div></blockquote>
+<p>Tickets for new features should be submitted with a functional granularity, that is according to the API call being introduced and at which level it belongs. For example, “register_dataset API (CORE)”, “register_dataset (REST)”, and “register_dataset API (CLIENT)”, instead of big and vague new feature definitions like “new dataset functionality”. This level of granularity allows better tracking of the progress of the RUCIO project, informs developers when new interfaces become available, and leads to more meaningful changelogs when a release is made.</p>
+<p>In order to avoid generating too many tickets and insuring the documentation of relevant work is placed in a single description, all minor schema changes and corresponding test cases should be included as part of the new feature ticket and seperate tickets should not be made. The exception to this is if additional functionality, a bug fix or a new test case is added to the task in a newer release of Rucio, this then should be documented as a new ticket, rather than modifying the existing ticket (as it is assigned to the previous Rucio release).</p>
+<p>The ticket workflow in Jira is summarised here:</p>
+<blockquote>
+<div><a class="reference external" href="https://confluence.atlassian.com/download/attachments/284367573/system-workflow.png">https://confluence.atlassian.com/download/attachments/284367573/system-workflow.png</a></div></blockquote>
+<p>When one is finished working on a new feature or bug fix and this has been commited and submitted to Code Review for approval, the ticket status should be changed to ‘resolved’. Once the new code has been approved and commited to the GIT master the ticket status should be changed to ‘closed’.</p>
+<p>GIT commits should include the relevant JIRA ticket number(s) in the beginning of the commit message. This is because Jira is integrated with GIT and will associate the tickets to the corresponding GIT commits.</p>
+<p>Jira ticket headers and descriptions will be included on release changelogs. For this reason the titles and descriptions should be meaningful.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Setting up a Rucio development environment</a><ul>
+<li><a class="reference internal" href="#contributing-patches-code-review">Contributing patches &amp; code review</a></li>
+<li><a class="reference internal" href="#first-setup">First setup</a></li>
+<li><a class="reference internal" href="#installing-dependencies">Installing dependencies</a></li>
+<li><a class="reference internal" href="#pypi-packages-and-virtualenv">PyPi Packages and VirtualEnv</a></li>
+<li><a class="reference internal" href="#developing-a-feature">Developing a feature</a></li>
+<li><a class="reference internal" href="#developing-a-patch">Developing a patch</a></li>
+<li><a class="reference internal" href="#code-review-and-merging-a-patch">Code review and merging a patch</a></li>
+<li><a class="reference internal" href="#ticketing-system">Ticketing system</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="development_guidelines.html"
+                        title="previous chapter">Development Guidelines</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="naming_convention_db.html"
+                        title="next chapter">Naming convention for the Rucio database objects</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/developing.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="naming_convention_db.html" title="Naming convention for the Rucio database objects"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="development_guidelines.html" title="Development Guidelines"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
