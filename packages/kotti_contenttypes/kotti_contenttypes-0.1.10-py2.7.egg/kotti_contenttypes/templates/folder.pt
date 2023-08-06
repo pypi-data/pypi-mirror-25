@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="api.macro('kotti:templates/view/master.pt')">
+
+  <article metal:fill-slot="content"
+           class="content default-view"
+           i18n:domain="kotti_contenttypes">
+
+    <h1>${context.title}</h1>
+    <p class="lead">
+      ${context.description}
+    </p>
+    <div id="folder-listing"  class="form-inline">
+     <h2>
+      <span>Resources<span>
+      <span class="pull-right">
+          <input class="search form-control" placeholder="Search" />
+          <button class="sort btn btn-primary" data-sort="title">
+            Sort by name
+          </button>
+          <button class="sort btn btn-primary" data-sort="contenttype">
+            Sort by Type
+          </button>
+          </span>
+        </h2>
+
+          <ul class="list">
+            <tal:block tal:repeat="item context.children">
+                  <li tal:condition="request.has_permission('view', item)" >
+                    <h3 class="title">
+                      <a tal:attributes="href api.url(item)">${item.title}</a>
+                      <span class="cotenttype badge pull-right">${item.type_info.title}</span>
+                    </h3>
+                    <span style="display: none" class="contenttype">${item.type_info.title}</span>
+                    <p class="description">${item.description}</p>
+                  </li>
+            </tal:block>
+          </ul>
+          <ul class="pagination"></ul>
+        </div>
+
+  </article>
+</html>
