@@ -1,0 +1,515 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>TheVirtualBrain Data Formats &mdash; TVB 1.5.4-8414 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.5.4-8414',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="top" title="TVB 1.5.4-8414 documentation" href="../../index.html" />
+    <link rel="up" title="Developers" href="../../doc_site/top_developers.html" />
+    <link rel="prev" title="A Description of a Complete Dataset" href="Complete_Dataset_Description.html" /> 
+  </head>
+  <body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body">
+            
+  <div class="section" id="tvb-data-formats">
+<span id="data-formats"></span><h1><em>TheVirtualBrain</em> Data Formats<a class="headerlink" href="#tvb-data-formats" title="Permalink to this headline">¶</a></h1>
+<p>The purpose of this chapter is to provide some details about the way <em>TheVirtualBrain</em>
+instance/installation can exchange data with other <em>TheVirtualBrain</em> instances, or with
+other applications available in the neuroscience community. Currently, there are
+several applications that can analyze and record brain activity in different
+formats, and one of the goals of <em>TheVirtualBrain</em> is to allow users from different
+backgrounds to have quick access to their recorded data.</p>
+<p>To achieve this, we have implemented some mechanisms to <strong>IMPORT / EXPORT</strong> data
+at different levels and formats:</p>
+<ul class="simple">
+<li><strong>Project</strong> - As you may know, <em>TheVirtualBrain</em> data is organized in projects and
+one of the options is to transfer projects (with attached data) entirely
+between <em>TheVirtualBrain</em> installations. This mechanism can be used only between <em>TheVirtualBrain</em>
+applications, and no other external tools.</li>
+<li><strong>Simple Data</strong> - This feature allows you to transfer independent data (e.g.
+surface, connectivity, time series) between two <em>TheVirtualBrain</em> instances or between <em>TheVirtualBrain</em>
+and an external application. As you may note later, depending on the targeted
+application, data can be exchanged in a custom <em>TheVirtualBrain</em> format or a commonly used
+format used in the neuroscience community (e.g. CFF, GIFTI, NIFTI ...)</li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>During export and import operations <em>TheVirtualBrain</em> does not apply any space
+transformation, so users have to ensure their data (especially in case
+of import) is generated/stored in the same space.</p>
+<p class="last"><em>TheVirtualBrain</em>&#8216;s default project contains data in a space where the nose is pointing
+in the direction of <tt class="docutils literal"><span class="pre">-y</span></tt> and the left ear in the direction of <tt class="docutils literal"><span class="pre">+x</span></tt>.
+The space is right handed: <tt class="docutils literal"><span class="pre">+z</span></tt> points up.</p>
+</div>
+<p>Before proceeding with more details about data exchange, it would be helpful to
+give you an idea how <em>TheVirtualBrain</em> stores its data. Basically there are two major
+storage areas:</p>
+<ol class="arabic simple">
+<li><em>Database</em> - where general information/metadata are stored and relation
+between stored elements (e.g. assignment of data to a project, data metadata
+- creation date, owner, etc...)</li>
+<li><em>Disk</em> - here we store &#8220;the real&#8221; data in a HDF5 format
+(<a class="reference external" href="http://www.hdfgroup.org/HDF5">http://www.hdfgroup.org/HDF5</a>). This means that for each data type (e.g.
+surface, connectivity, time series) we store on the disk, it is given a
+folder structure in an HDF5 / H5 file which contains all data (e.g. vertices,
+triangles, etc ...). This format has the following advantages which made it an
+optimal solution for our product:<ul>
+<li>can store huge pieces of data and can access it very fast (even random
+access)</li>
+<li>can organize data in a tree structure (groups and leaves)</li>
+<li>allows assignment of metadata on every level</li>
+<li>is a format agreed upon by the community and can be used/opened with
+different tools/languages (Python, Matlab, java, C++ ...)</li>
+</ul>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>An important aspect of <em>TheVirtualBrain</em> storage is that each data/datatype has associated a
+GUID, which makes it unique on every system where that data exists.</p>
+<div class="section" id="exchange-projects">
+<h2>Exchange Projects<a class="headerlink" href="#exchange-projects" title="Permalink to this headline">¶</a></h2>
+<p><em>TheVirtualBrain</em> product can be installed both on a server, to be used concurrent by multiple
+users, but also as a standalone application on a desktop/laptop for personal use.
+Specifically for the second scenario, there was an important request to allow
+people to exchange data. So, <em>TheVirtualBrain</em> has a mechanism to export and import an entire
+project to another system.</p>
+<div class="section" id="export-project">
+<h3>Export Project<a class="headerlink" href="#export-project" title="Permalink to this headline">¶</a></h3>
+<p>Using <em>TheVirtualBrain</em> interface, any user can export their projects in a custom format that
+can be transferred to other users.</p>
+<div class="section" id="file-format">
+<h4>File Format<a class="headerlink" href="#file-format" title="Permalink to this headline">¶</a></h4>
+<p>Export results are a ZIP file (named: date + project name), containing in a
+folder structure, all the details about the project. More specifically, it
+contains:</p>
+<ul>
+<li><p class="first">A root level XML file with details about the project itself</p>
+</li>
+<li><p class="first">Folders for each operation performed as part of the project</p>
+</li>
+<li><p class="first">Operation folder contains an XML file with details of the operation and
+a set of H5/HDF5 files for each data type generated during that operation.</p>
+<blockquote>
+<div><div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">each of the H5 files has a structure as described above in
+<em>TheVirtualBrain</em> Storage section.</p>
+</div>
+</div></blockquote>
+</li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-project">
+<h3>Import Project<a class="headerlink" href="#import-project" title="Permalink to this headline">¶</a></h3>
+<p>A project exported on one system can now be imported on another machine. In the
+projects area, <em>TheVirtualBrain</em> offers the possibility to import a project packed as ZIP
+file.</p>
+<div class="section" id="id1">
+<h4>File Format<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p>To import a project, the user has to provide a ZIP with the same structure like the
+one described above for &#8216;Export Project&#8217;.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">The same project cannot be imported multiple times on the same machine,
+because each project/data has a unique identifier (GUID).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="export-data">
+<h2>Export Data<a class="headerlink" href="#export-data" title="Permalink to this headline">¶</a></h2>
+<p>Using <em>TheVirtualBrain</em> interface, users can view all data types associated with a project and
+choose to export individual pieces of data.</p>
+<p>The <em>Export Datatype</em> operation results in a file with a format specific to <em>TheVirtualBrain</em>; it is not
+a standard format that can be used automatically by other software. This is
+basically HDF5/H5 format
+[<a class="reference external" href="http://www.hdfgroup.org/HDF5">http://www.hdfgroup.org/HDF5</a>] which, for each
+data type, contains both data and metadata. These files can be easily opened in
+Python / Matlab / Java / C++ for additional processing.</p>
+<p>In case you want to process HDF5 files with Matlab you can find API
+documentation here:</p>
+<blockquote>
+<div><a class="reference external" href="http://www.mathworks.com/help/matlab/ref/hdf5read.html">http://www.mathworks.com/help/matlab/ref/hdf5read.html</a></div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The HDF5 functionality referenced above was only introduced in Matlab 2011a.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In the future other data formats might be supported as export format from TVB,
+but for now, the HDF5 is the only format available at export time.</p>
+</div>
+<div class="section" id="id2">
+<h3>File Format<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>As a result of a Simulation or Analyze function, <em>TheVirtualBrain</em> can generate either a data
+type or a group of data types. Each of such structures can be exported as follows:</p>
+<ol class="arabic simple">
+<li>if a simple data type is exported, the result is an HDF5 file which has a root
+node datatype metadata and leaves the real data.</li>
+<li>if a data type group is exported, the result is a ZIP file containing:<ul>
+<li>at root level, an XML file with the details of the operation that
+generated the data types</li>
+<li>a list of HDF5 files, one for each data type included in the exported
+group. Each file has structure/details as described above in the case of
+simple data type export. <em>This format applies to any |TVB| data type.</em></li>
+</ul>
+</li>
+</ol>
+</div>
+</div>
+<div class="section" id="import-data">
+<h2>Import Data<a class="headerlink" href="#import-data" title="Permalink to this headline">¶</a></h2>
+<p>Probably this is the most important feature of data exchange, since it allows
+<em>TheVirtualBrain</em> to bring together data generated independently by other systems/applications
+and allows it&#8217;s users to perform different analyses on it and visualize them.
+Since there is an abundance of formats available for neuroimaging data, <em>TheVirtualBrain</em>
+tries to support as many as possible for an improved user experience.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>In case the imported data includes/represents a surface, <em>TheVirtualBrain</em> does an extra
+check regarding the number of vertices of that surface. Basically you can
+not import into <em>TheVirtualBrain</em> a surface that has more vertices than a MAX value.</p>
+<p class="last">This MAX value is defines and can be changed in the Application Settings
+area, depending on the configuration/performance of your hardware.</p>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="section" id="import-data-in-tvb-format">
+<h3>Import Data in <em>TheVirtualBrain</em> Format<a class="headerlink" href="#import-data-in-tvb-format" title="Permalink to this headline">¶</a></h3>
+<p>In correlation with export operations, <em>TheVirtualBrain</em> interface allows import of data in
+<em>TheVirtualBrain</em> format that has been exported from other systems. This format applies to any
+<em>TheVirtualBrain</em> data type. Depending on the uploaded file format, imported data can be as
+follows:</p>
+<div class="section" id="id3">
+<h4>File Format<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>If user uploads a ZIP file, the system automatically assumes a datatype group
+must be imported and then process the file accordingly. More specifically, it
+tries to find an XML file, within the ZIP file, describing the operation(s)
+that generated the data types and the list of HDF5 files for each datatype.</li>
+<li>If user uploads a simple HDF5/H5 file, the system assumes that a simple data
+type is imported and tries to process the file accordingly. Basically it
+reads the metadata stored in the root node group and determines the data type
+(e.g. connectivity, time series ...). Based on the detected type of data, the
+rest of the details are filled and the object is stored in the database.</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-volume-time-series-from-nifti-1-format">
+<h3>Import Volume Time Series from NIFTI-1 Format<a class="headerlink" href="#import-volume-time-series-from-nifti-1-format" title="Permalink to this headline">¶</a></h3>
+<p>NIFTI [<a class="reference external" href="http://www.nitrc.org/projects/nifti">http://www.nitrc.org/projects/nifti</a> ] is a standard format maintained by
+&#8220;The Neuroimaging Informatics Technology Initiative (NIfTI) and NIfTI Data
+Format Working Group&#8221; and allows the exchange of data with different meanings
+(imaging data, statistical values, etc.; stored as vectors, matrix, label set or
+mesh). NIFTI data can be stored in &lt;.nii&gt; or &lt;.hdr+.img&gt; files, or any of these
+in zipped format (&lt;.gz&gt; files).</p>
+<p>For the moment, <em>TheVirtualBrain</em> accommodates import of Volume Time Series from NIFTI files.</p>
+<div class="section" id="id4">
+<h4>File Format<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<p>For import, <em>TheVirtualBrain</em> users can upload either .nii or .gz files containing NIFTI data
+in the format specified by [<a class="reference external" href="http://www.nitrc.org/projects/nifti">http://www.nitrc.org/projects/nifti</a>]</p>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-sensors">
+<h3>Import Sensors<a class="headerlink" href="#import-sensors" title="Permalink to this headline">¶</a></h3>
+<p><em>TheVirtualBrain</em> allows users to import data about sensors used for brain imaging. More
+specifically, <em>TheVirtualBrain</em> supports three types of sensors: EEG, MEG and INTERNAL. During
+the import process, the user has to select a file to import and the type of the
+imported sensors. Based on the selected type, the data from the uploaded file
+will be processed accordingly.</p>
+<div class="section" id="id5">
+<h4>File Format<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<p>During import, the user might upload either a TXT file or a zipped TXT in bz2
+format. This TXT file should contain data separated by spaces and grouped as
+follows:</p>
+<ol class="arabic simple">
+<li>each line contains details of a sensor</li>
+<li>for each sensor there are four or seven columns<ul>
+<li>first column represents the name / label of the sensor</li>
+<li>next three columns represents the position of sensor (x, y, z)</li>
+<li>next three columns (if present) represents the orientation of sensor.
+These are required only for MEG sensors.</li>
+</ul>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-connectivity-from-zip">
+<h3>Import Connectivity from ZIP<a class="headerlink" href="#import-connectivity-from-zip" title="Permalink to this headline">¶</a></h3>
+<p>This feature allows import of connectivity from a ZIP file. The ZIP should
+contain files with connectivity details as follows:</p>
+<div class="section" id="id6">
+<h4>File Format<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h4>
+<p>ZIP file should include files with the following naming schema and format:</p>
+<ol class="arabic simple">
+<li>If any file name contains &#8220;weight&#8221;, it will be considered as the container
+for connectivity weights and the parse process expects the following format:<ul>
+<li>text file containing values separated by spaces / tabs</li>
+<li>contains a matrix of weights</li>
+<li>any value greater than zero is considered as a connection. You should not have negative values in your weights file.</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;centres&#8221; it will be considered as the container
+for connectivity centers and the parse process expects the following format:<ul>
+<li>text file containing values separated by spaces / tabs</li>
+<li>each row represents coordinates data for a region center</li>
+<li>each row should have at least 4 columns: region label and center position (x, y, z)</li>
+<li>a region label is a short unique identifier, for example: ‘RM-TCpol_R’</li>
+<li>each region centre is just a single point in space, corresponding to the centre of the region</li>
+<li>the meaning of the (x,y,z) coordinates depends entirely on how data was generated.
+It is possible to specify any coordinate system you want (“native”, “mni”, “talaraich”) depending on the processing you apply to your data.
+A region centre would be a single spatial location in 3D.
+This location is specified by three numbers (x,y,z), these numbers should ideally represent mm and must be relative to an origin (x=0, y=0, z=0).</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;tract&#8221; it will be considered as container for
+connectivity tract lengths and the parse process expects the following
+format:<ul>
+<li>text file containing values separated by spaces / tabs</li>
+<li>contains a matrix of tract lengths</li>
+<li>any value greater than zero is considered as a connection. You should not have negative values in your tract file.</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;orientation&#8221; it will be considered as container
+for connectivity center orientations and parse process expects the following
+format:<ul>
+<li>text file containing values separated by spaces / tabs</li>
+<li>each row represents orientation for a region center</li>
+<li>each row should have at least 3 columns for region center orientation (3 float values separated with spaces or tabs)</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;area&#8221; it will be considered as container for
+connectivity areas and the parse process expects the following format:<ul>
+<li>text file containing one area on each line (as float value)</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;cortical&#8221; it will be considered as container for
+connectivity cortical/non-cortical region flags, and the parse process expects the following format:<ul>
+<li>text file containing one boolean value on each line (as 0 or 1 value) being 1 when corresponding region is cortical.</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;hemisphere&#8221; it will be considered as container for
+hemisphere inclusion flag for connectivity regions, and the parse process expects the following format:<ul>
+<li>text file containing one boolean value on each line (as 0 or 1 value) being 1 when corresponding region is in the right hemisphere and 0 when in left hemisphere.</li>
+</ul>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-surface-from-zip">
+<h3>Import Surface from ZIP<a class="headerlink" href="#import-surface-from-zip" title="Permalink to this headline">¶</a></h3>
+<p>Using this option, users have the possibility to import a surface from a more
+human readable format into TVB. Basically users have to upload a zip file
+containing surface data and specify what type of surface they upload (Cortical
+Surface, Brain Skull, Skull Skin or Skin Air).</p>
+<div class="section" id="id7">
+<h4>File Format<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h4>
+<p>Uploaded ZIP file should contain files with a specified naming schema and format
+as follow:</p>
+<ol class="arabic simple">
+<li>If any file name contains &#8220;vertices&#8221; it will be considered as container for
+surface vertices and parse process expects the following format:<ul>
+<li>this is a space separated values file</li>
+<li>each row represents position of a vertex</li>
+<li>each row should have three columns (x, y, z as float values)</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;normals&#8221; it will be considered as container for
+surface vertices normals and parse process expects the following format:<ul>
+<li>this is a space separated values file</li>
+<li>each row represents a vertex normal</li>
+<li>each row should have three columns (with float values)</li>
+</ul>
+</li>
+<li>If any file name contains &#8220;triangles&#8221; it will be considered as container for
+surface triangles and parse process expects the following format:<ul>
+<li>this is a space separated values file</li>
+<li>each row represents a triangle</li>
+<li>each row should have three columns (int values) - each value representing
+the index of a vertex from the vertices array. This indices could be ZERO
+based or not, depending on the source which generated the surface. This
+is the user is required to specify this at import time.</li>
+</ul>
+</li>
+</ol>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>There are systems/applications that generate and store surface data in two parts:
+for left and right side. If this is the case, the imported ZIP file is expected
+to contain text files with the same naming and format, but the name should
+contain letter &#8220;r&#8221; or &#8220;l&#8221; at the end of the suffix (e.g. &lt;trianglesl.txt&gt; and
+&lt;trianglesr.txt&gt;)</p>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-surface-from-wavefront-obj">
+<h3>Import Surface from wavefront obj<a class="headerlink" href="#import-surface-from-wavefront-obj" title="Permalink to this headline">¶</a></h3>
+<p>OBJ is a generic 3d geometry format. Many 3d authoring tools can export geometry
+in this format.</p>
+<div class="section" id="id8">
+<h4>File Format<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h4>
+<p>An overview of the OBJ file format can be found on <a class="reference external" href="http://en.wikipedia.org/wiki/Wavefront_.obj_file">Wikipedia</a>
+TVB supports only a subset of the specification. Meaning that only geometry data is considered
+and accepted forms for faces attributes are: triangles or quads.
+We ignore at import time features such as texture coordinates, materials and groups.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-surface-and-timeseries-from-gifti">
+<h3>Import Surface and TimeSeries from GIFTI<a class="headerlink" href="#import-surface-and-timeseries-from-gifti" title="Permalink to this headline">¶</a></h3>
+<p>This is a geometry format (<a class="reference external" href="http://www.nitrc.org/projects/gifti/">http://www.nitrc.org/projects/gifti/</a>) under the
+Neuroimaging Informatics Technology Initiative (NIfTI) that allows exchange of
+brain data (surface, time series, shapes, labels ...). Basically format is
+XML based which stores both data and associated metadata in a single file, with
+.gii extension.</p>
+<p>If uploaded .gii file contains a surface (Cortical Surface or SkinAir) during
+import <em>TheVirtualBrain</em> stores found vertices / triangles and computes normals for them.</p>
+<p>In case .gii file contains a TimeSeries, user will be asked to specify what is
+the surface for which TimeSeries is imported. Important to know: number of
+vertices from imported time series must be the same as the one selected for surface.
+Otherwise import procedure will fail.</p>
+<div class="section" id="id9">
+<h4>File Format<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
+<p>This is a standard format, supported by a large community so all details about
+it and samples can be found here:</p>
+<blockquote>
+<div><a class="reference external" href="http://www.nitrc.org/projects/gifti">http://www.nitrc.org/projects/gifti</a></div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">At this moment <em>TheVirtualBrain</em> supports only import of data from a single .gii file.
+It does not handles cases when metadata is defines in .gii (XML) file and
+real data in external files.</p>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-data-from-cff">
+<h3>Import Data from CFF<a class="headerlink" href="#import-data-from-cff" title="Permalink to this headline">¶</a></h3>
+<p>CFF (Connectome File) is a complex format that tries to put together all data
+necessary for brain simulations or analysis. Because of its complexity and lack
+of support from the community, this format is not used very often. For this
+reason, we decided to implement <strong>import</strong> only of a custom form of CFF, for
+demo purposes.  Support for CFF import might be removed in the future versions.</p>
+<p>The current <em>TheVirtualBrain</em> version includes a set of demo data, housed in a folder that
+contains two CFF files which could be imported for testing.</p>
+<p>Since CFF is a complex format you can use it for uploading single data (e.g one
+surface, connectivity, local connectivity, region mapping) but also you could
+group multiple such data into a single CFF file.</p>
+<div class="section" id="id10">
+<h4>File Format<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
+<p>For this feature, the user has to upload a CFF file (which is basically a ZIP
+file) containing a root file &lt;meta.cml&gt; which describes the content of the
+archive. This file specifies what data types are packed (e.g. connectivity,
+surface, region mapping) and which files contain data for these types. In our
+demo data, files are in different formats: starting from raw data (numpy dump),
+GIFTI, NXGPickle.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-region-mapping">
+<h3>Import Region Mapping<a class="headerlink" href="#import-region-mapping" title="Permalink to this headline">¶</a></h3>
+<p>A Region Mapping in <em>TheVirtualBrain</em> is a vector, defining a map between a Cortical Surface and a Connectivity.
+At import time, you will need to have at least 2 entities in <em>TheVirtualBrain</em> system: Connectivity and Cortical Surface.
+The two entities need to be spatially aligned (overlap correctly in 3D space).</p>
+<div class="section" id="id11">
+<h4>File Format<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
+<p>For this upload we expect a text file (possibly compressed with bz2). The text file should have no headers,
+only numeric values separated with spaces.</p>
+<p>The file is expected to hold a vector of length number of vertices in the Cortical Surface.
+The numeric values should be in the interval (0...n-1), where n is the number of regions in  the connectivity.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="import-projection-matrix">
+<h3>Import Projection Matrix<a class="headerlink" href="#import-projection-matrix" title="Permalink to this headline">¶</a></h3>
+<p>A Projection Matrix, is intended to define a mapping from a source object and a set of sensors.
+The source entity can be either a Cortical Surface or a Connectivity, in <em>TheVirtualBrain</em>.
+In order for this import to work, you will need to have previously imported in <em>TheVirtualBrain</em>:
+both the source and the sensors entities.</p>
+<div class="section" id="id12">
+<h4>File Format<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
+<p>For this upload we expect a single text file, with numeric values, space and line separated.
+The numeric values in the uploaded file should hold a matrix of size (n, m).
+<strong>n</strong> is the number of sensors, and <strong>m</strong> is the  number of nodes. When the
+projection matrix we want to import is a
+Surface Projection Matrix, <strong>m</strong> will be the number of vertices in the target Cortical Surface.
+When the projection matrix is a region-level one, <strong>m</strong> will be the number of regions in the Connectivity.
+Having headers in the text file is not accepted. An incorrect number of values (lines or rows) in the
+Projection Matrix will also raise an exception.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2013-2016, TVB Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
