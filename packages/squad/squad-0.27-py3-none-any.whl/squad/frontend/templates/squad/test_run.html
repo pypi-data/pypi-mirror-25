@@ -1,0 +1,150 @@
+{% extends "squad/base.html" %}
+{% load squad %}
+
+{% block content %}
+
+{% load squad %}
+<h1>
+    <a href="{% group_url project.group %}">{{project.group}}</a>
+    » <a href="{% project_url project %}">{{project.slug}}</a>
+    » <a href="{% build_url build %}">Build {{build.version}}</a>
+    »
+    Test run {% if test_run.job_url %}<a href="{{ test_run.job_url }}">{% endif %}<u>{{test_run.job_id}}</u>{% if test_run.job_url %}</a>{% endif %}
+    <small>Environment: <em>{{test_run.environment.slug}}</em></small>
+</h1>
+
+
+<h2>Metadata</h2>
+{% include "squad/_metadata.html" %}
+
+<h2>Downloads</h2>
+
+{% if test_run.log_file|length > 0 %}
+<a href="log" class='btn btn-default'>
+    <i class='fa fa-file-text-o'></i>
+    Log file
+</a>
+{% endif %}
+
+{% if test_run.tests_file|length > 0 %}
+<a href="tests" class='btn btn-default'>
+    <i class='fa fa-file-code-o'></i>
+    Tests file
+</a>
+{% endif %}
+
+{% if test_run.metrics_file|length > 0 %}
+<a href="metrics" class='btn btn-default'>
+    <i class='fa fa-file-code-o'></i>
+    Metrics file
+</a>
+{% endif %}
+
+{% if test_run.metadata_file|length > 0 %}
+<a href="metadata" class='btn btn-default'>
+    <i class='fa fa-file-code-o'></i>
+    Metadata file
+</a>
+{% endif %}
+
+{% if attachments|length > 0 %}
+{% for file, file_type, length in attachments %}
+<a href="attachments/{{file}}" class='btn btn-default'>
+    {% if file_type %}
+    <i class='fa fa-file-{{file_type}}-o'></i>
+    {% else %}
+    <i class='fa fa-file-o'></i>
+    {% endif %}
+    {{file}}
+    ({{length|filesizeformat}})
+</a>
+{% endfor %}
+{% endif %}
+
+
+{% if tests_status|length > 0 %}
+    <h2>Tests</h2>
+    {% for status in tests_status %}
+        <a name="tests-{{status.suite}}"></a>
+        <h3>{{status.suite}}</h3>
+        {% with tests=status.tests_by_result %}
+            {% if tests.fail %}
+                {% for test in status.tests_by_result.fail %}
+                    <div class='row fail'>
+                        <div class='col-md-6 col-sm-6'>
+                            <i class='fa fa-times'></i>
+                            {{test.name}}
+                        </div>
+                        <div class='col-md-6 col-sm-6'>
+                            {% if test.log %}
+                                <a class="btn btn-sm btn-danger testlog-{{test.id}}" href='#' onclick='$(".testlog-{{test.id}}").toggle(); return false'>Show log snippet</a>
+                                <a class="btn btn-sm btn-danger testlog-{{test.id}}" href='#' onclick='$(".testlog-{{test.id}}").toggle(); return false' style='display: none'>Hide log snippet</a>
+                            {% else %}
+                                <em>No log available for this test</em>
+                            {% endif %}
+                        </div>
+                        <div class='testlog-{{test.id}} col-md-12 col-sm-12' style='display: none'>
+                            <pre>{{test.log}}</pre>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            {% if tests.skip %}
+                <div class='row'>
+                    <div class='col-md-12 col-sm-12'>
+                        <span class="badge alert-warning" data-placement="top">{{tests.skip|length}} skipped</span>
+                        <a class='tests-{{status.id}}-skip' href='#' onclick='$(".tests-{{status.id}}-skip").toggle(); return false'>Show</a>
+                        <a class='tests-{{status.id}}-skip' href='#' onclick='$(".tests-{{status.id}}-skip").toggle(); return false' style='display:none'>Hide</a>
+                    </div>
+                </div>
+                <div class='row tests-details tests-details-skip tests-{{status.id}}-skip' style='display: none'>
+                    {% for test in status.tests_by_result.skip %}
+                        <div class='col-md-12 col-sm-12'>
+                            <i class='fa fa-question-circle-o'></i>
+                            {{test.name}}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% if tests.pass %}
+                <div class='row'>
+                    <div class='col-md-12 col-sm-12'>
+                        <span class="badge alert-success" data-placement="top">{{tests.pass|length}} passed</span>
+                        <a class='tests-{{status.id}}-pass' href='#' onclick='$(".tests-{{status.id}}-pass").toggle(); return false'>Show</a>
+                        <a class='tests-{{status.id}}-pass' href='#' onclick='$(".tests-{{status.id}}-pass").toggle(); return false' style='display:none'>Hide</a>
+                    </div>
+                </div>
+                <div class='row tests-details tests-details-pass tests-{{status.id}}-pass' style='display: none'>
+                    {% for test in status.tests_by_result.pass %}
+                        <div class='col-md-12 col-sm-12'>
+                            <i class='fa fa-check-square-o'></i>
+                            {{test.name}}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% endfor %}
+{% endif %}
+
+{% if metrics_status|length > 0 %}
+    <h2>Metrics</h2>
+    {% for status in metrics_status %}
+        <a name="metrics-{{status.suite}}"></a>
+        <h3>{{status.suite}}</h3>
+        <div class='row metrics'>
+        {% for metric in status.metrics %}
+            <div class='col-md-4 col-sm-4 metric'>
+               <i class='fa fa-line-chart'></i>
+               {{metric.name}}
+               <div class='pull-right'>
+                   {{metric.result}}
+               </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% endfor %}
+{% endif %}
+
+
+{% endblock %}
