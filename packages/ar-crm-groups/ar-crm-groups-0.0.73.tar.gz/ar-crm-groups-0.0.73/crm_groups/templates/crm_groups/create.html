@@ -1,0 +1,139 @@
+{% extends "frbase/base.html" %}
+{% load url from future %}
+{% load sekizai_tags %}
+{% load i18n %}
+{% load comments %}
+
+{% block doctitle %}
+Neue Gruppe
+{% endblock %}
+
+{% block pagetitle_left %}
+<i class="icon-group"></i>
+Neue Gruppe
+{% endblock %}
+
+{% block pagetitle_right %}
+<ul class="inline pull-right sparkline-box">
+  <li class="sparkline-row">
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="box form-actions-dropdown-lines-2">
+      <div class="box-header">
+        <span class="title">Details</span>
+        {% if errors %}<span class="title status-error"><i class="icon-warning-sign"></i> Beim Speichern sind Fehler aufgetreten. Bitte korrigieren Sie die markierten Felder uns versuchen Sie es erneut</span>{% endif %}
+      </div>
+      <div class="box-content">
+        <form class="fill-up" action="." method="post" accept-charset="utf-8" onsubmit="checkForm()">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          {% for error in form.non_field_errors %}
+          <span class="help-block note status-error"><i class="icon-warning-sign"></i>{{ error }}</span>
+          {% endfor %}
+          {% endif %}
+
+          <div class="row-fluid">
+            <div class="span6">
+              <ul class="padded separate-sections">
+                <li>
+                  {{ form.name.label_tag }}
+                  {{ form.name }}
+                  {% if form.name.errors %}
+                  {% for error in form.name.errors %}
+                  <span class="help-block note status-error"><i class="icon-warning-sign"></i>{{ error }}</span>
+                  {% endfor %}
+                  {% endif %}
+                </li>
+                <li>
+                  {{ form.contacts.label_tag }}
+                  {{ form.contacts }}
+                  <div class="note pull-right">{{ form.contacts.help_text }}</div>
+                </li>
+                <li class="input">
+                  {{ form.tags.label_tag }}
+                  {{ form.tags }}
+                  <div class="note pull-right">{{ form.tags.help_text }}</div>
+                  {% if form.tags.errors %}
+                  {% for error in form.tags.errors %}
+                  <span class="help-block note status-error"><i class="icon-warning-sign"></i>{{ error }}</span>
+                  {% endfor %}
+                  {% endif %}
+                </li>
+              </ul>
+            </div>
+            <div class="span6">
+              <ul class="padded separate-sections">
+                <li class="input">
+                  <label for="id_about">Info</label>
+                  {{ form.about }}
+                </li>
+              </ul>
+            </div>
+
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div class="btn-group">
+              <button type="submit" class="btn btn-blue" name="_continue" value="_continue" id="submit-btn-btn-blue-spe-1698d11v">
+                Speichern
+              </button>
+              <button class="btn btn-blue dropdown-toggle" id="sei0Uxoo" data-toggle="dropdown"><span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li>
+                  <input type="submit" value="Speichern und weiter bearbeiten" name="_continue" />
+                </li>
+                <li>
+                  <input type="submit" value="Speichern und neue Gruppe hinzufügen" name="_addanother" />
+                </li>
+              </ul>
+            </div>
+
+            <a class="btn btn-default" href="{% url 'frcrm_group_list' %}">Abbrechen</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+{% addtoblock "js" %}
+<script type="text/javascript">
+function checkForm(form) {
+  var $submit = $('#submit-btn-btn-blue-spe-1698d11v');
+  $submit.css('pointer-events', 'none')
+  $submit.addClass('disabled');
+  $submit.html('<i class="fa fa-spinner fa-spin"></i> Speichern');
+  return true;
+}
+
+$(document).ready(function() {
+  $('#menu-gruppen').addClass("active");
+
+  $("#id_contacts").select2({
+      placeholder: "Objekte durchsuchen",
+      minimumInputLength: 3,
+      multiple: true,
+      ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+          url: "{% url 'frcrm_group_create_contacts_selection' %}",
+          dataType: 'json',
+          quietMillis: 330,
+          data: function (term, page) {
+              return {
+                  q: term, // search term
+              };
+          },
+          results: function (data, page) { // parse the results into the format expected by Select2.
+              return { results: data };
+          },
+          cache: true,
+      },
+  });
+});
+</script>
+{% endaddtoblock %}
+
+{% endblock %}

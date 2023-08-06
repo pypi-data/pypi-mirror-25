@@ -1,0 +1,236 @@
+{% extends "frbase/base.html" %}
+{% load url from future %}
+{% load sekizai_tags %}
+{% load crm_tasks_tags %}
+{% load crm_tagging_tags %}
+{% load i18n %}
+{% load comments %}
+
+{% block doctitle %}
+Gruppe: {{ object }}
+{% endblock %}
+
+{% block pagetitle_left %}
+<i class="icon-group"></i>
+{{ object }}
+{% get_tags_for_item object as group_tags %}
+{% if group_tags %}
+<h5>Diese Gruppe basiert auf den Zugehörigkeiten: {% for tag in group_tags %}<span style="margin-right: 10px" class="label label-gray">{{tag.name}}</span>{% endfor %}
+</h5>
+{% else %}
+<h5>Diese Gruppe basiert nicht auf Zugehörigkeiten.</h5>
+{% endif %}
+{% endblock %}
+
+
+{% block pagetitle_right %}
+<ul class="inline pull-right sparkline-box">
+  <li class="sparkline-row">
+    <h4 class="blue">
+    </h4>
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="row-fluid">
+    {% if not object.buildout_ready %}
+    <div class="alert alert-warning" id="group-buildout-not-ready-warning">
+      <h4>
+        <i class="fa fa-circle-o-notch fa-spin fa-fw"></i>&nbsp;Diese Gruppe wird gerade erstellt!
+      </h4>
+      <p>
+        Dies kann mehrere Minuten in Anspruch nehmen. Diese Warnung wird ausgeblendet, sobald die Gruppe bereit ist.
+      </p>
+    </div>
+    {% endif %}
+    <div class="alert alert-success" id="group-buildout-ready-success" style="display: none;">
+      <h4>
+        <i class="fa fa-exclamation-circle fa-fw"></i>&nbsp;Gruppe wurde erfolgreich erstellt!
+      </h4>
+      <p>
+        <a href="#" onclick="location.reload();">Laden Sie die Seite neu</a>, um die Ansicht zu aktualisieren.
+      </p>
+    </div>
+
+    {% display_task_status object %}
+    <div class="box form-actions-dropdown-lines-2">
+      {% include "crm_groups/_tab_navigation.html" %}
+
+      <div class="box-content">
+        {% if errors %}<span class="title status-error"><i class="icon-warning-sign"></i> Beim Speichern sind Fehler aufgetreten. Bitte korrigieren Sie die markierten Felder und versuchen Sie es erneut</span>{% endif %}
+
+        <form class="fill-up" action="." method="post" accept-charset="utf-8">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          {% for error in form.non_field_errors %}
+          <span class="help-block note status-error"><i class="icon-warning-sign"></i>{{ error }}</span>
+          {% endfor %}
+          {% endif %}
+
+          <div class="row-fluid">
+            <div class="span6">
+              <ul class="padded separate-sections">
+                <li>
+                  <label for="id_name">Name</label>
+                  {{ form.name }}
+                  {% if form.name.errors %}
+                  {% for error in form.name.errors %}
+                  <span class="help-block note status-error"><i class="icon-warning-sign"></i>{{ error }}</span>
+                  {% endfor %}
+                  {% endif %}
+                </li>
+              </ul>
+            </div>
+            <div class="span6">
+              <ul class="padded separate-sections">
+                <li class="input">
+                  <label for="id_about">Info</label>
+                  {{ form.about }}
+                </li>
+              </ul>
+            </div>
+
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div class="btn-group">
+              <input type="submit" class="btn btn-blue" value="Speichern" name="_save" />
+              <button class="btn btn-blue dropdown-toggle" id="Fie3eMoh" data-toggle="dropdown"><span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li>
+                  <input type="submit" value="Speichern und weiter bearbeiten" name="_continue" id="submit-btn-btn-default--Thuh4ohs"/>
+                </li>
+                <li>
+                  <input type="submit" value="Speichern und neue Gruppe hinzufügen" name="_addanother" id="submit-btn-btn-default--ee9Eethi" />
+                </li>
+              </ul>
+            </div>
+
+            <a class="btn btn-default" href="{% url 'frcrm_group_list' %}">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+
+    <h3>Mitglieder <a class="tool-tip" data-toggle="tooltip" data-placement="bottom" title="Diese Gruppe enthält insgesamt {{ object.get_number_of_members }} Mitglied(er). Davon möchte(n) {{ object.get_number_of_email_members }} per Email und {{ object.get_number_of_letter_members }} per Brief angeschrieben werden. {{ object.get_number_of_silent_members }} Mitglied(er) möchte(n) nicht angeschrieben werden. Diese Angaben entsprechen nicht der Anzahl der erreichten Kontakte innerhalb einer Kamapagne. Je nach Kontakt-Auswahl variieren diese Angaben."><span class="glyphicons circle_info"><i class="yellow"></i></span></a></h3>
+    <div class="box">
+      <div class="box-content">
+        <div id="dataTables">
+          <table id="members_table" cellpadding="0" cellspacing="0" border="0" class="responsive">
+            <thead>
+              <tr>
+                <th><div>Name</div></th>
+                <th><div>Typ</div></th>
+                <th><div>Spendenanfrage</div></th>
+                <th><div>Verdankung</div></th>
+                <th style="width: 20px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Group Update Modal -->
+<div id="grp_update_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="grp_update_modal_label" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="grp_update_modal_label">Gruppe aktualisieren</h3>
+  </div>
+  <div class="modal-body">
+    <p>Wenn Sie eine Gruppe aktualisieren, werden <strong>keine</strong> Kontakte aus der Gruppe entfernt. Es werden lediglich neue Kontakte hinzugefügt.
+    <p>Manuell entfernte Kontakte werden über ihre Zugehörigkeit erneut hinzugefügt.</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">Abbrechen</button>
+    <a href="{% url 'frcrm_group_perform' slug=object.slug %}?action=update&next={{ request.path }}" class="btn btn-blue">Gruppe aktualisieren</a>
+  </div>
+</div>
+
+<!-- Group Tag Members Modal -->
+<div id="tag_members_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="tag_members_modal_label" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="tag_members_modal_label">Gruppenmitglieder markieren</h3>
+  </div>
+  <form style="display: inline;" action="{% url 'frcrm_group_tag_members' slug=object.slug %}" method="post" accept-charset="utf-8">
+    <div class="modal-body">
+      <p>Alle Mitglieder dieser Gruppe mit folgenden Tags markieren</p>
+      {% csrf_token %}
+      {{ tag_form.tagsToAdd }}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">Abbrechen</button>
+      <input type="submit" class="btn btn-blue" value="Markieren">
+    </div>
+  </form>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="delete_modal_label" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="delete_modal_label">Gruppe {{ object }} löschen</h3>
+  </div>
+  <div class="modal-body">
+    <p>Möchten Sie die Gruppe {{ object }} wirklich löschen?</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">Abbrechen</button>
+    <form style="display: inline;" action="{% url 'frcrm_group_delete' slug=object.slug %}" method="post" accept-charset="utf-8">
+      {% csrf_token %}
+      <select style="display: none;" name="delete_group" id="delete_group" size="1" class="uniform">
+        <option value="Yes" selected="selected">Yes</option>
+      </select>
+      <input type="submit" class="btn btn-red" value="Löschen">
+    </form>
+  </div>
+</div>
+
+{% addtoblock "js" %}
+<script type="text/javascript">
+$(document).ready(function() {
+  $('.menu').removeClass('active');
+  $('#menu-gruppen').addClass("active");
+
+  var oTable = $('#members_table').dataTable({
+    "bProcessing": true,
+    "sAjaxSource": '{% url 'frcrm_group_detail_data' slug=object.slug %}',
+    "iDisplayLength": getDataTablesLength(),
+  });
+
+  // store the selected amount of items to dispaly in DataTables
+  $('select[name=memebrs_table_length]').on('change', function() {
+    setDataTablesLength(this.value);
+  });
+});
+
+{% if not object.buildout_ready %}
+(function poll_buildout_status(){
+  check_url = '{% url 'frcrm_group_status' slug=object.slug %}'
+  setTimeout(function(){
+    $.ajax({
+      url: check_url,
+      dataType: 'json',
+      success: function(data) {
+        if (data.buildout_ready !== true) {
+          poll_buildout_status();
+        }
+        else {
+          $('#group-buildout-not-ready-warning').slideUp(500);
+          $('#group-buildout-ready-success').slideDown(500);
+        }
+      }
+    });
+  }, 5000);
+})();
+{% endif %}
+</script>
+{% endaddtoblock %}
+
+{% endblock %}
