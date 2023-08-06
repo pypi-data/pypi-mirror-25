@@ -1,0 +1,60 @@
+language: python
+sudo: false
+cache: pip
+env:
+  global:
+    - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
+    - SEGFAULT_SIGNALS=all
+  matrix:
+    - TOXENV=check
+    - TOXENV=docs
+    - TOXENV=examples,publish
+matrix:
+  include:
+    - python: '2.7'
+      env:
+        - TOXENV=py27,report,coveralls,codecov
+    - python: '3.3'
+      env:
+        - TOXENV=py33,report,coveralls,codecov
+    - python: '3.4'
+      env:
+        - TOXENV=py34,report,coveralls,codecov
+    - python: '3.5'
+      env:
+        - TOXENV=py35,report,coveralls,codecov
+    - python: '3.6'
+      env:
+        - TOXENV=py36,report,coveralls,codecov
+    - python: 'pypy-5.4'
+      env:
+        - TOXENV=pypy,report,coveralls,codecov
+before_install:
+  - |
+    if [[ "${TOXENV}" =~ "publish" ]]; then
+      openssl aes-256-cbc -K $encrypted_fabbc4622c56_key -iv $encrypted_fabbc4622c56_iv -in publish-key.enc -out ~/.ssh/publish-key -d
+      chmod u=rw,og= ~/.ssh/publish-key
+      echo "Host github.com" >> ~/.ssh/config
+      echo "  IdentityFile ~/.ssh/publish-key" >> ~/.ssh/config
+      git --version
+      git remote set-url origin git@github.com:ionelmc/python-darkslide.git
+      git fetch origin -f gh-pages:gh-pages
+    fi
+  - python --version
+  - uname -a
+  - lsb_release -a
+install:
+  - pip install tox
+  - virtualenv --version
+  - easy_install --version
+  - pip --version
+  - tox --version
+script:
+  - tox -v
+after_failure:
+  - more .tox/log/* | cat
+  - more .tox/*/log/* | cat
+notifications:
+  email:
+    on_success: never
+    on_failure: always
