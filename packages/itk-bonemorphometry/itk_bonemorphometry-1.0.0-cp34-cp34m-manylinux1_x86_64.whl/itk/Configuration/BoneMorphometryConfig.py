@@ -1,0 +1,22 @@
+depends = ('ITKPyBase', 'ITKStatistics', 'ITKMathematicalMorphology', 'ITKImageSources', 'ITKImageGrid', 'ITKCommon', )
+templates = (
+  ('BoneMorphometryFeaturesFilter', 'itk::BoneMorphometryFeaturesFilter', 'itkBoneMorphometryFeaturesFilterISS3', True, 'itk::Image< signed short,3 >'),
+  ('BoneMorphometryFeaturesFilter', 'itk::BoneMorphometryFeaturesFilter', 'itkBoneMorphometryFeaturesFilterIUC3', True, 'itk::Image< unsigned char,3 >'),
+  ('BoneMorphometryFeaturesFilter', 'itk::BoneMorphometryFeaturesFilter', 'itkBoneMorphometryFeaturesFilterIF3', True, 'itk::Image< float,3 >'),
+  ('FixedArray', 'itk::FixedArray', 'itkFixedArrayF5', False, 'float,5'),
+  ('Vector', 'itk::Vector', 'itkVectorF5', False, 'float,5'),
+  ('Image', 'itk::Image', 'itkImageVF53', False, 'itk::Vector<float,5>,3'),
+  ('ImageSource', 'itk::ImageSource', 'itkImageSourceIVF53', False, 'itk::Image<itk::Vector<float,5>,3>'),
+  ('ImageToImageFilter', 'itk::ImageToImageFilter', 'itkImageToImageFilterISS3IVF53', False, 'itk::Image< signed short,3 >, itk::Image<itk::Vector<float,5>,3>'),
+  ('ImageToImageFilter', 'itk::ImageToImageFilter', 'itkImageToImageFilterIUC3IVF53', False, 'itk::Image< unsigned char,3 >, itk::Image<itk::Vector<float,5>,3>'),
+  ('ImageToImageFilter', 'itk::ImageToImageFilter', 'itkImageToImageFilterIF3IVF53', False, 'itk::Image< float,3 >, itk::Image<itk::Vector<float,5>,3>'),
+  ('ImageIOBase', 'itk::ImageIOBase', 'itkImageIOBase', False),
+  ('ImageFileReader', 'itk::ImageFileReader', 'itkImageFileReaderIVF53', False, 'itk::Image<itk::Vector<float,5>,3>'),
+  ('ImageFileWriter', 'itk::ImageFileWriter', 'itkImageFileWriterIVF53', False, 'itk::Image<itk::Vector<float,5>,3>'),
+  ('BoneMorphometryFeaturesImageFilter', 'itk::BoneMorphometryFeaturesImageFilter', 'itkBoneMorphometryFeaturesImageFilterISS3IVF53', True, 'itk::Image< signed short,3 >, itk::Image<itk::Vector<float,5>,3>'),
+  ('BoneMorphometryFeaturesImageFilter', 'itk::BoneMorphometryFeaturesImageFilter', 'itkBoneMorphometryFeaturesImageFilterISS3VIF3', True, 'itk::Image< signed short,3 >, itk::VectorImage< float,3 >'),
+  ('BoneMorphometryFeaturesImageFilter', 'itk::BoneMorphometryFeaturesImageFilter', 'itkBoneMorphometryFeaturesImageFilterIUC3IVF53', True, 'itk::Image< unsigned char,3 >, itk::Image<itk::Vector<float,5>,3>'),
+  ('BoneMorphometryFeaturesImageFilter', 'itk::BoneMorphometryFeaturesImageFilter', 'itkBoneMorphometryFeaturesImageFilterIUC3VIF3', True, 'itk::Image< unsigned char,3 >, itk::VectorImage< float,3 >'),
+  ('BoneMorphometryFeaturesImageFilter', 'itk::BoneMorphometryFeaturesImageFilter', 'itkBoneMorphometryFeaturesImageFilterIF3IVF53', True, 'itk::Image< float,3 >, itk::Image<itk::Vector<float,5>,3>'),
+  ('BoneMorphometryFeaturesImageFilter', 'itk::BoneMorphometryFeaturesImageFilter', 'itkBoneMorphometryFeaturesImageFilterIF3VIF3', True, 'itk::Image< float,3 >, itk::VectorImage< float,3 >'),
+)
