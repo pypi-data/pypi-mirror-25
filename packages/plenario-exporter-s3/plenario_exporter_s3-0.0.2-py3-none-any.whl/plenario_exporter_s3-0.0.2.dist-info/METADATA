@@ -1,0 +1,117 @@
+Metadata-Version: 2.0
+Name: plenario-exporter-s3
+Version: 0.0.2
+Summary: export pleanrio data sets to s3
+Home-page: https://github.com/UrbanCCD-UChicago/plenario-exporter-s3
+Author: Vince Forgione
+Author-email: vforgione@uhicago.edu
+License: GPLv3
+Keywords: plenario
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Programming Language :: Python :: 3.6
+Requires-Python: >=3.6
+Requires-Dist: Django (<1.12,>=1.11)
+Requires-Dist: channels
+Requires-Dist: asgi-redis
+Requires-Dist: arrow
+Requires-Dist: boto3
+
+Plenario Exporter S3
+====================
+
+.. image:: https://travis-ci.org/UrbanCCD-UChicago/plenario-exporter-s3.svg?branch=master
+   :target: https://travis-ci.org/UrbanCCD-UChicago/plenario-exporter-s3
+
+.. image:: https://coveralls.io/repos/github/UrbanCCD-UChicago/plenario-exporter-s3/badge.svg?branch=master
+   :target: https://coveralls.io/github/UrbanCCD-UChicago/plenario-exporter-s3?branch=master
+
+Usage
+-----
+
+This is both a simple application and a rather complicated application. The
+actions it performs are straight forward - create a job to export a data set,
+zip up the generated CSVs, upload them to Amazon S3, and email the requestor.
+
+The application uses ``django-channels``: it's a new asynchronous back end for
+Django, thus relieving us of the hassle of running separate instances for
+``celery`` and ``flower``. It has its own baggage though - in production it has
+its own server environment and relies on Redis for message passing.
+
+Overall, it's pretty snappy and I'm confident that ``channels`` is the future
+of Django, and not ``celery``.
+
+To wire this up, it's a relatively simple install::
+
+    # your site/settings.py
+    INSTALLED_APPS = [
+        'whatever django and local stuff',
+        'channels',  # necessary to make exporter go
+        'plenario_exporter_s3',  # this app
+    ]
+
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'asgi_redis.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+            },
+            'ROUTING': 'plenario_exporter_s3.routing.channel_routing',
+        },
+    }
+
+You're also going to need an ``asgi.py`` file alongside your wsgi file::
+
+    import os
+    import channels.asgi
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your app.settings')
+    channel_layer = channels.asgi.get_channel_layer()
+
+And in your views, wire up the provided export service function as the
+``async_handler`` argument to the ``plenario-core`` export view::
+
+    from plenario_core.views.export import GenericMetaExportView
+    from plenario_exporter_s3.services import create_models_and_start_job
+
+    from .models import EtlEventMeta
+
+    export_meta = GenericMetaExportView.as_view(
+        models=[EtlEventMeta],
+        async_handler=create_models_and_start_job)
+
+
+Development
+-----------
+
+Fire up a virtualenv and install the dev requirements::
+
+    $ python3.6 -m venv .env
+    $ source .env/bin/activate
+    $ pip install -r dev-requirements.txt
+
+To run the tests, in a separate terminal pull in the PostGIS docker image and create the database::
+
+    $ docker pull mdillon/postgis
+    $ docker run -d -p 5432:5432 mdillon/postgis
+    $ docker ps
+    ...
+    $ docker exec -it {container hash} /bin/bash
+    ...
+    # su postgres -c psql
+    ...
+    > create database plenario;
+
+You're also going to need a local Redis server running::
+
+    $ docker pull redis
+    $ docker run -d -p 6379:6379 redis
+
+Then all you have to do is run the tests normally::
+
+    $ coverage run manage.py test
+    $ coverage report
+    $ flake8
+
+
