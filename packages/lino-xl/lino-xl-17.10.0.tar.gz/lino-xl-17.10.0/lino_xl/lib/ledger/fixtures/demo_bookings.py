@@ -1,0 +1,124 @@
+# -*- coding: UTF-8 -*-
+# Copyright 2012-2017 Luc Saffre
+# License: BSD (see file COPYING for details)
+
+
+"""
+Creates fictive demo bookings with monthly purchases.
+
+See also:
+- :mod:`lino_xl.lib.finan.fixtures.demo_bookings`
+- :mod:`lino_xl.lib.sales.fixtures.demo_bookings`
+
+"""
+
+from __future__ import unicode_literals
+
+import datetime
+from dateutil.relativedelta import relativedelta as delta
+
+from decimal import Decimal
+
+from django.conf import settings
+from lino.utils import Cycler
+from lino.utils.dates import AMONTH
+from lino.api import dd, rt
+
+from lino_xl.lib.vat.mixins import myround
+
+# from lino.core.requests import BaseRequest
+REQUEST = settings.SITE.login()  # BaseRequest()
+MORE_THAN_A_MONTH = datetime.timedelta(days=40)
+
+
+def objects():
+
+    Journal = rt.models.ledger.Journal
+    PaymentTerm = rt.models.ledger.PaymentTerm
+    
+    Company = rt.models.contacts.Company
+
+    USERS = Cycler(settings.SITE.user_model.objects.all())
+
+    PROVIDERS = Cycler(Company.objects.filter(
+        sepa_accounts__iban__isnull=False).order_by('id'))
+
+    if len(PROVIDERS) == 0:
+        raise Exception("No providers.")
+
+    JOURNAL_P = Journal.objects.get(ref="PRC")
+    if dd.is_installed('ana'):
+        ANA_ACCS = Cycler(rt.models.ana.Account.objects.all())
+    ACCOUNTS = Cycler(JOURNAL_P.get_allowed_accounts())
+    AMOUNTS = Cycler([Decimal(x) for x in
+                      "20 29.90 39.90 99.95 199.95 599.95 1599.99".split()])
+    AMOUNT_DELTAS = Cycler([Decimal(x)
+                           for x in "0 0.60 1.10 1.30 2.50".split()])
+    DATE_DELTAS = Cycler((1, 2, 3, 4, 5, 6, 7))
+    INFLATION_RATE = Decimal("0.02")
+
+    """"purchase stories" : each story represents a provider who sends
+    monthly invoices.
+
+    """
+    PURCHASE_STORIES = []
+    for i in range(5):
+        # provider, (account,amount)
+        story = (PROVIDERS.pop(), [])
+        story[1].append((ACCOUNTS.pop(), AMOUNTS.pop()))
+        if i % 3:
+            story[1].append((ACCOUNTS.pop(), AMOUNTS.pop()))
+        PURCHASE_STORIES.append(story)
+
+    START_YEAR = dd.plugins.ledger.start_year
+    date = datetime.date(START_YEAR, 1, 1)
+    end_date = settings.SITE.demo_date(-10)  # + delta(years=-2)
+    # end_date = datetime.date(START_YEAR+1, 5, 1)
+    # print(20151216, START_YEAR, settings.SITE.demo_date(), end_date - date)
+
+    PAYMENT_TERMS = Cycler(PaymentTerm.objects.all())
+    if len(PAYMENT_TERMS) == 0:
+        raise Exception("No PAYMENT_TERMS.")
+
+    
+    while date < end_date:
+
+        for story in PURCHASE_STORIES:
+            vd = date + delta(days=DATE_DELTAS.pop())
+            if dd.is_installed('ana'):
+                cl = rt.models.ana.AnaAccountInvoice
+            else:
+                cl = rt.models.vat.VatAccountInvoice
+                
+            invoice = cl(
+                journal=JOURNAL_P, partner=story[0], user=USERS.pop(),
+                voucher_date=vd,
+                payment_term=PAYMENT_TERMS.pop(),
+                entry_date=vd + delta(days=1))
+            yield invoice
+            for account, amount in story[1]:
+                kwargs = dict()
+                if dd.is_installed('ana'):
+                    if account.needs_ana:
+                        kwargs.update(ana_account=ANA_ACCS.pop())
+                    model = rt.models.ana.InvoiceItem
+                else:
+                    model = rt.models.vat.InvoiceItem
+                amount += amount + \
+                    (amount * INFLATION_RATE * (date.year - START_YEAR))
+                item = model(voucher=invoice,
+                             account=account,
+                             total_incl=myround(amount) +
+                             AMOUNT_DELTAS.pop(), **kwargs)
+                item.total_incl_changed(REQUEST)
+                item.before_ui_save(REQUEST)
+                #~ if item.total_incl:
+                    #~ print "20121208 ok", item
+                #~ else:
+                    #~ if item.product.price:
+                        #~ raise Exception("20121208")
+                yield item
+            invoice.register(REQUEST)
+            invoice.save()
+
+        date += AMONTH
