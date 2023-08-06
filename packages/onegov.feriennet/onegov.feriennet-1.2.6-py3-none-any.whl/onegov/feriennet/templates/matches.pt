@@ -1,0 +1,179 @@
+<div metal:use-macro="layout.base" i18n:domain="onegov.feriennet">
+    <tal:block metal:fill-slot="title">
+        ${title}
+    </tal:block>
+    <tal:block metal:fill-slot="content">
+
+        <div class="callout panel">
+            <div class="hints">
+                <tal:block metal:use-macro="layout.macros.period_hints" />
+
+                <div class="hint hint-happiness" i18n:translate>
+                    The average happiness is <strong tal:content="happiness" i18n:name="happiness" />.
+                </div>
+
+                <div class="hint hint-operability" i18n:translate>
+                    <strong tal:content="operability" i18n:name="operability" /> of all occasions have enough attendees.
+                </div>
+
+                <div class="hint hint-nobble" i18n:translate>
+                    Marking bookings increases their priority during the next matching run.
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="columns small-12 medium-8">
+                <tal:block repeat="oid occasions">
+                    <div tal:define="records occasions[oid]" class="matched-occasion matched-state-${records['state']}" data-reload-from="${request.url}" data-reload-from-selector="#${oid}" id="${oid}">
+                        <a href="${activity_link(oid)}">
+                            <h3>${records['first'].activity_title}</h3>
+                        </a>
+
+                        <span class="subtitle">${layout.format_datetime_range(
+                            layout.to_timezone(
+                                records['first'].occasion_start,
+                                records['first'].occasion_timezone
+                            ),
+                            layout.to_timezone(
+                                records['first'].occasion_end,
+                                records['first'].occasion_timezone
+                            ),
+                        )}, ${records['first'].occasion_spots.lower} -
+                            ${records['first'].occasion_spots.upper - 1}
+                            <span i18n:translate>Attendees</span>,
+                            ${records['first'].occasion_age.lower} - ${records['first'].occasion_age.upper - 1}
+                            <span i18n:translate>Years</span>
+                        </span>
+
+                        <h4 class="show-for-sr" i18n:translate>Bookings</h4>
+
+                        <div class="matching-details" tal:define="
+                                accepted len(records['accepted']);
+                                total len(records['accepted']) + len(records['other']);
+                                min_spots records['first'].occasion_spots.lower;
+                                max_spots records['first'].occasion_spots.upper - 1;
+                                cancelled records['first'].occasion_cancelled;
+                        ">
+                            <tal:block define="state cancelled and 'cancelled' or accepted >= min_spots and 'success' or 'alert'">
+                                <div class="progress ${state}" onclick="$('#button-${oid}').click();">
+                                    <span class="meter" style="width: ${accepted / max_spots * 100}%;"></span>
+                                    <span class="meter-text" tal:condition="state != 'cancelled'">
+                                        ${accepted} / ${max_spots} <span i18n:translate>Attendees</span>
+                                    </span>
+                                    <span class="meter-text" tal:condition="state == 'cancelled'">
+                                        <span class="meter-text-inner" i18n:translate>
+                                            Rescinded
+                                        </span>
+                                    </span>
+                                </div>
+
+                                <button id="button-${oid}" data-toggle="#details-${oid}" class="untoggled ${state}">
+                                    <span i18n:translate class="show-for-sr">Show Details</span>
+                                    <i class="fa fa-angle-double-down" aria-hidden="true"></i>
+                                </button>
+
+                                <div class="clearfix"></div>
+                            </tal:block>
+
+                            <table id="details-${oid}" class="matches" style="display: none;" tal:condition="records['accepted'] or records['other']">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th i18n:translate>Name</th>
+                                        <th i18n:translate>Age</th>
+                                        <th i18n:translate>State</th>
+                                        <th>
+                                            <tal:block
+                                                define="
+                                                    action_id 'action-{}'.format(oid);
+                                                    links occasion_links(oid)
+                                                "
+                                                metal:use-macro="layout.macros.actions_button"
+                                            />
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody tal:condition="not:records['first'].booking_state">
+                                    <tr class="booking booking-none">
+                                        <td colspan="5"><span i18n:translate>No bookings.</span></td>
+                                    </tr>
+                                </tbody>
+                                <tbody tal:condition="records['first'].booking_state">
+                                    <tal:block repeat="kind ('accepted', 'other')">
+                                        <tr tal:repeat="record records[kind]" class="booking booking-${kind} ${record.booking_state}" id="${record.booking_id}">
+                                            <td>
+                                                <a tal:condition="not period.confirmed" ic-post-to="${booking_link(record, 'toggle-nobble')}">
+                                                    <tal:block metal:use-macro="layout.macros['nobble']" />
+                                                </a>
+                                                <tal:block condition="period.confirmed" metal:use-macro="layout.macros['nobble']" />
+                                            </td>
+                                            <td><span>${record.attendee_name}</span></td>
+                                            <td><span>${int(record.attendee_age)}</span></td>
+                                            <td>
+                                                <tal:block
+                                                    define="state record.booking_state"
+                                                    metal:use-macro="layout.macros.booking_state"
+                                                />
+                                            </td>
+                                            <td>
+                                                <tal:block
+                                                    define="
+                                                        action_id 'action-{}-{}'.format(oid, record.attendee_id);
+                                                        links record_links(record)
+                                                    "
+                                                    metal:use-macro="layout.macros.actions_button"
+                                                />
+                                            </td>
+                                        </tr>
+                                    </tal:block>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </tal:block>
+            </div>
+            <div class="columns small-12 medium-4">
+                <div class="filter-panel">
+                    <div>
+                        <h4 class="filter-title" i18n:translate>State</h4>
+                        <div metal:use-macro="layout.macros['tags']" tal:define="tags filters['states']" />
+                    </div>
+                </div>
+
+                <div class="side-panel form-panel">
+                    <h4 i18n:translate>Automatic Matching</h4>
+
+                    <div class="form-panel-block">
+                        <tal:block condition="period.active and period.wishlist_phase">
+                            <div metal:use-macro="layout.macros['form']" />
+                            <a ic-post-to="${request.link(model, 'zuruecksetzen')}" redirect-after="${request.link(model)}" i18n:translate class="reset-matching">
+                                Reset Matching
+                            </a>
+                        </tal:block>
+
+                        <tal:block condition="not period.active and not period.confirmed">
+                            <p>
+                                <i class="fa fa-lock fa-fw" aria-hidden="true"></i>
+                                <span i18n:translate>
+                                    This period is not active. Only the active period may be matched.
+                                </span>
+                            </p>
+                        </tal:block>
+
+                        <tal:block condition="period.confirmed">
+                            <p>
+                                <i class="fa fa-lock fa-fw" aria-hidden="true"></i>
+                                <span i18n:translate>
+                                    The matching for this period has been confirmed. If you want to change matching you need to book/cancel bookings manually.
+                                </span>
+                            </p>
+                        </tal:block>
+                    </div>
+                </div>
+
+                <tal:block metal:use-macro="layout.macros.periods" />
+            </div>
+        </div>
+    </tal:block>
+</div>
