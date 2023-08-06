@@ -1,0 +1,81 @@
+### What Apollo Is
+At [Morgan & Morgan](https://www.forthepeople.com/), the development team builds lots of forms. A lot. While most of the
+heavy lifting for form management was done for us by the marketing platform, Hubspot, there were some major gaps that forced us to consider
+a switch:
+
+1. Cost. Our Hubspot license was > $50,000 yearly where the only utility came from the form management tooling.
+2. Lack of flexibility. While defining basic validation rules and field layouts was OK, doing anything more complex 
+(e.g. email blacklists, geo-based submission filtering, etc.) was impossible. In fact, since their switch to React rendered
+forms, [custom validation in a Hubspot form doesn't work at all](https://integrate.hubspot.com/t/integration-with-jquery-validator-customized-validation/1172/9).
+3. Lack of control. The Hubspot JS library is 300kb+ in size before gzip and sets short-term cache expiration headers. Why? It's hard to say without access to the unminified source.  
+![more than 300kb](http://static.forthepeople.com/engineering/apollo/big_hubspot.png)
+
+
+With these problems in mind, we built **Apollo** as a solution. 
+
+Apollo is a Django application which - in conjunction with the [Icarus Javascript Library](https://github.com/Morgan-and-Morgan/icarus) -
+aims to act as a plug-and-play solution for the busy engineer. In addition to providing a management interface for building
+form fields, designing forms, and viewing form submissions, Apollo makes the assumption that it should make no assumptions about
+domain specific requirements of the host application. Thus, it decouples form management from submission processing,
+leaving the job of reacting to events within the host. To facilitate this architecture, Apollo opts for a Pub/Sub design, notifying listeners
+on key events like:
+
+* _form submission_
+* _form submission validation_
+* _form submission validation failure_
+
+
+### Why Apollo
+Apollo is a hybrid of SASS form services (e.g. Hubspot, Typeform) and tightly integrated framework based applications (e.g. Gravity Forms, WP Forms).
+It's advantages over these services are three-fold:
+
+1. It is - and always will be - free and open source
+2. It has no dependency on what environment form usage occurs in.
+3. Its powerful and hyper-customizeable form creation interface.
+
+
+### Installation
+```bash
+pip install django-apollo
+
+# add the App to the list of INSTALLED_APPS
+INSTALLED_APPS = {
+  ...
+  'apollo'
+  ...
+}
+# run the migrations to generate DB tables
+python manage.py makemigrations apollo
+python manage.py migrate apollo
+
+# collectstatic to generate the static files for the form builder interface
+python manage.py collectstatic
+```
+
+
+### Features
+
+###### Setup field templates for your forms. These define the default configurations for fields and can be overridden on a per-form basis. 
+![](http://static.forthepeople.com/engineering/apollo/feature_create_field-min.png)
+
+---
+
+###### Step-by-step form builder interface.
+![](http://static.forthepeople.com/engineering/apollo/feature_create_form_step_1-min.png)
+
+---
+
+###### Powerful layout creator with the ability to apply different layouts for desktop and mobile screens.
+![](http://static.forthepeople.com/engineering/apollo/feature_build_layouts-min.png)
+
+---
+
+
+### Form Usage
+When it comes to actually using the forms built by Apollo, you have two options:
+ 
+1. Use the [Icarus Javascript Library](https://github.com/Morgan-and-Morgan/icarus) (_Recommended_)
+2. DIY.
+
+If you decide to pursue (2), you'll want to consult the [API guide](https://morgan-and-morgan.github.io/apollo/api) for details on authentication, request format,
+and available queries / mutations.
