@@ -1,0 +1,66 @@
+<!-- -*- mode: nxml -*- -->
+<configure	xmlns="http://namespaces.zope.org/zope"
+			xmlns:i18n="http://namespaces.zope.org/i18n"
+			xmlns:zcml="http://namespaces.zope.org/zcml">
+
+	<include package="zope.component" file="meta.zcml" />
+	<include package="zope.component" />
+    <include package="nti.nikola_chameleon" file="meta.zcml" />
+	<!-- required by zope.browserpage -->
+	<include package="zope.security" file="meta.zcml" />
+
+	<!-- z3c.macro needs this but doesn't configure it-->
+	<include package="zope.browserpage" />
+	<include package="zope.browserpage" file="meta.zcml" />
+
+    <include package="z3c.macro" file="meta.zcml" />
+    <include package="z3c.template" file="meta.zcml" />
+    <include package="zope.viewlet" file="meta.zcml" />
+
+	<include package="z3c.ptcompat" />
+	<include package="z3c.pt" />
+
+	<include package="z3c.macro" />
+
+    <!-- configure the viewlet (doesn't currently actually do anything)-->
+    <include package="zope.viewlet" />
+
+    <!--
+        configure the content provider provider: expression type for tales.
+
+        Technically this is not needed while we explicitly instantiate
+        z3c.pt Template objects, as 'provider:' is an expression type it
+        makes sure the compiler understands.
+    -->
+    <include package="zope.contentprovider" />
+
+    <!-- An @@macros view for binding macros to a context -->
+    <adapter for="* *"
+             factory=".macro.NamedMacroView"
+             name="macros" />
+
+    <adapter
+        for=".interfaces.IPost"
+        factory=".adapters.MetaPathAdapter"
+        provides="zope.traversing.interfaces.IPathAdapter"
+        name="meta"/>
+
+
+    <adapter
+        for=".interfaces.IPost"
+        factory=".adapters.FormattedDatePathAdapter"
+        provides="zope.traversing.interfaces.IPathAdapter"
+        name="formatted_date"/>
+
+    <view for="*"
+          type="*"
+          factory=".view.PostTextView"
+          name="post_text"
+          />
+
+    <view for="*"
+          type="*"
+          factory=".feeds.Feeds"
+          name="feeds" />
+
+</configure>
