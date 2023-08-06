@@ -1,0 +1,53 @@
+'''
+Modify a few boxes in a file to account for bugs in the C code
+
+lib/ship:
+- delete 7624 SL bs
+- overwrite 8383 SL bs 96287
+'''
+
+import sys
+import yaml
+import os
+from contextlib import redirect_stdout
+
+from olypy.formatters import read_oly_file
+from olypy.oio import write_oly_file
+
+
+def do_one(filename, order_list):
+    with open(filename, 'r') as fd:
+        data = read_oly_file(fd)
+    os.rename(filename, filename + '.orig')
+
+    for o in order_list:
+        parts = o.split()
+        verb = parts.pop(0)
+        if verb == 'delete':
+            if len(parts) == 3:
+                print('parts', parts)
+                del data[parts[0]][parts[1]][parts[2]]
+            else:
+                raise ValueError('unimplemented delete order')
+        elif verb == 'overwrite':
+            if len(parts) == 4:
+                print('parts', parts)
+                print('data is', data[parts[0]])
+                data[parts[0]][parts[1]][parts[2]] = [parts[3]]
+            else:
+                raise ValueError('unimplemented overwrite order')
+        else:
+            raise ValueError('unimplemented verb '+verb)
+
+    with open(filename, 'w') as fd:
+        with redirect_stdout(fd):
+            write_oly_file(data)
+
+
+with open(sys.argv[1], 'r') as fd:
+    orders = yaml.safe_load(fd)
+    print('orders are', orders)
+
+for filename, order_list in orders.items():
+    print('doing', filename, order_list)
+    do_one(filename, order_list)

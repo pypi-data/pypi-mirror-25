@@ -1,0 +1,143 @@
+#!python
+
+'''
+Modify an existing lib directory to have a lot of additional stuff
+'''
+
+import os
+import subprocess
+
+import olypy
+from olypy.oid import to_int
+from olypy.oio import read_lib, write_lib
+from olypy.data import set_where, add_structure, add_scroll, add_potion
+import olypy.dbck as dbck
+
+
+def add_scrolls(data):  # this is all 20 usable letters
+    ownerprefix = {'aa1': ['a', 'b', 'c', 'd', 'f'],
+                   'gg1': ['g', 'h', 'j', 'k', 'm'],
+                   'nn1': ['n', 'p', 'q', 'r', 's'],
+                   'tt1': ['t', 'v', 'w', 'x', 'z']}
+    skills = ['600', '610', '630', '636', '637', '638', '639', '650', '657', '658',
+              '659', '661', '670', '675', '676', '680', '690', '693', '694', '695',
+              '696', '697', '700', '706', '707', '720', '723', '730', '750', '753',
+              '754', '755', '756', '800', '807', '808', '809', '811', '812', '813',
+              '814', '820', '825', '826', '827', '828', '829', '831', '832', '833',
+              '840', '843', '844', '845', '846', '847', '848', '849', '851', '852',
+              '860', '864', '865', '866', '867', '868', '869', '871', '872', '880',
+              '885', '886', '887', '888', '889', '891', '892', '893', '894', '900',
+              '904', '905', '906', '907', '908', '909', '911', '921', '922']
+
+    for owner in ownerprefix:
+        for prefix in ownerprefix[owner]:
+            for skill in skills:
+                oid = prefix + skill
+                add_scroll(data, skill, owner, oid=oid)
+
+
+def add_potions(data):
+    ownerprefix = {'aa1': ['a'],
+                   'gg1': ['g'],
+                   'nn1': ['n'],
+                   'tt1': ['t']}
+    ct = {'aa1': '1001', 'gg1': '2001', 'nn1': '3001', 'tt1': '4001'}
+    farcasts = {
+        'aa1': ['aa08', 'aa08', 'c43', 'c43', '2001', '2001'],
+        'gg1': [],
+        'nn1': [],
+        'tt1': [],
+    }
+    for owner in ownerprefix:
+        for prefix in ownerprefix[owner]:
+            for r in range(500, 510):
+                oid = prefix + str(r)
+                add_potion(data, 'heal', {'uk': [2]}, owner, oid=oid)
+            for r in range(510, 512):
+                oid = prefix + str(r)
+                add_potion(data, 'death', {'uk': [1]}, owner, oid=oid)
+            for r in range(520, 522):
+                oid = prefix + str(r)
+                im = {'uk': [3]}
+                im['ct'] = [ct[owner]]
+                add_potion(data, 'slavery', im, owner, oid=oid)
+            count = 530
+            for pc in farcasts[owner]:
+                oid = prefix + str(count)
+                count += 1
+                im = {'uk': [5], 'pc': [to_int(pc)]}
+                add_potion(data, 'farcast '+pc, im, owner, oid=oid)
+
+libdir = olypy.get_mapgen_lib()
+print('reading mapgen lib from', libdir)
+data = read_lib(libdir)
+
+# the mapgen lib has some added chars that have no LI wh.
+problems = dbck.check_db(data)
+expected = 9
+if problems != expected:
+    raise ValueError('Pre-modification database check failed with {} errors, expected {}'.format(problems, expected))
+else:
+    print('Pre-modification database check passed with the expected {} errors'.format(expected))
+
+print('adding stuff to lib')
+
+add_scrolls(data)
+add_potions(data)
+# add_storms(data)
+
+add_structure(data, 'castle6', 'c18', 'Aachen Castle', oid='1001')
+add_structure(data, 'tower', '1001', 'Aachen Tower', oid='1002')
+add_structure(data, 'tower', 'c18', 'Aachen Outer Tower', oid='1003')
+add_structure(data, 'tower', 'aa01', 'Aachen Outside Tower', oid='1004')
+add_structure(data, 'temple', 'c18', 'Aachen Temple', oid='1005')
+add_structure(data, 'mine', 'aa01', 'Aachen Mine', oid='1006')
+
+# XXX structures for other factions
+add_structure(data, 'castle6', 'c43', 'Gruven Castle', oid='2001')
+add_structure(data, 'castle6', 'k20', 'Nicht Castle', oid='3001')
+add_structure(data, 'castle6', 'w65', 'Tanz Castle', oid='4001')
+
+# add_garrison(loc, castle, oid=oid)
+
+set_where(data, 1100, 1001)
+set_where(data, 1101, 1100)
+set_where(data, 1102, 'c18')
+set_where(data, 1103, 1005)
+set_where(data, 1104, 1001)
+set_where(data, 1105, 1006)
+
+set_where(data, 2100, 2001)
+set_where(data, 3100, 3001)
+set_where(data, 4100, 4001)
+
+# fix mage aura, add 1100 auraculum
+# copy chars to other factions
+
+# make list of hidden stuff, make 1/2 of it randomly visible to each faction
+# (do this after you finish creating more stuff...)
+
+problems = dbck.check_db(data)
+if problems:
+    raise ValueError('Post-modification database check failed with {} errors'.format(problems))
+    pass
+else:
+    print('Post-modification database check passed.')
+
+outlib = 'lib'
+outlib_longname = 'qa-default-lib'     
+
+if os.path.exists(outlib):
+    raise ValueError('output directory {} already exists'.format(outlib))
+
+write_lib(data, outlib)
+
+subprocess.run('cp -r {}/lore/ {}/lore/'.format(libdir, outlib).split(), check=True)
+
+os.mkdir(os.path.join(outlib, 'html'))
+os.mkdir(os.path.join(outlib, 'orders'))
+os.mkdir(os.path.join(outlib, 'spool'))
+
+subprocess.run('tar czf {}.tar.gz {}'.format(outlib_longname, outlib).split(), check=True)
+
+print('output lib written to ./{}.tar.gz'.format(outlib_longname))
