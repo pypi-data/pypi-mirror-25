@@ -1,0 +1,498 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Dovecot &mdash; Modoboa 1.7.4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.7.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Modoboa 1.7.4 documentation" href="../index.html" />
+    <link rel="up" title="Installation" href="../installation.html" />
+    <link rel="next" title="Postfix" href="postfix.html" />
+    <link rel="prev" title="Web server" href="webserver.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="postfix.html" title="Postfix"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="webserver.html" title="Web server"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Modoboa 1.7.4 documentation</a> &raquo;</li>
+          <li><a href="../installation.html" accesskey="U">Installation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="dovecot">
+<span id="id1"></span><h1>Dovecot<a class="headerlink" href="#dovecot" title="Permalink to this headline">¶</a></h1>
+<p>Modoboa requires Dovecot 2+ to work so the following documentation is
+suitable for this combination.</p>
+<p>In this section, we assume dovecot&#8217;s configuration resides in
+<tt class="file docutils literal"><span class="pre">/etc/dovecot</span></tt>, all pathes will be relative to this directory.</p>
+<div class="section" id="mailboxes">
+<h2>Mailboxes<a class="headerlink" href="#mailboxes" title="Permalink to this headline">¶</a></h2>
+<p>First, edit the <tt class="file docutils literal"><span class="pre">conf.d/10-mail.conf</span></tt> and set the <tt class="docutils literal"><span class="pre">mail_location</span></tt>
+variable:</p>
+<div class="highlight-python"><div class="highlight"><pre># maildir
+mail_location = maildir:~/.maildir
+</pre></div>
+</div>
+<p>Then, edit the <tt class="docutils literal"><span class="pre">inbox</span></tt> namespace and add the following lines:</p>
+<div class="highlight-python"><div class="highlight"><pre>inbox = yes
+
+mailbox Drafts {
+  auto = subscribe
+  special_use = \Drafts
+}
+mailbox Junk {
+  auto = subscribe
+  special_use = \Junk
+}
+mailbox Sent {
+  auto = subscribe
+  special_use = \Sent
+}
+mailbox Trash {
+  auto = subscribe
+  special_use = \Trash
+}
+</pre></div>
+</div>
+<p>With dovecot 2.1+, it ensures all the special mailboxes will be
+automaticaly created for new accounts.</p>
+<p>For dovecot 2.0 and older, use the <a class="reference external" href="http://wiki2.dovecot.org/Plugins/Autocreate">autocreate</a> plugin.</p>
+<div class="section" id="operations-on-the-file-system">
+<span id="fs-operations"></span><h3>Operations on the file system<a class="headerlink" href="#operations-on-the-file-system" title="Permalink to this headline">¶</a></h3>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Modoboa needs to access the <tt class="docutils literal"><span class="pre">dovecot</span></tt> binary to check its
+version. To find the binary path, we use the <tt class="docutils literal"><span class="pre">which</span></tt> command
+first and then try known locations (<tt class="file docutils literal"><span class="pre">/usr/sbin/dovecot</span></tt> and
+<tt class="file docutils literal"><span class="pre">/usr/local/sbin/dovecot</span></tt>). If you installed dovecot in a
+custom location, please tell us where the binary is by using the
+<tt class="docutils literal"><span class="pre">DOVECOT_LOOKUP_PATH</span></tt> setting (see <tt class="file docutils literal"><span class="pre">settings.py</span></tt>).</p>
+</div>
+<p>Three operation types are considered:</p>
+<ol class="arabic simple">
+<li>Mailbox creation</li>
+<li>Mailbox renaming</li>
+<li>Mailbox deletion</li>
+</ol>
+<p>The first one is managed by Dovecot. The last two ones may be managed
+by Modoboa if it can access the file system where the mailboxes are
+stored (see <a class="reference internal" href="../configuration.html#admin-params"><em>General parameters</em></a> to activate this feature).</p>
+<p>Those operations are treated asynchronously by a cron script. For
+example, when you rename an e-mail address through the web UI, the
+associated mailbox on the file system is not modified
+directly. Instead of that, a <em>rename</em> order is created for this
+mailbox. The mailbox will be considered unavailable until the order is
+not executed (see <a class="reference internal" href="postfix.html#postfix-config"><em>Postfix configuration</em></a>).</p>
+<p>Edit the crontab of the user who owns the mailboxes on the file system:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ crontab -u &lt;user&gt; -e
+</pre></div>
+</div>
+<p>And add the following line inside:</p>
+<div class="highlight-python"><div class="highlight"><pre>* * * * * python &lt;modoboa_site&gt;/manage.py handle_mailbox_operations
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The cron script must be executed by the system user owning the mailboxes.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The user running the cron script must have access to the
+<tt class="file docutils literal"><span class="pre">settings.py</span></tt> file of the modoboa instance.</p>
+</div>
+<p>The result of each order is recorded into Modoboa&#8217;s log. Go to
+<em>Modoboa &gt; Logs</em> to consult them.</p>
+</div>
+</div>
+<div class="section" id="authentication">
+<span id="dovecot-authentication"></span><h2>Authentication<a class="headerlink" href="#authentication" title="Permalink to this headline">¶</a></h2>
+<p>To make the authentication work, edit the <tt class="file docutils literal"><span class="pre">conf.d/10-auth.conf</span></tt> and
+uncomment the following line at the end:</p>
+<div class="highlight-python"><div class="highlight"><pre>#!include auth-system.conf.ext
+!include auth-sql.conf.ext
+#!include auth-ldap.conf.ext
+#!include auth-passwdfile.conf.ext
+#!include auth-checkpassword.conf.ext
+#!include auth-vpopmail.conf.ext
+#!include auth-static.conf.ext
+</pre></div>
+</div>
+<p>Then, edit the <tt class="file docutils literal"><span class="pre">conf.d/auth-sql.conf.ext</span></tt> file and add the following
+content inside:</p>
+<div class="highlight-python"><div class="highlight"><pre>passdb sql {
+  driver = sql
+  # Path for SQL configuration file, see example-config/dovecot-sql.conf.ext
+  args = /etc/dovecot/dovecot-sql.conf.ext
+}
+
+userdb sql {
+  driver = sql
+  args = /etc/dovecot/dovecot-sql.conf.ext
+}
+</pre></div>
+</div>
+<p>Make sure to activate only one backend (per type) inside your configuration
+(just comment the other ones).</p>
+<p>Edit the <tt class="file docutils literal"><span class="pre">dovecot-sql.conf.ext</span></tt> and modify the configuration according
+to your database engine.</p>
+<div class="section" id="mysql-users">
+<span id="dovecot-mysql-queries"></span><h3>MySQL users<a class="headerlink" href="#mysql-users" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre>driver = mysql
+
+connect = host=&lt;mysqld socket&gt; dbname=&lt;database&gt; user=&lt;user&gt; password=&lt;password&gt;
+
+default_pass_scheme = CRYPT
+
+password_query = SELECT email AS user, password FROM core_user WHERE email=&#39;%Lu&#39; and is_active=1
+
+ user_query = SELECT &#39;&lt;mailboxes storage directory&gt;/%Ld/%Ln&#39; AS home, &lt;uid&gt; as uid, &lt;gid&gt; as gid, concat(&#39;*:bytes=&#39;, mb.quota, &#39;M&#39;) AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE mb.address=&#39;%Ln&#39; AND dom.name=&#39;%Ld&#39;
+
+iterate_query = SELECT email AS user FROM core_user
+</pre></div>
+</div>
+</div>
+<div class="section" id="postgresql-users">
+<span id="dovecot-pg-queries"></span><h3>PostgreSQL users<a class="headerlink" href="#postgresql-users" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre>driver = pgsql
+
+connect = host=&lt;postgres socket&gt; dbname=&lt;database&gt; user=&lt;user&gt; password=&lt;password&gt;
+
+default_pass_scheme = CRYPT
+
+password_query = SELECT email AS user, password FROM core_user u INNER JOIN admin_mailbox mb ON u.id=mb.user_id INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE u.email=&#39;%Lu&#39; AND u.is_active AND dom.enabled
+
+user_query = SELECT &#39;&lt;mailboxes storage directory&gt;/%Ld/%Ln&#39; AS home, &lt;uid&gt; as uid, &lt;gid&gt; as gid, &#39;*:bytes=&#39; || mb.quota || &#39;M&#39; AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE mb.address=&#39;%Ln&#39; AND dom.name=&#39;%Ld&#39;
+
+iterate_query = SELECT email AS user FROM core_user
+</pre></div>
+</div>
+</div>
+<div class="section" id="sqlite-users">
+<h3>SQLite users<a class="headerlink" href="#sqlite-users" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre>driver = sqlite
+
+connect = &lt;path to the sqlite db file&gt;
+
+default_pass_scheme = CRYPT
+
+password_query = SELECT email AS user, password FROM core_user u INNER JOIN admin_mailbox mb ON u.id=mb.user_id INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE u.email=&#39;%Lu&#39; AND u.is_active=1 AND dom.enabled=1
+
+user_query = SELECT &#39;&lt;mailboxes storage directory&gt;/%Ld/%Ln&#39; AS home, &lt;uid&gt; as uid, &lt;gid&gt; as gid, (&#39;*:bytes=&#39; || mb.quota || &#39;M&#39;) AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE mb.address=&#39;%Ln&#39; AND dom.name=&#39;%Ld&#39;
+
+iterate_query = SELECT email AS user FROM core_user
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Replace values between <tt class="docutils literal"><span class="pre">&lt;&gt;</span></tt> with yours.</p>
+</div>
+</div>
+</div>
+<div class="section" id="lmtp">
+<h2>LMTP<a class="headerlink" href="#lmtp" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://en.wikipedia.org/wiki/Local_Mail_Transfer_Protocol">Local Mail Transport Protocol</a> is used
+to let Postfix deliver messages to Dovecot.</p>
+<p>First, make sure the protocol is activated by looking at the
+<tt class="docutils literal"><span class="pre">protocols</span></tt> setting (generally inside
+<tt class="file docutils literal"><span class="pre">dovecot.conf</span></tt>). It should be similar to the following example:</p>
+<div class="highlight-python"><div class="highlight"><pre>protocols = imap pop3 lmtp
+</pre></div>
+</div>
+<p>Then, open the <tt class="file docutils literal"><span class="pre">conf.d/10-master.conf</span></tt>, look for <tt class="docutils literal"><span class="pre">lmtp</span></tt>
+service definition and add the following content inside:</p>
+<div class="highlight-python"><div class="highlight"><pre>service lmtp {
+  # stuff before
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+    mode = 0600
+    user = postfix
+    group = postfix
+  }
+  # stuff after
+}
+</pre></div>
+</div>
+<p>We assume here that Postfix is <em>chrooted</em> within
+<tt class="file docutils literal"><span class="pre">/var/spool/postfix</span></tt>.</p>
+<p>Finally, open the <tt class="file docutils literal"><span class="pre">conf.d/20-lmtp.conf</span></tt> and modify it as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre>protocol lmtp {
+  postmaster_address = postmaster@&lt;domain&gt;
+  mail_plugins = $mail_plugins quota sieve
+}
+</pre></div>
+</div>
+<p>Replace <tt class="docutils literal"><span class="pre">&lt;domain&gt;</span></tt> by the appropriate value.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you don&#8217;t plan to apply quota or to use filters, just adapt the
+content of the <tt class="docutils literal"><span class="pre">mail_plugins</span></tt> setting.</p>
+</div>
+</div>
+<div class="section" id="quota">
+<span id="dovecot-quota"></span><h2>Quota<a class="headerlink" href="#quota" title="Permalink to this headline">¶</a></h2>
+<p>Modoboa lets adminstrators define per-domain and/or per-account limits
+(quota). It also lists the current quota usage of each account. Those
+features require Dovecot to be configured in a specific way.</p>
+<p>Inside <tt class="file docutils literal"><span class="pre">conf.d/10-mail.conf</span></tt>, add the <tt class="docutils literal"><span class="pre">quota</span></tt> plugin to the default
+activated ones:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mail_plugins</span> <span class="o">=</span> <span class="n">quota</span>
+</pre></div>
+</div>
+<p>Inside <tt class="file docutils literal"><span class="pre">conf.d/10-master.conf</span></tt>, update the <tt class="docutils literal"><span class="pre">dict</span></tt> service to set
+proper permissions:</p>
+<div class="highlight-python"><div class="highlight"><pre>service dict {
+  # If dict proxy is used, mail processes should have access to its socket.
+  # For example: mode=0660, group=vmail and global mail_access_groups=vmail
+  unix_listener dict {
+    mode = 0600
+    user = &lt;user owning mailboxes&gt;
+    #group =
+  }
+}
+</pre></div>
+</div>
+<p>Inside <tt class="file docutils literal"><span class="pre">conf.d/20-imap.conf</span></tt>, activate the <tt class="docutils literal"><span class="pre">imap_quota</span></tt> plugin:</p>
+<div class="highlight-python"><div class="highlight"><pre>protocol imap {
+  # ...
+
+  mail_plugins = $mail_plugins imap_quota
+
+  # ...
+}
+</pre></div>
+</div>
+<p>Inside <tt class="file docutils literal"><span class="pre">dovecot.conf</span></tt>, activate the quota SQL dictionary backend:</p>
+<div class="highlight-python"><div class="highlight"><pre>dict {
+  quota = &lt;driver&gt;:/etc/dovecot/dovecot-dict-sql.conf.ext
+}
+</pre></div>
+</div>
+<p>Inside <tt class="file docutils literal"><span class="pre">conf.d/90-quota.conf</span></tt>, activate the <em>quota dictionary</em> backend:</p>
+<div class="highlight-python"><div class="highlight"><pre>plugin {
+  quota = dict:User quota::proxy::quota
+}
+</pre></div>
+</div>
+<p>It will tell Dovecot to keep quota usage in the SQL dictionary.</p>
+<p>Finally, edit the <tt class="file docutils literal"><span class="pre">dovecot-dict-sql.conf.ext</span></tt> file and put the
+following content inside:</p>
+<div class="highlight-python"><div class="highlight"><pre>connect = host=&lt;db host&gt; dbname=&lt;db name&gt; user=&lt;db user&gt; password=&lt;password&gt;
+# SQLite users
+# connect = /path/to/the/database.db
+
+map {
+  pattern = priv/quota/storage
+  table = admin_quota
+  username_field = username
+  value_field = bytes
+}
+map {
+  pattern = priv/quota/messages
+  table = admin_quota
+  username_field = username
+  value_field = messages
+}
+</pre></div>
+</div>
+<div class="section" id="id2">
+<h3><em>PostgreSQL</em> users<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="database-schema-update">
+<h4>Database schema update<a class="headerlink" href="#database-schema-update" title="Permalink to this headline">¶</a></h4>
+<p>The <tt class="docutils literal"><span class="pre">admin_quota</span></tt> table is created by Django but unfortunately it
+doesn&#8217;t support <tt class="docutils literal"><span class="pre">DEFAULT</span></tt> constraints (it only simulates them when the
+ORM is used). As PostgreSQL is a bit strict about constraint
+violations, you must execute the following query manually:</p>
+<div class="highlight-python"><div class="highlight"><pre>db=&gt; ALTER TABLE admin_quota ALTER COLUMN bytes SET DEFAULT 0;
+db=&gt; ALTER TABLE admin_quota ALTER COLUMN messages SET DEFAULT 0;
+</pre></div>
+</div>
+</div>
+<div class="section" id="trigger">
+<h4>Trigger<a class="headerlink" href="#trigger" title="Permalink to this headline">¶</a></h4>
+<p>As indicated on <a class="reference external" href="http://wiki2.dovecot.org/Quota/Dict">Dovecot&#8217;s wiki</a>, you need a trigger to
+properly update the quota.</p>
+<p>A working copy of this trigger is available on <a class="reference external" href="http://modoboa.org/resources/modoboa_postgres_trigger.sql">Modoboa&#8217;s website</a>.</p>
+<p>Download this file and copy it on the server running postgres. Then,
+execute the following commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ su - postgres
+$ psql [modoboa database] &lt; /path/to/modoboa_postgres_trigger.sql
+$ exit
+</pre></div>
+</div>
+<p>Replace <tt class="docutils literal"><span class="pre">[modoboa</span> <span class="pre">database]</span></tt> by the appropriate value.</p>
+</div>
+</div>
+<div class="section" id="forcing-recalculation">
+<h3>Forcing recalculation<a class="headerlink" href="#forcing-recalculation" title="Permalink to this headline">¶</a></h3>
+<p>For existing installations, <em>Dovecot</em> (&gt; 2) offers a command to
+recalculate the current quota usages. For example, if you want to
+update all usages, run the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ doveadm quota recalc -A
+</pre></div>
+</div>
+<p>Be carefull, it can take a while to execute.</p>
+</div>
+</div>
+<div class="section" id="managesieve-sieve">
+<h2>ManageSieve/Sieve<a class="headerlink" href="#managesieve-sieve" title="Permalink to this headline">¶</a></h2>
+<p>Modoboa lets users define filtering rules from the web interface. To
+do so, it requires <em>ManageSieve</em> to be activated on your server.</p>
+<p>Inside <tt class="file docutils literal"><span class="pre">conf.d/20-managesieve.conf</span></tt>, make sure the following lines are
+uncommented:</p>
+<div class="highlight-python"><div class="highlight"><pre>protocols = $protocols sieve
+
+service managesieve-login {
+  # ...
+}
+
+service managesieve {
+  # ...
+}
+
+protocol sieve {
+  # ...
+}
+</pre></div>
+</div>
+<p>Messages filtering using Sieve is done by the LDA.</p>
+<p>Inside <tt class="file docutils literal"><span class="pre">conf.d/15-lda.conf</span></tt>, activate the <tt class="docutils literal"><span class="pre">sieve</span></tt> plugin like this:</p>
+<div class="highlight-python"><div class="highlight"><pre>protocol lda {
+  # Space separated list of plugins to load (default is global mail_plugins).
+  mail_plugins = $mail_plugins sieve
+}
+</pre></div>
+</div>
+<p>Finally, configure the <tt class="docutils literal"><span class="pre">sieve</span></tt> plugin by editing the
+<tt class="file docutils literal"><span class="pre">conf.d/90-sieve.conf</span></tt> file. Put the follwing caontent inside:</p>
+<div class="highlight-python"><div class="highlight"><pre>plugin {
+  # Location of the active script. When ManageSieve is used this is actually
+  # a symlink pointing to the active script in the sieve storage directory.
+  sieve = ~/.dovecot.sieve
+
+  #
+  # The path to the directory where the personal Sieve scripts are stored. For
+  # ManageSieve this is where the uploaded scripts are stored.
+  sieve_dir = ~/sieve
+}
+</pre></div>
+</div>
+<p>Restart Dovecot.</p>
+<p>Now, you can go to the <a class="reference internal" href="postfix.html#postfix"><em>Postfix</em></a> section to finish the installation.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Dovecot</a><ul>
+<li><a class="reference internal" href="#mailboxes">Mailboxes</a><ul>
+<li><a class="reference internal" href="#operations-on-the-file-system">Operations on the file system</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#authentication">Authentication</a><ul>
+<li><a class="reference internal" href="#mysql-users">MySQL users</a></li>
+<li><a class="reference internal" href="#postgresql-users">PostgreSQL users</a></li>
+<li><a class="reference internal" href="#sqlite-users">SQLite users</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lmtp">LMTP</a></li>
+<li><a class="reference internal" href="#quota">Quota</a><ul>
+<li><a class="reference internal" href="#id2"><em>PostgreSQL</em> users</a><ul>
+<li><a class="reference internal" href="#database-schema-update">Database schema update</a></li>
+<li><a class="reference internal" href="#trigger">Trigger</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#forcing-recalculation">Forcing recalculation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#managesieve-sieve">ManageSieve/Sieve</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="webserver.html"
+                        title="previous chapter">Web server</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="postfix.html"
+                        title="next chapter">Postfix</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/manual_installation/dovecot.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="postfix.html" title="Postfix"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="webserver.html" title="Web server"
+             >previous</a> |</li>
+        <li><a href="../index.html">Modoboa 1.7.4 documentation</a> &raquo;</li>
+          <li><a href="../installation.html" >Installation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2017, Antoine Nguyen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

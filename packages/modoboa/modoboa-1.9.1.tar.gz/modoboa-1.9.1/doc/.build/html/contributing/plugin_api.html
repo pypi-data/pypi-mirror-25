@@ -1,0 +1,311 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Create a new plugin &mdash; Modoboa 1.7.4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.7.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Modoboa 1.7.4 documentation" href="../index.html" />
+    <link rel="up" title="How to contribute" href="../contributing.html" />
+    <link rel="next" title="Contributors" href="../contributors.html" />
+    <link rel="prev" title="Useful tips" href="getting_started.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../contributors.html" title="Contributors"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Useful tips"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Modoboa 1.7.4 documentation</a> &raquo;</li>
+          <li><a href="../contributing.html" accesskey="U">How to contribute</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="create-a-new-plugin">
+<h1>Create a new plugin<a class="headerlink" href="#create-a-new-plugin" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Modoboa offers a plugin API to expand its capabilities. The current
+implementation provides the following possibilities:</p>
+<ul class="simple">
+<li>Expand navigation by adding entry points to your plugin inside the GUI</li>
+<li>Access and modify administrative objects (domains, mailboxes, etc.)</li>
+<li>Register callback actions for specific events</li>
+</ul>
+<p>Plugins are nothing more than Django applications with an extra piece
+of code that integrates them into Modoboa. The
+<tt class="file docutils literal"><span class="pre">modo_extension.py</span></tt> file will contain a complete description of
+the plugin:</p>
+<ul class="simple">
+<li>Admin and user parameters</li>
+<li>Custom menu entries</li>
+</ul>
+<p>The communication between both applications is provided by <a class="reference external" href="https://docs.djangoproject.com/en/1.9/topics/signals/">Django
+signals</a>.</p>
+<p>The following subsections describe the plugin architecture and explain
+how you can create your own.</p>
+</div>
+<div class="section" id="the-required-glue">
+<h2>The required glue<a class="headerlink" href="#the-required-glue" title="Permalink to this headline">¶</a></h2>
+<p>To create a new plugin, just start a new django application like
+this (into Modoboa&#8217;s directory):</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python manage.py startapp
+</pre></div>
+</div>
+<p>Then, you need to register this application using the provided
+API. Just copy/paste the following example into the <tt class="file docutils literal"><span class="pre">modo_extension.py</span></tt> file
+of the future extension:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">modoboa.core.extensions</span> <span class="kn">import</span> <span class="n">ModoExtension</span><span class="p">,</span> <span class="n">exts_pool</span>
+
+
+<span class="k">class</span> <span class="nc">MyExtension</span><span class="p">(</span><span class="n">ModoExtension</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;My custom Modoboa extension.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;myext&quot;</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="s">&quot;My Extension&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s">&quot;0.1&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s">&quot;A description&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s">&quot;myext_root_location&quot;</span> <span class="c"># optional, name is used if not defined</span>
+
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method is called when Modoboa loads available and activated plugins.</span>
+
+<span class="sd">        Declare parameters and register events here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">load_initial_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Optional: provide initial data for your extension here.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<span class="n">exts_pool</span><span class="o">.</span><span class="n">register_extension</span><span class="p">(</span><span class="n">MyExtension</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once done, simply add your extension&#8217;s module name to the
+<tt class="docutils literal"><span class="pre">MODOBOA_APPS</span></tt> variable located inside <tt class="file docutils literal"><span class="pre">settings.py</span></tt>. Finally,
+run the following commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python manage.py migrate
+$ python manage.py load_initial_data
+$ python manage.py collectstatic
+</pre></div>
+</div>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<p>A plugin can declare its own parameters. There are two levels available:</p>
+<ul class="simple">
+<li>&#8216;Global&#8217; parameters : used to configure the plugin, editable
+inside the <em>Admin &gt; Settings &gt; Parameters</em> page</li>
+<li>&#8216;User&#8217; parameters : per-user parameters (or preferences), editable
+inside the <em>Options &gt; Preferences</em> page</li>
+</ul>
+<div class="section" id="playing-with-parameters">
+<h3>Playing with parameters<a class="headerlink" href="#playing-with-parameters" title="Permalink to this headline">¶</a></h3>
+<p>Parameters are defined using <a class="reference external" href="https://docs.djangoproject.com/en/1.9/topics/forms/">Django forms</a> and Modoboa
+adds two special forms you can inherit depending on the level of
+parameter(s) you want to add:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">modoboa.parameters.forms.AdminParametersForm</span></tt>: for general parameters</li>
+<li><tt class="docutils literal"><span class="pre">modoboa.parameters.forms.UserParametersForm</span></tt>: for user parameters</li>
+</ul>
+<p>To register new parameters, add the following line into the <tt class="docutils literal"><span class="pre">load</span></tt>
+method of your plugin class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">modoboa.parameters</span> <span class="kn">import</span> <span class="n">tools</span> <span class="k">as</span> <span class="n">param_tools</span>
+<span class="n">param_tools</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+    <span class="n">LEVEL</span><span class="p">,</span> <span class="n">YourForm</span><span class="p">,</span> <span class="n">ugettext_lazy</span><span class="p">(</span><span class="s">&quot;Title&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Replace <tt class="docutils literal"><span class="pre">LEVEL</span></tt> by <tt class="docutils literal"><span class="pre">&quot;global&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;user&quot;</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="custom-role-permissions">
+<h2>Custom role permissions<a class="headerlink" href="#custom-role-permissions" title="Permalink to this headline">¶</a></h2>
+<p>Modoboa uses Django&#8217;s internal permission system. Administrative roles
+are nothing more than groups (<tt class="docutils literal"><span class="pre">Group</span></tt> instances).</p>
+<p>An extension can add new permissions to a group by listening to the
+<tt class="docutils literal"><span class="pre">extra_role_permissions</span></tt> signal. Here is an example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.dispatch</span> <span class="kn">import</span> <span class="n">receiver</span>
+<span class="kn">from</span> <span class="nn">modoboa.core</span> <span class="kn">import</span> <span class="n">signals</span> <span class="k">as</span> <span class="n">core_signals</span>
+
+<span class="n">PERMISSIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;Resellers&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s">&quot;relaydomains&quot;</span><span class="p">,</span> <span class="s">&quot;relaydomain&quot;</span><span class="p">,</span> <span class="s">&quot;add_relaydomain&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s">&quot;relaydomains&quot;</span><span class="p">,</span> <span class="s">&quot;relaydomain&quot;</span><span class="p">,</span> <span class="s">&quot;change_relaydomain&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s">&quot;relaydomains&quot;</span><span class="p">,</span> <span class="s">&quot;relaydomain&quot;</span><span class="p">,</span> <span class="s">&quot;delete_relaydomain&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s">&quot;relaydomains&quot;</span><span class="p">,</span> <span class="s">&quot;service&quot;</span><span class="p">,</span> <span class="s">&quot;add_service&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s">&quot;relaydomains&quot;</span><span class="p">,</span> <span class="s">&quot;service&quot;</span><span class="p">,</span> <span class="s">&quot;change_service&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s">&quot;relaydomains&quot;</span><span class="p">,</span> <span class="s">&quot;service&quot;</span><span class="p">,</span> <span class="s">&quot;delete_service&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">core_signals</span><span class="o">.</span><span class="n">extra_role_permissions</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">extra_role_permissions</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">role</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+   <span class="sd">&quot;&quot;&quot;Add permissions to the Resellers group.&quot;&quot;&quot;</span>
+   <span class="k">return</span> <span class="n">constants</span><span class="o">.</span><span class="n">PERMISSIONS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="p">[])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="extending-admin-forms">
+<h2>Extending admin forms<a class="headerlink" href="#extending-admin-forms" title="Permalink to this headline">¶</a></h2>
+<p>The forms used to edit objects (account, domain, etc.) through the admin
+panel are composed of tabs. You can extend them (ie. add new
+tabs) in a pretty easy way thanks to custom signals.</p>
+<div class="section" id="account">
+<h3>Account<a class="headerlink" href="#account" title="Permalink to this headline">¶</a></h3>
+<p>To add a new tab to the account edition form, define new listeners
+(handlers) for the following signals:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">modoboa.admin.signals.extra_account_forms</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">modoboa.admin.signals.get_account_form_instances</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">modoboa.admin.signals.check_extra_account_form</span></tt> (optional)</li>
+</ul>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.dispatch</span> <span class="kn">import</span> <span class="n">receiver</span>
+<span class="kn">from</span> <span class="nn">modoboa.admin</span> <span class="kn">import</span> <span class="n">signals</span> <span class="k">as</span> <span class="n">admin_signals</span>
+
+
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">admin_signals</span><span class="o">.</span><span class="n">extra_account_forms</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">extra_account_form</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="s">&quot;tabid&quot;</span><span class="p">,</span> <span class="s">&quot;title&quot;</span><span class="p">:</span> <span class="s">&quot;Title&quot;</span><span class="p">,</span> <span class="s">&quot;cls&quot;</span><span class="p">:</span> <span class="n">MyFormClass</span><span class="p">}</span>
+    <span class="p">]</span>
+
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">admin_signals</span><span class="o">.</span><span class="n">get_account_form_instances</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">fill_my_tab</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="n">my_instance</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="domain">
+<h3>Domain<a class="headerlink" href="#domain" title="Permalink to this headline">¶</a></h3>
+<p>To add a new tab to the domain edition form, define new listeners
+(handlers) for the following signals:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">modoboa.admin.signals.extra_domain_forms</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">modoboa.admin.signals.get_domain_form_instances</span></tt></li>
+</ul>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.dispatch</span> <span class="kn">import</span> <span class="n">receiver</span>
+<span class="kn">from</span> <span class="nn">modoboa.admin</span> <span class="kn">import</span> <span class="n">signals</span> <span class="k">as</span> <span class="n">admin_signals</span>
+
+
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">admin_signals</span><span class="o">.</span><span class="n">extra_domain_forms</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">extra_account_form</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="s">&quot;tabid&quot;</span><span class="p">,</span> <span class="s">&quot;title&quot;</span><span class="p">:</span> <span class="s">&quot;Title&quot;</span><span class="p">,</span> <span class="s">&quot;cls&quot;</span><span class="p">:</span> <span class="n">MyFormClass</span><span class="p">}</span>
+    <span class="p">]</span>
+
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">admin_signals</span><span class="o">.</span><span class="n">get_domain_form_instances</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">fill_my_tab</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="n">my_instance</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Create a new plugin</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#the-required-glue">The required glue</a></li>
+<li><a class="reference internal" href="#parameters">Parameters</a><ul>
+<li><a class="reference internal" href="#playing-with-parameters">Playing with parameters</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#custom-role-permissions">Custom role permissions</a></li>
+<li><a class="reference internal" href="#extending-admin-forms">Extending admin forms</a><ul>
+<li><a class="reference internal" href="#account">Account</a></li>
+<li><a class="reference internal" href="#domain">Domain</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="previous chapter">Useful tips</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../contributors.html"
+                        title="next chapter">Contributors</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/contributing/plugin_api.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../contributors.html" title="Contributors"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Useful tips"
+             >previous</a> |</li>
+        <li><a href="../index.html">Modoboa 1.7.4 documentation</a> &raquo;</li>
+          <li><a href="../contributing.html" >How to contribute</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2017, Antoine Nguyen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Modoboa &mdash; Modoboa 1.7.4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.7.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Modoboa 1.7.4 documentation" href="../index.html" />
+    <link rel="up" title="Installation" href="../installation.html" />
+    <link rel="next" title="Web server" href="webserver.html" />
+    <link rel="prev" title="Installation" href="../installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="webserver.html" title="Web server"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Modoboa 1.7.4 documentation</a> &raquo;</li>
+          <li><a href="../installation.html" accesskey="U">Installation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="modoboa">
+<h1>Modoboa<a class="headerlink" href="#modoboa" title="Permalink to this headline">¶</a></h1>
+<p>This section describes the installation of the web interface (a
+<a class="reference external" href="https://www.djangoproject.com/">Django</a> project).</p>
+<div class="section" id="prepare-the-system">
+<h2>Prepare the system<a class="headerlink" href="#prepare-the-system" title="Permalink to this headline">¶</a></h2>
+<p>First of all, we recommand the following context:</p>
+<ul class="simple">
+<li>Use a dedicated system user</li>
+<li>Use a <a class="reference external" href="http://www.virtualenv.org/en/latest/">virtualenv</a> to
+install the application because it will isolate it (and its
+dependencies) from the rest of your system</li>
+</ul>
+<p>The following example illustrates how to realize this (Debian like system):</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; sudo apt-get install python-virtualenv python-pip
+&gt; sudo useradd modoboa
+&gt; sudo -i modoboa
+&gt; virtualenv env
+<span class="o">(</span>env<span class="o">)</span>&gt; <span class="nb">source </span>env/bin/activate
+<span class="o">(</span>env<span class="o">)</span>&gt; pip install -U pip
+</pre></div>
+</div>
+<p>Modoboa depends on external tools and some of them require compilation
+so you need a compiler and a few C libraries. Make sure to install the
+following system packages according to your distribution:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Debian/Ubuntu</th>
+<th class="head">CentOS</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>build-essential, python-dev,
+libxml2-dev, libxslt-dev,
+libjpeg-dev, librrd-dev,
+rrdtool, libffi-dev</td>
+<td>gcc, gcc-c++, python-devel,
+libxml2-devel, libxslt-devel,
+libjpeg-turbo-devel,
+rrdtool-devel, rrdtool,
+libffi-devel</td>
+</tr>
+</tbody>
+</table>
+<p>Then, install Modoboa:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="o">(</span>env<span class="o">)</span>&gt; pip install modoboa
+</pre></div>
+</div>
+</div>
+<div class="section" id="database">
+<span id="id1"></span><h2>Database<a class="headerlink" href="#database" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This documentation does not cover the installation of a database
+server but only the setup of a functional database that Modoboa
+will use.</p>
+</div>
+<p>Thanks to Django, Modoboa is compatible with the following databases:</p>
+<ul class="simple">
+<li>PostgreSQL</li>
+<li>MySQL / MariaDB</li>
+<li>SQLite</li>
+</ul>
+<p>Since the last one does not require particular actions, only the first
+two ones are described.</p>
+<div class="section" id="postgresql">
+<h3>PostgreSQL<a class="headerlink" href="#postgresql" title="Permalink to this headline">¶</a></h3>
+<p>Install the corresponding Python binding:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="o">(</span>env<span class="o">)</span>&gt; pip install psycopg2
+</pre></div>
+</div>
+<p>Then, create a user and a database:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; sudo -i postgres
+&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="mysql-mariadb">
+<h3>MySQL / MariaDB<a class="headerlink" href="#mysql-mariadb" title="Permalink to this headline">¶</a></h3>
+<p>Install the corresponding Python binding:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="o">(</span>env<span class="o">)</span>&gt; pip install MySQL-Python
+</pre></div>
+</div>
+<p>Then, create a user and a database:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; mysqladmin -u root -p create modoboa
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="deploy-an-instance">
+<h2>Deploy an instance<a class="headerlink" href="#deploy-an-instance" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">modoboa-admin.py</span></tt>, a command line tool, lets you deploy a
+<em>ready-to-use</em> Modoboa site using only one instruction:</p>
+<div class="highlight-python"><div class="highlight"><pre>(env)&gt; modoboa-admin.py deploy instance --collectstatic \
+         --domain &lt;hostname of your server&gt; --dburl default:database-url
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>You can install additional extensions during the deploy process. To
+do so, use the <tt class="docutils literal"><span class="pre">--extensions</span></tt> option which accepts a list of
+names as argument (<tt class="docutils literal"><span class="pre">--extensions</span> <span class="pre">ext1</span> <span class="pre">ext2</span> <span class="pre">...</span></tt>). If you want to
+install all extensions, just use the <tt class="docutils literal"><span class="pre">all</span></tt> keyword like this
+<tt class="docutils literal"><span class="pre">--extensions</span> <span class="pre">all</span></tt>.</p>
+<p>If you choose to install extensions one at a time, you will have to
+add their names in settings.py to <tt class="docutils literal"><span class="pre">MODOBOA_APPS</span></tt>. Also ensure that
+you have the line <tt class="docutils literal"><span class="pre">from</span> <span class="pre">modoboa_amavis.settings</span> <span class="pre">import</span> <span class="pre">*</span></tt> at the
+end of this file.</p>
+<p class="last">The list of available extensions can be found on the <a class="reference internal" href="../index.html"><em>index
+page</em></a>. Instructions to install them are available on
+each extensions page.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>You can specify more than one database connection using the
+<tt class="docutils literal"><span class="pre">--dburl</span></tt> option. Multiple connections are differentiated by a
+prefix.</p>
+<p>The primary connection must use the <tt class="docutils literal"><span class="pre">default:</span></tt> prefix (as shown
+in the example above). For the <a class="reference external" href="http://modoboa-amavis.readthedocs.org">amavis</a> extension, use the
+<tt class="docutils literal"><span class="pre">amavis:</span></tt> prefix. For example: <tt class="docutils literal"><span class="pre">--dburl</span>
+<span class="pre">default:&lt;database</span> <span class="pre">url&gt;</span> <span class="pre">amavis:&lt;database</span> <span class="pre">url&gt;</span></tt>.</p>
+<p class="last">A database url should meet the following syntax
+<tt class="docutils literal"><span class="pre">&lt;mysql|postgres&gt;://[user:pass&#64;][host:port]/dbname</span></tt> <strong>OR</strong>
+<tt class="docutils literal"><span class="pre">sqlite:////full/path/to/your/database/file.sqlite</span></tt>.</p>
+</div>
+<p>The command will ask you a few questions, answer them and you&#8217;re
+done.</p>
+<p>If you need a <strong>silent installation</strong> (e.g. if you&#8217;re using
+Salt-Stack, Ansible or whatever), it&#8217;s possible to supply the database
+credentials as commandline arguments.</p>
+<p>You can consult the complete option list by running the following
+command:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ modoboa-admin.py help deploy
+</pre></div>
+</div>
+</div>
+<div class="section" id="cron-jobs">
+<h2>Cron jobs<a class="headerlink" href="#cron-jobs" title="Permalink to this headline">¶</a></h2>
+<p>A few recurring jobs must be configured to make Modoboa works as
+expected.</p>
+<p>Create a new file, for example <tt class="file docutils literal"><span class="pre">/etc/cron.d/modoboa</span></tt> and put the
+following content inside:</p>
+<div class="highlight-python"><div class="highlight"><pre>#
+# Modoboa specific cron jobs
+#
+PYTHON=&lt;PATH TO PYTHON BINARY&gt;
+INSTANCE=&lt;PATH TO MODOBOA INSTANCE&gt;
+
+# Operations on mailboxes
+*       *       *       *       *       vmail   $PYTHON $INSTANCE/manage.py handle_mailbox_operations
+
+# Sessions table cleanup
+0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py clearsessions
+
+# Logs table cleanup
+0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py cleanlogs
+
+# Logs parsing
+*/5     *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &amp;&gt; /dev/null
+
+# DNSBL checks
+*/30    *       *       *       *       root    $PYTHON $INSTANCE/manage.py modo check_mx
+
+# Public API communication
+0       *       *       *       *       root    $PYTHON $INSTANCE/manage.py communicate_with_public_api
+</pre></div>
+</div>
+<p>Now you can continue to the <a class="reference internal" href="webserver.html#webserver"><em>Web server</em></a> section.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Modoboa</a><ul>
+<li><a class="reference internal" href="#prepare-the-system">Prepare the system</a></li>
+<li><a class="reference internal" href="#database">Database</a><ul>
+<li><a class="reference internal" href="#postgresql">PostgreSQL</a></li>
+<li><a class="reference internal" href="#mysql-mariadb">MySQL / MariaDB</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#deploy-an-instance">Deploy an instance</a></li>
+<li><a class="reference internal" href="#cron-jobs">Cron jobs</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../installation.html"
+                        title="previous chapter">Installation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="webserver.html"
+                        title="next chapter">Web server</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/manual_installation/modoboa.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="webserver.html" title="Web server"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../installation.html" title="Installation"
+             >previous</a> |</li>
+        <li><a href="../index.html">Modoboa 1.7.4 documentation</a> &raquo;</li>
+          <li><a href="../installation.html" >Installation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2017, Antoine Nguyen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
