@@ -1,0 +1,792 @@
+diff --git a/examples/BasicDemo/BasicExample.cpp b/examples/BasicDemo/BasicExample.cpp
+index f5bd948..b6365df 100644
+--- a/examples/BasicDemo/BasicExample.cpp
++++ b/examples/BasicDemo/BasicExample.cpp
+@@ -42,7 +42,7 @@ struct BasicExample : public CommonRigidBodyBase
+ 		float dist = 41;
+ 		float pitch = 52;
+ 		float yaw = 35;
+-		float targetPos[3]={0,0.46,0};
++		float targetPos[3]={0,0,0};
+ 		m_guiHelper->resetCamera(dist,pitch,yaw,targetPos[0],targetPos[1],targetPos[2]);
+ 	}
+ };
+diff --git a/examples/SharedMemory/PhysicsClientC_API.cpp b/examples/SharedMemory/PhysicsClientC_API.cpp
+index 57121f0..203e0eb 100644
+--- a/examples/SharedMemory/PhysicsClientC_API.cpp
++++ b/examples/SharedMemory/PhysicsClientC_API.cpp
+@@ -167,6 +167,10 @@ b3SharedMemoryCommandHandle b3JointControlCommandInit2( b3PhysicsClientHandle ph
+     command->m_sendDesiredStateCommandArgument.m_controlMode = controlMode;
+ 	command->m_sendDesiredStateCommandArgument.m_bodyUniqueId = bodyUniqueId;
+ 	command->m_updateFlags = 0;
++    for (int i=0;i<MAX_DEGREE_OF_FREEDOM;i++)
++    {
++        command->m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[i] = 0;
++    }
+     return (b3SharedMemoryCommandHandle) command;
+ }
+ 
+@@ -176,6 +180,7 @@ int b3JointControlSetDesiredPosition(b3SharedMemoryCommandHandle commandHandle,
+     b3Assert(command);
+     command->m_sendDesiredStateCommandArgument.m_desiredStateQ[qIndex] = value;
+ 	command->m_updateFlags |= SIM_DESIRED_STATE_HAS_Q;
++    command->m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[qIndex] |= SIM_DESIRED_STATE_HAS_Q;
+ 
+     return 0;
+ }
+@@ -186,6 +191,8 @@ int b3JointControlSetKp(b3SharedMemoryCommandHandle commandHandle, int dofIndex,
+     b3Assert(command);
+     command->m_sendDesiredStateCommandArgument.m_Kp[dofIndex] = value;
+ 	command->m_updateFlags |= SIM_DESIRED_STATE_HAS_KP;
++    command->m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[dofIndex] |= SIM_DESIRED_STATE_HAS_KP;
++
+     return 0;
+ }
+ 
+@@ -195,6 +202,7 @@ int b3JointControlSetKd(b3SharedMemoryCommandHandle commandHandle, int dofIndex,
+     b3Assert(command);
+     command->m_sendDesiredStateCommandArgument.m_Kd[dofIndex] = value;
+ 	command->m_updateFlags |= SIM_DESIRED_STATE_HAS_KD;
++    command->m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[dofIndex] |= SIM_DESIRED_STATE_HAS_KD;
+ 
+     return 0;
+ }
+@@ -205,6 +213,8 @@ int b3JointControlSetDesiredVelocity(b3SharedMemoryCommandHandle commandHandle,
+     b3Assert(command);
+     command->m_sendDesiredStateCommandArgument.m_desiredStateQdot[dofIndex] = value;
+ 	command->m_updateFlags |= SIM_DESIRED_STATE_HAS_QDOT;
++    command->m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[dofIndex] |= SIM_DESIRED_STATE_HAS_QDOT;
++
+     return 0;
+ }
+ 
+@@ -215,6 +225,8 @@ int b3JointControlSetMaximumForce(b3SharedMemoryCommandHandle commandHandle, int
+     b3Assert(command);
+     command->m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[dofIndex] = value;
+ 	command->m_updateFlags |= SIM_DESIRED_STATE_HAS_MAX_FORCE;
++    command->m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[dofIndex] |= SIM_DESIRED_STATE_HAS_MAX_FORCE;
++
+     return 0;
+ }
+ 
+@@ -224,6 +236,8 @@ int b3JointControlSetDesiredForceTorque(b3SharedMemoryCommandHandle commandHandl
+     b3Assert(command);
+     command->m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[dofIndex] = value;
+     command->m_updateFlags |= SIM_DESIRED_STATE_HAS_MAX_FORCE;
++    command->m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[dofIndex] |= SIM_DESIRED_STATE_HAS_MAX_FORCE;
++
+     return 0;
+ }
+ 
+@@ -372,6 +386,7 @@ int	b3CreateBoxCommandSetStartOrientation(b3SharedMemoryCommandHandle commandHan
+ 
+ b3SharedMemoryCommandHandle b3CreatePoseCommandInit(b3PhysicsClientHandle physClient, int bodyIndex)
+ {
++    
+ 	PhysicsClient* cl = (PhysicsClient* ) physClient;
+     b3Assert(cl);
+     b3Assert(cl->canSubmitCommand());
+@@ -380,6 +395,11 @@ b3SharedMemoryCommandHandle b3CreatePoseCommandInit(b3PhysicsClientHandle physCl
+     command->m_type = CMD_INIT_POSE;
+     command->m_updateFlags =0;
+ 	command->m_initPoseArgs.m_bodyUniqueId = bodyIndex;
++	//a bit slow, initialing the full range to zero...
++	for (int i=0;i<MAX_DEGREE_OF_FREEDOM;i++)
++    {
++        command->m_initPoseArgs.m_hasInitialStateQ[i] = 0;
++    }
+     return (b3SharedMemoryCommandHandle) command;
+ }
+ 
+@@ -392,6 +412,11 @@ int	b3CreatePoseCommandSetBasePosition(b3SharedMemoryCommandHandle commandHandle
+ 	command->m_initPoseArgs.m_initialStateQ[0] = startPosX;
+ 	command->m_initPoseArgs.m_initialStateQ[1] = startPosY;
+ 	command->m_initPoseArgs.m_initialStateQ[2] = startPosZ;
++	
++	command->m_initPoseArgs.m_hasInitialStateQ[0] = 1;
++	command->m_initPoseArgs.m_hasInitialStateQ[1] = 1;
++	command->m_initPoseArgs.m_hasInitialStateQ[2] = 1;
++	
+ 	return 0;
+ }
+ 
+@@ -405,6 +430,12 @@ int	b3CreatePoseCommandSetBaseOrientation(b3SharedMemoryCommandHandle commandHan
+ 	command->m_initPoseArgs.m_initialStateQ[4] = startOrnY;
+ 	command->m_initPoseArgs.m_initialStateQ[5] = startOrnZ;
+ 	command->m_initPoseArgs.m_initialStateQ[6] = startOrnW;
++	
++	command->m_initPoseArgs.m_hasInitialStateQ[3] = 1;
++	command->m_initPoseArgs.m_hasInitialStateQ[4] = 1;
++	command->m_initPoseArgs.m_hasInitialStateQ[5] = 1;
++	command->m_initPoseArgs.m_hasInitialStateQ[6] = 1;
++	
+ 	return 0;
+ }
+ 
+@@ -417,6 +448,7 @@ int	b3CreatePoseCommandSetJointPositions(b3SharedMemoryCommandHandle commandHand
+ 	for (int i=0;i<numJointPositions;i++)
+ 	{
+ 		command->m_initPoseArgs.m_initialStateQ[i+7] = jointPositions[i];
++		command->m_initPoseArgs.m_hasInitialStateQ[i+7] = 1;
+ 	}
+ 	return 0;
+ }
+@@ -433,6 +465,7 @@ int	b3CreatePoseCommandSetJointPosition(b3PhysicsClientHandle physClient, b3Shar
+ 	if ((info.m_flags & JOINT_HAS_MOTORIZED_POWER) && info.m_qIndex >=0)
+ 	{  
+ 		command->m_initPoseArgs.m_initialStateQ[info.m_qIndex] = jointPosition;
++		command->m_initPoseArgs.m_hasInitialStateQ[info.m_qIndex] = 1;
+ 	}
+ 	return 0;
+ }
+diff --git a/examples/SharedMemory/PhysicsClientC_API.h b/examples/SharedMemory/PhysicsClientC_API.h
+index 0f03641..aee561d 100644
+--- a/examples/SharedMemory/PhysicsClientC_API.h
++++ b/examples/SharedMemory/PhysicsClientC_API.h
+@@ -99,15 +99,16 @@ b3SharedMemoryCommandHandle	b3LoadSdfCommandInit(b3PhysicsClientHandle physClien
+ b3SharedMemoryCommandHandle  b3JointControlCommandInit(b3PhysicsClientHandle physClient, int controlMode);
+ 
+     
+-///Set joint control variables such as desired position/angle, desired velocity,
++///Set joint motor control variables such as desired position/angle, desired velocity,
+ ///applied joint forces, dependent on the control mode (CONTROL_MODE_VELOCITY or CONTROL_MODE_TORQUE)
+ b3SharedMemoryCommandHandle  b3JointControlCommandInit2(b3PhysicsClientHandle physClient, int bodyUniqueId, int controlMode);
+ 
+-    ///Only use when controlMode is CONTROL_MODE_POSITION_VELOCITY_PD
++///Only use when controlMode is CONTROL_MODE_POSITION_VELOCITY_PD
+ int b3JointControlSetDesiredPosition(b3SharedMemoryCommandHandle commandHandle, int qIndex, double value);
+ int b3JointControlSetKp(b3SharedMemoryCommandHandle commandHandle, int dofIndex, double value);
+ int b3JointControlSetKd(b3SharedMemoryCommandHandle commandHandle, int dofIndex, double value);
+-//Only use when controlMode is CONTROL_MODE_VELOCITY
++
++///Only use when controlMode is CONTROL_MODE_VELOCITY
+ int b3JointControlSetDesiredVelocity(b3SharedMemoryCommandHandle commandHandle, int dofIndex, double value); /* find a better name for dof/q/u indices, point to b3JointInfo */
+ int b3JointControlSetMaximumForce(b3SharedMemoryCommandHandle commandHandle, int dofIndex,  double value);
+ ///Only use if when controlMode is CONTROL_MODE_TORQUE,
+diff --git a/examples/SharedMemory/PhysicsServerCommandProcessor.cpp b/examples/SharedMemory/PhysicsServerCommandProcessor.cpp
+index b2c3c5c..af3cfe8 100644
+--- a/examples/SharedMemory/PhysicsServerCommandProcessor.cpp
++++ b/examples/SharedMemory/PhysicsServerCommandProcessor.cpp
+@@ -1386,38 +1386,23 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+ 										{
+ 											b3Printf("Using CONTROL_MODE_TORQUE");
+ 										}
+-                                        mb->clearForcesAndTorques();
+-                                        
++                                      //  mb->clearForcesAndTorques();
+                                         int torqueIndex = 0;
+-		#if 0
+-		//it is inconsistent to allow application of base force/torque, there is no 'joint' motor. Use a separate API for this.
+-
+-										btVector3 f(0,0,0);
+-										btVector3 t(0,0,0);
+-
+-										if ((clientCmd.m_updateFlags&SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
+-										{
+-											f = btVector3 (clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[0],
+-														clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[1],
+-														clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[2]);
+-											t = btVector3 (clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[3],
+-														clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[4],
+-														clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[5]);
+-										}
+-                                        torqueIndex+=6;
+-                                        mb->addBaseForce(f);
+-                                        mb->addBaseTorque(t);
+-                    #endif 
+-			                   for (int link=0;link<mb->getNumLinks();link++)
++                                        if ((clientCmd.m_updateFlags&SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
+                                         {
+-                                            
+-                                            for (int dof=0;dof<mb->getLink(link).m_dofCount;dof++)
+-                                            {               
+-                                                double torque = 0.f;
+-												if ((clientCmd.m_updateFlags&SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
+-													torque = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[torqueIndex];
+-                                                mb->addJointTorqueMultiDof(link,dof,torque);
+-                                                torqueIndex++;
++                                            for (int link=0;link<mb->getNumLinks();link++)
++                                            {
++                                                
++                                                for (int dof=0;dof<mb->getLink(link).m_dofCount;dof++)
++                                                {               
++                                                    double torque = 0.f;
++                                                    if ((clientCmd.m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[torqueIndex]&SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
++                                                    {
++                                                        torque = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[torqueIndex];
++                                                        mb->addJointTorqueMultiDof(link,dof,torque);
++                                                    }
++                                                    torqueIndex++;
++                                                }
+                                             }
+                                         }
+                                         break;
+@@ -1444,15 +1429,23 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+                                                     if (motor)
+ 													{
+ 														btScalar desiredVelocity = 0.f;
+-														if ((clientCmd.m_updateFlags&SIM_DESIRED_STATE_HAS_QDOT)!=0)
++                                                        bool hasDesiredVelocity = false;
++                                                        
++														if ((clientCmd.m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[dofIndex]&SIM_DESIRED_STATE_HAS_QDOT)!=0)
++                                                        {
+ 															desiredVelocity = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateQdot[dofIndex];
+-														motor->setVelocityTarget(desiredVelocity);
+-
+-														btScalar maxImp = 1000000.f*m_data->m_physicsDeltaTime;
+-														if ((clientCmd.m_updateFlags&SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
+-															maxImp = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[dofIndex]*m_data->m_physicsDeltaTime;
+-														
+-														motor->setMaxAppliedImpulse(maxImp);
++                                                            motor->setVelocityTarget(desiredVelocity);
++                                                            hasDesiredVelocity = true;
++                                                        }
++                                                        if (hasDesiredVelocity)
++                                                        {
++                                                            btScalar maxImp = 1000000.f*m_data->m_physicsDeltaTime;
++                                                            if ((clientCmd.m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[dofIndex]&SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
++                                                            {
++                                                                maxImp = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[dofIndex]*m_data->m_physicsDeltaTime;
++                                                            }
++                                                            motor->setMaxAppliedImpulse(maxImp);
++                                                        }
+ 														numMotors++;
+ 
+ 													}
+@@ -1470,7 +1463,6 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+ 											b3Printf("Using CONTROL_MODE_POSITION_VELOCITY_PD");
+ 										}
+ 										//compute the force base on PD control
+-										 mb->clearForcesAndTorques();
+ 
+ 										int numMotors = 0;
+ 										//find the joint motors and apply the desired velocity and maximum force/torque
+@@ -1488,19 +1480,31 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+                                                 	if (motor)
+ 													{
+ 													
++                                                        bool hasDesiredPosOrVel = false;
++                                                        btScalar kp = 1.f;
++                                                        btScalar kd = 1.f;
+                                                         btScalar desiredVelocity = 0.f;
+-														if ((clientCmd.m_updateFlags & SIM_DESIRED_STATE_HAS_QDOT)!=0)
++														if ((clientCmd.m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[velIndex] & SIM_DESIRED_STATE_HAS_QDOT)!=0)
++                                                        {
++                                                            hasDesiredPosOrVel = true;
+ 															desiredVelocity = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateQdot[velIndex];
++                                                        }
+ 														btScalar desiredPosition = 0.f;
+-														if ((clientCmd.m_updateFlags & SIM_DESIRED_STATE_HAS_Q)!=0)
++														if ((clientCmd.m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[posIndex] & SIM_DESIRED_STATE_HAS_Q)!=0)
++                                                        {
++                                                            hasDesiredPosOrVel = true;
+ 															desiredPosition = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateQ[posIndex];
+-
+-                                                        btScalar kp = 0.f;
+-														if ((clientCmd.m_updateFlags & SIM_DESIRED_STATE_HAS_KP)!=0)
++                                                        }
++                                                        
++														if ((clientCmd.m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[velIndex] & SIM_DESIRED_STATE_HAS_KP)!=0)
++                                                        {
+ 															kp = clientCmd.m_sendDesiredStateCommandArgument.m_Kp[velIndex];
+-														btScalar kd = 0.f;
+-														if ((clientCmd.m_updateFlags & SIM_DESIRED_STATE_HAS_KD)!=0)
++                                                        }
++														
++														if ((clientCmd.m_sendDesiredStateCommandArgument.m_hasDesiredStateFlags[velIndex] & SIM_DESIRED_STATE_HAS_KD)!=0)
++                                                        {
+ 															kd = clientCmd.m_sendDesiredStateCommandArgument.m_Kd[velIndex];
++                                                        }
+ 
+                                                         int dof1 = 0;
+                                                         btScalar currentPosition = mb->getJointPosMultiDof(link)[dof1];
+@@ -1512,13 +1516,15 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+                                                                             kd * velocityError;
+                                                         
+                                                         motor->setVelocityTarget(desiredVelocity);
+-                                                        
+-                                                        btScalar maxImp = 1000000.f*m_data->m_physicsDeltaTime;
+-
+-														if ((clientCmd.m_updateFlags & SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
+-															maxImp = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[velIndex]*m_data->m_physicsDeltaTime;
+-                                                        
+-                                                        motor->setMaxAppliedImpulse(maxImp);
++                                                        if (hasDesiredPosOrVel)
++                                                        {
++                                                            btScalar maxImp = 1000000.f*m_data->m_physicsDeltaTime;
++
++                                                            if ((clientCmd.m_updateFlags & SIM_DESIRED_STATE_HAS_MAX_FORCE)!=0)
++                                                                maxImp = clientCmd.m_sendDesiredStateCommandArgument.m_desiredStateForceTorque[velIndex]*m_data->m_physicsDeltaTime;
++                                                            
++                                                            motor->setMaxAppliedImpulse(maxImp);
++                                                        }
+                                                         numMotors++;
+                                                     }
+ 
+@@ -1803,6 +1809,10 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+ 						if (clientCmd.m_updateFlags & INIT_POSE_HAS_INITIAL_POSITION)
+ 						{
+ 							btVector3 zero(0,0,0);
++							btAssert(clientCmd.m_initPoseArgs.m_hasInitialStateQ[0] &&
++                                    clientCmd.m_initPoseArgs.m_hasInitialStateQ[1] &&
++                                    clientCmd.m_initPoseArgs.m_hasInitialStateQ[2]);
++
+ 							mb->setBaseVel(zero);
+ 							mb->setBasePos(btVector3(
+ 									clientCmd.m_initPoseArgs.m_initialStateQ[0],
+@@ -1811,6 +1821,11 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+ 						}
+ 						if (clientCmd.m_updateFlags & INIT_POSE_HAS_INITIAL_ORIENTATION)
+ 						{
++						    btAssert(clientCmd.m_initPoseArgs.m_hasInitialStateQ[3] &&
++                                    clientCmd.m_initPoseArgs.m_hasInitialStateQ[4] &&
++                                    clientCmd.m_initPoseArgs.m_hasInitialStateQ[5] &&
++                                    clientCmd.m_initPoseArgs.m_hasInitialStateQ[6]);
++
+ 							mb->setBaseOmega(btVector3(0,0,0));
+ 							mb->setWorldToBaseRot(btQuaternion(
+ 									clientCmd.m_initPoseArgs.m_initialStateQ[3],
+@@ -1823,9 +1838,8 @@ bool PhysicsServerCommandProcessor::processCommand(const struct SharedMemoryComm
+ 							int dofIndex = 7;
+ 							for (int i=0;i<mb->getNumLinks();i++)
+ 							{
+-								if (mb->getLink(i).m_dofCount==1)
++							    if ( (clientCmd.m_initPoseArgs.m_hasInitialStateQ[dofIndex]) && (mb->getLink(i).m_dofCount==1))
+ 								{
+-									
+ 									mb->setJointPos(i,clientCmd.m_initPoseArgs.m_initialStateQ[dofIndex]);
+ 									mb->setJointVel(i,0);
+ 								}
+diff --git a/examples/SharedMemory/SharedMemoryCommands.h b/examples/SharedMemory/SharedMemoryCommands.h
+index 83fd91c..9745b8e 100644
+--- a/examples/SharedMemory/SharedMemoryCommands.h
++++ b/examples/SharedMemory/SharedMemoryCommands.h
+@@ -115,6 +115,7 @@ enum EnumInitPoseFlags
+ struct InitPoseArgs
+ {
+ 	int m_bodyUniqueId;
++	int m_hasInitialStateQ[MAX_DEGREE_OF_FREEDOM];
+ 	double m_initialStateQ[MAX_DEGREE_OF_FREEDOM];
+ };
+ 
+@@ -179,11 +180,14 @@ struct SendDesiredStateArgs
+ 	double m_Kp[MAX_DEGREE_OF_FREEDOM];//indexed by degree of freedom, 6 for base, and then the dofs for each link
+ 	double m_Kd[MAX_DEGREE_OF_FREEDOM];//indexed by degree of freedom, 6 for base, and then the dofs for each link
+ 
++    int m_hasDesiredStateFlags[MAX_DEGREE_OF_FREEDOM];
++    
+ 	//desired state is only written by the client, read-only access by server is expected
+ 
+ 	//m_desiredStateQ is indexed by position variables, 
+ 	//starting with 3 base position variables, 4 base orientation variables (quaternion), then link position variables
+     double m_desiredStateQ[MAX_DEGREE_OF_FREEDOM];
++    
+ 
+ 	//m_desiredStateQdot is index by velocity degrees of freedom, 3 linear and 3 angular variables for the base and then link velocity variables
+     double m_desiredStateQdot[MAX_DEGREE_OF_FREEDOM];
+diff --git a/examples/pybullet/pybullet.c b/examples/pybullet/pybullet.c
+index 0d2303f..b978feb 100644
+--- a/examples/pybullet/pybullet.c
++++ b/examples/pybullet/pybullet.c
+@@ -3,6 +3,7 @@
+ #include "../SharedMemory/SharedMemoryInProcessPhysicsC_API.h"
+ 
+ 
++
+ #ifdef __APPLE__
+ #include <Python/Python.h>
+ #else
+@@ -139,9 +140,11 @@ pybullet_loadURDF(PyObject* self, PyObject* args)
+ 	
+ 	int bodyIndex = -1;
+ 	const char* urdfFileName="";
++	
+ 	float startPosX =0;
+-  float startPosY =0;
+-  float startPosZ = 1;
++    float startPosY =0;
++    float startPosZ = 0;
++  
+ 	float startOrnX = 0;
+ 	float startOrnY = 0;
+ 	float startOrnZ = 0;
+@@ -282,7 +285,7 @@ pybullet_resetSimulation(PyObject* self, PyObject* args)
+ 	return Py_None;
+ }
+ 
+-static PyObject* pybullet_setJointControl(PyObject* self, PyObject* args)
++static PyObject* pybullet_setJointMotorControl(PyObject* self, PyObject* args)
+ {
+     //todo(erwincoumans): set max forces, kp, kd
+ 
+@@ -296,25 +299,22 @@ static PyObject* pybullet_setJointControl(PyObject* self, PyObject* args)
+     
+     size= PySequence_Size(args);
+     
+-    if (size==3)
++    if (size==4)
+     {
+-        int bodyIndex, controlMode;
+-        PyObject* targetValues;
+-        if (PyArg_ParseTuple(args, "iiO", &bodyIndex, &controlMode, &targetValues))
++        int bodyIndex, jointIndex, controlMode;
++        double targetValue;
++        
++        if (PyArg_ParseTuple(args, "iiid", &bodyIndex, &jointIndex, &controlMode, &targetValue))
+         {
+-            PyObject* seq;
+-            int numJoints, len;
+-            seq = PySequence_Fast(targetValues, "expected a sequence");
+-            len = PySequence_Size(targetValues);
+-            numJoints = b3GetNumJoints(sm,bodyIndex);
++            int numJoints;
+             b3SharedMemoryCommandHandle commandHandle;
+             b3SharedMemoryStatusHandle statusHandle;
+-		int qIndex;
+-            
+-            if (len!=numJoints)
+-           { 
+-                PyErr_SetString(SpamError, "Number of control target values doesn't match the number of joints.");
+-                Py_DECREF(seq);
++            struct b3JointInfo info;
++
++			numJoints = b3GetNumJoints(sm,bodyIndex);
++            if ((jointIndex >= numJoints) || (jointIndex < 0))
++            {
++                PyErr_SetString(SpamError, "Joint index out-of-range.");
+                 return NULL;
+             }
+             
+@@ -323,49 +323,43 @@ static PyObject* pybullet_setJointControl(PyObject* self, PyObject* args)
+                 (controlMode != CONTROL_MODE_POSITION_VELOCITY_PD))
+             {
+                 PyErr_SetString(SpamError, "Illegral control mode.");
+-                Py_DECREF(seq);
+                 return NULL;
+             }
+             
+             commandHandle = b3JointControlCommandInit2(sm, bodyIndex,controlMode);
++             
++            b3GetJointInfo(sm, bodyIndex, jointIndex, &info);
+             
+-            for (qIndex=0;qIndex<numJoints;qIndex++)
++            switch (controlMode)
+             {
+-                float value = pybullet_internalGetFloatFromSequence(seq,qIndex);
+-            
+-                switch (controlMode)
++                case CONTROL_MODE_VELOCITY:
+                 {
+-                    case CONTROL_MODE_VELOCITY:
+-                    {
+-                        b3JointControlSetDesiredVelocity(commandHandle, 6+qIndex, value);
+-                      	b3JointControlSetKd(commandHandle,6+qIndex,1);
+-			b3JointControlSetMaximumForce(commandHandle,6+qIndex,10000);
+-			break;
+-                    }
+-
+-                    case CONTROL_MODE_TORQUE:
+-                    {
+-                        b3JointControlSetDesiredForceTorque(commandHandle, 6+qIndex, value);
+-                        break;
+-                    }
+-                        
+-                    case CONTROL_MODE_POSITION_VELOCITY_PD:
+-                    {
+-                        b3JointControlSetDesiredPosition( commandHandle, 7+qIndex, value);
+-                        b3JointControlSetKp(commandHandle,6+qIndex,1);
+-                        b3JointControlSetMaximumForce(commandHandle,6+qIndex,10000);                        
+-			break;
+-                    }
+-                    default:
+-                    {
+-                    
+-                    }
+-                };
+-            }
++                    b3JointControlSetDesiredVelocity(commandHandle, info.m_uIndex, targetValue);
++                    b3JointControlSetKd(commandHandle,info.m_uIndex,1);
++                    b3JointControlSetMaximumForce(commandHandle,info.m_uIndex,10000);
++                    break;
++                }
+ 
+-	  statusHandle = b3SubmitClientCommandAndWaitStatus(sm, commandHandle);
+-             
+-            Py_DECREF(seq);
++                case CONTROL_MODE_TORQUE:
++                {
++                    b3JointControlSetDesiredForceTorque(commandHandle, info.m_uIndex, targetValue);
++                    break;
++                }
++                        
++                case CONTROL_MODE_POSITION_VELOCITY_PD:
++                {
++                    b3JointControlSetDesiredPosition( commandHandle, info.m_qIndex, targetValue);
++                    b3JointControlSetKp(commandHandle,info.m_uIndex,1);
++                    b3JointControlSetMaximumForce(commandHandle,info.m_uIndex,10000);
++                    break;
++                }
++                default:
++                {
++                }
++            };
++            
++            statusHandle = b3SubmitClientCommandAndWaitStatus(sm, commandHandle);
++            
+             Py_INCREF(Py_None);
+             return Py_None;
+         }
+@@ -560,7 +554,7 @@ pybullet_getNumJoints(PyObject* self, PyObject* args)
+ 
+ // Initalize all joint positions given a list of values
+ static PyObject*
+-pybullet_initializeJointPositions(PyObject* self, PyObject* args)
++pybullet_resetJointState(PyObject* self, PyObject* args)
+ {
+ 	int size;
+ 	if (0==sm)
+@@ -572,44 +566,36 @@ pybullet_initializeJointPositions(PyObject* self, PyObject* args)
+ 
+ 	size= PySequence_Size(args);
+    
+-	if (size==2)
++	if (size==3)
+ 	{
+         int bodyIndex;
+-        PyObject* targetValues;
+-        if (PyArg_ParseTuple(args, "iO", &bodyIndex,  &targetValues))
++        int jointIndex;
++        double targetValue;
++        
++        if (PyArg_ParseTuple(args, "iid", &bodyIndex, &jointIndex, &targetValue))
+         {
+-            PyObject* seq;
+-            int numJoints, len;
+-            seq = PySequence_Fast(targetValues, "expected a sequence");
+-            len = PySequence_Size(targetValues);
+-            numJoints = b3GetNumJoints(sm,bodyIndex);
+             b3SharedMemoryCommandHandle commandHandle;
+             b3SharedMemoryStatusHandle statusHandle;
+-                int qIndex;
+-
+-            if (len!=numJoints)
+-           {
+-                PyErr_SetString(SpamError, "Number of joint position values doesn't match the number of joints.");
+-                Py_DECREF(seq);
++            int numJoints;
++            
++            numJoints = b3GetNumJoints(sm,bodyIndex);
++            if ((jointIndex >= numJoints) || (jointIndex < 0))
++            {
++                PyErr_SetString(SpamError, "Joint index out-of-range.");
+                 return NULL;
+             }
++            
++            commandHandle = b3CreatePoseCommandInit(sm, bodyIndex);
+ 
+-	commandHandle = b3CreatePoseCommandInit(sm, bodyIndex);
+-
+-            for (qIndex=0;qIndex<numJoints;qIndex++)
+-            {
+-                float value = pybullet_internalGetFloatFromSequence(seq,qIndex);
+-		b3CreatePoseCommandSetJointPosition(sm, commandHandle, qIndex, value);
+-	}
+-          statusHandle = b3SubmitClientCommandAndWaitStatus(sm, commandHandle);
++            b3CreatePoseCommandSetJointPosition(sm, commandHandle,  jointIndex, targetValue);
+ 
+-            Py_DECREF(seq);
++            statusHandle = b3SubmitClientCommandAndWaitStatus(sm, commandHandle);
+             Py_INCREF(Py_None);
+             return Py_None;
+         }
+ 
+     }
+-    PyErr_SetString(SpamError, "error in initializeJointPositions.");
++    PyErr_SetString(SpamError, "error in resetJointState.");
+     return NULL;
+ }
+ 
+@@ -658,7 +644,7 @@ pybullet_initializeJointPositions(PyObject* self, PyObject* args)
+ // 	Py_INCREF(Py_None);
+ //         return Py_None;
+ // }
+-
++#if 0
+ static void pybullet_internalGetJointPositions(int bodyIndex, int numJoints, double jointPositions[]) {
+   int i, j;
+   int numDegreeQ;
+@@ -746,7 +732,7 @@ pybullet_getJointPositions(PyObject* self, PyObject* args)
+     Py_INCREF(Py_None);
+     return Py_None;
+ }
+-
++#endif 
+ 
+ // Get the a single joint info for a specific bodyIndex
+ //
+@@ -765,13 +751,7 @@ pybullet_getJointPositions(PyObject* self, PyObject* args)
+ static PyObject*
+ pybullet_getJointInfo(PyObject* self, PyObject* args)
+ {
+-	if (0==sm)
+-	{
+-		PyErr_SetString(SpamError, "Not connected to physics server.");
+-		return NULL;
+-	}
+-
+-  PyObject *pyListJointInfo; 
++	  PyObject *pyListJointInfo; 
+   
+   struct b3JointInfo info;
+   
+@@ -781,6 +761,14 @@ pybullet_getJointInfo(PyObject* self, PyObject* args)
+     
+   int size= PySequence_Size(args);
+ 
++	if (0==sm)
++	{
++		PyErr_SetString(SpamError, "Not connected to physics server.");
++		return NULL;
++	}
++
++
++
+   if (size==2) // get body index and joint index
+   {
+    if (PyArg_ParseTuple(args, "ii", &bodyIndex, &jointIndex))
+@@ -808,7 +796,7 @@ pybullet_getJointInfo(PyObject* self, PyObject* args)
+     //          info.m_jointDamping,
+     //          info.m_jointFriction);
+       PyTuple_SetItem(pyListJointInfo, 0, 
+-        PyInt_FromLong(info.m_jointIndex));
++      PyInt_FromLong(info.m_jointIndex));
+       PyTuple_SetItem(pyListJointInfo, 1, 
+         PyString_FromString(info.m_jointName));
+       PyTuple_SetItem(pyListJointInfo, 2, 
+@@ -848,14 +836,7 @@ pybullet_getJointInfo(PyObject* self, PyObject* args)
+ static PyObject*
+ pybullet_getJointState(PyObject* self, PyObject* args)
+ {
+-	if (0==sm)
+-	{
+-		PyErr_SetString(SpamError, "Not connected to physics server.");
+-		return NULL;
+-	}
+-  
+-    
+-  PyObject *pyListJointForceTorque; 
++	  PyObject *pyListJointForceTorque; 
+   PyObject *pyListJointState; 
+   PyObject *item;   
+   
+@@ -871,6 +852,15 @@ pybullet_getJointState(PyObject* self, PyObject* args)
+     
+   int size= PySequence_Size(args);
+ 
++	if (0==sm)
++	{
++		PyErr_SetString(SpamError, "Not connected to physics server.");
++		return NULL;
++	}
++  
++    
++
++
+   if (size==2) // get body index and joint index
+   {
+    if (PyArg_ParseTuple(args, "ii", &bodyIndex, &jointIndex))
+@@ -1070,11 +1060,6 @@ static PyObject* pybullet_renderImage(PyObject* self, PyObject* args)
+ 
+ 
+ static PyMethodDef SpamMethods[] = {
+-  {"loadURDF",  pybullet_loadURDF, METH_VARARGS,
+-      "Create a multibody by loading a URDF file."},
+-      
+-	{"loadSDF", pybullet_loadSDF, METH_VARARGS,
+-		"Load multibodies from an SDF file."},
+   
+   {"connect",  pybullet_connectPhysicsServer, METH_VARARGS,
+       "Connect to an existing physics server (using shared memory by default)."},
+@@ -1091,34 +1076,44 @@ static PyMethodDef SpamMethods[] = {
+ 	{"setGravity",  pybullet_setGravity, METH_VARARGS,
+         "Set the gravity acceleration (x,y,z)."},
+ 
+-	{"initializeJointPositions", pybullet_initializeJointPositions, METH_VARARGS,
+-	"Initialize the joint positions for all joints. This method skips any physics simulation and teleports all joints to the new positions."},
+-	
+-  // CURRENTLY NOT SUPPORTED
+-  // {"initializeJointPosition", pybullet_initializeJointPosition, METH_VARARGS,
+-  // "Initialize the joint position for one joint. This method skips any physics simulation and teleports the joint to the new position."},
+-  
+-  {"getJointInfo", pybullet_getJointInfo, METH_VARARGS,
+-  "Get the joint metadata info for a joint on a body. This includes joint index, name, type, q-index and u-index."},
+-  
+-  {"getJointState", pybullet_getJointState, METH_VARARGS,
+-  "Get the joint metadata info for a joint on a body."},
+-
+-    {"setJointControl", pybullet_setJointControl, METH_VARARGS,
+-        "Set the joint control mode and desired target values."},
+-
++    {"loadURDF",  pybullet_loadURDF, METH_VARARGS,
++      "Create a multibody by loading a URDF file."},
++      
++	{"loadSDF", pybullet_loadSDF, METH_VARARGS,
++		"Load multibodies from an SDF file."},
+     
+-	{"renderImage", pybullet_renderImage, METH_VARARGS,
+-	"Render an image (given the pixel resolution width & height and camera view & projection matrices), and return the 8-8-8bit RGB pixel data and floating point depth values"},	
+-	
+ 	{"getBasePositionAndOrientation",  pybullet_getBasePositionAndOrientation, METH_VARARGS,
+         "Get the world position and orientation of the base of the object. (x,y,z) position vector and (x,y,z,w) quaternion orientation."},
+ 
+-  {"getJointPositions", pybullet_getJointPositions, METH_VARARGS,
+-  "Get the all the joint positions for a given body index."},
+-        
++//    {"resetBasePositionAndOrientation",  pybullet_getBasePositionAndOrientation, METH_VARARGS,
++//        "Reset the world position and orientation of the base of the object instantaneously, not through physics simulation. (x,y,z) position vector and (x,y,z,w) quaternion orientation."},
++
+ 	{"getNumJoints", pybullet_getNumJoints, METH_VARARGS,
+         "Get the number of joints for an object."},
++
++    {"getJointInfo", pybullet_getJointInfo, METH_VARARGS,
++    "Get the name and type info for a joint on a body."},
++
++    {"getJointState", pybullet_getJointState, METH_VARARGS,
++    "Get the state (position, velocity etc) for a joint on a body."},
++	  
++	{"resetJointState", pybullet_resetJointState, METH_VARARGS,
++    "Reset the state (position, velocity etc) for a joint on a body instantaneously, not through physics simulation."},
++		
++    {"setJointMotorControl", pybullet_setJointMotorControl, METH_VARARGS,
++        "Set a single joint motor control mode and desired target value. There is no immediate state change, stepSimulation will process the motors."},
++    
++    //saveSnapshot
++    //loadSnapshot
++    
++    //collision info
++    //raycast info
++        
++    //applyBaseForce
++    //applyLinkForce
++     
++	{"renderImage", pybullet_renderImage, METH_VARARGS,
++	"Render an image (given the pixel resolution width & height and camera view & projection matrices), and return the 8-8-8bit RGB pixel data and floating point depth values"},	
+ 	
+     {NULL, NULL, 0, NULL}        /* Sentinel */
+ };
+diff --git a/test/SharedMemory/test.c b/test/SharedMemory/test.c
+index a74cb34..6bc517c 100644
+--- a/test/SharedMemory/test.c
++++ b/test/SharedMemory/test.c
+@@ -85,9 +85,9 @@ void testSharedMemory(b3PhysicsClientHandle sm)
+                 b3SharedMemoryStatusHandle statusHandle;
+                 b3SharedMemoryCommandHandle commandHandle;
+                 double jointAngle = 0.f;
+-                
++               	int jointIndex; 
+                 commandHandle = b3CreatePoseCommandInit(sm, bodyUniqueId);
+-                for (int jointIndex=0;jointIndex<numJoints;jointIndex++)
++                for (jointIndex=0;jointIndex<numJoints;jointIndex++)
+                 {
+                     b3CreatePoseCommandSetJointPosition(sm, commandHandle, jointIndex, jointAngle);
+                 }
