@@ -1,0 +1,50 @@
+from setuptools import setup, find_packages
+import imp
+
+with open('README.md') as file:
+    long_description = file.read()
+
+version = imp.load_source('scaper.version', 'scaper/version.py')
+
+setup(
+    name='scaper',
+    version=version.version,
+    description='A library for soundscape synthesis and augmentation',
+    author='Justin Salamon & Duncan MacConnell',
+    author_email='justin.salamon@gmail.com',
+    url='https://github.com/justinsalamon/scaper',
+    download_url='http://github.com/justinsalamon/scaper/releases',
+    packages=find_packages(),
+    package_data={'': ['namespaces/sound_event.json']},
+    include_package_data=True,
+    long_description=long_description,
+    keywords='audio sound soundscape environmental dsp mixing',
+    license='BSD-3-Clause',
+    classifiers=[
+            "License :: OSI Approved :: BSD License",
+            "Programming Language :: Python",
+            "Development Status :: 3 - Alpha",
+            "Intended Audience :: Developers",
+            "Topic :: Multimedia :: Sound/Audio :: Analysis",
+            "Programming Language :: Python :: 2",
+            "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.4",
+            "Programming Language :: Python :: 3.5",
+            "Programming Language :: Python :: 3.6",
+        ],
+    install_requires=[
+        'sox',
+        'jams==0.2.2',
+        'pandas==0.19.2'
+    ],
+    extras_require={
+        'docs': [
+                'sphinx==1.2.3',  # autodoc was broken in 1.3.1
+                'sphinxcontrib-napoleon',
+                'sphinx_rtd_theme',
+                'numpydoc',
+            ],
+        'tests': ['backports.tempfile', 'pysoundfile']
+    }
+)
