@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load utils %}
+
+{% block content %}
+<style type=text/css>
+    body { font: normal 0.8em sans-serif;}
+    thead { background-color: #333; color: #eee; }
+    th, td { padding: 4px; }
+    tr:nth-child(even) { background-color: #eee; }
+    table { width: 100%; }
+</style>
+<style type=text/css media=screen>
+    h1 { border-bottom: 1px solid #000; margin-top: 3em; }
+</style>
+{% for llag in lokallag %}
+{% ifchanged llag.andsvar %}
+{% if not forloop.first %}</section>{%endif%}
+<section><h1>{{ llag.andsvar }}</h1>{% endifchanged %}
+<h2>{{ llag }}</h2>
+    <table>
+        <thead><tr>
+                <th>ID</th>
+                <th>Namn</th>
+                <th>Født</th>
+                <th>mob/tlf</th>
+                <th>Postadr</th>
+                <th>Epost</th>
+                <th>bet</th>
+            </tr>
+        </thead>
+      <tbody>
+  {% for m in llag.medlem_set.interessante %}
+          <tr>
+            <td>{{ m.pk }}</td>
+            <td>{{ m }}</td>
+            <td>{{ m.fodt }}</td>
+	    <td>{% val_exists m 'Ikkje ring' %} {{ m.mobnr }}{% if m.heimenr %}, {{ m.heimenr }}{% endif %}</td>
+            <td>{{ m.postadr }}, {{ m.postnr }} {{ m.stad }}</td>
+            <td>{{ m.epost }}</td>
+            <td>{{ m.har_betalt|yesno:"b,ub,?" }} </td>
+          </tr>
+  {% endfor %}
+        </tbody>
+      </table>
+{% endfor %}
+
+{% endblock %}

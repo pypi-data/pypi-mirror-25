@@ -1,0 +1,68 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n admin_static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+     <a href="../../">{% trans "Home" %}</a> &rsaquo;
+     <a href="../">{{ app_label|capfirst }}</a> &rsaquo;
+     <a href="./">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
+     {% trans "Giroar" %}
+</div>
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post">{% csrf_token %}
+
+    <fieldset class="module aligned">
+    <div class=form-row>
+      <div class=field-box>
+        <label for=belop class=required>Beløp:</label> {{ form.belop }}
+      </div>
+      <div class=field-box>
+        <label for=konto>Konto:</label> {{ form.konto }}
+      </div>
+      <div class=field-box>
+        <label for=hensikt>Hensikt:</label> {{ form.hensikt }}
+      </div>
+    </div>
+    <div class=form-row>
+      <div class=field-box>
+        <label for=desc>Forklaring:</label> {{ form.desc }}
+        <p class=help>Forklaring på korleis desse giroane vart oppretta. T.d. «vanleg medlem 2013».
+      </div>
+    </div>
+    </fieldset>
+
+    {% if n_allereie_giro or n_utmelde %}
+      <fieldset class="module aligned">
+        {% if n_allereie_giro %}
+        <div class=form-row>
+          <div class=field-box>
+            <input type=checkbox name=ink-betalt> <label for=ink-betalt>Inkluder folk som har betalt</label>
+            <p>Det er <strong>{{ n_allereie_giro }} medlem</strong> som allereie har giro for {% now "Y" %}.
+            <p class=help>Desse vert det ikkje laga ein giro for.
+          </div>
+        </div>
+        {% endif %}
+        {% if n_utmelde %}
+        <div class=form-row>
+          <div class=field-box>
+            <input type=checkbox name=ink-utmeld> <label for=ink-utmeld>Inkluder utmelde</label>
+            <p>Det er <strong>{{ n_utmelde }} utmelde medlem</strong> i lista di.
+            <p class=help>Du bør eigentleg aldri sjå dette, for å laga giroar til utmelde medlem er ikkje særleg vits.
+          </div>
+        </div>
+        {% endif %}
+      </fieldset>
+    {% endif %}
+
+    {% for obj in queryset %}<input type=hidden name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}">{% endfor %}
+
+    <input type=hidden name=action value=lag_giroar>
+    <input type=hidden name=post value=yes>
+    <div class=submit-row>
+      <input type=submit value="Opprett giroar" class=default>
+    </div>
+    </form>
+{% endblock %}
