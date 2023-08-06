@@ -1,0 +1,206 @@
+#!/usr/bin/env python
+
+""" Cleans SSTables on S3 """
+import eventlet
+eventlet.monkey_patch()
+
+import argparse
+import boto
+import json
+import logging
+import os
+import socket
+import sys
+from eventlet.greenpool import GreenPool
+from eventlet import pools
+
+from datetime import datetime
+from dateutil import parser as dtparser
+
+now = None
+
+def days_ago(tstamp):
+    global now
+    if now is None:
+        now = datetime.now()
+    # Datetime format from the last_modified property on keys from boto
+    backup = datetime.strptime(tstamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+    delta = now - backup
+    return delta.days
+
+
+def get_bucket(args):
+    try:
+        s3conn = boto.s3.connect_to_region(args.aws_region,
+                                           aws_access_key_id=args.key,
+                                           aws_secret_access_key=args.secret,
+                                           security_token=args.token)
+        return s3conn.get_bucket(args.bucket)
+    except boto.exception.BotoServerError, e:
+        log.error('Problem initializing S3 connection: %s', e)
+        sys.exit(1)
+
+
+def clean_backups(args, log):
+
+    if args.debug:
+        log.setLevel(logging.DEBUG)
+
+    if not args.name:
+        args.name = socket.getfqdn()
+
+    bucket = get_bucket(args)
+
+    try:
+        key_list = bucket.list("%s:%s" % (args.name, args.path))
+    except boto.exception.BotoServerError, e:
+        log.error('Problem getting keys from S3 bucket: %s', e)
+        sys.exit(1)
+
+    log.info("Connected to S3, getting keys ...")
+
+    index_keys = []
+    data_keys = []
+    files_to_delete = set()
+
+    for key in key_list:
+        files_to_delete.add(key.name)
+        if key.name.endswith('-listdir.json'):
+            index_keys.append(key)
+        else:
+            data_keys.append(key)
+
+    index_keys.sort(key=lambda k: dtparser.parse(k.last_modified),
+                    reverse=True)
+
+    log.info("Found %s index files and %s data files", len(index_keys), len(data_keys))
+
+    index_files_to_keep = set()
+    index_files_to_keep.add(index_keys[0].name)  # Always keep the most recent index.
+    for index_key in index_keys:
+        if days_ago(index_key.last_modified) > args.age:
+            break
+        index_files_to_keep.add(index_key.name)
+
+    log.info("Keeping %s/%s index files", len(index_files_to_keep), len(index_keys))
+
+    files_to_keep = get_files_from_indexes(args, index_files_to_keep)
+    log.info("Keeping %s/%s data files", len(files_to_keep), len(data_keys))
+
+    files_to_delete -= files_to_keep
+    files_to_delete -= index_files_to_keep
+
+    if args.list_deletes:
+        for filename in sorted(files_to_delete):
+            log.info('Deleting %s', filename)
+
+    if args.debug:
+        log.debug("Would delete %s/%s files", len(files_to_delete), len(index_keys) + len(data_keys))
+        log.debug("Test mode, nothing deleted")
+        return
+
+    log.info("Deleting %s/%s files", len(files_to_delete), len(index_keys) + len(data_keys))
+    try:
+        bucket.delete_keys(files_to_delete)
+    except Exception as e:
+        log.error('S3 delete ERR, will try again later [%s]', e)
+
+
+def get_files_from_indexes(args, index_files):
+    pool = GreenPool(int(args.parallel))
+    bucket_pool = pools.Pool(create=lambda: get_bucket(args), max_size=int(args.parallel))
+
+    def worker(index_file):
+        with bucket_pool.item() as bucket:
+            return get_file_list(args, bucket, index_file)
+
+    res = set()
+    for result in pool.imap(worker, index_files):
+        res.update(result)
+    return res
+
+
+def get_file_list(args, bucket, index_file):
+    index = json.loads(bucket.get_key(index_file).get_contents_as_string())
+    if len(index.values()) != 1:
+        raise SystemError('-listdir.json file should have a single key/value pair!')
+    dirname = index.keys()[0]
+    return ["%s:%s" % (args.name, os.path.join(dirname, filename)) for filename in index.values()[0]]
+
+
+def main(log):
+    parser = argparse.ArgumentParser(
+        description='Clean SSTables from S3. Scroll backwards through '
+        '-listdir.json keys in chronological order collecting a "keeper" '
+        'list until it reaches it\'s age cutoff. Deletes all keys not in that '
+        'list')
+    parser.add_argument(
+        '-d',
+        '--debug',
+        dest='debug',
+        action='store_true',
+        help='Run in debug mode, will not delete keys. Implies -v')
+    parser.add_argument(
+        '-l',
+        '--list-deletes',
+        dest='list_deletes',
+        action='store_true',
+        help='Log every file being deleted')
+    parser.add_argument(
+        '-j',
+        '--parallel',
+        dest='parallel',
+        default=5,
+        help='Parallelism to fetch index files from S3')
+    parser.add_argument(
+        '-k',
+        '--key',
+        dest='key',
+        default=os.environ.get('AWS_ACCESS_KEY_ID'),
+        help='Amazon S3 Key (default from AWS_ACCESS_KEY_ID in environment)')
+    parser.add_argument(
+        '-s',
+        '--secret',
+        dest='secret',
+        default=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+        help='Amazon S3 Secret (default from AWS_SECRET_ACCESS_KEY in environment)')
+    parser.add_argument('--token',
+        default=os.environ.get('AWS_SECURITY_TOKEN'),
+        help='Amazon S3 Token (default from AWS_SECURITY_TOKEN in environment)')
+    parser.add_argument('--aws-region',
+        default='us-east-1',
+        choices=[region.name for region in boto.s3.regions()],
+        help='AWS region to connect to.')
+    parser.add_argument(
+        '-n',
+        '--name',
+        dest='name',
+        required=False,
+        help='Use this name instead of the FQDN to identify the files from '
+             'this host')
+    parser.add_argument(
+        'bucket',
+        help='S3 Bucket')
+    parser.add_argument(
+        'path',
+        help='Path portion of key in S3')
+    parser.add_argument(
+        'age',
+        type=int,
+        help='How many days worth of backups to keep')
+    args = parser.parse_args()
+    clean_backups(args, log)
+
+if __name__ == '__main__':
+
+    log = logging.getLogger('tablechop')
+    stderr = logging.StreamHandler()
+    stderr.setFormatter(logging.Formatter(
+        '%(name)s [%(asctime)s] %(levelname)s %(message)s'))
+    log.addHandler(stderr)
+    if os.environ.get('TDEBUG', False):
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+
+    main(log)
