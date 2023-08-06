@@ -1,0 +1,1 @@
+This library simplifies the interaction with Lending Club’s API
