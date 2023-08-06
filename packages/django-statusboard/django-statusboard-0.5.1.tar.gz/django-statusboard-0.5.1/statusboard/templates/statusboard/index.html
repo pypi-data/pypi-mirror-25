@@ -1,0 +1,43 @@
+{% extends "statusboard/base.html" %}
+
+{% load humanize %}
+{% load statusboard %}
+{% load i18n %}
+
+{% block content %}
+<div class="container">
+    {% for m in maintenances %}
+    <div class="alert alert-info" role="alert">
+        <p>
+        <strong>{{ m.name }} - {% trans 'scheduled in' %} <abbr title="{{ m.scheduled|date:"r" }}">{{ m.scheduled|naturaltime }}</abbr></strong>
+        {% if perms.statusboard.delete_maintenance %}
+        <small><a href="{% url 'statusboard:maintenance:delete' pk=m.id %}">{% trans 'delete' %}</a></small>
+        {% endif %}
+        {% if perms.statusboard.edit_maintenance %}
+        <small><a href="{% url 'statusboard:maintenance:edit' pk=m.id %}">{% trans 'edit' %}</a></small>
+        {% endif %}
+        </p>
+        <p>
+            {{ m.description }}
+        </p>
+    </div>
+    {% endfor %}
+    {% if worst_status != None %}
+    <div class="alert alert-{{ worst_status|service_status_class:"" }}" role="alert">
+        {{ worst_status|service_status_summary_text:"" }}
+    </div>
+    {% endif %}
+    {% include "statusboard/servicegroup/list_snippet.html" with servicegroups=servicegroups uncategorized=uncategorized perms=perms only %}
+    {% if incidents %}
+    <div class="incidents">
+        <h2>
+            {% trans 'Recent incidents' %}
+            {% if perms.statusboard.incident_create %}
+            <small><a href="{% url "statusboard:incident:create" %}">{% trans 'create' %}</a></small>
+            {% endif %}
+        </h2>
+        {% include "statusboard/incident/list_snippet.html" with incidents=incidents perms=perms only %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
