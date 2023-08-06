@@ -1,0 +1,172 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Scheduled Transfers &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Data deletion" href="overview_Data_Deletion.html" />
+    <link rel="prev" title="Rucio Storage Element Wrapper and Manager" href="overview_Rucio_Storage_Element_Manager.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="overview_Data_Deletion.html" title="Data deletion"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview_Rucio_Storage_Element_Manager.html" title="Rucio Storage Element Wrapper and Manager"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="scheduled-transfers">
+<h1>Scheduled Transfers<a class="headerlink" href="#scheduled-transfers" title="Permalink to this headline">¶</a></h1>
+<p>There are three components involved with scheduled transfer requests: the conveyor daemon, the transfertool, and the message-listener. The conveyor daemon selects which request should be queued for transfer, and then hands them over to the transfertool. The transfertool implements the binding to a, possibly third-party, service that actually executes the transfer. The message-listener is an optional component that updates the status of the actual transfer within Rucio, if a third-party system sends status update events. If the external system does not send events, then the Conveyor polls instead periodically.</p>
+<img alt="Scheduled Transfers" class="align-center" src="_images/scheduled_transfers.png" />
+<div class="section" id="conveyor">
+<h2>Conveyor<a class="headerlink" href="#conveyor" title="Permalink to this headline">¶</a></h2>
+<p>The conveyor consists of two independent threads, the submitter and the poller. Multiple instances of the conveyor can be started as well.</p>
+<p>The submitter retrieves a request from the database, in status QUEUED and with type TRANSFER. It then resolves the currently available source replicas for the request and submits it to a given implementation of the transfertool interface. Currently, only FTS3 as a transfertool is implemented. After submission the submitter continues immediately with the next available request.</p>
+<p>The poller retrieves a request of type TRANSFER from the database, which has been in state SUBMITTED since more than, configurable, one hour. Single file transfer should not take longer than this, which most likely means that the notification from the external transfer system was lost. The poller then explicitly queries the external transfer system for the status of the transfer, and resets the appropriate status (SUBMITTED, DONE, FAILED) within Rucio.</p>
+</div>
+<div class="section" id="transfertool">
+<h2>Transfertool<a class="headerlink" href="#transfertool" title="Permalink to this headline">¶</a></h2>
+<p>The transfertool implements three actions, submitting a transfer, querying the status of a transfer, and cancelling a transfer. There is currently only one implementation of the transfertool, for the WLCG File Transfer Service 3 (FTS3). It uses the REST API of FTS3 to submit or cancel JSON-encoded transfers, and parses the JSON responses of job status queries.</p>
+</div>
+<div class="section" id="message-listener">
+<h2>Message-Listener<a class="headerlink" href="#message-listener" title="Permalink to this headline">¶</a></h2>
+<p>The Message-Listener updates the state of the request within Rucio, after receiving ActiveMQ notifications from FTS3. The events are consumed based on an “vo=atlas” selector, so it actually has to consume all transfer state changes, but it will only act when an external state change would result in a Rucio request state change. The Message-Listener is also not a requirement, as the poller in the conveyor will ensure that every request will be processed eventually.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Scheduled Transfers</a><ul>
+<li><a class="reference internal" href="#conveyor">Conveyor</a></li>
+<li><a class="reference internal" href="#transfertool">Transfertool</a></li>
+<li><a class="reference internal" href="#message-listener">Message-Listener</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="overview_Rucio_Storage_Element_Manager.html"
+                        title="previous chapter">Rucio Storage Element Wrapper and Manager</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="overview_Data_Deletion.html"
+                        title="next chapter">Data deletion</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/overview_Scheduled_Transfers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="overview_Data_Deletion.html" title="Data deletion"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="overview_Rucio_Storage_Element_Manager.html" title="Rucio Storage Element Wrapper and Manager"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 1.12.2 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>

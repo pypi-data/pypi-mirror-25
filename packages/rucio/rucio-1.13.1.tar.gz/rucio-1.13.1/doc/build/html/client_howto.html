@@ -1,0 +1,609 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Rucio Client How To &mdash; Rucio 0.3.8 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Rucio 0.3.8 documentation" href="index.html" />
+    <link rel="next" title="Acronyms and Abbreviations" href="Acronyms_and_Abbreviations.html" />
+    <link rel="prev" title="Rucio CLI tutorial" href="client_tutorial.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Acronyms_and_Abbreviations.html" title="Acronyms and Abbreviations"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="client_tutorial.html" title="Rucio CLI tutorial"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 0.3.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="rucio-client-how-to">
+<h1>Rucio Client How To<a class="headerlink" href="#rucio-client-how-to" title="Permalink to this headline">¶</a></h1>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p class="last">ATLAS users should refer to <a class="reference external" href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/RucioClientsHowTo">https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/RucioClientsHowTo</a> instead of this page. This twiki is the entry point for ATLAS users learning the Rucio client. The ATLAS-specific information on this page will be removed.</p>
+</div>
+<div class="section" id="general-concepts">
+<h2><code class="docutils literal"><span class="pre">General</span> <span class="pre">concepts</span></code><a class="headerlink" href="#general-concepts" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="introduction">
+<h2><code class="docutils literal"><span class="pre">Introduction</span></code><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The main command line interface is <code class="docutils literal"><span class="pre">rucio</span></code>. Type <code class="docutils literal"><span class="pre">rucio</span></code> without arguments to get a list of possible sub-commands. A <code class="docutils literal"><span class="pre">rucio-admin</span></code> tool also exists which is used for administrative purposes. This tool is not covered here.</p>
+<p>The recommended set up is to use ATLAS Local Root Base. <code class="docutils literal"><span class="pre">localSetupDQ2Clients</span></code> also sets up the Rucio clients.</p>
+</div>
+<div class="section" id="rucio-concepts">
+<h2><code class="docutils literal"><span class="pre">Rucio</span> <span class="pre">concepts</span></code><a class="headerlink" href="#rucio-concepts" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="dids">
+<h2><code class="docutils literal"><span class="pre">DIDs</span></code><a class="headerlink" href="#dids" title="Permalink to this headline">¶</a></h2>
+<p>Dataset identifiers (DIDs) are the core objects in Rucio and are labelled with a unique <code class="docutils literal"><span class="pre">scope:name</span></code> pair. They may be files, datasets or containers. Many Rucio commands ask for a DID and can accept files, datasets or containers.</p>
+</div>
+<div class="section" id="accounts">
+<h2><code class="docutils literal"><span class="pre">Accounts</span></code><a class="headerlink" href="#accounts" title="Permalink to this headline">¶</a></h2>
+<p>Your identity in Rucio is the Rucio account. When joining the ATLAS VO you must pick a nickname which is the same as your CERN login account - this is also your default Rucio account. When using the recommended set up above the account is set automatically and you do not need to do anything further. Under special circumstances you may need to use another Rucio account and it can be set with the <code class="docutils literal"><span class="pre">RUCIO_ACCOUNT</span></code> environment variable.</p>
+</div>
+<div class="section" id="scopes">
+<h2><code class="docutils literal"><span class="pre">Scopes</span></code><a class="headerlink" href="#scopes" title="Permalink to this headline">¶</a></h2>
+<p>Scopes are a new concept in Rucio and are a way of partitioning the dataset and file namespace. Every DID has a unique scope and a name and the Rucio clients always display this as <code class="docutils literal"><span class="pre">scope:name</span></code>. When a command requires a DID argument it must be the full DID with <code class="docutils literal"><span class="pre">scope:name</span></code>. With the default Rucio account you may only create new DIDs in your own scope, <code class="docutils literal"><span class="pre">user.&lt;RUCIO_ACCOUNT&gt;</span></code>. Only special admin users can create DIDs in other scopes.</p>
+</div>
+<div class="section" id="rse-rucio-storage-element">
+<h2><code class="docutils literal"><span class="pre">RSE</span> <span class="pre">(Rucio</span> <span class="pre">Storage</span> <span class="pre">Element)</span></code><a class="headerlink" href="#rse-rucio-storage-element" title="Permalink to this headline">¶</a></h2>
+<p>A Rucio Storage Element is a site or part of the site that allows to store datasets and files in. There are several types of RSEs. The most important are DATADISK, SCRATCHDISK, and LOCALGROUPDISK.</p>
+</div>
+<div class="section" id="installing-initializing-rucio-commands">
+<h2><code class="docutils literal"><span class="pre">Installing/Initializing</span> <span class="pre">Rucio</span> <span class="pre">commands</span></code><a class="headerlink" href="#installing-initializing-rucio-commands" title="Permalink to this headline">¶</a></h2>
+<p>Start with a clean environment
+(Some GRID or python environment might screw up the setups.)</p>
+<div class="highlight-python"><div class="highlight"><pre>$ setupATLAS
+$ localSetupRucioClients
+$ voms-proxy-init -voms atlas
+</pre></div>
+</div>
+<p>if setupATLAS is undefined, then</p>
+<div class="highlight-python"><div class="highlight"><pre>$ export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
+$ alias setupATLAS=&#39;source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh&#39;
+</pre></div>
+</div>
+</div>
+<div class="section" id="user-identity">
+<h2><code class="docutils literal"><span class="pre">User</span> <span class="pre">Identity</span></code><a class="headerlink" href="#user-identity" title="Permalink to this headline">¶</a></h2>
+<p>Is possible to get information about the current account the users is using with the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre>jbogadog@lxplus0157:~$ rucio whoami
+status  : ACTIVE
+account : jbogadog
+account_type : USER
+created_at : 2014-08-25T18:19:42
+suspended_at : None
+updated_at : 2014-08-25T18:19:42
+deleted_at : None
+email   : None
+</pre></div>
+</div>
+<p>This account will use the user certificate for authentication automatically. The user DN can be mapped to different accounts (meaning, some users can have several identities associated to his/her DN) and is possible to change the account that the users is using setting the environment variable RUCIO_ACCOUNT. However, if your certificate is not mapped to the account you will receive an error.</p>
+<div class="highlight-python"><div class="highlight"><pre>jbogadog@lxplus0157:~$ RUCIO_ACCOUNT=root
+jbogadog@lxplus0157:~$ rucio whoami
+Traceback (most recent call last):
+
+rucio.common.exception.CannotAuthenticate: Cannot authenticate.
+Details: Cannot authenticate to account root with given credentials
+</pre></div>
+</div>
+</div>
+<div class="section" id="querying">
+<h2><code class="docutils literal"><span class="pre">Querying</span></code><a class="headerlink" href="#querying" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">List</span> <span class="pre">all</span> <span class="pre">DDM</span> <span class="pre">sites</span></code>
+All RSEs in alphabetical order can be listed with list-rses:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-rses
+AGLT2_CALIBDISK
+AGLT2_DATADISK
+AGLT2_LOCALGROUPDISK
+AGLT2_PERF-MUONS
+AGLT2_PHYS-HIGGS
+AGLT2_PHYS-SM
+AGLT2_PRODDISK
+AGLT2_SCRATCHDISK
+AGLT2_USERDISK
+AM-04-YERPHI_LOCALGROUPDISK
+</pre></div>
+</div>
+<p>To use an RSE Expression to filter the results the option &#8211;expression &lt;expression&gt; can be used. See <a class="reference internal" href="replication_rules_examples.html"><em>Replication rule syntax</em></a> for more information.</p>
+</div>
+<div class="section" id="id1">
+<h2><code class="docutils literal"><span class="pre">Scopes</span></code><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>List all scopes in Rucio</dt>
+<dd>$&gt; rucio list-scopes
+...
+user.vfilimon
+user.vgallo
+user.vgaronne
+user.vgiangio
+user.vgjika
+...
+data13
+data13_1beam
+data13_2p76TeV
+data13_8TeV
+data13_calib
+data13_calocomm
+data13_comm
+data13_cos
+...
+group.det-muon
+group.det-slhc
+group.det-tile
+group.perf-egamma
+group.perf-flavtag
+...</dd>
+</dl>
+<p>User scopes always have the prefix ‘user.’ followed by the account name.</p>
+</div>
+<div class="section" id="find-a-dataset">
+<h2><code class="docutils literal"><span class="pre">Find</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#find-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>List all the datasets and containers for a scope</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids data13_hip
+</pre></div>
+</div>
+<p>or with</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids data13_hip:
+</pre></div>
+</div>
+<p>and also</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids data13_hip:*
+</pre></div>
+</div>
+<p>Search by pattern:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids mc12_14TeV:mc12_14TeV.167817.Sherpa_CT10_ZtautauMassiveCBPt140_280_CVetoBVeto.merge.log.e2445_p1614_tid01596380_00*
+mc12_14TeV:mc12_14TeV.167817.Sherpa_CT10_ZtautauMassiveCBPt140_280_CVetoBVeto.merge.log.e2445_p1614_tid01596380_00 [COLLECTION]
+</pre></div>
+</div>
+<p>Search by meta-data:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids mc12_14TeV:*  --filter datatype=AOD | head
+mc12_14TeV:mc12_14TeV.159000.ParticleGenerator_nu_E50.recon.AOD.e1564_s1762_s1777_r6030_tid04659335_00_sub0202463592 [COLLECTION]
+mc12_14TeV:mc12_14TeV.147807.PowhegPythia8_AU2CT10_Zmumu.recon.AOD.e1564_s1762_s1777_r6030_tid04659337_00_sub0202481445 [COLLECTION]
+mc12_14TeV:mc12_14TeV.147807.PowhegPythia8_AU2CT10_Zmumu.recon.AOD.e1564_s1762_s1777_r6025_tid04658484_00_sub0202361579 [COLLECTION]
+mc12_14TeV:mc12_14TeV.107218.ParticleGenerator_mu_Pt20.recon.AOD.e2023_s1762_s1777_r6028_tid04659431_00_sub0202438551 [COLLECTION]
+mc12_14TeV:mc12_14TeV.159072.ParticleGenerator_mu_Pt100.recon.AOD.e2023_s1762_s1777_r6028_tid04659428_00_sub0202439480 [COLLECTION]
+</pre></div>
+</div>
+<p>Search by type:
+You can filter the results for <cite>file</cite>, <cite>dataset</cite>, <cite>container</cite>, <cite>collection</cite> (dataset or container) or <cite>all</cite>.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids mc12_14TeV:*  --filter type=dataset | head
+mc12_14TeV:mc12_14TeV.159000.ParticleGenerator_nu_E50.recon.AOD.e1564_s1762_s1777_r6030_tid04659335_00_sub0202463592 [DATASET]
+mc12_14TeV:mc12_14TeV.147807.PowhegPythia8_AU2CT10_Zmumu.recon.AOD.e1564_s1762_s1777_r6030_tid04659337_00_sub0202481445 [DATASET]
+mc12_14TeV:mc12_14TeV.147807.PowhegPythia8_AU2CT10_Zmumu.recon.AOD.e1564_s1762_s1777_r6025_tid04658484_00_sub0202361579 [DATASET]
+mc12_14TeV:mc12_14TeV.107218.ParticleGenerator_mu_Pt20.recon.AOD.e2023_s1762_s1777_r6028_tid04659431_00_sub0202438551 [DATASET]
+mc12_14TeV:mc12_14TeV.159072.ParticleGenerator_mu_Pt100.recon.AOD.e2023_s1762_s1777_r6028_tid04659428_00_sub0202439480 [DATASET]
+</pre></div>
+</div>
+<p>If the results are not as you spect, you should escape the wildcard in order to bypass globbing:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids &#39;scope:my_dataset*&#39;
+</pre></div>
+</div>
+<p>Otherwise you will not find anything with zsh or you may find only a single dataset if you have a directory with the dataset name in bash.</p>
+</div>
+<div class="section" id="list-the-files-in-a-dataset">
+<h2><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">files</span> <span class="pre">in</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#list-the-files-in-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>The content of a dataset can be listed with list-files. Mandatory parameters are &lt;scope&gt;:&lt;name&gt;.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-files mc12_14TeV:mc12_14TeV.167817.Sherpa_CT10_ZtautauMassiveCBPt140_280_CVetoBVeto.merge.log.e2445_p1614_tid01596380_00
+mc12_14TeV:log.01596380._000026.job.log.tgz.1    700680    52bb0e00    AC39C3DE6B8A4BD3B27BC77DDC26AE7A
+mc12_14TeV:log.01596380._000050.job.log.tgz.1    538783    14979047    8C511D9D63C048648BC7EE2194793654
+mc12_14TeV:log.01596380._000082.job.log.tgz.1    539690    8c4c69a7    AA6E75F579564128B7FE1079FE9EAD9E
+mc12_14TeV:log.01596380._000091.job.log.tgz.1    548126    7fd2e951    D4C051251A1F4022B9B17D30084514B3
+mc12_14TeV:log.01596380._000130.job.log.tgz.1    537886    ee702106    A84676B20E964DB58C23970ED8919372
+mc12_14TeV:log.01596380._000131.job.log.tgz.1    540323    e8a222f8    A867E909F4BB4C0D9A67123F44B1224E
+mc12_14TeV:log.01596380._000134.job.log.tgz.1    546319    f0d257e1    983048962F3C4179978630661848F484
+mc12_14TeV:log.01596380._000142.job.log.tgz.1    525845    347c45cf    252F61AC8D9447919F9AD12A995EF6B6
+mc12_14TeV:log.01596380._000156.job.log.tgz.1    702544    fb020a40    D1B8A2579DBD45FDB8BDF8F8DACBB509
+mc12_14TeV:log.01596380._000170.job.log.tgz.1    530714    37d44ab9    325F5C1F7B84445C94DD824F5AC7EE9B
+</pre></div>
+</div>
+<p>This command can also be used to list the content of a container.</p>
+<p>Also, yo can use <cite>rucio list-dids</cite> command. If you specify one dataset or container, the command will list it&#8217;s content.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-files mc12_14TeV:mc12_14TeV.167817.Sherpa_CT10_ZtautauMassiveCBPt140_280_CVetoBVeto.merge.log.e2445_p1614_tid01596380_00
+|    |- mc12_14TeV:log.01596380._000026.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000050.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000082.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000091.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000130.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000131.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000134.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000142.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000156.job.log.tgz.1    [FILE]
+|    |- mc12_14TeV:log.01596380._000170.job.log.tgz.1    [FILE]
+</pre></div>
+</div>
+</div>
+<div class="section" id="list-the-replica-locations-of-a-dataset">
+<h2><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">replica</span> <span class="pre">locations</span> <span class="pre">of</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#list-the-replica-locations-of-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>It can be done with the <cite>rucio list-dataset-replicas &lt;scope&gt;:&lt;name&gt;</cite>.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dataset-replicas mc12_14TeV:mc12_14TeV.167817.Sherpa_CT10_ZtautauMassiveCBPt140_280_CVetoBVeto.merge.log.e2445_p1614_tid01596380_00
+RSE                                      Found  Total
+------------------------------------------------------
+IN2P3-CC_DATADISK                            12     12
+</pre></div>
+</div>
+<p>It returns all the locations of the dataset, the number of files on each of these locations and the total number of files. If the scope and name belongs to a file, then the output will be empty.</p>
+</div>
+<div class="section" id="list-the-datasets-at-a-site">
+<h2><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">datasets</span> <span class="pre">at</span> <span class="pre">a</span> <span class="pre">site</span></code><a class="headerlink" href="#list-the-datasets-at-a-site" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div>See dumps</div></blockquote>
+</div>
+<div class="section" id="list-the-replicas-of-file">
+<h2><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">replicas</span> <span class="pre">of</span> <span class="pre">file</span></code><a class="headerlink" href="#list-the-replicas-of-file" title="Permalink to this headline">¶</a></h2>
+<p>The command <cite>rucio list-file-replicas &lt;scope&gt;:&lt;filename&gt;</cite> will show the physical location of the file.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-file-replicas mc12_14TeV:ESD.01332706._000181.pool.root.1
+Scope   Name                    Filesize        adler32 Replicas
+mc12_14TeV      ESD.01332706._000181.pool.root.1        1175213672      3f51b03d        CERN-PROD_DATADISK      :       gsiftp://eosatlassftp.cern.ch:2811/eos/atlas/atlasdatadisk/rucio/mc12_14TeV/58/4f/ESD.01332706._000181.pool.root.1
+</pre></div>
+</div>
+<p>It&#8217;s possible to filter the results by site with the argument &#8211;rse &lt;RSE-NAME&gt;</p>
+</div>
+<div class="section" id="list-the-datasets-where-a-particular-file-belongs">
+<h2><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">datasets</span> <span class="pre">where</span> <span class="pre">a</span> <span class="pre">particular</span> <span class="pre">file</span> <span class="pre">belongs</span></code><a class="headerlink" href="#list-the-datasets-where-a-particular-file-belongs" title="Permalink to this headline">¶</a></h2>
+<p>The command <cite>rucio list-parent-dids &lt;scope&gt;:&lt;name&gt;</cite> will show the datasets containing the file.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-parent-dids mc12_14TeV:HITS.04640638._001016.pool.root.1
+mc12_14TeV:mc12_14TeV.119996.Pythia8_A2MSTW2008LO_minbias_inelastic_high.merge.HITS.e1133_s2079_s1964_tid04640638_00 [DATASET]
+mc12_14TeV:mc12_14TeV.119996.Pythia8_A2MSTW2008LO_minbias_inelastic_high.merge.HITS.e1133_s2079_s1964_tid04640638_00_sub0201868877 [DATASET]
+</pre></div>
+</div>
+</div>
+<div class="section" id="retrieving-data">
+<h2><code class="docutils literal"><span class="pre">Retrieving</span> <span class="pre">data</span></code><a class="headerlink" href="#retrieving-data" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="download-a-full-dataset">
+<h2><code class="docutils literal"><span class="pre">Download</span> <span class="pre">a</span> <span class="pre">full</span> <span class="pre">dataset</span></code><a class="headerlink" href="#download-a-full-dataset" title="Permalink to this headline">¶</a></h2>
+<p>It can be done with <cite>rucio download &lt;scope&gt;:&lt;name&gt;</cite></p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio download mc14_13TeV:mc14_13TeV.169153.PowhegPythia8_AU2CT10_VBFH600NWA_WWlepnuqq.recon.log.e3292_s1982_s2008_r5787_tid04606738_00_sub0201586236
+2015-02-04 13:49:17,867 INFO [Starting download for mc14_13TeV:mc14_13TeV.169153.PowhegPythia8_AU2CT10_VBFH600NWA_WWlepnuqq.recon.log.e3292_s1982_s2008_r5787_tid04606738_00_sub0201586236]
+[++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]    100/100
+File downloaded. Will be validated
+File validated
+2015-02-04 13:49:18,554 INFO [File mc14_13TeV:log.04606738._000047.job.log.tgz.1 successfully downloaded from FZK-LCG2_DATADISK]
+[++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]    100/100
+File downloaded. Will be validated
+File validated
+2015-02-04 13:49:18,923 INFO [File mc14_13TeV:log.04606738._000048.job.log.tgz.1 successfully downloaded from FZK-LCG2_DATADISK]
+[++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++]    100/100
+File downloaded. Will be validated
+File validated
+2015-02-04 13:49:19,325 INFO [File mc14_13TeV:log.04606738._000049.job.log.tgz.1 successfully downloaded from FZK-LCG2_DATADISK]
+2015-02-04 13:49:19,325 INFO [Download operation for mc14_13TeV:mc14_13TeV.169153.PowhegPythia8_AU2CT10_VBFH600NWA_WWlepnuqq.recon.log.e3292_s1982_s2008_r5787_tid04606738_00_sub0201586236 done]
+----------------------------------
+Download summary
+----------------------------------------
+DID mc14_13TeV:mc14_13TeV.169153.PowhegPythia8_AU2CT10_VBFH600NWA_WWlepnuqq.recon.log.e3292_s1982_s2008_r5787_tid04606738_00_sub0201586236
+Downloaded files :                            3
+Files already found locally :                 0
+Files that cannot be downloaded :             0
+</pre></div>
+</div>
+<p>The files are copied locally into a directory &lt;scope&gt;</p>
+<p>The download command support &#8211;rse &lt;RSE-NAME&gt;, which allows to download a dataset from an spefic site and &#8211;protocol &lt;PROTOCOL&gt; to use a specific transfer protocol. Note that however, the dataset could not be available to download in a particular site or the protocol could not be supported by the rse.</p>
+</div>
+<div class="section" id="download-specific-files-from-a-dataset">
+<h2><code class="docutils literal"><span class="pre">Download</span> <span class="pre">specific</span> <span class="pre">files</span> <span class="pre">from</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#download-specific-files-from-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>This operation is still not supported by rucio, but will be available soon.</p>
+</div>
+<div class="section" id="download-a-sample-of-n-random-files-from-a-dataset">
+<h2><code class="docutils literal"><span class="pre">Download</span> <span class="pre">a</span> <span class="pre">sample</span> <span class="pre">of</span> <span class="pre">n</span> <span class="pre">random</span> <span class="pre">files</span> <span class="pre">from</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#download-a-sample-of-n-random-files-from-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>This operation is still not supported by rucio, but will be available soon.</p>
+</div>
+<div class="section" id="download-with-datasets-files-given-in-an-inputfile">
+<h2><code class="docutils literal"><span class="pre">Download</span> <span class="pre">with</span> <span class="pre">datasets/files</span> <span class="pre">given</span> <span class="pre">in</span> <span class="pre">an</span> <span class="pre">inputfile</span></code><a class="headerlink" href="#download-with-datasets-files-given-in-an-inputfile" title="Permalink to this headline">¶</a></h2>
+<p>Not supported by Rucio, but similar functionality can be achieved by</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio download `cat input.txt`
+</pre></div>
+</div>
+<p>where the input file (<code class="docutils literal"><span class="pre">input.txt</span></code>) contains one DID per line, e.g.</p>
+<div class="highlight-python"><div class="highlight"><pre>user.dcameron:test66
+user.dcameron:test8
+</pre></div>
+</div>
+</div>
+<div class="section" id="download-datasets-from-tape">
+<h2><code class="docutils literal"><span class="pre">Download</span> <span class="pre">datasets</span> <span class="pre">from</span> <span class="pre">tape</span></code><a class="headerlink" href="#download-datasets-from-tape" title="Permalink to this headline">¶</a></h2>
+<p>Users cannot download files from DDM sites associated to TAPE (xxx_MCTAPE and xxx_DATATAPE, CERN-PROD_TZERO and CERN-PROD_DAQ). To access data from TAPE, one should request a replication of the dataset to DISK storage through DDM request.
+If you need the whole dataset, choose the DATADISK of the same site as the destination.</p>
+</div>
+<div class="section" id="creating-data">
+<h2><code class="docutils literal"><span class="pre">Creating</span> <span class="pre">data</span></code><a class="headerlink" href="#creating-data" title="Permalink to this headline">¶</a></h2>
+<p>There 2 ways to create data on the Grid.
+The first one is by using Panda. The Panda jobs will create output data that are copied to some temporary areas (they can be identified by their name that ends with SCRATCHDISK, e.g. FZK-LCG2_SCRATCHDISK). Rucio ensures that the data are kept on this area for 2 weeks, but after that period they can disappear are anytime.</p>
+<p>The second method is to upload files with Rucio. The typical use case is that you produced locally some files, but want to share it with some other persons, or you want to run over these files using Distributed Analysis tools like Panda. For this you need to upload the files into a dataset on some Rucio Storage element (RSE). It can be done with rucio upload. Rucio will take care of registering the files into the rucio catalog and to physically upload the files on the Rucio Storage Element you choose. Once the dataset is successfully uploaded, you can use all the rucio features on it (transfer, deletion...).</p>
+</div>
+<div class="section" id="which-name-should-i-give-to-my-files-and-dataset">
+<h2><code class="docutils literal"><span class="pre">Which</span> <span class="pre">name</span> <span class="pre">should</span> <span class="pre">I</span> <span class="pre">give</span> <span class="pre">to</span> <span class="pre">my</span> <span class="pre">files</span> <span class="pre">and</span> <span class="pre">dataset</span></code><a class="headerlink" href="#which-name-should-i-give-to-my-files-and-dataset" title="Permalink to this headline">¶</a></h2>
+<p>If you create files into your own scope which is user.&lt;account&gt;, there is no restriction. You can give whatever name for your Data IDentifier (i.e. files/datasets/containers). But be carefull : once a name has been used for a Data IDentifier, it cannot be reused anymore even if you delete the original!
+For official data, a specific nomanclature is used.</p>
+</div>
+<div class="section" id="where-my-dataset-files-will-be-stored-with-rucio-upload">
+<h2><code class="docutils literal"><span class="pre">Where</span> <span class="pre">my</span> <span class="pre">dataset/files</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">stored</span> <span class="pre">with</span> <span class="pre">rucio</span> <span class="pre">upload</span> <span class="pre">?</span></code><a class="headerlink" href="#where-my-dataset-files-will-be-stored-with-rucio-upload" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>You can decide to upload your datasets into 2 different storage areas :</dt>
+<dd><ul class="first last simple">
+<li>The first one is a temporary area, which is any SCRATCHDISK. The datasets uploaded there will be kept for 2 weeks, but after that period, they can disappear at anytime.</li>
+<li>The second place is a permanent area (the so called LOCALGROUPDISK). This areas are dedicated to local users and are managed by the cloud squads. Permissions are set according to the user nationality and/or institut. The retention policy and the quota on these endpoints are defined by the cloud squads.</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="where-my-dataset-files-should-be-finally-stored">
+<h2><code class="docutils literal"><span class="pre">Where</span> <span class="pre">my</span> <span class="pre">dataset/files</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">finally</span> <span class="pre">stored</span> <span class="pre">?</span></code><a class="headerlink" href="#where-my-dataset-files-should-be-finally-stored" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul>
+<li><p class="first">Long term storage for user datasets</p>
+<p>On the Grid managed by DDM, the final destination for user datasets should be LOCALGROUPDISK. This area is not pledged, its size is defined by the site and its access is restricted to local users (technically to users from the same country). Datasets in this area are deleted only if the dataset was produced centrally (mc* or data*) and the associated task is declared aborted (usually meaning that the task was bugged). To send your dataset there, request the replication by setting a rule. There is no such storage at CERN. Outside the Grid or for Grid storage not declared in DDM, the storage managment is done by the site with its own tools. Currently, files can be replicated to this area through <code class="docutils literal"><span class="pre">dq2-get</span></code> / <code class="docutils literal"><span class="pre">rucio</span> <span class="pre">download</span></code>. There is non-Grid storage at CERN with quotas per user (to be documented).</p>
+</li>
+<li><p class="first">Long term storage for group datasets</p>
+<p>The group datasets are user (possible that this user is working for a group) datasets replicated in group areas. Only the data manager of the group can request the replication of datasets.</p>
+</li>
+<li><p class="first">Short term storage</p>
+<p>The dataset can be stored or replicated in SCRATCHDISK. SCRATCHDISK is the place for analysis output (except in US where _USERDISK is the place for pathena output) or <code class="docutils literal"><span class="pre">dq2-put</span></code> / <code class="docutils literal"><span class="pre">rucio</span> <span class="pre">upload</span></code>. The deletion policy for datasets in SCRATCHDISK is defined. Using LOCALGROUPDISK as the ouput location for analysis jobs is not recommended by the DDM team.</p>
+</li>
+<li><p class="first">Exceptions in US</p>
+<p>Because of temporary limitations in xrootd sites (SLACXRD and SWT2_SPB), the DDM sites SCRATCHDISK and LOCALGROUPDISK could not be created. Users are asked to send their datasets to GROUPDISK.</p>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="create-a-dataset-from-files-on-my-local-disk">
+<h2><code class="docutils literal"><span class="pre">Create</span> <span class="pre">a</span> <span class="pre">dataset</span> <span class="pre">from</span> <span class="pre">files</span> <span class="pre">on</span> <span class="pre">my</span> <span class="pre">local</span> <span class="pre">disk</span></code><a class="headerlink" href="#create-a-dataset-from-files-on-my-local-disk" title="Permalink to this headline">¶</a></h2>
+<p>To upload local files to Rucio Catalog, the rucio upload command must be used.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio upload --rse MY_SCRATCHDISK file1 file2 file3
+</pre></div>
+</div>
+<p>Rucio will try to guess the scope for the files based on the user account being used. If this fails or a different scope is needed, it can be specified by the &#8211;scope argument.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio upload --rse MY_SCRATCHDISK file1 file2 file3 --scope user.jbogadog
+</pre></div>
+</div>
+<p>Rucio also support upload files within a directory. This command however is not recursive and only the files in the directory will be added.  If the only file in “directory” is  “my_file”, the following command will upload the file under user.account:my_file.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio upload --rse MY_SCRATCHDISK directory/
+</pre></div>
+</div>
+<p>Also, if a scope:name is specified, it will be interpreted as a dataset name. All the files to upload will be automatically attached to this dataset. If the dataset exist already, the files will be added, if not, the dataset will be created first.</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio upload --rse MY_SCRATCHDISK user.name:mydataset file1 file2 file3 directory/
+</pre></div>
+</div>
+<p>Again, you can specify a different scope for the files with &#8211;scope</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio upload --rse MY_SCRATCHDISK  user.name:mydataset file1 file2 file3 directory/ --scope user.other_name
+</pre></div>
+</div>
+<p><strong>Important note</strong>: The names of files and datasets must be unique for a given scope. Otherwise, the rucio command will end in an error. Also the name of the files must be different that the one given for the dataset.</p>
+<p>Also important. Note that the <code class="docutils literal"><span class="pre">rse</span></code> argument is mandatory. This is because rucio will automatically create a replication rule for you. This default rules is per dataset (if you provide one) or per files (if no dataset is provided.) This rule is associated to the particular RSE you have selected and have a lifetime of 15 days by default. After that, your dataset and files will be eligible for deletion.</p>
+</div>
+<div class="section" id="create-a-dataset-from-files-already-in-other-datasets">
+<h2><code class="docutils literal"><span class="pre">Create</span> <span class="pre">a</span> <span class="pre">dataset</span> <span class="pre">from</span> <span class="pre">files</span> <span class="pre">already</span> <span class="pre">in</span> <span class="pre">other</span> <span class="pre">datasets</span></code><a class="headerlink" href="#create-a-dataset-from-files-already-in-other-datasets" title="Permalink to this headline">¶</a></h2>
+<p>To create a dataset from files in other datasets, you can follow these steps:</p>
+<blockquote>
+<div><p>Step 0: List files in the source datasets:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids  user.wguan:user.wguan.test.upload
+|    |- user.wguan:setup_dev.sh [FILE]
+|    |- user.wguan:setup_dq2.sh [FILE]
+|    |- user.wguan:testMulProcess.py [FILE]
+|    |- user.wguan:testcatalog.py [FILE]
+</pre></div>
+</div>
+<p>Step 1: Add destination dataset:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio add-dataset user.wguan:user.wguan.test.upload1
+Added user.wguan:user.wguan.test.upload1
+</pre></div>
+</div>
+<p>Step 2: Add files to destination dataset:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio attach user.wguan:user.wguan.test.upload1 user.wguan:setup_dev.sh user.wguan:setup_dq2.sh
+</pre></div>
+</div>
+<p>Note that the arguments are positional and the first argument after <cite>attach</cite> must be the dataset name</p>
+<p>Step 3: List the destination dataset to check the result:</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio list-dids  user.wguan:user.wguan.test.upload1
+|    |- user.wguan:setup_dev.sh [FILE]
+|    |- user.wguan:setup_dq2.sh [FILE]
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="what-to-do-after-creating-a-dataset">
+<h2><code class="docutils literal"><span class="pre">What</span> <span class="pre">to</span> <span class="pre">do</span> <span class="pre">after</span> <span class="pre">creating</span> <span class="pre">a</span> <span class="pre">dataset?</span></code><a class="headerlink" href="#what-to-do-after-creating-a-dataset" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>You should &#8220;close&#8221; the dataset. If the dataset is not closed, matching rules will have to constantly reevaluate your dataset and possibly generate transfers.</li>
+<li>If you want to add another set of files after a while, think about using containers.</li>
+<li>If you want to keep the possibility to add files to this dataset, do not close the dataset.</li>
+<li>By default, user datasets are created on SCRATCHDISK at the site where the jobs run.</li>
+<li>All the datasets on SCRATCHDISK are to be deleted after a certain period (minimum 7 days). See the section Lifetime of data on SCRATCHDISK.</li>
+<li>To retrieve your output files, you should either</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>Set a rule. The output files will stay as a dataset on Grid.</li>
+<li>Download onto your local disk using <cite>dq2-get</cite> <cite>rucio download</cite>. The output files will not be available via DDM after the dataset on the SCRATCHDISK is deleted. If the files are Athena files (POOL files), you will not be able to re-register the files. If you see a possibility to use them on Grid, you should think about setting rules.</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li>After retrieving the data from the SCRATCHDISK, you are encouraged to request early deletion of the original replicas in SCRATCHDISK.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="close-a-dataset">
+<h2><code class="docutils literal"><span class="pre">Close</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#close-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>To close a dataset the command rucio close has to be used</p>
+<div class="highlight-python"><div class="highlight"><pre>$&gt; rucio close user.barisits:test-dataset
+user.barisits:test-dataset has been closed.
+</pre></div>
+</div>
+</div>
+<div class="section" id="re-open-a-dataset">
+<h2><code class="docutils literal"><span class="pre">Re-open</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#re-open-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>This is only possible for privileged accounts using the Rucio Python clients.</p>
+</div>
+<div class="section" id="freeze-a-dataset">
+<h2><code class="docutils literal"><span class="pre">Freeze</span> <span class="pre">a</span> <span class="pre">dataset</span></code><a class="headerlink" href="#freeze-a-dataset" title="Permalink to this headline">¶</a></h2>
+<p>Freezing a dataset is not possible in Rucio. Closing the dataset is sufficient.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Rucio Client How To</a><ul>
+<li><a class="reference internal" href="#general-concepts"><code class="docutils literal"><span class="pre">General</span> <span class="pre">concepts</span></code></a></li>
+<li><a class="reference internal" href="#introduction"><code class="docutils literal"><span class="pre">Introduction</span></code></a></li>
+<li><a class="reference internal" href="#rucio-concepts"><code class="docutils literal"><span class="pre">Rucio</span> <span class="pre">concepts</span></code></a></li>
+<li><a class="reference internal" href="#dids"><code class="docutils literal"><span class="pre">DIDs</span></code></a></li>
+<li><a class="reference internal" href="#accounts"><code class="docutils literal"><span class="pre">Accounts</span></code></a></li>
+<li><a class="reference internal" href="#scopes"><code class="docutils literal"><span class="pre">Scopes</span></code></a></li>
+<li><a class="reference internal" href="#rse-rucio-storage-element"><code class="docutils literal"><span class="pre">RSE</span> <span class="pre">(Rucio</span> <span class="pre">Storage</span> <span class="pre">Element)</span></code></a></li>
+<li><a class="reference internal" href="#installing-initializing-rucio-commands"><code class="docutils literal"><span class="pre">Installing/Initializing</span> <span class="pre">Rucio</span> <span class="pre">commands</span></code></a></li>
+<li><a class="reference internal" href="#user-identity"><code class="docutils literal"><span class="pre">User</span> <span class="pre">Identity</span></code></a></li>
+<li><a class="reference internal" href="#querying"><code class="docutils literal"><span class="pre">Querying</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal"><span class="pre">Scopes</span></code></a></li>
+<li><a class="reference internal" href="#find-a-dataset"><code class="docutils literal"><span class="pre">Find</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#list-the-files-in-a-dataset"><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">files</span> <span class="pre">in</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#list-the-replica-locations-of-a-dataset"><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">replica</span> <span class="pre">locations</span> <span class="pre">of</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#list-the-datasets-at-a-site"><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">datasets</span> <span class="pre">at</span> <span class="pre">a</span> <span class="pre">site</span></code></a></li>
+<li><a class="reference internal" href="#list-the-replicas-of-file"><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">replicas</span> <span class="pre">of</span> <span class="pre">file</span></code></a></li>
+<li><a class="reference internal" href="#list-the-datasets-where-a-particular-file-belongs"><code class="docutils literal"><span class="pre">List</span> <span class="pre">the</span> <span class="pre">datasets</span> <span class="pre">where</span> <span class="pre">a</span> <span class="pre">particular</span> <span class="pre">file</span> <span class="pre">belongs</span></code></a></li>
+<li><a class="reference internal" href="#retrieving-data"><code class="docutils literal"><span class="pre">Retrieving</span> <span class="pre">data</span></code></a></li>
+<li><a class="reference internal" href="#download-a-full-dataset"><code class="docutils literal"><span class="pre">Download</span> <span class="pre">a</span> <span class="pre">full</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#download-specific-files-from-a-dataset"><code class="docutils literal"><span class="pre">Download</span> <span class="pre">specific</span> <span class="pre">files</span> <span class="pre">from</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#download-a-sample-of-n-random-files-from-a-dataset"><code class="docutils literal"><span class="pre">Download</span> <span class="pre">a</span> <span class="pre">sample</span> <span class="pre">of</span> <span class="pre">n</span> <span class="pre">random</span> <span class="pre">files</span> <span class="pre">from</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#download-with-datasets-files-given-in-an-inputfile"><code class="docutils literal"><span class="pre">Download</span> <span class="pre">with</span> <span class="pre">datasets/files</span> <span class="pre">given</span> <span class="pre">in</span> <span class="pre">an</span> <span class="pre">inputfile</span></code></a></li>
+<li><a class="reference internal" href="#download-datasets-from-tape"><code class="docutils literal"><span class="pre">Download</span> <span class="pre">datasets</span> <span class="pre">from</span> <span class="pre">tape</span></code></a></li>
+<li><a class="reference internal" href="#creating-data"><code class="docutils literal"><span class="pre">Creating</span> <span class="pre">data</span></code></a></li>
+<li><a class="reference internal" href="#which-name-should-i-give-to-my-files-and-dataset"><code class="docutils literal"><span class="pre">Which</span> <span class="pre">name</span> <span class="pre">should</span> <span class="pre">I</span> <span class="pre">give</span> <span class="pre">to</span> <span class="pre">my</span> <span class="pre">files</span> <span class="pre">and</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#where-my-dataset-files-will-be-stored-with-rucio-upload"><code class="docutils literal"><span class="pre">Where</span> <span class="pre">my</span> <span class="pre">dataset/files</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">stored</span> <span class="pre">with</span> <span class="pre">rucio</span> <span class="pre">upload</span> <span class="pre">?</span></code></a></li>
+<li><a class="reference internal" href="#where-my-dataset-files-should-be-finally-stored"><code class="docutils literal"><span class="pre">Where</span> <span class="pre">my</span> <span class="pre">dataset/files</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">finally</span> <span class="pre">stored</span> <span class="pre">?</span></code></a></li>
+<li><a class="reference internal" href="#create-a-dataset-from-files-on-my-local-disk"><code class="docutils literal"><span class="pre">Create</span> <span class="pre">a</span> <span class="pre">dataset</span> <span class="pre">from</span> <span class="pre">files</span> <span class="pre">on</span> <span class="pre">my</span> <span class="pre">local</span> <span class="pre">disk</span></code></a></li>
+<li><a class="reference internal" href="#create-a-dataset-from-files-already-in-other-datasets"><code class="docutils literal"><span class="pre">Create</span> <span class="pre">a</span> <span class="pre">dataset</span> <span class="pre">from</span> <span class="pre">files</span> <span class="pre">already</span> <span class="pre">in</span> <span class="pre">other</span> <span class="pre">datasets</span></code></a></li>
+<li><a class="reference internal" href="#what-to-do-after-creating-a-dataset"><code class="docutils literal"><span class="pre">What</span> <span class="pre">to</span> <span class="pre">do</span> <span class="pre">after</span> <span class="pre">creating</span> <span class="pre">a</span> <span class="pre">dataset?</span></code></a></li>
+<li><a class="reference internal" href="#close-a-dataset"><code class="docutils literal"><span class="pre">Close</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#re-open-a-dataset"><code class="docutils literal"><span class="pre">Re-open</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+<li><a class="reference internal" href="#freeze-a-dataset"><code class="docutils literal"><span class="pre">Freeze</span> <span class="pre">a</span> <span class="pre">dataset</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="client_tutorial.html"
+                        title="previous chapter">Rucio CLI tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Acronyms_and_Abbreviations.html"
+                        title="next chapter">Acronyms and Abbreviations</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/client_howto.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Acronyms_and_Abbreviations.html" title="Acronyms and Abbreviations"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="client_tutorial.html" title="Rucio CLI tutorial"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 0.3.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
