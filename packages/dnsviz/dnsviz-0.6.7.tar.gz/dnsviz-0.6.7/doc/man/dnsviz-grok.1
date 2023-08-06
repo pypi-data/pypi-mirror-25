@@ -1,0 +1,109 @@
+.\"
+.\" This file is a part of DNSViz, a tool suite for DNS/DNSSEC monitoring,
+.\" analysis, and visualization.
+.\" Created by Casey Deccio (casey@deccio.net)
+.\"
+.\" Copyright 2015-2016 VeriSign, Inc.
+.\"
+.\" DNSViz is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" DNSViz is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.TH dnsviz-grok 1 "3 Oct 2017" "0.6.7"
+.SH NAME
+dnsviz-grok \- assess diagnostic DNS queries
+.SH SYNOPSIS
+.B dnsviz
+\fBgrok\fR
+[ \fIoptions\fR ]
+[ \fIdomain_name...\fR ]
+.SH DESCRIPTION
+Process the results of diagnostic DNS queries previously performed, e.g., using
+\fBdnsviz-probe(1)\fR, to assess the health of the associated DNS deployments for one
+or more domain names specified.  The results of this processing are serialized
+into JSON format for further programmatic diagnostics or alerts.
+
+The source of the diagnostic query input is either a file specified with
+\fB-r\fR or standard input.
+
+Domain names to be processed may be passed either as command-line arguments, in
+a file (using the \fB-f\fR option), or simply implied using the diagnostic
+query input.  The latter is the preferred methodology (and the simplest) and is
+useful, except in cases where the input contains diagnostic queries for
+multiple domain names, only a subset of which are to be processed.
+
+If \fB-f\fR is not used and no domain names are supplied on the command line,
+then the domain names to be processed are extracted from the diagnostic query
+input.  If the \fB-f\fR option is used, then names may not be specified on the
+command line.
+
+The domain names passed as input are fully-qualified domain names, such as
+example.com, www.example.com, _443._tcp.example.com, 1.2.0.192.in-addr.arpa, or
+8.b.d.0.1.0.0.2.ip6.arpa.  Because it is implied that specified domain names
+are fully qualified, no trailing dot is necessary.
+
+.SH OPTIONS
+.TP
+.B -f
+\fIfilename\fR
+Read names from a file (one name per line), instead of from command line.
+
+If this option is used, then names may not be specified on the command line.
+.TP
+.B -r
+\fIfilename\fR
+Read diagnostic query input from the specified file, instead of from standard
+input.
+.TP
+.B -t \fIfilename\fR
+Specify a file that contains trusted keys for processing diagnostic queries.
+The default is to not use any trusted keys.
+
+The format of this file is master zone file format and should contain DNSKEY
+records that correspond to one more trusted keys for one or more DNS zones.
+
+This option may be used multiple times on the command line.
+.TP
+\fB-o\fR \fIfilename\fR
+Write the output to the specified file instead of to standard output, which
+is the default.
+.TP
+.B -c
+Make JSON output minimal instead of "pretty" (i.e., remove indentation and
+newlines).
+.TP
+.B -l \fIlevel\fR
+Display only information at the specified log priority or higher.  Valid values
+(in increasing order of priority) are: "error", "warning", "info", and "debug".
+The default is "debug".
+.TP
+.B -h
+Display the usage and exit.
+
+.SH EXIT CODES
+The exit codes are:
+.IP 0
+Program terminated normally.
+.IP 1
+Incorrect usage.
+.IP 2
+Required package dependencies were not found.
+.IP 3
+There was an error processing the input or saving the output.
+.IP 4
+Program execution was interrupted, or an unknown error ocurred.
+.SH SEE ALSO
+.BR dnsviz(1),
+.BR dnsviz-probe(1),
+.BR dnsviz-graph(1),
+.BR dnsviz-print(1),
+.BR dnsviz-query(1)

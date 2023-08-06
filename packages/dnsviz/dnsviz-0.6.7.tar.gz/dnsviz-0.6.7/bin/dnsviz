@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+#
+# This file is a part of DNSViz, a tool suite for DNS/DNSSEC monitoring,
+# analysis, and visualization.
+# Created by Casey Deccio (casey@deccio.net)
+#
+# Copyright 2015-2016 VeriSign, Inc.
+#
+# DNSViz is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# DNSViz is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from __future__ import unicode_literals
+
+import importlib
+import sys
+
+def check_deps():
+    # check dnspython dependency
+    try:
+        import dns.name
+    except ImportError:
+        sys.stderr.write('Error: dnspython does not appear to be installed\n')
+        sys.exit(1)
+
+def usage(err=None):
+    if err is not None:
+        err += '\n\n'
+    else:
+        err = ''
+    sys.stderr.write('''%sUsage: dnsviz <command> [args]
+Commands:
+    probe          - issue diagnostic DNS queries
+    grok           - assess diagnostic DNS queries
+    graph          - graph the assessment of diagnostic DNS queries
+    print          - process diagnostic DNS queries to textual output
+    query          - assess a DNS query
+    help [<command>]
+                   - show usage for a command
+''' % (err))
+
+def main():
+    check_deps()
+
+    if len(sys.argv) < 2:
+        usage()
+        sys.exit(0)
+
+    if sys.argv[1] == 'help':
+        if len(sys.argv) < 3:
+            usage()
+            sys.exit(0)
+
+        command = sys.argv[2]
+    else:
+        command = sys.argv[1]
+
+    # first try importing just the commands module to make sure
+    # dnsviz is properly reachable with the current path
+    import dnsviz.commands
+
+    # now try importing the module for the actual command
+    try:
+        mod = importlib.import_module('dnsviz.commands.%s' % command)
+    except ImportError:
+        # if there are more than two frames in the stack trace,
+        # then the command was legit, but there was an ImportError
+        # raised while running that command.
+        exc_frame = sys.exc_info()[2]
+        if exc_frame.tb_next.tb_next is not None:
+            raise
+
+        usage('Invalid command: %s' % command)
+        sys.exit(1)
+
+    if sys.argv[1] == 'help':
+        mod.usage()
+    else:
+        mod.main(sys.argv[1:])
+
+if __name__ == "__main__":
+    main()
