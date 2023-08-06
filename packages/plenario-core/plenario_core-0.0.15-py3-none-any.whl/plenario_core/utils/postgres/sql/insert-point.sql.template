@@ -1,0 +1,17 @@
+CREATE OR REPLACE FUNCTION
+  {{ function_name }}()
+RETURNS TRIGGER AS $$
+
+  BEGIN
+    {% for mapping in location_fields %}
+    {% if mapping.parsing_kwargs.coordinates %}
+    new.{{ mapping.name }} := parsepointlocation(new.{{ mapping.parsing_kwargs.coordinates }});
+    {% else %}
+    new.{{ mapping.name }} := parsepointlonglat(new.{{ mapping.parsing_kwargs.longitude }}, new.{{ mapping.parsing_kwargs.latitude }});
+    {% endif %}
+    {% endfor %}
+    return new;
+  END
+
+$$
+LANGUAGE 'plpgsql';

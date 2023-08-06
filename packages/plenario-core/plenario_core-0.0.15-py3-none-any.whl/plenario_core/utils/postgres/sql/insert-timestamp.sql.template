@@ -1,0 +1,20 @@
+CREATE OR REPLACE FUNCTION
+  {{ function_name }}()
+RETURNS TRIGGER AS $$
+
+  BEGIN
+    {% for mapping in date_fields %}
+    new.{{ mapping.name }} := parsetimestamp(
+      new.{{ mapping.parsing_kwargs.year }},
+      {% if mapping.parsing_kwargs.month %}new.{{ mapping.parsing_kwargs.month }}{% else %}NULL{% endif %},
+      {% if mapping.parsing_kwargs.day %}new.{{ mapping.parsing_kwargs.day }}{% else %}NULL{% endif %},
+      {% if mapping.parsing_kwargs.hour %}new.{{ mapping.parsing_kwargs.hour }}{% else %}NULL{% endif %},
+      {% if mapping.parsing_kwargs.minute %}new.{{ mapping.parsing_kwargs.minute }}{% else %}NULL{% endif %},
+      {% if mapping.parsing_kwargs.second %}new.{{ mapping.parsing_kwargs.second }}{% else %}NULL{% endif %}
+    );
+    {% endfor %}
+    return new;
+  END
+
+$$
+LANGUAGE 'plpgsql';
