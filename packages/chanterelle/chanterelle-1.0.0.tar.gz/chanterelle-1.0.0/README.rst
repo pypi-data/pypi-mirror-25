@@ -1,0 +1,83 @@
+Chanterelle
+===========
+Chanterelle is a command line utility written in Python 3 that synchronizes
+the contents of an S3 bucket with a local static website. This tool has no
+dependency on Jekyll or Ruby, but assumes a default configuration that works
+with the default structure of a Jekyll site.
+
+Chanterelle was designed to reduce the monetary cost of using the S3 API by
+only making changes that are necessary to a bucket. Files are not uploaded if
+already present in the bucket with the same content, and bulk list and delete
+operations are used.
+
+Installation
+------------
+To install with Chanterelle you will need `Python 3 <https://www.python.org>`_
+and `setuptools <https://packaging.python.org/tutorials/installing-packages/
+#requirements-for-installing-packages>`_. Run the following to install the
+latest release of Chanterelle directly from PyPI::
+
+    pip install chanterelle
+
+Configuration
+-------------
+Chanterelle can be configured using a YAML file placed in the project root
+called :code:`_upload.yml`. Jekyll's :code:`_config.yml` is not read by
+Chanterelle. The following is a table of keys for the configuration file:
+
++------------+----------------------------------------------------------------+
+| Key        | Description                                                    |
++============+================================================================+
+| bucket     | Name of the S3 bucket to synchronize. This key is required.    |
++------------+----------------------------------------------------------------+
+| profile    | Name of the `AWS profile <http://docs.aws.amazon.com           |
+|            | /cli/latest/userguide/cli-multiple-profiles.html>`_ to use.    |
+|            | The default profile will be used if omitted.                   |
++------------+----------------------------------------------------------------+
+| site_root  | Path to the root of the generated site. Default value is       |
+|            | :code:`_site`.                                                 |
++------------+----------------------------------------------------------------+
+| mime_types | Map of file extension (including dot) to mime-type that will   |
+|            | be in addition to the system's map to determine the            |
+|            | Content-Type of a file.                                        |
++------------+----------------------------------------------------------------+
+| charset    | Content-Type charset assigned to files that are subtypes of    |
+|            | the :code:`text` type (:code:`text/*`). Default value is       |
+|            | :code:`utf-8`.                                                 |
++------------+----------------------------------------------------------------+
+| strip_html | If set to :code:`true` the :code:`.html` extension will be     |
+|            | stripped from the filenames of uploaded files. This is useful  |
+|            | for permalink styles that dont include an extension. Default   |
+|            | value is :code:`false`.                                        |
++------------+----------------------------------------------------------------+
+| delete_old | If set to :code:`true` files in the bucket that do not exist   |
+|            | in the local directory will be deleted. Default value is       |
+|            | :code:`false`.                                                 |
++------------+----------------------------------------------------------------+
+
+AWS Credentials
+~~~~~~~~~~~~~~~
+In addition to :code:`_upload.yml` you will also need to configure AWS
+credentials. These are ommited from :code:`_upload.yml` so it can be checked
+into version control without sharing keys with contributors.
+
+There are several ways to `manually configure <http://boto.cloudhackers.com
+/en/latest/boto_config_tut.html#credentials>`_ the credentials that Chanterelle
+uses, but the easiest way for those only using a single set of credentials is
+to use the `configure command <https://aws.amazon.com/documentation/cli/>`_ of
+the `aws command line tool <http://docs.aws.amazon.com
+/cli/latest/userguide/cli-chap-getting-started.html>`_::
+
+    aws configure
+
+Usage
+-----
+Once you have created :code:`_upload.yml` and set AWS credentials, you can run
+Chanterelle from the command line::
+
+    chanterelle
+
+Licensing
+---------
+Chanterelle is licensed under the MIT License, see :code:`LICENSE` file in
+source repository for full license text.
