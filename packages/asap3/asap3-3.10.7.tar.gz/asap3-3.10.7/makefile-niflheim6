@@ -1,0 +1,48 @@
+########################################################################################
+#### Configuration file for DTU Physics' cluster Niflheim.
+####
+#### This uses the Intel compilers
+####
+
+
+#### Override object directories to separate similar architectures.
+OBJDIR = $(FYS_PLATFORM)$(POSTFIX)
+BINDIR = $(OBJDIR)
+$(info FYS_PLATFORM detected - building for CAMd/CINF/Niflheim with OBJDIR=$(OBJDIR).)
+
+
+#### Python executable.  Uncomment and set to python3 to compile for Python 3
+#PYTHON=python
+
+
+#### Compilers and compilation flags
+
+# Uncomment to enable OpenMP support
+#OPENMPFLAGS = -openmp
+OPENMPFLAGS = 
+
+# C and C++ compiler and compilation flags.  You enable OpenMP support here.
+# OpenMP is currently only supported in the parallel version.
+CC=icc
+CXX=icpc
+CFLAGS = -O3 -g -xHost -fPIC -qopt-report=5 -qopt-report-phase=vec
+CXXFLAGS = -std=c++11 $(CFLAGS)
+LIBS = -lsvml -lm 
+
+# Compilation flags for parallel simulations
+MPICFLAGS = -O3 -g -xHost $(OPENMPFLAGS)
+MPICXXFLAGS = -std=c++11 $(MPICFLAGS)
+EXTRA_LIBS = $(OPENMPFLAGS)
+
+# Enable PARPOSTFIX if the compilation flags for parallel and serial code is different,
+# e.g. if to OpenMP is enabled in one case.
+PARPOSTFIX = -par
+
+# Extra flags to silence compiler warnings in Interface and ParallelInterface
+IFACEFLAGS = -Wno-write-strings -Wno-strict-aliasing
+
+# Extra flags to silence compiler warning for the Brenner potential
+BRENNERCFLAGS =  -Wno-strict-aliasing -Wno-unused
+
+
+
