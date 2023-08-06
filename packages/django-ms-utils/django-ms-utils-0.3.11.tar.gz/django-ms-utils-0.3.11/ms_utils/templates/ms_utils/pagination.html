@@ -1,0 +1,39 @@
+{% load i18n ms_pagination %}
+
+{% if page_obj %}
+<div class="row">
+    <div class="col-sm-6">
+        <div class="pagination-info">
+            <span>{% trans 'Page' %} <b>{{ page_obj.number }}</b> {% trans 'of' %} <b>{{ page_obj.paginator.num_pages }}</b></span>
+            <br>
+            <span>{% trans 'Total' %}: <b>{{ page_obj.paginator.count }}</b></span>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div class="pagination-pages">
+            {% if page_obj.has_other_pages %}
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li><a href="{% page_url page_obj.previous_page_number %}">&laquo;</a></li>
+                {% else %}
+                <li class="disabled"><span>&laquo;</span></li>
+                {% endif %}
+                {% pages_relative page_obj as page_range %}
+                {% for i in page_range %}
+                {% if page_obj.number == i %}
+                <li class="active"><span>{{ i }}</span></li>
+                {% else %}
+                <li><a href="{% page_url i %}">{{ i }}</a></li>
+                {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li><a href="{% page_url page_obj.next_page_number %}">&raquo;</a></li>
+                {% else %}
+                <li class="disabled"><span>&raquo;</span></li>
+                {% endif %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
