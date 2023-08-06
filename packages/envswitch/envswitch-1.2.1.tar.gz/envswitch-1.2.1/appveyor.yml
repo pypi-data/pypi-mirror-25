@@ -1,0 +1,125 @@
+environment:
+
+  matrix:
+
+    # For Python versions available on Appveyor, see
+    # http://www.appveyor.com/docs/installed-software#python
+    # The list here is complete (excluding Python 2.6, which
+    # isn't covered by this document) at the time of writing.
+
+    # for miniconda :
+    # https://www.appveyor.com/docs/build-environment/#miniconda
+    # http://help.appveyor.com/discussions/questions/6802-appveyor-with-conda
+
+    #- PYTHON: "C:\\Python27"
+    #- PYTHON: "C:\\Python33"
+    #- PYTHON: "C:\\Python34"
+
+    # Unfortunately this does not work with miniconda 32 bit: resulting cx_freeze still contains 64/32
+#    - PYTHON_VERSION: "3.5"
+#      PYTHON: "C:\\Python35"
+#      MINICONDA: "C:\\Miniconda35"
+    #- PYTHON: "C:\\Python27-x64"
+    #- PYTHON: "C:\\Python33-x64"
+    #  DISTUTILS_USE_SDK: "1"
+    #- PYTHON: "C:\\Python34-x64"
+    #  DISTUTILS_USE_SDK: "1"
+    - PYTHON_VERSION: "3.5"
+      PYTHON: "C:\\Python35-x64"
+      MINICONDA: "C:\\Miniconda35-x64"
+
+init:
+  - "ECHO %PYTHON_VERSION% %PYTHON% %MINICONDA%"
+
+## **** pip version. It works but  ****
+#install:
+#  # We need wheel installed to build wheels
+#  - "%PYTHON%\\python.exe -m pip install wheel"
+#  - "%PYTHON%\\python.exe -m pip install -r ci_tools/requirements-setup.txt"
+#  - "%PYTHON%\\python.exe -m pip install pyqt5>=5.6"
+#  - "%PYTHON%\\python.exe -m pip install -r ci_tools/requirements-test.txt"
+#  - "%PYTHON%\\python.exe -m pip install -r ci_tools/requirements-report.txt"
+#  - "%PYTHON%\\python.exe -m pip install -r ci_tools/requirements-doc.txt"
+#  - "%PYTHON%\\python.exe -m pip install pypiwin32"
+#  - cinst pandoc
+#  - pandoc -v
+#  - "%PYTHON%\\python.exe -m pip install ."
+
+# **** Miniconda version ****
+install:
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+#  - conda config --set always_yes yes --set changeps1 no
+#  - conda update -q conda
+#  - conda info -a
+#  # - conda config --add channels bashtage
+#  # - conda install arch -y
+#  - "conda create -q -n test-environment python=%PYTHON_VERSION% wheel"
+#  - activate test-environment
+#  - conda install pyqt=5.6  # otherwise this creates issues with the packaging ?
+#  - conda install pywin32
+  - conda env create -f "ci_tools/conda_env.yml" -n envswitch
+  - activate envswitch
+#  - conda install pandoc -q
+  - pandoc -v
+  - pip install -r ci_tools/requirements-test.txt
+  - pip install -r ci_tools/requirements-setup.txt
+  - pip install -r ci_tools/requirements-report.txt
+  - pip install -r ci_tools/requirements-doc.txt
+#  - conda list cx-Freeze
+  - pip install .
+
+build: off
+
+test_script:
+  # Put your test command here.
+  # If you don't need to build C extensions on 64-bit Python 3.3 or 3.4,
+  # you can remove "build.cmd" from the front of the command, as it's
+  # only needed to support those cases.
+  # Note that you must use the environment variable %PYTHON% to refer to
+  # the interpreter you're using - Appveyor does not do anything special
+  # to put the Python version you want to use on PATH.
+  # - "%PYTHON%\\python.exe setup.py test"
+  - python setup.py test
+
+after_test:
+  # ***packaging for releases***
+  # source and wheel for PyPi >> this is already done in travis
+  # - "build.cmd %PYTHON%\\python.exe setup.py sdist bdist_wheel"
+  # installer for github release
+  # - "%PYTHON%\\python.exe setup_cx_app.py build"
+  - python setup_cx_app.py build
+  # - 7z a myapp.zip %APPVEYOR_BUILD_FOLDER%\path\to\bin\*.dll
+
+  # - "%PYTHON%\\python.exe setup_cx_app.py bdist_msi"
+  - python setup_cx_app.py bdist_msi
+
+  # ***reporting >> this is already done in travis ***
+  # ***documentation >> this is already done in travis ***
+
+artifacts:
+  # bdist_wheel puts your built wheel in the dist directory
+  - path: 'build\exe.win-amd64-%PYTHON_VERSION%'
+    type: zip
+
+  - path: 'build\exe.win32-%PYTHON_VERSION%'
+    type: zip
+
+  - path: dist\*
+
+on_success:
+#  You can use this step to upload your artifacts to a public website.
+#  See Appveyor's documentation for more details. Or you can simply
+#  access your wheels from the Appveyor "artifacts" tab for your build.
+
+deploy:
+  # release: myproduct-v$(appveyor_build_version)
+  description: ''
+  provider: GitHub
+  auth_token:
+    secure: 'SYd5+MMCyCHhSsQ8ZLPnbBC0KbUv/DVDUFTkdCkYd+wJCa2lsxo9w0HzA8Zg11iG' # encrypted token from GitHub
+  # artifact: /.*\.nupkg/            # upload all
+  draft: false
+  prerelease: false
+  on:
+    branch: master                 # release from master branch only
+    appveyor_repo_tag: true        # deploy on tag push only
