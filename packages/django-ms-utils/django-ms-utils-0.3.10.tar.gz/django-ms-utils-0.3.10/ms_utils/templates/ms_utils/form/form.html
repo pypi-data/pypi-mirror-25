@@ -1,0 +1,27 @@
+{% load ms_form %}
+{% for error in form.non_field_errors %}
+<span class="text-danger">{{ error }}</span>
+{% endfor %}
+
+{% bslayout form as layout %}
+{% csrf_token %}
+{% for hidden in form.hidden_fields %}
+    {{ hidden }}
+{% endfor %}
+{% if layout %}
+    {% for rows in layout %}
+    <div class="row">
+        {% for size, num, fields in rows %}
+        <div class="col-{{ size }}-{{ num }}">
+            {% for field_name in fields %}
+                {% bsfieldname field_name form %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+{% else %}
+{% for field in form.visible_fields %}
+    {% bsfield field %}
+{% endfor %}
+{% endif %}
