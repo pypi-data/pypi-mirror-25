@@ -1,0 +1,61 @@
+{% extends "pretixcontrol/items/base.html" %}
+{% load i18n %}
+{% load eventurl %}
+
+{% block title %}{% trans "Share a cart" %}{% endblock %}
+
+{% block content %}
+    <h1>{% trans "Carts" %}</h1>
+
+    {% if carts|length == 0 %}
+        <div class="empty-collection">
+            <p>
+                {% trans "No carts found." %}
+            </p>
+
+            <a href="{% url "plugins:pretix_cartshare:create" organizer=request.event.organizer.slug event=request.event.slug %}"
+                    class="btn btn-primary btn-lg"><i class="fa fa-plus"></i> {% trans "Create a cart" %}</a>
+        </div>
+    {% else %}
+        <p>
+            <a href="{% url "plugins:pretix_cartshare:create" organizer=request.event.organizer.slug event=request.event.slug %}" class="btn
+btn-default"><i class="fa fa-plus"></i> {% trans "Create a new cart" %}
+            </a>
+        </p>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                <tr>
+                    <th>{% trans "Cart ID" %}</th>
+                    <th>{% trans "Total" %}</th>
+                    <th>{% trans "Created" %}</th>
+                    <th>{% trans "Expires" %}</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for cart in carts %}
+                    <tr>
+                        <td>
+                            <a href="{% eventurl request.event "plugins:pretix_cartshare:redeem" id=cart.cart_id %}"
+                                    target="_blank">
+                                {{ cart.cart_id }}
+                            </a>
+                        </td>
+                        <td>{{ cart.total|floatformat:2 }}</td>
+                        <td>{{ cart.datetime|date:"SHORT_DATE_FORMAT" }}</td>
+                        <td>{{ cart.expires|date:"SHORT_DATE_FORMAT" }}</td>
+                        <td>
+                            <a class="btn btn-danger" href="{% url "plugins:pretix_cartshare:delete" event=request.event.slug organizer=request.event.organizer.slug id=cart.cart_id %}">
+                                <span class="fa fa-trash"></span>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+    {% include "pretixcontrol/pagination.html" %}
+
+{% endblock %}
