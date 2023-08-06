@@ -1,0 +1,1 @@
+from .json_loads_hooks import flatten_dict
