@@ -1,0 +1,22 @@
+language: python
+sudo: false
+python:
+  - "2.7"
+  - "3.5"
+  - "3.6"
+  - "pypy"
+
+branches:
+  only:
+    - master
+    - development
+
+install:
+  - travis_retry pip install -Ur requirements-dev.txt bandit
+
+script:
+  - bandit -ll -r pyapp
+  - py.test tests/ --cov=pyapp
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
