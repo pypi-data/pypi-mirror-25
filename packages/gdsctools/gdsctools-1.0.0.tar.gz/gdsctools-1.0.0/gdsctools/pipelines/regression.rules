@@ -1,0 +1,167 @@
+# A snakemake pipeline for regression analysis across many drugs and features
+import pylab
+from gdsctools import *
+import pandas as pd
+import colorlog
+
+# Change INFO to WARNING or ERROR to get less messages
+colorlog.getLogger().setLevel("ERROR")
+
+
+
+configfile: "config.yaml"
+
+
+print("//Loading main data set")
+ic50 = IC50(config['input']['ic50_file'])
+gf = GenomicFeatures(config['input']['genomic_features_file'])
+
+## Overwrite config :
+config = config['regression']
+assert config['method_choice'] in ['lasso', "elastic_net", "ridge"]
+
+if config['method_choice'] == "lasso":
+    gd = regression.GDSCLasso(ic50, gf)
+elif config['method_choice'] == "ridge":
+    gd = regression.GDSCRidge(ic50, gf)
+elif config['method_choice'] == "elastic_net":
+    gd = regression.GDSCElasticNet(ic50, gf)
+
+
+
+
+DRUGIDS = gd.drugIds
+PREFIX = "gdsctools_regression_"
+IMAGE_DIR = "images/"
+DATA_DIR = "data/"
+DATA_PREFIX = DATA_DIR  + PREFIX
+IMAGE_PREFIX = IMAGE_DIR + PREFIX
+
+import os
+try: os.mkdir(IMAGE_DIR)
+except: pass
+
+################################################  NOTHING TO CHANGE HERE BELOW
+# RUNME as follows:
+# snakemake -s regression.rules -j 40 --cluster "sbatch --qos normal"
+#
+#################################################################"
+
+localrules: all, get_weights, get_results, report
+
+rule all:
+    input: "index.html"
+
+rule report:
+    input:
+        IMAGE_PREFIX + "scatter_plot.png",
+        DATA_PREFIX + "weights.csv",
+        DATA_PREFIX + "results.csv",
+    output: "index.html"
+    run:
+        from gdsctools import regression_report
+        report = regression_report.RegressionReport(config['method_choice'],
+                image_dir=IMAGE_DIR, config=config)
+        report.prefix = PREFIX
+        report.create_html_main()
+        report.create_html_drug()
+
+
+rule all_drug_all_features:
+    input:
+        expand(DATA_PREFIX +"results_{drugid}.json", drugid=DRUGIDS),
+        expand(DATA_PREFIX + "weights_{drugid}.csv", drugid=DRUGIDS),
+
+
+rule get_weights:
+    message: "gather back all individual weights"
+    input: expand(DATA_PREFIX + "weights_{drugid}.csv", drugid=DRUGIDS),
+    output: DATA_PREFIX + "weights.csv"
+    run:
+        df = pd.concat(
+            [pd.read_csv(this).set_index("features") for this in input],
+            axis=1)
+        df.columns = DRUGIDS
+        df.to_csv(output[0])
+
+
+rule scatter_plot:
+    input: DATA_PREFIX + "results.csv"
+    output: IMAGE_PREFIX + "scatter_plot.png"
+    run:
+        df = pd.read_csv(input[0]).set_index("drugid")
+        pylab.clf()
+        pylab.scatter(df.Rp, -pylab.log10(df.ttest), c=df.bayes, s=80, vmax=20, alpha=0.9)
+        pylab.grid(True)
+        pylab.colorbar(extend="max")
+        pylab.xlabel("Regression coefficients")
+        pylab.ylabel("-log10 ttest")
+        pylab.xlim([0, pylab.xlim()[1]])
+        pylab.ylim([0, pylab.ylim()[1]])
+        pylab.savefig(output[0])
+
+
+rule get_results:
+    input: expand(DATA_PREFIX + "results_{drugid}.json", drugid=DRUGIDS),
+    output: DATA_PREFIX + "results.csv"
+    run:
+        data = []
+        for this in input:
+            with open(this, "r") as fh:
+                data.append(json.loads(fh.read()))
+        df = pd.DataFrame(data)
+        df.set_index("drugid", inplace=True)
+        df.to_csv(output[0])
+
+
+rule one_drug_all_features:
+    output:
+        DATA_PREFIX + "weights_{drugid}.csv",
+        DATA_PREFIX + "results_{drugid}.json",
+    run:
+        def _pngname(tag):
+            return IMAGE_PREFIX + "%s_%s.png" % (tag, wildcards.drugid)
+        drugid = int(wildcards.drugid)
+
+        # Get best model
+        res = gd.runCV(drugid, verbose=False, kfolds=config['kfold'])
+        bestmodel = gd.get_model(alpha=res.alpha)
+
+        # Plot weights
+        weights = gd.plot_weight(drugid, bestmodel)
+        if len(weights):
+            pylab.savefig(_pngname("weights"))
+            pylab.close()
+
+        weights = pd.DataFrame({
+                "weigths": res.coefficients,
+                "features":gd.feature_names})
+        weights.to_csv(output[0], index=False)
+
+        # Plot importance
+        weights = gd.plot_importance(drugid, bestmodel)
+        if len(weights):
+            pylab.savefig(_pngname("importance"))
+            pylab.close()
+
+        # Boxplots
+        boxres = gd.boxplot(drugid, model=bestmodel, n=config['boxplot_n'], bx_vert=False)
+        if len(boxres['data']):
+            pylab.savefig(_pngname("boxplot"))
+            pylab.close()
+
+        # Bayes factor
+        ran = gd.check_randomness(drugid, config["kfold"], N=config['randomness'])
+        pylab.savefig(_pngname("randomness"))
+        pylab.close()
+        results = {"drugid": int(drugid),
+                "Rp":res.Rp,
+                "alpha": res.alpha,
+                "ln_alpha": res.ln_alpha,
+                "ttest": ran['ttest_pval'],
+                "bayes":ran['bayes_factor']}
+
+        fh = open(output[1], "w")
+        json.dump(results, fh)
+        fh.close()
+
