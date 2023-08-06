@@ -1,0 +1,76 @@
+\hypertarget{structpsiAsciiTableOutput__t}{}\section{psi\+Ascii\+Table\+Output\+\_\+t Struct Reference}
+\label{structpsiAsciiTableOutput__t}\index{psi\+Ascii\+Table\+Output\+\_\+t@{psi\+Ascii\+Table\+Output\+\_\+t}}
+
+
+Structure for handling output to an A\+S\+C\+II table.  
+
+
+
+
+{\ttfamily \#include $<$Psi\+Interface.\+h$>$}
+
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{structpsiAsciiTableOutput__t_a787f59c8e7319c437d7458d6470654c6}\label{structpsiAsciiTableOutput__t_a787f59c8e7319c437d7458d6470654c6}} 
+int \hyperlink{structpsiAsciiTableOutput__t_a787f59c8e7319c437d7458d6470654c6}{\+\_\+valid}
+\begin{DoxyCompactList}\small\item\em Success or failure of initializing the structure. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structpsiAsciiTableOutput__t_aaccb8efb45387db8b563062beca99825}\label{structpsiAsciiTableOutput__t_aaccb8efb45387db8b563062beca99825}} 
+const char $\ast$ \hyperlink{structpsiAsciiTableOutput__t_aaccb8efb45387db8b563062beca99825}{\+\_\+name}
+\begin{DoxyCompactList}\small\item\em Path to local table or name of message queue. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structpsiAsciiTableOutput__t_a2faf1afb6a1d4410a902d2c2074a8ea9}\label{structpsiAsciiTableOutput__t_a2faf1afb6a1d4410a902d2c2074a8ea9}} 
+int \hyperlink{structpsiAsciiTableOutput__t_a2faf1afb6a1d4410a902d2c2074a8ea9}{\+\_\+type}
+\begin{DoxyCompactList}\small\item\em 0 if \hyperlink{structpsiAsciiTableOutput__t_aaccb8efb45387db8b563062beca99825}{\+\_\+name} is a local table, 1 if it is a message queue. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structpsiAsciiTableOutput__t_aa2c3f77a38c5907c9a4bf37d9483e12f}\label{structpsiAsciiTableOutput__t_aa2c3f77a38c5907c9a4bf37d9483e12f}} 
+\hyperlink{structasciiTable__t}{ascii\+Table\+\_\+t} \hyperlink{structpsiAsciiTableOutput__t_aa2c3f77a38c5907c9a4bf37d9483e12f}{\+\_\+table}
+\begin{DoxyCompactList}\small\item\em Associated output handler for local tables. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structpsiAsciiTableOutput__t_a6d499326c0db9a9d50e55dd5c0147141}\label{structpsiAsciiTableOutput__t_a6d499326c0db9a9d50e55dd5c0147141}} 
+\hyperlink{structpsiOutput__t}{psi\+Output\+\_\+t} \hyperlink{structpsiAsciiTableOutput__t_a6d499326c0db9a9d50e55dd5c0147141}{\+\_\+psi}
+\begin{DoxyCompactList}\small\item\em Associated output handler for queues. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Structure for handling output to an A\+S\+C\+II table. 
+
+Table IO
+
+Handle I/O from/to a local or remote A\+S\+C\+II table either line-\/by-\/line or as an array.
+
+\subsection*{Row-\/by-\/\+Row }
+
+Input by Row Usage\+:
+\begin{DoxyEnumerate}
+\item One-\/time\+: Create file interface by providing either a channel name or a path to a local file. \hyperlink{structpsiAsciiTableInput__t}{psi\+Ascii\+Table\+Input\+\_\+t} fin = psi\+Ascii\+Table\+Input(\char`\"{}file\+\_\+channel\char`\"{}, 1); // channel \hyperlink{structpsiAsciiTableInput__t}{psi\+Ascii\+Table\+Input\+\_\+t} fin = psi\+Ascii\+Table\+Input(\char`\"{}/local/file.\+txt\char`\"{}, 0); // local table
+\item Prepare\+: Allocate space for variables in row (the format in this example is \char`\"{}\%5s \%d \%f\textbackslash{}n\char`\"{} like the output example below). char a\mbox{[}5\mbox{]}; int b; double c;
+\item Receive each row, terminating when receive returns -\/1 (E\+OF or channel closed). int ret = 1; while (ret $>$ 0) \{ ret = at\+\_\+recv\+\_\+row(fin, \&a, \&b, \&c); Do something with the row \}
+\item Cleanup. Call functions to deallocate structures and close files. cleanup\+\_\+pati(\&fin);
+\end{DoxyEnumerate}
+
+Output by Row Usage\+:
+\begin{DoxyEnumerate}
+\item One-\/time\+: Create file interface by providing either a channel name or a path to a local file and a format string for rows. \hyperlink{structpsiAsciiTableOutput__t}{psi\+Ascii\+Table\+Output\+\_\+t} fout = psi\+Ascii\+Table\+Output(\char`\"{}file\+\_\+channel\char`\"{}, // channel \char`\"{}\%5s \%d \%f\textbackslash{}n\char`\"{}, 1); \hyperlink{structpsiAsciiTableOutput__t}{psi\+Ascii\+Table\+Output\+\_\+t} fout = psi\+Ascii\+Table\+Output(\char`\"{}/local/file.\+txt\char`\"{}, // local table \char`\"{}\%5s \%d \%f\textbackslash{}n\char`\"{}, 0);
+\item Send rows to the file by providing entries. Formatting is handled by the interface. If return value is not 0, the send was not succesful. int ret; ret = at\+\_\+send\+\_\+row(fout, \char`\"{}one\char`\"{}, 1, 1.\+0); ret = at\+\_\+send\+\_\+row(fout, \char`\"{}two\char`\"{}, 2, 2.\+0);
+\item Send E\+OF message when done to close the file. ret = at\+\_\+send\+\_\+eof(fout);
+\item Cleanup. Call functions to deallocate structures and close files. cleanup\+\_\+pato(\&fout);
+\end{DoxyEnumerate}
+
+\subsection*{Array }
+
+Input by Array Usage\+:
+\begin{DoxyEnumerate}
+\item One-\/time\+: Create file interface by providing either a channel name or a path to a local file. \hyperlink{structpsiAsciiTableInput__t}{psi\+Ascii\+Table\+Input\+\_\+t} fin = psi\+Ascii\+Table\+Input(\char`\"{}file\+\_\+channel\char`\"{}, 1); // channel \hyperlink{structpsiAsciiTableInput__t}{psi\+Ascii\+Table\+Input\+\_\+t} fin = psi\+Ascii\+Table\+Input(\char`\"{}/local/file.\+txt\char`\"{}, 0); // local table
+\item Prepare\+: Declare pointers for table columns (they will be allocated by the interface once the number of rows is known). char $\ast$a\+Col; int $\ast$b\+Col; double $\ast$c\+Col;
+\item Receive entire table as columns. Return value will be the number of elements in each column (the number of table rows). Negative values indicate errors. int ret = at\+\_\+recv\+\_\+array(fin, \&a, \&b, \&c);
+\item Cleanup. Call functions to deallocate structures and close files. cleanup\+\_\+pati(\&fin);
+\end{DoxyEnumerate}
+
+Output by Array Usage\+:
+\begin{DoxyEnumerate}
+\item One-\/time\+: Create file interface by providing either a channel name or a path to a local file and a format string for rows. \hyperlink{structpsiAsciiTableOutput__t}{psi\+Ascii\+Table\+Output\+\_\+t} fout = psi\+Ascii\+Table\+Output(\char`\"{}file\+\_\+channel\char`\"{}, // channel \char`\"{}\%5s \%d \%f\textbackslash{}n\char`\"{}, 1); \hyperlink{structpsiAsciiTableOutput__t}{psi\+Ascii\+Table\+Output\+\_\+t} fout = psi\+Ascii\+Table\+Output(\char`\"{}/local/file.\+txt\char`\"{}, // local table \char`\"{}\%5s \%d \%f\textbackslash{}n\char`\"{}, 0);
+\item Send columns to the file by providing pointers (or arrays). Formatting is handled by the interface. If return value is not 0, the send was not succesful. char a\+Col\mbox{[}\mbox{]} = \{\char`\"{}one  \char`\"{}, \char`\"{}two  \char`\"{}, \char`\"{}three\char`\"{}\}; \textbackslash{} Each str is of len 5 int b\+Col\mbox{[}3\mbox{]} = \{1, 2, 3\}; float c\+Col\mbox{[}3\mbox{]} = \{1.\+0, 2.\+0, 3.\+0\}; int ret = at\+\_\+send\+\_\+array(fout, a, b, c);
+\item Cleanup. Call functions to deallocate structures and close files. cleanup\+\_\+pato(\&fout); 
+\end{DoxyEnumerate}
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/ubuntu/langmm/cis\+\_\+iterface/cis\+\_\+interface/interface/Psi\+Interface.\+h\end{DoxyCompactItemize}
