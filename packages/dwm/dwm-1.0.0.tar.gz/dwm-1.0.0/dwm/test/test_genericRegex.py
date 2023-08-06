@@ -1,0 +1,3 @@
+genericRegex = [
+    {"pattern": r"^badvalue$"}
+]
