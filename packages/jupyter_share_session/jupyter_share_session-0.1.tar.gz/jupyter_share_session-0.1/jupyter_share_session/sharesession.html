@@ -1,0 +1,60 @@
+{% extends "notebook.html" %}
+{% block stylesheet %} {{super()}} {% endblock %}
+{% block bodyclasses %}notebook_app {{super()}}{% endblock %}
+{% block params %}
+{{super()}}
+data-session-path="{{session_path | urlencode}}"
+data-address-path="{{address_path | urlencode}}"
+{% endblock %}
+{% block headercontainer %} {{super()}} {% endblock headercontainer %}
+{% block header %} {{super()}} {% endblock header %}
+{% block site %} {{super()}} {% endblock %}
+{% block after_site %} {{super()}} {% endblock %}
+{% block script %}
+<script type="text/javascript">
+require([
+    'jquery',
+    'base/js/utils',
+    'base/js/namespace',
+    'services/sessions/session',
+    'notebook/js/savewidget'
+], function(
+    $,
+    utils,
+    Jupyter,
+    session,
+    savewidget
+) {
+    "use strict";
+    var save_prototype_get_model = session.Session.prototype._get_model;
+    session.Session.prototype._get_model = function () {
+        var model = save_prototype_get_model.call(this);
+        model.path= utils.get_body_data("sessionPath");
+        return model;
+    };
+    savewidget.SaveWidget.prototype.update_document_title = function () {
+        var nbname = this.notebook.get_notebook_name();
+        var spath = utils.url_path_split(
+                        utils.get_body_data("sessionPath"))[0];
+        var sname = utils.url_path_split(spath)[1];
+        if (sname != nbname) {
+            document.title = sname + ':' + nbname;
+        } else  {
+            document.title = nbname;
+        }
+    };
+    function _joinpaths() {
+        var addpath = utils.get_body_data("addressPath");
+        var pathname = window.location.pathname;
+        var idx = pathname.indexOf('/',1);
+        var new_url = window.location.origin 
+                + pathname.slice(0,idx+1)
+                + addpath;
+        window.history.replaceState({}, "", new_url);
+    }
+    _joinpaths();
+})
+</script>
+{{super()}}
+{% endblock %}
+
