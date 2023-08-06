@@ -1,0 +1,58 @@
+\hypertarget{structpsiRpc__t}{}\section{psi\+Rpc\+\_\+t Struct Reference}
+\label{structpsiRpc__t}\index{psi\+Rpc\+\_\+t@{psi\+Rpc\+\_\+t}}
+
+
+Remote Procedure Call (R\+PC) structure. Contains information required to coordinate sending/receiving response/requests from/to an R\+PC server/client.  
+
+
+
+
+{\ttfamily \#include $<$Psi\+Interface.\+h$>$}
+
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{structpsiRpc__t_a957a8bcaac05ec113b43b6ba77915ec3}\label{structpsiRpc__t_a957a8bcaac05ec113b43b6ba77915ec3}} 
+\hyperlink{structpsiInput__t}{psi\+Input\+\_\+t} \hyperlink{structpsiRpc__t_a957a8bcaac05ec113b43b6ba77915ec3}{\+\_\+input}
+\begin{DoxyCompactList}\small\item\em Input queue structure. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structpsiRpc__t_a17f0094559da23188f3782d9cca1157a}\label{structpsiRpc__t_a17f0094559da23188f3782d9cca1157a}} 
+\hyperlink{structpsiOutput__t}{psi\+Output\+\_\+t} \hyperlink{structpsiRpc__t_a17f0094559da23188f3782d9cca1157a}{\+\_\+output}
+\begin{DoxyCompactList}\small\item\em Output queue structure. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structpsiRpc__t_a31c6a55cda7c12d643fbe358e429c207}\label{structpsiRpc__t_a31c6a55cda7c12d643fbe358e429c207}} 
+char $\ast$ \hyperlink{structpsiRpc__t_a31c6a55cda7c12d643fbe358e429c207}{\+\_\+in\+Fmt}
+\begin{DoxyCompactList}\small\item\em Format string used for input queue. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structpsiRpc__t_a5f04717309ffe83b639b459d5052ea19}\label{structpsiRpc__t_a5f04717309ffe83b639b459d5052ea19}} 
+char $\ast$ \hyperlink{structpsiRpc__t_a5f04717309ffe83b639b459d5052ea19}{\+\_\+out\+Fmt}
+\begin{DoxyCompactList}\small\item\em Format string used for output queue. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Remote Procedure Call (R\+PC) structure. Contains information required to coordinate sending/receiving response/requests from/to an R\+PC server/client. 
+
+Remote Procedure Call (R\+PC) IO
+
+Handle IO case of a server receiving input from clients, performing some calculation, and then sending a response back to the client.
+
+Server Usage\+:
+\begin{DoxyEnumerate}
+\item One-\/time\+: Create server channels with format specifiers for input and output. \hyperlink{structpsiRpc__t}{psi\+Rpc\+\_\+t} srv = psi\+Rpc\+Server(\char`\"{}srv\+\_\+name\char`\"{}, \char`\"{}\%d\char`\"{}, \char`\"{}\%d \%d\char`\"{});
+\item Prepare\+: Allocate space for recovered variables from request. int a;
+\item Receive request\+: int ret = rpc\+Recv(srv, \&a);
+\item Process\+: Do tasks the server should do with input to produce output. int b = 2$\ast$a; int c = 3$\ast$a;
+\end{DoxyEnumerate}
+\begin{DoxyEnumerate}
+\item Send response\+: ret = rpc\+Send(srv, b, c);
+\end{DoxyEnumerate}
+
+Client Usage\+:
+\begin{DoxyEnumerate}
+\item One-\/time\+: Create client channels to desired server with format specifiers for output and input (should be the same arguments as for the server except for name). \hyperlink{structpsiRpc__t}{psi\+Rpc\+\_\+t} cli = psi\+Rpc\+Client(\char`\"{}cli\+\_\+name\char`\"{}, \char`\"{}\%d\char`\"{}, \char`\"{}\%d \%d\char`\"{});
+\item Prepare\+: Allocate space for recovered variables from response. int b, c;
+\item Call server\+: int ret = rpc\+Call(cli, 1, \&b, \&c);
+\end{DoxyEnumerate}
+
+Clients can also send several requests at once before receiving any responses. This allows the server to be processing the next requests while the client handles the previous response, thereby increasing efficiency. The responses are assumed to be in the same order as the generating requests (i.\+e. first come, first served). 
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/ubuntu/langmm/cis\+\_\+iterface/cis\+\_\+interface/interface/Psi\+Interface.\+h\end{DoxyCompactItemize}
