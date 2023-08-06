@@ -1,0 +1,79 @@
+#!/bin/bash -xe
+
+# Function to run at the end of each rpm build (success and failure)
+# Cleanup temp dir where was stored src.rpm files
+function finalize() {
+    rm -rf ${TOP_DIR}
+}
+
+function setversionandrelease(){
+    UPSTREAMVERSION=$1
+    # version-release e.g 1.0.0-d7f1b849
+    if [[ "$UPSTREAMVERSION" =~ ([^-]*)-(.+) ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+    # semver release candidate 7.0.0.0rc2.dev1
+    elif [[ "$UPSTREAMVERSION" =~ (.*?)\.(0rc.+) ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+    # semver beta milestone 2.0.0.0b4.dev15
+    elif [[ "$UPSTREAMVERSION" =~ (.*?)\.(0b.+) ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+    # semver alpha pre-release 7.0.0.0a1.dev1
+    elif [[ "$UPSTREAMVERSION" =~ (.*?)\.(0a.+) ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+    # 2014.2.dev50.g99bef1f 2.0.1.dev17
+    elif [[ "$UPSTREAMVERSION" =~ (.*?)\.(dev.+) ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+    # 0.10.1.11.ga5f0e3c
+    elif [[ "$UPSTREAMVERSION" =~ (.*?)\.(g.+) ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+    # prerelease, eg. 1.8.0.pre
+  elif [[ "$UPSTREAMVERSION" =~ (.*?)\.pre.* ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+    # Only version e.g. 1.7.3
+    elif [[ "$UPSTREAMVERSION" =~ ^([.0-9]*)$ ]] ; then
+        VERSION=${BASH_REMATCH[1]}
+        # python-alembic version=0.8.2 but tarball is alembic-0.8.2.dev0
+        if [[ "${TARBALL-}" =~ \.dev[0-9]+\. ]] ; then
+            UPSTREAMVERSION=$(echo ${TARBALL} | sed 's/.*-\(.*\).tar.gz/\1/')
+        fi
+    else
+        # e.g. eb6dbe2
+        echo  "WARNING: Couldn't parse VERSION, falling back to 0.0.1"
+        VERSION=0.0.1
+    fi
+    RELEASE=0.$(date --utc "+%Y%m%d%H%M%S").$2
+}
+
+function cleanup_sdist() {
+    # FIXME: gnocchi regenerates config files at sdist time
+    # requiring all BR installed at that time
+    # http://git.openstack.org/cgit/openstack/gnocchi/commit/?id=f34777f1a88536ec3c76a3d4c760a75ecf4a3d5c
+    if [ -f setup.cfg ]; then
+        sed -i 's/pre-hook.build_config = .*//' setup.cfg
+        # FIXME: remove when Sphinx 1.5 update is ready in Pike deps repo
+        sed -i '/warning-is-error/d' setup.cfg
+    fi
+    # FIXME: PBR 2.0 was pushed to Pike but we do not have Pike tags/repo ready
+    if [ -f setup.py ]; then
+        sed -i 's/pbr>=2.0.0/pbr/' setup.py
+    fi
+}
+
+if [ $# = 5 ]; then
+    PROJECT_NAME=$1
+    OUTPUT_DIRECTORY=$2
+    DATA_DIR=$3
+    BASEURL=$4
+    DISTGIT_DIR=$5
+
+    TOP_DIR=$(mktemp -d)
+
+    mkdir -p ${TOP_DIR}/SOURCES ${TOP_DIR}/SPECS $OUTPUT_DIRECTORY
+
+    trap finalize EXIT
+
+    cd ${DATA_DIR}/$PROJECT_NAME
+    git clean -dxf
+else
+    echo "Less than 5 parameters passed, not parsed."
+fi
