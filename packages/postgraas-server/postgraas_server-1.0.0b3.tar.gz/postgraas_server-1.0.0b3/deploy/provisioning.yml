@@ -1,0 +1,52 @@
+---
+- hosts: all
+  sudo: yes
+
+  vars:
+    app_user: postgraas
+
+  tasks:
+  - name: Install base packages
+    apt: name={{ item }} update_cache=yes force=no state=installed
+    with_items:
+    - sudo
+    - build-essential
+    - python-psycopg2
+    - libpq-dev
+    - ntp
+    - htop
+    - git
+    - python-dev
+    - python-pip
+    - python-pycurl
+    - python-virtualenv
+    - supervisor
+    - curl
+
+  - name: installing virtualenv into virtualenv
+    pip:
+      name=virtualenv
+      state=latest
+
+  - name: add backports repository
+    apt_repository: repo='deb http://http.debian.net/debian wheezy-backports main' state=present
+
+  - name: install new kernel from backports
+    apt: name=linux-image-amd64 state=latest default_release=wheezy-backports update_cache=yes
+
+  - name: install docker with evil internetscript
+    shell: curl -sSL https://get.docker.com/ | sh
+
+  - name: add docker group
+    group: name=docker state=present
+
+  - name: add root user to the docker group
+    shell: sudo gpasswd -a {{ ansible_ssh_user }} docker
+
+  - name: create app user in docker group
+    user: name={{ app_user }} shell=/bin/bash groups=docker append=yes
+
+  - authorized_key: user={{ app_user }} key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+  - name: start docker deamon
+    service: name=docker state=started
