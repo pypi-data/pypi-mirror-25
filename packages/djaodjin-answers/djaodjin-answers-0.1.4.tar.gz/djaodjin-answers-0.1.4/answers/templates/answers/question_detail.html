@@ -1,0 +1,103 @@
+{% extends "answers/base.html" %}
+{% load i18n %}
+{% load comments %}
+{% load staticfiles %}
+
+{% block document %}
+<div>
+  <a href="{% url 'answers_list' %}">&lt; {% trans 'All Questions' %}</a>
+</div>
+
+{% if messages %}
+<ul class="messages">
+  {% for message in messages %}
+  <li{% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %}>{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<div>
+  {% if is_following %}
+  <button type="submit" class="dj-answers-unfollow">{% trans 'Unfollow' %}</button>
+  {% else %}
+  <button type="submit" class="dj-answers-follow">{% trans 'Follow' %}</button>
+  {% endif %}
+  {% if is_user_vote %}
+  <div>
+    My vote: {% trans 'Upvote' %}
+  </div>
+  {% else %}
+  <button type="submit" class="dj-answers-upvote">{% trans 'Upvote' %}</button>
+  {% endif %}
+</div>
+
+<div>
+  {% get_comment_count for question as answers_count %}
+  <h2>{{question.title}}</h2>
+  <p>{{question.text}}</p>
+  <em>Asked by {{question.user}}</em>
+  <h4>{{answers_count}} Answers</h4>
+</div>
+<div>
+  {% get_comment_list for question as answer_list %}
+  {% for comment in answer_list %}
+  <div>
+    <a name="c{{ comment.id }}"></a>
+    <div>
+      <h4><a href="{% get_comment_permalink comment %}">#{{ forloop.counter }}</a>&nbsp;{{comment.user}}</h4>
+      <p>
+        {{comment.comment}}
+      </p>
+      <small>{{comment.created_at|date:"M d, Y"}}</small>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if user.is_authenticated %}
+  {% get_comment_form for question as form %}
+  <form action="{% comment_form_target %}" method="POST">
+    <fieldset>
+      <legend>My Answer:</legend>
+      {% csrf_token %}
+      {{ form.honeypot }}
+      {{ form.content_type }}
+      {{ form.object_pk }}
+      {{ form.timestamp }}
+      {{ form.security_hash }}
+      <input type="hidden" name="next" value="{% url 'answers_detail' question.id %}" />
+
+      {{ form.comment }}
+      <input type="submit" value="Submit" id="id_submit" />
+    </fieldset>
+  </form>
+  {% else %}
+  <p>Please <a href="{% url 'auth_login' %}">log in</a> to leave a comment.</p>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block sidebar %}
+<ul>
+<!-- XXX
+    referer: {{question.referer}}
+-->
+  <li>{{ votes_score }} vote{{ votes_score|pluralize }}</li>
+  <li>{{ nb_followers }} follower{{ nb_followers|pluralize }}</li>
+  <li>{{question.created_at|date:"M d, Y"}}</li>
+</ul>
+{% endblock %}
+
+{% block bodyscripts %}
+{{block.super}}
+{% if request|is_broker_manager %}
+<script type="text/javascript" charset="utf-8">
+$(document).ready(function(){
+	$(".dj-answers-actions").djForumQuestion({
+		api_follow: "{% url 'answers_api_follow' best_practice %}",
+		api_unfollow: "{% url 'answers_api_unfollow' best_practice %}",
+		api_upvote: "{% url 'answers_api_upvote' best_practice %}",
+		api_downvote: "{% url 'answers_api_downvote' best_practice %}"
+	});
+</script>
+{% endblock %}
