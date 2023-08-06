@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Conversion</h1>
+            <div class="row">
+                <p>Paste in a permitted link to test conversion to thumbnail, and optionally a JavaScript viewer for a relevant type.</p>
+                <form action="" method="GET">
+                    <div class="col-sm-7 col-md-7">
+
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-addon" id="foreignresource">Foreign resource
+                            </span>
+                            <input type="text" value="{{ form.res_url }}" name="res_url" class="form-control" placeholder="url.to/resource" aria-describedby="foreignresource">
+                        </div>
+
+
+                            <span class="dropdown">
+                                <button class="btn btn-xs dropdown-toggle" type="button" data-toggle="dropdown">
+                                Examples
+                                <span class="caret"></span></button>
+                                <ul class="dropdown-menu">
+                                    {% for path, filename in zoo_examples %}
+                                        <li><a class="zoo-example" data-fn="{{ filename }}" data-url="{{ path }}">{{ filename }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </span>
+                    </div>
+                    <div class="col-sm-4 col-md-4">
+                        <div class="input-group input-group-lg">
+                            <input value="{{ form.thumb_width }}" name="thumb_width" type="text" class="form-control">
+                            <span class="input-group-addon">x</span>
+                            <input value="{{ form.thumb_height }}" name="thumb_height" type="text" class="form-control" placeholder="200">
+                        </div>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-addon" id="sizing-viewer_type">Viewer</span>
+                            <input type="text" value="{{ form.viewer_type }}" name="viewer_type" class="form-control" placeholder="optional: one of PDF, OBJ etc" aria-describedby="sizing-viewer_type">
+                        </div>
+                    </div>
+                    <div class="col-sm-1 col-md-1">
+                        <button style="height: 6em" type="submit" class="btn btn-default btn-lg">&rarr;</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row" style="margin-top: 10px">
+                <div class="col-sm-6">
+                    <img
+                        src="{{ thumb_src }}"
+                        width="{{ form.thumb_width }}"
+                        height="{{ form.thumb_height }}"
+                        omnic-thumb
+                        {% if viewer_src %}
+                            omnic-viewer="{{ form.viewer_type }}"
+                            omnic-viewer-src="{{ viewer_src }}"
+                        {% endif %}
+                    />
+                </div>
+                <div class="col-sm-6">
+                    <h3>Code</h3>
+<pre>
+&lt;img
+    src="{{ thumb_src }}"
+    width="{{ form.thumb_width }}" height="{{ form.thumb_height }}"
+    omnic-thumb {% if viewer_src %}
+    omnic-viewer="{{ form.viewer_type }}"
+    omnic-viewer-src="{{ viewer_src }}" {% endif %}
+/&gt;
+</pre>
+
+
+                {% if ext %}
+                    <a class="btn btn-success btn-lg"
+                        href="/admin/graph/{{ ext }}/">{{ ext }}
+                    </a>
+                {% endif %}
+                </div>
+            </div>
+
+            <h1>Workers</h1>
+            <div class="row" id="workers">
+                {% include "workers.html" %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if viewer_src %}
+    <script src="/viewer/js/viewers.js"></script>
+    <script src="/viewer/js/reload-viewers.js"></script>
+{% endif %}
+<script src="/viewer/js/reload-thumb.js"></script>
+
+<script>
+    window.setURL = function (newURL) {
+    }
+
+    $(document).ready(function () {
+        $('.zoo-example').click(function () {
+            var ext = $(this).attr('data-fn').split('.')[1];
+            var viewer = null;
+
+            // add in PDF viewer for a few types
+            console.log('thsi is ext', ext)
+            if ('odt, doc'.indexOf(ext) !== -1) {
+                viewer = 'PDF';
+            }
+            if ('svg, mol, obj, pdf'.indexOf(ext) !== -1) {
+                viewer = 'PNG';
+            }
+
+            if (viewer) {
+                $('[name=viewer_type]').val(viewer);
+            } else {
+                $('[name=viewer_type]').val('');
+            }
+
+            $('[name=res_url]').val($(this).attr('data-url'));
+            $('form').submit();
+        });
+
+        {% if not update_workers %}
+            return;
+        {% endif %}
+        // Auto-reload workers every 1 second
+        var reloadWorkers = function () {
+            $('#workers').load('/admin/ajax/workers/', function () {
+                console.log('refreshing workers');
+                setTimeout(reloadWorkers, 1000);
+            });
+        };
+        setTimeout(reloadWorkers, 1000);
+    });
+</script>
+
+{% endblock body %}

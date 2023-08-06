@@ -1,0 +1,36 @@
+{% macro file_listing(git_url, git_sha, items) %}
+    {% for item in items %}
+        <div class="omnic-git--item {% if item.type == "directory" %}omnic-git--directory{% endif %}
+        ">
+            {% if item.type == "directory" %}
+                <div class="omnic-git--path">
+                    {{ item.path|basename }}/
+                </div>
+
+                <div class="omnic-git--subdir">
+                    {{ file_listing(git_url, git_sha, item.children) }}
+                </div>
+            {% else %}
+                <div class="omnic-git--preview-thumb">
+                    <img src="{{ git_url|media('thumb.jpg:80x80', git_sha, item.path) }}"
+                        width="80" height="80"
+                        omnic-thumb 
+                    />
+                </div>
+                <div class="omnic-git--path">
+                    {{ item.path|basename }}
+                </div>
+                <div class="omnic-git--size">
+                    {{ item.size }}b
+                </div>
+                <div class="omnic-git--sha">
+                    {{ item.sha }}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+{% endmacro %}
+
+<div class="omnic-git--root">
+    {{ file_listing(root.git_url, root.git_sha, root.children) }}
+</div>
