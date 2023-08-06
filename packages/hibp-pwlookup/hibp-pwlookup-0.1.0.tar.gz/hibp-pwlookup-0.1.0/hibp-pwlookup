@@ -1,0 +1,101 @@
+#!/usr/bin/python3
+"""
+HIBP Password Lookup - local lookup tool for the HIBP password database
+
+HIBP Password Lookup uses a local copy of the Have I been pwned?
+list of password hashes to enable quick local lookups. It allows
+users to check all of the passwords they currently use without the
+risk of leaking them out to a third-party service.
+
+Copyright (C) 2017  Francois Marier <francois@fmarier.org>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import argparse
+import hashlib
+import sys
+
+import psycopg2
+
+VERSION = '0.1.0'
+DBNAME = 'hibp-passwords'
+DBUSER = 'francois'
+
+
+def run_query(dbconnection, pwhash):
+    cur = dbconnection.cursor()
+    try:
+        cur.execute("SELECT EXISTS("
+                    "    SELECT 1 FROM password WHERE hash = %s"
+                    ");", (pwhash,))
+        return cur.fetchone()[0]
+    finally:
+        cur.close()
+
+
+def db_lookup(pwhash):
+    found = False
+    conn = psycopg2.connect("dbname=%s user=%s" % (DBNAME, DBUSER))
+    try:
+        found = run_query(conn, pwhash)
+    finally:
+        conn.close()
+    return found
+
+
+def hash_password(password):
+    encoded_password = password.encode('utf-8')  # Assuming UTF-8 encoding
+    hexdigest = hashlib.sha1(encoded_password).hexdigest()
+    hibp_hash = hexdigest.upper()  # To match HIBP format
+    return hibp_hash
+
+
+def print_result(found):
+    if found:
+        print("""Compromised!
+
+Your password has previously appeared in a data breach. You should consider
+changing it on any site where you have used it.""")
+    else:
+        print("Not found.")
+
+    # PSA for the Have I been pwned? service
+    print()
+    print("""You may want to register your email address on https://haveibeenpwned.com/
+to be notified whenever it appears in a data breach.""")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Local lookup tool for the HIBP password database')
+    parser.add_argument('password', type=str, nargs='?',
+                        help='the password to check (STDIN if missing)')
+    parser.add_argument('-q', '--quiet', dest='quiet', action='store_true',
+                        help='whether or not to output the results')
+    parser.add_argument('-V', '--version', action='version',
+                        version='hibp-pwlookup %s' % VERSION)
+    args = parser.parse_args()
+
+    password = args.password
+    if not password:
+        password = sys.stdin.readline().strip()
+
+    found = db_lookup(hash_password(password))
+    if not args.quiet:
+        print_result(found)
+    return 1 if found else 0
+
+
+exit(main())
