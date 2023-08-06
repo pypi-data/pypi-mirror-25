@@ -1,0 +1,403 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>rucio.rse.protocols.protocol &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for rucio.rse.protocols.protocol</h1><div class="highlight"><pre>
+<span class="c"># Copyright European Organization for Nuclear Research (CERN)</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># You may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at</span>
+<span class="c"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Authors:</span>
+<span class="c"># - Ralph Vigne, &lt;ralph.vigne@cern.ch&gt;, 2012-2014</span>
+<span class="c"># - Cedric Serfon, &lt;cedric.serfon@cern.ch&gt;, 2013-2016</span>
+<span class="c"># - Wen Guan, &lt;wen.guan@cern.ch&gt;, 2014</span>
+<span class="c"># - Cheng-Hsi Chao, &lt;cheng-hsi.chao@cern.ch&gt;, 2014</span>
+
+<span class="kn">import</span> <span class="nn">hashlib</span>
+
+<span class="kn">from</span> <span class="nn">exceptions</span> <span class="k">import</span> <span class="ne">NotImplementedError</span>
+<span class="kn">from</span> <span class="nn">urlparse</span> <span class="k">import</span> <span class="n">urlparse</span>
+
+<span class="kn">from</span> <span class="nn">rucio.common</span> <span class="k">import</span> <span class="n">exception</span>
+<span class="kn">from</span> <span class="nn">rucio.rse</span> <span class="k">import</span> <span class="n">rsemanager</span>
+
+<span class="k">if</span> <span class="n">rsemanager</span><span class="o">.</span><span class="n">CLIENT_MODE</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">rucio.client.replicaclient</span> <span class="k">import</span> <span class="n">ReplicaClient</span>
+
+<span class="k">if</span> <span class="n">rsemanager</span><span class="o">.</span><span class="n">SERVER_MODE</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">rucio.core</span> <span class="k">import</span> <span class="n">replica</span>
+
+
+<div class="viewcode-block" id="RSEProtocol"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol">[docs]</a><span class="k">class</span> <span class="nc">RSEProtocol</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This class is virtual and acts as a base to inherit new protocols from. It further provides some common functionality which applies for the amjority of the protocols.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protocol_attr</span><span class="p">,</span> <span class="n">rse_settings</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initializes the object with information about the referred RSE.</span>
+
+<span class="sd">            :param props: Properties of the reuested protocol</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="n">protocol_attr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renaming</span> <span class="o">=</span> <span class="k">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span> <span class="o">=</span> <span class="k">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rse</span> <span class="o">=</span> <span class="n">rse_settings</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rse</span><span class="p">[</span><span class="s">&#39;deterministic&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">rsemanager</span><span class="o">.</span><span class="n">CLIENT_MODE</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;lfns2pfns&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lfns2pfns_client</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rsemanager</span><span class="o">.</span><span class="n">SERVER_MODE</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_get_path&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_path_nondeterministic_server</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;determinism_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;default&#39;</span>
+
+<div class="viewcode-block" id="RSEProtocol.lfns2pfns"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.lfns2pfns">[docs]</a>    <span class="k">def</span> <span class="nf">lfns2pfns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lfns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Retruns a fully qualified PFN for the file referred by path.</span>
+
+<span class="sd">            :param path: The path to the file.</span>
+
+<span class="sd">            :returns: Fully qualified PFN.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pfns</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">prefix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">prefix</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">prefix</span><span class="p">,</span> <span class="s">&#39;/&#39;</span><span class="p">])</span>
+
+        <span class="n">lfns</span> <span class="o">=</span> <span class="p">[</span><span class="n">lfns</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">lfns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span> <span class="k">else</span> <span class="n">lfns</span>
+        <span class="k">for</span> <span class="n">lfn</span> <span class="ow">in</span> <span class="n">lfns</span><span class="p">:</span>
+            <span class="n">scope</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;scope&#39;</span><span class="p">],</span> <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s">&#39;path&#39;</span> <span class="ow">in</span> <span class="n">lfn</span> <span class="ow">and</span> <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                <span class="n">pfns</span><span class="p">[</span><span class="s">&#39;%s:%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">],</span>
+                                                         <span class="s">&#39;://&#39;</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">],</span>
+                                                         <span class="s">&#39;:&#39;</span><span class="p">,</span>
+                                                         <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">]),</span>
+                                                         <span class="n">prefix</span><span class="p">,</span>
+                                                         <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+                                                         <span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pfns</span><span class="p">[</span><span class="s">&#39;%s:%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">],</span>
+                                                         <span class="s">&#39;://&#39;</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">],</span>
+                                                         <span class="s">&#39;:&#39;</span><span class="p">,</span>
+                                                         <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">]),</span>
+                                                         <span class="n">prefix</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">_get_path</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+                                                         <span class="p">])</span>
+        <span class="k">return</span> <span class="n">pfns</span></div>
+
+    <span class="k">def</span> <span class="nf">__lfns2pfns_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lfns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Provides the path of a replica for non-deterministic sites. Will be assigned to get path by the __init__ method if neccessary.</span>
+
+<span class="sd">            :param scope: list of DIDs</span>
+
+<span class="sd">            :returns: dict with scope:name as keys and PFN as value (in case of errors the Rucio exception si assigned to the key)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">ReplicaClient</span><span class="p">()</span>
+        <span class="n">pfns</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">lfns</span> <span class="o">=</span> <span class="p">[</span><span class="n">lfns</span><span class="p">]</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">lfns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span> <span class="k">else</span> <span class="n">lfns</span>
+        <span class="k">for</span> <span class="n">lfn</span> <span class="ow">in</span> <span class="n">lfns</span><span class="p">:</span>
+            <span class="n">scope</span> <span class="o">=</span> <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;scope&#39;</span><span class="p">]</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">lfn</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+            <span class="n">replicas</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">client</span><span class="o">.</span><span class="n">list_replicas</span><span class="p">([{</span><span class="s">&#39;scope&#39;</span><span class="p">:</span> <span class="n">scope</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">},</span> <span class="p">],</span> <span class="n">schemes</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;scheme&#39;</span><span class="p">],</span> <span class="p">])]</span>  <span class="c"># schemes is used to narrow down the response message.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">replicas</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">pfns</span><span class="p">[</span><span class="s">&#39;%s:%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">exception</span><span class="o">.</span><span class="n">RSEOperationNotSupported</span><span class="p">(</span><span class="s">&#39;This operation can only be performed for files.&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">replicas</span><span class="p">):</span>
+                <span class="n">pfns</span><span class="p">[</span><span class="s">&#39;%s:%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">exception</span><span class="o">.</span><span class="n">RSEOperationNotSupported</span><span class="p">(</span><span class="s">&#39;File not found.&#39;</span><span class="p">)</span>
+            <span class="n">pfns</span><span class="p">[</span><span class="s">&#39;%s:%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">replicas</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;rses&#39;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">rse</span><span class="p">[</span><span class="s">&#39;rse&#39;</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rse</span><span class="p">[</span><span class="s">&#39;rse&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">replicas</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;rses&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">else</span> <span class="n">exception</span><span class="o">.</span><span class="n">RSEOperationNotSupported</span><span class="p">(</span><span class="s">&#39;Replica not found on given RSE.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pfns</span>
+
+    <span class="k">def</span> <span class="nf">_get_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Transforms the logical file name into a PFN.</span>
+<span class="sd">            Suitable for sites implementing the RUCIO naming convention.</span>
+
+<span class="sd">            :param lfn: filename</span>
+<span class="sd">            :param scope: scope</span>
+
+<span class="sd">            :returns: RSE specific URI of the physical file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hstr</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="s">&#39;%s:%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">scope</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;user&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">scope</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;group&#39;</span><span class="p">):</span>
+            <span class="n">scope</span> <span class="o">=</span> <span class="n">scope</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s">&#39;%s/%s/%s/%s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">hstr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">hstr</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_path_nondeterministic_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Provides the path of a replica for non-deterministic sites. Will be assigned to get path by the __init__ method if neccessary. &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">replica</span><span class="o">.</span><span class="n">get_replica</span><span class="p">(</span><span class="n">rse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rse</span><span class="p">[</span><span class="s">&#39;rse&#39;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">rse_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rse</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;path&#39;</span> <span class="ow">in</span> <span class="n">r</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s">&#39;state&#39;</span> <span class="ow">in</span> <span class="n">r</span> <span class="ow">and</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">or</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;UNAVAILABLE&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">exception</span><span class="o">.</span><span class="n">ReplicaUnAvailable</span><span class="p">(</span><span class="s">&#39;Missing path information and state is UNAVAILABLE for replica %s:%s on non-deterministic storage named %s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rse</span><span class="p">[</span><span class="s">&#39;rse&#39;</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">exception</span><span class="o">.</span><span class="n">ReplicaNotFound</span><span class="p">(</span><span class="s">&#39;Missing path information for replica %s:%s on non-deterministic storage named %s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rse</span><span class="p">[</span><span class="s">&#39;rse&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">path</span>
+
+<div class="viewcode-block" id="RSEProtocol.parse_pfns"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.parse_pfns">[docs]</a>    <span class="k">def</span> <span class="nf">parse_pfns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pfns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Splits the given PFN into the parts known by the protocol. It is also checked if the provided protocol supportes the given PFNs.</span>
+
+<span class="sd">            :param pfns: a list of a fully qualified PFNs</span>
+
+<span class="sd">            :returns: dic with PFN as key and a dict with path and name as value</span>
+
+<span class="sd">            :raises RSEFileNameNotSupported: if the provided PFN doesn&#39;t match with the protocol settings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">pfns</span> <span class="o">=</span> <span class="p">[</span><span class="n">pfns</span><span class="p">]</span> <span class="k">if</span> <span class="p">((</span><span class="nb">type</span><span class="p">(</span><span class="n">pfns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">pfns</span><span class="p">)</span> <span class="o">==</span> <span class="n">unicode</span><span class="p">))</span> <span class="k">else</span> <span class="n">pfns</span>
+
+        <span class="k">for</span> <span class="n">pfn</span> <span class="ow">in</span> <span class="n">pfns</span><span class="p">:</span>
+            <span class="n">parsed</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">pfn</span><span class="p">)</span>
+            <span class="n">scheme</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">scheme</span>
+            <span class="n">hostname</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">netloc</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">parsed</span><span class="o">.</span><span class="n">netloc</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">])</span> <span class="k">if</span> <span class="n">parsed</span><span class="o">.</span><span class="n">netloc</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="s">&#39;//&#39;</span> <span class="ow">in</span> <span class="n">parsed</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+                <span class="n">parsed</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">parsed</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;//&#39;</span><span class="p">,</span> <span class="s">&#39;/&#39;</span><span class="p">))</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">path</span>
+
+            <span class="c"># Protect against &#39;lazy&#39; defined prefixes for RSEs in the repository</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;/&#39;</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">hostname</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;localhost&#39;</span><span class="p">:</span>  <span class="c"># In the database empty hostnames are replaced with localhost but for some URIs (e.g. file) a hostname is not included</span>
+                    <span class="k">raise</span> <span class="n">exception</span><span class="o">.</span><span class="n">RSEFileNameNotSupported</span><span class="p">(</span><span class="s">&#39;Invalid hostname: provided </span><span class="se">\&#39;</span><span class="s">%s</span><span class="se">\&#39;</span><span class="s">, expected </span><span class="se">\&#39;</span><span class="s">%s</span><span class="se">\&#39;</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]))</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">port</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">exception</span><span class="o">.</span><span class="n">RSEFileNameNotSupported</span><span class="p">(</span><span class="s">&#39;Invalid port: provided </span><span class="se">\&#39;</span><span class="s">%s</span><span class="se">\&#39;</span><span class="s">, expected </span><span class="se">\&#39;</span><span class="s">%s</span><span class="se">\&#39;</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">]))</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="n">exception</span><span class="o">.</span><span class="n">RSEFileNameNotSupported</span><span class="p">(</span><span class="s">&#39;Invalid prefix: provided </span><span class="se">\&#39;</span><span class="s">%s</span><span class="se">\&#39;</span><span class="s">, expected </span><span class="se">\&#39;</span><span class="s">%s</span><span class="se">\&#39;</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span>
+                                                                                                              <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]))</span>  <span class="c"># len(...)-1 due to the leading &#39;/</span>
+
+            <span class="c"># Spliting parsed.path into prefix, path, filename</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">]</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s">&#39;prefix&#39;</span><span class="p">])[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span> <span class="o">+</span> <span class="n">path</span>
+            <span class="n">ret</span><span class="p">[</span><span class="n">pfn</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;path&#39;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;scheme&#39;</span><span class="p">:</span> <span class="n">scheme</span><span class="p">,</span> <span class="s">&#39;prefix&#39;</span><span class="p">:</span> <span class="n">prefix</span><span class="p">,</span> <span class="s">&#39;port&#39;</span><span class="p">:</span> <span class="n">port</span><span class="p">,</span> <span class="s">&#39;hostname&#39;</span><span class="p">:</span> <span class="n">hostname</span><span class="p">,</span> <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.exists"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Checks if the requested file is known by the referred RSE.</span>
+
+<span class="sd">            :param path: Physical file name</span>
+
+<span class="sd">            :returns: True if the file exists, False if it doesn&#39;t</span>
+
+<span class="sd">            :raises SourceNotFound: if the source file was not found on the referred storage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.connect"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Establishes the actual connection to the referred RSE.</span>
+
+<span class="sd">            :raises RSEAccessDenied: if no connection could be established.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.close"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Closes the connection to RSE.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.get"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Provides access to files stored inside connected the RSE.</span>
+
+<span class="sd">            :param path: Physical file name of requested file</span>
+<span class="sd">            :param dest: Name and path of the files when stored at the client</span>
+
+<span class="sd">            :raises DestinationNotAccessible: if the destination storage was not accessible.</span>
+<span class="sd">            :raises ServiceUnavailable: if some generic error occured in the library.</span>
+<span class="sd">            :raises SourceNotFound: if the source file was not found on the referred storage.</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.put"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.put">[docs]</a>    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">source_dir</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Allows to store files inside the referred RSE.</span>
+
+<span class="sd">            :param source: path to the source file on the client file system</span>
+<span class="sd">            :param target: path to the destination file on the storage</span>
+<span class="sd">            :param source_dir: Path where the to be transferred files are stored in the local file system</span>
+
+<span class="sd">            :raises DestinationNotAccessible: if the destination storage was not accessible.</span>
+<span class="sd">            :raises ServiceUnavailable: if some generic error occured in the library.</span>
+<span class="sd">            :raises SourceNotFound: if the source file was not found on the referred storage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.delete"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Deletes a file from the connected RSE.</span>
+
+<span class="sd">            :param path: path to the to be deleted file</span>
+
+<span class="sd">            :raises ServiceUnavailable: if some generic error occured in the library.</span>
+<span class="sd">            :raises SourceNotFound: if the source file was not found on the referred storage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.rename"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.rename">[docs]</a>    <span class="k">def</span> <span class="nf">rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Allows to rename a file stored inside the connected RSE.</span>
+
+<span class="sd">            :param path: path to the current file on the storage</span>
+<span class="sd">            :param new_path: path to the new file on the storage</span>
+
+<span class="sd">            :raises DestinationNotAccessible: if the destination storage was not accessible.</span>
+<span class="sd">            :raises ServiceUnavailable: if some generic error occured in the library.</span>
+<span class="sd">            :raises SourceNotFound: if the source file was not found on the referred storage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.get_space_usage"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.get_space_usage">[docs]</a>    <span class="k">def</span> <span class="nf">get_space_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Get RSE space usage information.</span>
+
+<span class="sd">            :returns: a list with dict containing &#39;totalsize&#39; and &#39;unusedsize&#39;</span>
+
+<span class="sd">            :raises ServiceUnavailable: if some generic error occured in the library.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="RSEProtocol.stat"><a class="viewcode-back" href="../../../../rse.html#rucio.rse.protocols.protocol.RSEProtocol.stat">[docs]</a>    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Returns the stats of a file.</span>
+
+<span class="sd">            :param path: path to file</span>
+
+<span class="sd">            :raises ServiceUnavailable: if some generic error occured in the library.</span>
+<span class="sd">            :raises SourceNotFound: if the source file was not found on the referred storage.</span>
+
+<span class="sd">            :returns: a dict with two keys, filesize and adler32 of the file provided in path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="../../../../_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
