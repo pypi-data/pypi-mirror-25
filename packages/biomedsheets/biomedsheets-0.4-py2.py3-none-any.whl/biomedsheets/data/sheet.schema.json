@@ -1,0 +1,165 @@
+{
+    "id": "http://biosheets.github.io/base-schema#",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Schema for describing BioMed Sheet objects",
+
+    "type": "object",
+
+    "required": [ "id" ],
+
+    "additionalProperties": false,
+
+    "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "extraInfo": {
+            "type": "object"
+        },
+        "bioEntities": {
+            "type": "object",
+            "patternProperties": {
+                "^.*$": { "$ref": "#/definitions/bioEntity" }
+            },
+            "additionalProperties": false,
+            "default": {}
+        },
+        "extraInfoDefs": {
+            "type": "object",
+            "properties": {
+                "sheet": { "$ref": "#/definitions/extraInfoDef" },
+                "bioEntity": { "$ref": "#/definitions/extraInfoDef" },
+                "bioSample": { "$ref": "#/definitions/extraInfoDef" },
+                "testSample": { "$ref": "#/definitions/extraInfoDef" },
+                "ngsLibrary": { "$ref": "#/definitions/extraInfoDef" }
+            }
+        }
+    },
+
+    "definitions": {
+        "bioEntity": {
+            "type": "object",
+            "required": [ "pk" ],
+            "additionalProperties": false,
+            "properties": {
+                "pk": { "type": "string" },
+                "disabled": { "type": "boolean", "default": false },
+                "extraIds": { "$ref": "#/definitions/extraIds" },
+                "bioSamples": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^.*$": { "$ref": "#/definitions/bioSample" }
+                    },
+                    "additionalProperties": false,
+                    "default": {}
+                },
+                "ignore": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "extraInfo": {
+                    "type": "object"
+                }
+            }
+        },
+        "bioSample": {
+            "type": "object",
+            "required": [ "pk" ],
+            "additionalProperties": false,
+            "properties": {
+                "pk": { "type": "string" },
+                "disabled": { "type": "boolean", "default": false },
+                "extraIds": { "$ref": "#/definitions/extraIds" },
+                "testSamples": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^.*$": { "$ref": "#/definitions/testSample" }
+                    },
+                    "additionalProperties": false,
+                    "default": {}
+                },
+                "ignore": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "extraInfo": {
+                    "type": "object"
+                }
+            }
+        },
+        "testSample": {
+            "type": "object",
+            "required": [ "pk" ],
+            "additionalProperties": false,
+            "properties": {
+                "pk": { "type": "string" },
+                "disabled": { "type": "boolean", "default": false },
+                "extraIds": { "$ref": "#/definitions/extraIds" },
+                "ngsLibraries": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^.*$": { "$ref": "#/definitions/ngsLibrary" }
+                    },
+                    "uniqueItems": true,
+                    "default": []
+                },
+                "ignore": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "extraInfo": {
+                    "type": "object"
+                }
+            }
+        },
+        "ngsLibrary": {
+            "type": "object",
+            "required": [ "pk" ],
+            "additionalProperties": false,
+            "properties": {
+                "pk": { "type": "string" },
+                "disabled": { "type": "boolean", "default": false },
+                "extraIds": { "$ref": "#/definitions/extraIds" },
+                "ignore": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "extraInfo": {
+                    "type": "object"
+                }
+            }
+        },
+        "extraInfoDef": {
+            "type": "object",
+            "required": [ "type" ],
+            "properties": {
+                "docs": { "type": "string" },
+                "type": {
+                    "enum": [
+                        "boolean", "string", "integer", "number", "enum",
+                        "object", "array"
+                    ]
+                },
+                "entry": {
+                    "enum": [
+                        "boolean", "string", "integer", "number"
+                    ]
+                },
+                "unit": { "type": "string" },
+                "minimum": { "type": "number" },
+                "maximum": { "type": "number" },
+                "pattern": { "type": "string" },
+                "choices": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            }
+        },
+        "extraIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true,
+            "default": []
+        }
+    }
+}
