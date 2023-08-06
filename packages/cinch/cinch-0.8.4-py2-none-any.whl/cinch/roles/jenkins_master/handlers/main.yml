@@ -1,0 +1,25 @@
+- name: restart nginx
+  systemd:
+    name: nginx
+    state: restarted
+
+- name: update certificate chains
+  command: /usr/bin/update-ca-trust extract
+
+- name: restart Jenkins
+  service:
+    name: jenkins
+    state: restarted
+
+- name: restart Jenkins during upgrade
+  service:
+    name: jenkins
+    state: restarted
+  when: jenkins_upgrade
+
+# Reload firewalld by running command, since the firewalld module doesn't
+# support the functionality to reload rules.
+- name: reload firewalld
+  command: firewall-cmd --reload
+  tags:
+    - skip_ansible_lint
