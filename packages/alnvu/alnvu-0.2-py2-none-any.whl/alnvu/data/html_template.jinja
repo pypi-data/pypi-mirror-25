@@ -1,0 +1,96 @@
+{% if not tableonly %}
+<html>
+<body>
+{% endif %}
+<style type="text/css">
+  table.alnvu {font-family: monospace; border-collapse: collapse}
+  table.alnvu th, table.alnvu td {padding: 0}
+  table.alnvu tr.sitenum td {background-color: white}
+  table.alnvu tr.sitenum td.pound {padding-right: 10px; text-align: right}
+  table.alnvu tr.reference td {font-weight: bold}
+  table.alnvu th.seqname, table.alnvu {padding-right: 10px}
+  td.seqname {padding-right: 10px; text-align: right; white-space: nowrap}
+
+  {# character color definitions #}
+  {% if colors %}
+    span {background-color: black;color: white;}
+    {% for key, value in colors.items() %}
+      {# classes are case-insensitive, so work around that #}
+      {% if key == key|upper %}
+        span.{{key}}up {color: {{value}};}
+      {% else %}
+        span.{{key}} {color: {{value}};}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {# Auto insert colors for annotations #}
+  /* Column color specifications - Feel free to modify as you wish */
+  {% if annotations -%}
+  {% for _, group, color  in annotations.iterate(seqlist[0]) -%}
+  {% if group -%}
+  table.alnvu col.{{group}} {background-color: {{color}} }
+  {%- endif %}
+  {# Want newlines between #}
+  {% endfor %}
+  {%- endif %}
+</style>
+
+<table class='alnvu'>
+
+  <col class='seqname' />
+  {% if annotations -%}
+  {% for _, group, _  in annotations.iterate(seqlist[0]) -%}
+  {% if group -%}
+  <col class="{{group}}" />
+  {% else -%}
+  <col />
+  {%- endif %}
+  {% endfor %}
+  {%- else %}
+  {# If no annotations, just insert directly #}
+  <col />
+  {%- endif %}
+
+  {# Insert numbering rows #}
+  {% for numrow in vnumstrs -%}
+  <tr class='sitenum'>
+    <td class='pound'>#</td>
+    {% if annotations -%}
+      {% for block, _, _  in annotations.iterate(numrow) -%}
+      {# If annotations, insert a column for each block #}
+      <td>{{ block }}</td>
+      {%- endfor %}
+    {% else -%}
+    {# If no annotations, just insert directly #}
+    <td>{{ numrow }}</td>
+    {%- endif %}
+  </tr>
+  {% endfor %}
+
+  {# Insert sequences #}
+  {% for seq in seqlist -%}
+  <tr {{ "class='reference'" if seq.reference }}>
+    {# add 'reference' class if the sequence is the reference sequence. Used for bolding. #}
+    <td class='seqname'>{{ seq.name }}</td>
+    {% if annotations -%}
+      {% for block, _, _  in annotations.iterate(seq.seq) -%}
+      {# If annotations, insert a column for each block #}
+      <td>{{ block }}</td>
+      {%- endfor %}
+    {%- elif colors %}
+      {# Set character colors (including uppercase, if specified) #}
+      <td>{{ seq.seq|regex_replace('(.)', '<span class="\\1">\\1</span>')|regex_replace('(class=")([A-Z])(")', '\\1\\2up\\3') }}</td>
+    {%- else %}
+    {# If no annotations or colors, just insert directly #}
+    <td>{{ seq.seq }}</td>
+    {%- endif %}
+  </tr>
+  {% endfor %}
+
+</table>
+
+{% if not tableonly %}
+</body>
+</html>
+{% endif %}
