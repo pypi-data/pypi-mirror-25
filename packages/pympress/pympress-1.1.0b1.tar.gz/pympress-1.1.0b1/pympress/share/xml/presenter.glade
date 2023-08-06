@@ -1,0 +1,951 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.20.0 -->
+<interface>
+  <requires lib="gtk+" version="3.2"/>
+  <object class="GtkSizeGroup" id="previews_sizegroup"/>
+  <object class="GtkRecentFilter" id="recent_filter">
+    <mime-types>
+      <mime-type>application/pdf</mime-type>
+    </mime-types>
+  </object>
+  <object class="GtkAdjustment" id="spin_adjust">
+    <property name="lower">1</property>
+    <property name="upper">1</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">1</property>
+  </object>
+  <object class="GtkWindow" id="p_win">
+    <property name="name">p_win</property>
+    <property name="can_focus">False</property>
+    <property name="events">GDK_POINTER_MOTION_MASK | GDK_KEY_PRESS_MASK | GDK_STRUCTURE_MASK | GDK_SCROLL_MASK</property>
+    <property name="title" translatable="yes">pympress presenter</property>
+    <property name="window_position">center</property>
+    <signal name="configure-event" handler="on_configure_win" swapped="no"/>
+    <signal name="delete-event" handler="save_and_quit" swapped="no"/>
+    <signal name="destroy" handler="save_and_quit" swapped="no"/>
+    <signal name="drag-data-received" handler="on_drag_drop" swapped="no"/>
+    <signal name="key-press-event" handler="on_navigation" swapped="no"/>
+    <signal name="scroll-event" handler="on_scroll" swapped="no"/>
+    <signal name="window-state-event" handler="on_window_state_event" swapped="no"/>
+    <child>
+      <object class="GtkBox" id="bigvbox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkMenuBar" id="menu_bar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkMenuItem" id="menu_file">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">_File</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="file_open">
+                        <property name="label">gtk-open</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="pick_file" swapped="no"/>
+                        <accelerator key="o" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="file_recent">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Open _Recent</property>
+                        <property name="use_underline">True</property>
+                        <child type="submenu">
+                          <object class="GtkRecentChooserMenu" id="menu_recent">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="filter">recent_filter</property>
+                            <property name="limit">10</property>
+                            <property name="sort_type">mru</property>
+                            <signal name="item-activated" handler="recent_document" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="file_close">
+                        <property name="label">gtk-close</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="close_file" swapped="no"/>
+                        <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="file_quit">
+                        <property name="label">gtk-quit</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="save_and_quit" swapped="no"/>
+                        <accelerator key="q" signal="activate"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="menu_pres">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">_Presentation</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="pres_pause">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Pause timer</property>
+                        <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                        <signal name="toggled" handler="talk_time.switch_pause" swapped="no"/>
+                        <accelerator key="p" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="pres_reset">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Reset timer</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="talk_time.reset_timer" swapped="no"/>
+                        <accelerator key="r" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="pres_ett">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Set talk _Time</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="est_time.on_label_event" swapped="no"/>
+                        <accelerator key="t" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="pres_fullscreen">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Fullscreen</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="switch_fullscreen" swapped="no"/>
+                        <accelerator key="f" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="pres_swap">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Swap screens</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="swap_screens" swapped="no"/>
+                        <accelerator key="s" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="pres_notes">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Notes mode</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="switch_mode" swapped="no"/>
+                        <accelerator key="n" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="pres_blank">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Blank screen</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="switch_blanked" swapped="no"/>
+                        <accelerator key="b" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="pres_align">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Align content</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="adjust_frame_position" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="pres_annot">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Annotations</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="switch_annotations" swapped="no"/>
+                        <accelerator key="a" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="pres_buttons">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Big buttons</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="switch_bigbuttons" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="pres_highlight">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Highlight</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="scribbler.switch_scribbling" swapped="no"/>
+                        <accelerator key="h" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="pres_pointer">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Pointer</property>
+                        <child type="submenu">
+                          <object class="GtkMenu">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkRadioMenuItem" id="pointer_red">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">_Red</property>
+                                <property name="use_underline">True</property>
+                                <property name="draw_as_radio">True</property>
+                                <property name="group">pointer_none</property>
+                                <signal name="toggled" handler="laser.change_pointer" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkRadioMenuItem" id="pointer_green">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">_Green</property>
+                                <property name="use_underline">True</property>
+                                <property name="draw_as_radio">True</property>
+                                <property name="group">pointer_none</property>
+                                <signal name="toggled" handler="laser.change_pointer" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkRadioMenuItem" id="pointer_blue">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">_Blue</property>
+                                <property name="use_underline">True</property>
+                                <property name="draw_as_radio">True</property>
+                                <property name="group">pointer_none</property>
+                                <signal name="toggled" handler="laser.change_pointer" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkRadioMenuItem" id="pointer_none">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">_Disabled</property>
+                                <property name="use_underline">True</property>
+                                <property name="draw_as_radio">True</property>
+                                <signal name="toggled" handler="laser.change_pointer" swapped="no"/>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="menu_nav">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">_Navigation</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkMenuItem" id="nav_next">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Next</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="doc.goto_next" swapped="no"/>
+                        <accelerator key="Right" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="nav_prev">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Previous</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="doc.goto_prev" swapped="no"/>
+                        <accelerator key="Left" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="nav_first">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_First</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="doc.goto_home" swapped="no"/>
+                        <accelerator key="Home" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="nav_last">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Last</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="doc.goto_end" swapped="no"/>
+                        <accelerator key="End" signal="activate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="nav_goto">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">_Go to...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="page_number.on_label_event" swapped="no"/>
+                        <accelerator key="g" signal="activate"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="menu_start">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">_Starting Configuration</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="start_blanked">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Content blanked</property>
+                        <property name="use_underline">True</property>
+                        <property name="name">content.start_blanked</property>
+                        <signal name="toggled" handler="config.toggle_start" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="start_cwin_full">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Content fullscreen</property>
+                        <property name="use_underline">True</property>
+                        <property name="name">content.start_fullscreen</property>
+                        <signal name="toggled" handler="config.toggle_start" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="start_pwin_full">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Presenter fullscreen</property>
+                        <property name="use_underline">True</property>
+                        <property name="name">presenter.start_fullscreen</property>
+                        <signal name="toggled" handler="config.toggle_start" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="menu_help">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="right_justified">True</property>
+                <property name="label" translatable="yes">_Help</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="help_about">
+                        <property name="label">gtk-about</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="menu_about" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="p_central">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkPaned" id="hpaned">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="events">GDK_BUTTON_RELEASE_MASK</property>
+                <property name="margin_left">5</property>
+                <property name="margin_right">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="position">600</property>
+                <property name="position_set">True</property>
+                <signal name="notify::position" handler="on_pane_event" swapped="no"/>
+                <signal name="button-release-event" handler="on_pane_event" swapped="no"/>
+                <property name="wide_handle">True</property>
+                <child>
+                  <object class="GtkAspectFrame" id="p_frame_notes">
+                    <property name="name">p_frame_notes</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="margin_right">5</property>
+                    <property name="label_xalign">0</property>
+                    <property name="shadow_type">in</property>
+                    <property name="ratio">1.3300000429153442</property>
+                    <property name="obey_child">False</property>
+                    <child>
+                      <object class="GtkDrawingArea" id="p_da_notes">
+                        <property name="name">p_da_notes</property>
+                        <property name="visible">True</property>
+                        <property name="app_paintable">True</property>
+                        <property name="can_focus">False</property>
+                        <signal name="configure-event" handler="on_configure_da" swapped="no"/>
+                        <signal name="draw" handler="on_draw" swapped="no"/>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel" id="label422">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Notes</property>
+                        <property name="use_markup">True</property>
+                        <style>
+                          <class name="frame-label"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkPaned" id="vpaned">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="orientation">vertical</property>
+                    <property name="position">11</property>
+                    <property name="position_set">True</property>
+                    <property name="wide_handle">True</property>
+                    <signal name="button-release-event" handler="on_pane_event" swapped="no"/>
+                    <signal name="notify::position" handler="on_pane_event" swapped="no"/>
+                    <child>
+                      <object class="GtkBox" id="right_pane">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="margin_left">5</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkAspectFrame" id="p_frame_cur">
+                            <property name="name">p_frame_current</property>
+                            <property name="height_request">200</property>
+                            <property name="can_focus">False</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">in</property>
+                            <property name="yalign">0</property>
+                            <property name="ratio">1.3300000429153442</property>
+                            <property name="obey_child">False</property>
+                            <child>
+                              <object class="GtkDrawingArea" id="p_da_cur">
+                                <property name="name">p_da_cur</property>
+                                <property name="visible">True</property>
+                                <property name="app_paintable">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
+                                <signal name="button-press-event" handler="track_clicks" swapped="no"/>
+                                <signal name="button-release-event" handler="track_clicks" swapped="no"/>
+                                <signal name="configure-event" handler="on_configure_da" swapped="no"/>
+                                <signal name="draw" handler="on_draw" swapped="no"/>
+                                <signal name="motion-notify-event" handler="track_motions" swapped="no"/>
+                              </object>
+                            </child>
+                            <child type="label">
+                              <object class="GtkLabel" id="label420">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Current slide</property>
+                                <property name="use_markup">True</property>
+                                <style>
+                                  <class name="frame-label"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkAspectFrame" id="p_frame_next">
+                            <property name="name">p_frame_next</property>
+                            <property name="height_request">200</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">in</property>
+                            <property name="yalign">0</property>
+                            <property name="ratio">1.3300000429153442</property>
+                            <property name="obey_child">False</property>
+                            <child>
+                              <object class="GtkDrawingArea" id="p_da_next">
+                                <property name="name">p_da_next</property>
+                                <property name="visible">True</property>
+                                <property name="app_paintable">True</property>
+                                <property name="can_focus">False</property>
+                                <signal name="configure-event" handler="on_configure_da" swapped="no"/>
+                                <signal name="draw" handler="on_draw" swapped="no"/>
+                              </object>
+                            </child>
+                            <child type="label">
+                              <object class="GtkLabel" id="label421">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Next slide</property>
+                                <property name="use_markup">True</property>
+                                <style>
+                                  <class name="frame-label"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="resize">True</property>
+                        <property name="shrink">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFrame" id="p_frame_annot">
+                        <property name="name">p_frame_annotations</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label_xalign">0</property>
+                        <property name="shadow_type">in</property>
+                        <signal name="configure-event" handler="annotations.on_configure_annot" swapped="no"/>
+                        <child>
+                          <object class="GtkScrolledWindow" id="scrolled_window">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="min_content_width">10</property>
+                            <property name="min_content_height">10</property>
+                            <child>
+                              <object class="GtkTreeView" id="scrollable_treelist">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="headers_visible">False</property>
+                                <property name="headers_clickable">False</property>
+                                <property name="enable_search">False</property>
+                                <property name="show_expanders">False</property>
+                                <child internal-child="selection">
+                                  <object class="GtkTreeSelection" id="treeview-selection1">
+                                    <property name="mode">none</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child type="label">
+                          <object class="GtkLabel" id="label4">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Annotations</property>
+                            <property name="use_markup">True</property>
+                            <style>
+                              <class name="frame-label"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="resize">True</property>
+                        <property name="shrink">True</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="padding">1</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="bottom">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkButton" id="prev_button">
+                <property name="label">gtk-go-back</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="margin_top">10</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="doc.goto_prev" swapped="no"/>
+                <style>
+                  <class name="info-label"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="padding">2</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="frame_cur">
+                <property name="width_request">200</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">out</property>
+                <child>
+                  <object class="GtkEventBox" id="eb_cur">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="receives_default">True</property>
+                    <signal name="event" handler="page_number.on_label_event" swapped="no"/>
+                    <child>
+                      <object class="GtkBox" id="hb_cur">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="homogeneous">True</property>
+                        <child>
+                          <object class="GtkSpinButton" id="spin_cur">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">1</property>
+                            <property name="adjustment">spin_adjust</property>
+                            <property name="climb_rate">1</property>
+                            <property name="snap_to_ticks">True</property>
+                            <property name="numeric">True</property>
+                            <property name="update_policy">if-valid</property>
+                            <signal name="changed" handler="page_preview" swapped="no"/>
+                            <signal name="insert-text" handler="page_preview" swapped="no"/>
+                            <signal name="key-press-event" handler="page_number.on_keypress" swapped="no"/>
+                            <signal name="key-release-event" handler="page_number.on_keypress" swapped="no"/>
+                            <style>
+                              <class name="big-info-label"/>
+                            </style>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label_cur">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="label">0</property>
+                            <property name="justify">right</property>
+                            <property name="single_line_mode">True</property>
+                            <property name="track_visited_links">False</property>
+                            <style>
+                              <class name="big-info-label"/>
+                            </style>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label_last">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">start</property>
+                            <property name="label">/0</property>
+                            <property name="track_visited_links">False</property>
+                            <style>
+                              <class name="big-info-label"/>
+                            </style>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="slide_number">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Slide number</property>
+                    <property name="use_markup">True</property>
+                    <style>
+                      <class name="frame-label"/>
+                    </style>
+                  </object>
+                </child>
+                <style>
+                  <class name="big-info-label"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="next_button">
+                <property name="label">gtk-go-forward</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="margin_top">10</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="doc.goto_next" swapped="no"/>
+                <style>
+                  <class name="info-label"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="padding">2</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="highlight_button">
+                <property name="label" translatable="yes">Highlight</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="margin_top">10</property>
+                <style>
+                  <class name="info-label"/>
+                </style>
+                <signal name="clicked" handler="scribbler.switch_scribbling" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="padding">2</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="frame_time">
+                <property name="width_request">170</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_left">1</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkLabel" id="label_time">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label">00:00</property>
+                    <style>
+                      <class name="big-info-label"/>
+                    </style>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="framelabel_time">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Time elapsed</property>
+                    <property name="use_markup">True</property>
+                    <style>
+                      <class name="frame-label"/>
+                    </style>
+                  </object>
+                </child>
+                <style>
+                  <class name="big-info-label"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="frame_ett">
+                <property name="width_request">170</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkEventBox" id="eb_ett">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <signal name="button-press-event" handler="est_time.on_label_event" swapped="no"/>
+                    <signal name="key-press-event" handler="est_time.on_keypress" swapped="no"/>
+                    <child>
+                      <object class="GtkLabel" id="label_ett">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">00:00</property>
+                        <style>
+                          <class name="info-label"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="framelabel_ett">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Time estimation</property>
+                    <property name="use_markup">True</property>
+                    <style>
+                      <class name="frame-label"/>
+                    </style>
+                  </object>
+                </child>
+                <style>
+                  <class name="info-label"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="frame_clock">
+                <property name="width_request">170</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkLabel" id="label_clock">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label">00:00</property>
+                    <style>
+                      <class name="info-label"/>
+                    </style>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="framelabel_clock">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Clock</property>
+                    <property name="use_markup">True</property>
+                    <style>
+                      <class name="frame-label"/>
+                    </style>
+                  </object>
+                </child>
+                <style>
+                  <class name="info-label"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">6</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
