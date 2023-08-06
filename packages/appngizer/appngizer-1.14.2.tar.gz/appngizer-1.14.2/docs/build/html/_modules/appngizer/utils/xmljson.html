@@ -1,0 +1,462 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>appngizer.utils.xmljson &mdash; appngizer 1.14.2 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="appngizer 1.14.2 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../../index.html" class="fa fa-home"> appngizer</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes.html#version-1-14-2">Version 1.14.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes.html#version-1-14-1">Version 1.14.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changes.html#version-1-14-0">Version 1.14.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">Module Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/appngizer.html">appngizer package</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">appngizer</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>appngizer.utils.xmljson</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for appngizer.utils.xmljson</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">lxml.etree</span> <span class="k">import</span> <span class="n">Element</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">xml.etree.cElementTree</span> <span class="k">import</span> <span class="n">Element</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;S Anand&#39;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s">&#39;root.node@gmail.com&#39;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&#39;0.1.9&#39;</span>
+
+<span class="c"># Python 3: define unicode() as str()</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+    <span class="n">unicode</span> <span class="o">=</span> <span class="nb">str</span>
+    <span class="n">basestring</span> <span class="o">=</span> <span class="nb">str</span>
+
+
+<div class="viewcode-block" id="XMLData"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.XMLData">[docs]</a><span class="k">class</span> <span class="nc">XMLData</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xml_fromstring</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">xml_tostring</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">dict_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span>
+                 <span class="n">list_type</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">attr_prefix</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">text_content</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">simple_text</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="c"># xml_fromstring == False(y) =&gt; &#39;1&#39; -&gt; &#39;1&#39;</span>
+        <span class="c"># xml_fromstring == True     =&gt; &#39;1&#39; -&gt; 1</span>
+        <span class="c"># xml_fromstring == fn       =&gt; &#39;1&#39; -&gt; fn(1)</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">xml_fromstring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span> <span class="o">=</span> <span class="n">xml_fromstring</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">xml_fromstring</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span>
+        <span class="c"># custom conversion function to convert data string to XML string</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">xml_tostring</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tostring</span> <span class="o">=</span> <span class="n">xml_tostring</span>
+        <span class="c"># custom etree.Element to use</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element</span> <span class="o">=</span> <span class="n">Element</span> <span class="k">if</span> <span class="n">element</span> <span class="ow">is</span> <span class="k">None</span> <span class="k">else</span> <span class="n">element</span>
+        <span class="c"># dict constructor (e.g. OrderedDict, defaultdict)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict</span> <span class="o">=</span> <span class="n">OrderedDict</span> <span class="k">if</span> <span class="n">dict_type</span> <span class="ow">is</span> <span class="k">None</span> <span class="k">else</span> <span class="n">dict_type</span>
+        <span class="c"># list constructor (e.g. UserList)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="nb">list</span> <span class="k">if</span> <span class="n">list_type</span> <span class="ow">is</span> <span class="k">None</span> <span class="k">else</span> <span class="n">list_type</span>
+        <span class="c"># Prefix attributes with a string (e.g. &#39;$&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr_prefix</span> <span class="o">=</span> <span class="n">attr_prefix</span>
+        <span class="c"># Key that stores text content (e.g. &#39;$t&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span> <span class="o">=</span> <span class="n">text_content</span>
+        <span class="c"># simple_text == False or None or 0 =&gt; &#39;&lt;x&gt;a&lt;/x&gt;&#39; = {&#39;x&#39;: {&#39;a&#39;: {}}}</span>
+        <span class="c"># simple_text == True               =&gt; &#39;&lt;x&gt;a&lt;/x&gt;&#39; = {&#39;x&#39;: &#39;a&#39;}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simple_text</span> <span class="o">=</span> <span class="n">simple_text</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_tostring</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert value to XML compatible string&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="k">True</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="s">&#39;true&#39;</span>
+        <span class="k">elif</span> <span class="n">value</span> <span class="ow">is</span> <span class="k">False</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="s">&#39;false&#39;</span>
+        <span class="k">return</span> <span class="n">unicode</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>       <span class="c"># noqa: convert to whatever native unicode repr</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_fromstring</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert XML string value to None, boolean, int or float&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">None</span>
+        <span class="n">std_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">std_value</span> <span class="o">==</span> <span class="s">&#39;true&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">elif</span> <span class="n">std_value</span> <span class="o">==</span> <span class="s">&#39;false&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">std_value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">std_value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="XMLData.etree"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.XMLData.etree">[docs]</a>    <span class="k">def</span> <span class="nf">etree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert data structure into a list of etree.Element&#39;&#39;&#39;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">()</span> <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="k">None</span> <span class="k">else</span> <span class="n">root</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">value_is_list</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span>
+                <span class="n">value_is_dict</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">))</span>
+                <span class="c"># Add attributes and text to result (if root)</span>
+                <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                    <span class="c"># Handle attribute prefixes (BadgerFish)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attr_prefix</span><span class="p">):</span>
+                            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attr_prefix</span><span class="p">)</span>
+                            <span class="c"># @xmlns: {$: xxx, svg: yyy} becomes xmlns=&quot;xxx&quot; xmlns:svg=&quot;yyy&quot;</span>
+                            <span class="k">if</span> <span class="n">value_is_dict</span><span class="p">:</span>
+                                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;XML namespaces not yet supported&#39;</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">result</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tostring</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+                            <span class="k">continue</span>
+                    <span class="c"># Handle text content (BadgerFish, GData)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">:</span>
+                            <span class="n">result</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tostring</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                            <span class="k">continue</span>
+                    <span class="c"># Treat scalars as text content, not children (GData)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_prefix</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">value_is_dict</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value_is_list</span><span class="p">:</span>
+                            <span class="n">result</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tostring</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+                            <span class="k">continue</span>
+                <span class="c"># Add other keys as one or more children</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">value</span> <span class="k">if</span> <span class="n">value_is_list</span> <span class="k">else</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                    <span class="n">elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">element</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+                    <span class="c"># Treat scalars as text content, not children (Parker)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">:</span>
+                            <span class="n">value</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">:</span> <span class="n">value</span><span class="p">}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">etree</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">elem</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">is</span> <span class="k">None</span> <span class="ow">and</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+                <span class="n">root</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tostring</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">element</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tostring</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="XMLData.data"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.XMLData.data">[docs]</a>    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert etree.Element into a dictionary&#39;&#39;&#39;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+        <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">attrval</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="n">attr</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_prefix</span> <span class="ow">is</span> <span class="k">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_prefix</span> <span class="o">+</span> <span class="n">attr</span>
+            <span class="n">value</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">attrval</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">text</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simple_text</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">count</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">())</span>
+                <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">child</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">([(</span><span class="n">root</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">value</span><span class="p">)])</span></div></div>
+
+
+<div class="viewcode-block" id="BadgerFish"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.BadgerFish">[docs]</a><span class="k">class</span> <span class="nc">BadgerFish</span><span class="p">(</span><span class="n">XMLData</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Converts between XML and data using the BadgerFish convention&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BadgerFish</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">attr_prefix</span><span class="o">=</span><span class="s">&#39;@&#39;</span><span class="p">,</span> <span class="n">text_content</span><span class="o">=</span><span class="s">&#39;$&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GData"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.GData">[docs]</a><span class="k">class</span> <span class="nc">GData</span><span class="p">(</span><span class="n">XMLData</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Converts between XML and data using the GData convention&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">GData</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">text_content</span><span class="o">=</span><span class="s">&#39;$t&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Yahoo"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.Yahoo">[docs]</a><span class="k">class</span> <span class="nc">Yahoo</span><span class="p">(</span><span class="n">XMLData</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Converts between XML and data using the Yahoo convention&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;xml_fromstring&#39;</span><span class="p">,</span> <span class="k">False</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Yahoo</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">text_content</span><span class="o">=</span><span class="s">&#39;content&#39;</span><span class="p">,</span> <span class="n">simple_text</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Parker"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.Parker">[docs]</a><span class="k">class</span> <span class="nc">Parker</span><span class="p">(</span><span class="n">XMLData</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Converts between XML and data using the Parker convention&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Parker</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Parker.data"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.Parker.data">[docs]</a>    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">preserve_root</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+        <span class="s">&#39;Convert etree.Element into a dictionary&#39;</span>
+        <span class="c"># If preserve_root is False, return the root element. This is easiest</span>
+        <span class="c"># done by wrapping the XML in a dummy root element that will be ignored.</span>
+        <span class="k">if</span> <span class="n">preserve_root</span><span class="p">:</span>
+            <span class="n">new_root</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">makeelement</span><span class="p">(</span><span class="s">&#39;dummy_root&#39;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">new_root</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">new_root</span>
+
+        <span class="c"># If no children, just return the text</span>
+        <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+        <span class="c"># Element names become object properties</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">count</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">())</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">result</span></div></div>
+
+
+<div class="viewcode-block" id="Abdera"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.Abdera">[docs]</a><span class="k">class</span> <span class="nc">Abdera</span><span class="p">(</span><span class="n">XMLData</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Converts between XML and data using the Abdera convention&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Abdera</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">simple_text</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">text_content</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Abdera.data"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.Abdera.data">[docs]</a>    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert etree.Element into a dictionary&#39;&#39;&#39;</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+
+        <span class="c"># Add attributes specific &#39;attributes&#39; key</span>
+        <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+            <span class="n">value</span><span class="p">[</span><span class="s">u&#39;attributes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">attrval</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">value</span><span class="p">[</span><span class="s">u&#39;attributes&#39;</span><span class="p">][</span><span class="n">unicode</span><span class="p">(</span><span class="n">attr</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">attrval</span><span class="p">)</span>
+
+        <span class="c"># Add children to specific &#39;children&#39; key</span>
+        <span class="n">children_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+        <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)]</span>
+
+        <span class="c"># Add root text</span>
+        <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">text</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simple_text</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">children_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+            <span class="n">child_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="n">children_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_data</span><span class="p">)</span>
+
+        <span class="c"># Flatten children</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">children_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">value</span><span class="p">[</span><span class="s">u&#39;children&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">children_list</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">([(</span><span class="n">unicode</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">tag</span><span class="p">),</span> <span class="n">value</span><span class="p">)])</span></div></div>
+
+
+<span class="c"># The difference between Cobra and Abdera is that Cobra _always_ has &#39;attributes&#39; keys,</span>
+<span class="c"># &#39;children&#39; key is remove when only one child and everything is a string.</span>
+<span class="c"># https://github.com/datacenter/cobra/blob/master/cobra/internal/codec/jsoncodec.py</span>
+<div class="viewcode-block" id="Cobra"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.Cobra">[docs]</a><span class="k">class</span> <span class="nc">Cobra</span><span class="p">(</span><span class="n">XMLData</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Converts between XML and data using the Cobra convention&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Cobra</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">simple_text</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">text_content</span><span class="o">=</span><span class="k">True</span><span class="p">,</span>
+                                    <span class="n">xml_fromstring</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cobra.data"><a class="viewcode-back" href="../../../api/appngizer.utils.xmljson.html#appngizer.utils.xmljson.Cobra.data">[docs]</a>    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Convert etree.Element into a dictionary&#39;&#39;&#39;</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+
+        <span class="c"># Add attributes to &#39;attributes&#39; key (sorted!) even when empty</span>
+        <span class="n">value</span><span class="p">[</span><span class="s">u&#39;attributes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">):</span>
+                <span class="n">value</span><span class="p">[</span><span class="s">u&#39;attributes&#39;</span><span class="p">][</span><span class="n">unicode</span><span class="p">(</span><span class="n">attr</span><span class="p">)]</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
+
+        <span class="c"># Add children to specific &#39;children&#39; key</span>
+        <span class="n">children_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+        <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)]</span>
+
+        <span class="c"># Add root text</span>
+        <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">text</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simple_text</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">children_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_fromstring</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="p">]</span>
+
+        <span class="n">count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+            <span class="n">child_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">count</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">tag</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">children_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">children_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)):</span>
+                <span class="c"># Merge keys to existing dictionary</span>
+                <span class="n">children_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">child_data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Add additional text</span>
+                <span class="n">children_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">value</span><span class="p">[</span><span class="s">u&#39;children&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">children_list</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict</span><span class="p">([(</span><span class="n">unicode</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">tag</span><span class="p">),</span> <span class="n">value</span><span class="p">)])</span></div></div>
+
+
+<span class="n">abdera</span> <span class="o">=</span> <span class="n">Abdera</span><span class="p">()</span>
+<span class="n">badgerfish</span> <span class="o">=</span> <span class="n">BadgerFish</span><span class="p">()</span>
+<span class="n">cobra</span> <span class="o">=</span> <span class="n">Cobra</span><span class="p">()</span>
+<span class="n">gdata</span> <span class="o">=</span> <span class="n">GData</span><span class="p">()</span>
+<span class="n">parker</span> <span class="o">=</span> <span class="n">Parker</span><span class="p">()</span>
+<span class="n">yahoo</span> <span class="o">=</span> <span class="n">Yahoo</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, aiticon GmbH.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'1.14.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
