@@ -1,0 +1,57 @@
+- name: install necessary python packages
+  command: dnf install -y python2-dnf
+  when: ansible_distribution == 'Fedora'
+  changed_when: false
+
+- name: install java and other necessary packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - java-1.{{ java_version }}.0-openjdk
+    - java-1.{{ java_version }}.0-openjdk-devel
+    - libselinux-python
+    - openssh
+    - gcc
+    - redhat-rpm-config
+    - git
+    - "{{ python_pip_package }}"
+  retries: 2
+  register: install_deps
+  until: install_deps|success
+
+- name: install additional packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ extra_rpms }}"
+
+- name: create jenkins user
+  user:
+    name: "{{ jenkins_user }}"
+    password: "{{ jenkins_user_password | default(omit) }}"
+    home: "{{ jenkins_user_home }}"
+    shell: /bin/bash
+    uid: "{{ jenkins_user_uid | default(omit) }}"
+
+- name: ensure SSH directory exists
+  file:
+    name: "{{ jenkins_user_home }}/.ssh"
+    owner: "{{ jenkins_user }}"
+    mode: 0700
+    state: directory
+
+- name: generate new SSH key
+  command: |-
+    ssh-keygen -b 4096 -t rsa -f {{ jenkins_user_home }}/.ssh/id_rsa
+    -N '' creates={{ jenkins_user_home }}/.ssh/id_rsa
+  become: true
+  become_user: "{{ jenkins_user }}"
+  notify: generate public SSH key
+
+- name: add ssh keys to authorized_keys for the jenkins user
+  authorized_key:
+    user: "{{ jenkins_user }}"
+    state: present
+    key: "{{ item }}"
+  with_file: "{{ jenkins_authorized_keys }}"

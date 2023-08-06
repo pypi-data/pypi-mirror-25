@@ -1,0 +1,41 @@
+- name: unpin jenkins package for version upgrades
+  lineinfile:
+    dest: "{{ version_pin_file }}"
+    state: present
+    regexp: "^exclude=.*"
+    line: "exclude={{ upgrade_blacklist | difference(['jenkins']) | join(' ') }}"
+  when: jenkins_upgrade
+
+- name: install necessary RPM files
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ jenkins_rpm }}"
+    - libvirt-devel
+    - python-virtualenv
+    - libyaml-devel
+    - openssl-devel
+    - libffi-devel
+  notify: restart Jenkins during upgrade
+
+- name: install additional packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ jmaster_extra_rpms }}"
+
+- name: install gcc_compat where necessary
+  package:
+    name: "{{ gcc_compat_package }}"
+    state: present
+  when: gcc_compat_package is defined
+
+# This blacklist must be done *after* the package installation defined above,
+# otherwise packages can be blacklisted before they are installed initially.
+- name: pin certain packages
+  lineinfile:
+    dest: "{{ version_pin_file }}"
+    line: "exclude={{ upgrade_blacklist | join(' ') }}"
+    state: present
+    regexp: "^exclude=.*$"
