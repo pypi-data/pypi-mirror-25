@@ -1,0 +1,62 @@
+<configure
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:browser="http://namespaces.zope.org/browser"
+  i18n_domain="eea">
+
+  <include package="five.pt" />
+
+  <include package="z3c.jbot" file="meta.zcml" />
+  <include package="plone.app.registry" />
+  <include package="plone.app.async" />
+
+  <includeDependencies package="." />
+  <include file="profiles.zcml" />
+  <include file="permissions.zcml" />
+  <include file="overrides.zcml" />
+
+  <include package=".rules" />
+  <include package=".events" />
+  <include package=".async" />
+  <include package=".browser" />
+  <include package=".content" />
+  <include package=".upgrades" />
+
+  <browser:page
+    name="register"
+    for="Products.CMFPlone.Portal.PloneSite"
+    class=".userdataschema.CopernicusRegistrationForm"
+    permission="cmf.AddPortalMember"
+    />
+
+  <browser:page
+    for="Products.CMFPlone.Portal.PloneSite"
+    name="personal-information"
+    class=".userdataschema.CustomizedUserDataPanel"
+    permission="cmf.SetOwnProperties"
+    />
+
+  <browser:jbot
+    directory="browser/template-overrides/"
+    />
+
+  <subscriber
+    for="Products.PluggableAuthService.interfaces.authservice.IPropertiedUser
+         Products.PluggableAuthService.interfaces.events.IPrincipalCreatedEvent"
+    handler="land.copernicus.content.globalhandlers.autofillFullname" />
+
+  <subscriber
+    for="*
+         Products.PluggableAuthService.interfaces.events.IUserLoggedInEvent"
+    handler="land.copernicus.content.globalhandlers.forceUpdateProfile" />
+
+  <subscriber
+    for="land.copernicus.content.content.interfaces.ILandFile
+         Products.Archetypes.interfaces.IObjectInitializedEvent"
+    handler="land.copernicus.content.globalhandlers.saveAutoExtractedFileSize" />
+
+  <subscriber
+    for="land.copernicus.content.content.interfaces.ILandFile
+         Products.Archetypes.interfaces.IObjectEditedEvent"
+    handler="land.copernicus.content.globalhandlers.saveAutoExtractedFileSize" />
+
+</configure>
