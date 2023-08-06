@@ -1,0 +1,160 @@
+=============================
+Land Copernicus Content-Types
+=============================
+Custom Content-Types for Land Copernicus
+
+Copyright and license
+=====================
+
+The Initial Owner of the Original Code is European Environment Agency (EEA).
+All Rights Reserved.
+
+The Land Copernicus Content-Types (the Original Code) is free software;
+you can redistribute it and/or modify it under the terms of the GNU
+General Public License as published by the Free Software Foundation;
+either version 2 of the License, or (at your option) any later
+version.
+
+More details under land.copernicus.content/docs/License.txt
+
+
+Funding and project management
+==============================
+
+EEA_ - European Environment Agency (EU)
+
+.. _EEA: http://www.eea.europa.eu/
+
+Changelog
+=========
+
+2.5rc1 - (2017-10-04)
+---------------------
+* Feature: async download of Land files.
+  [batradav #88377]
+
+2.4 - (2016-08-08)
+------------------
+* Features and fixes:
+  - Login, logout, Download land files tab beahviour, Terms of Use
+      Download, Metadata tabs, added Access and Use Constraints fields,
+      Added Terms of Use pop-up, Detalied Metadata, fix Show only published land files,
+      Added isValidatedDataset field to schema, Splitted fullname in first_name and last_name,
+      Implement Download tab behaviour, Login page updates, error for broken land file url,
+      custom text label for not validated datasets
+      other fixes
+
+      [GhitaB refs #24611, #24186, #24843, #24844, #24611, #24188, #25147, #25146, #25173, #25178,
+       #25198, #25175, #25232, #25255, #25251, #25229, #25387, #25462, #25677, #25690, #25690,
+       #25690, #25742, #26562, #26314, #25732, #26950, #27390, #27389, #27445, #27447, #27558,
+       #28075, #28080, #28272, #29190, etc.]
+
+  - Eagle section
+      User menu links, EAGLE contact form, Plone Help Center used for EAGLE manual, Forum
+      [GhitaB refs #25735, #25727, #26806, #26950, #27826, #27898, etc.]
+
+* Bug fix: [Jenkins] Updated install requires.
+  [GhitaB refs #28876]
+
+* Feature: Changed widget for thematic_domain and institutional_domain to
+  MultiCheckBoxVocabularyWidget
+  [olimpiurob refs #24190]
+* Feature: Added LDAP specific properties to local users
+  [olimpiurob refs #24190]
+* Upgrade step: (manual) Enable user registration in @@security-controlpanel. Tick
+  Enable self-registration, Let users select their own passwords and Use email address as login name
+* Upgrade step: Within "Plone > Site setup > Add-ons" click on
+  upgrade button available for land.copernicus.content
+* Feature: Added thematic_domain and institutional_domain extra properties to users
+  [olimpiurob refs #24190]
+* Feature: Added Copernicus Publication Workflow
+  [olimpiurob refs #24190]
+
+2.3 - (2015-03-24)
+------------------
+* Bug fix: Fixed issue with ATBlobModifier which caused errors when saving/adding
+  files
+  [olimpiurob refs #24157]
+
+2.2 - (2015-03-18)
+------------------
+* Bug fix: IATBlob can be implemented by Files, not just Images. Avoid error
+  when fiddling schema
+  [tiberich #24102]
+
+2.1 - (2015-03-16)
+------------------
+* Bug fix: use a ISchemaModifier instead of ISchemaExtender to change label for
+  the ATBlob content type
+  [tiberich #23775]
+* Change: Switched to curl in the jenkins build install script
+  [olimpiurob refs #22402]
+* Change: Changed fetch url for jenkins build install script to the install
+  script from the main EEA CPB repository
+  [olimpiurob refs #22402]
+
+2.0 - (2015-02-25)
+----------------------
+* Change: remove Map view, metadata, web services, download and legend tab from
+  land items
+  [tiberich #23184]
+* Bug fix: Updated Manifest file
+  [olimpiurob]
+
+1.9 - (2014-09-16)
+------------------
+* Bug fix: Added Wand in setup.py as a dependency
+  [olimpiurob]
+
+1.8 - (2014-05-26)
+------------------
+
+1.7 - (2013-12-09)
+------------------
+* Bug fix: fixed embedding parsing errors when the embed code contains
+  multiple sibblings.
+  [olimpiurob #17693]
+* Feature: added doctests for our content types and our overview page
+  [olimpiurob #17345]
+
+1.6 - (2013-11-21)
+------------------
+* Feature: added configlet for @@overview page
+  [robaaoli #17440]
+* Feature: added landitems administrative @@overview page
+  [robaaoli #17440]
+
+1.5 - (2013-11-14)
+------------------
+* Bug fix: don't hardcode width, instead set the class=widen
+  to the embeded iframes
+  [tiberich #17266]
+
+1.4 - (2013-11-12)
+------------------
+* Feature: show a loading icon before loading the map
+  [tiberich #17338]
+
+1.3 - (2013-11-08)
+------------------
+* Bug fix: reconfigure iframe width to make the wider
+  [tiberich #17266]
+* Bug fix: only set width/height if embeding an iframe
+  [tiberich #17266]
+
+1.2 - (2013-11-08)
+------------------
+* Bug fix: make the displayed embeded maps larger
+  [tiberich #17266]
+
+1.1 - (2013-11-05)
+------------------
+* Feature: Added legend field to the LandItem content type
+  [tiberiu #16962]
+
+1.0  - (initial release)
+------------------------
+* Initial release
+
+
+

@@ -1,0 +1,97 @@
+<configure
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:browser="http://namespaces.zope.org/browser"
+  xmlns:zcml="http://namespaces.zope.org/zcml"
+  i18n_domain="eea">
+
+  <include file="backports.zcml" />
+  <include file="cookiepolicy.zcml" />
+  <include file="patches.zcml" />
+  <include file="landitem.zcml" />
+
+  <browser:resourceDirectory
+    name="land.copernicus.content.images"
+    directory="./images" />
+
+  <browser:resourceDirectory
+    name="land.copernicus.content.static"
+    directory="./static" />
+
+  <browser:page
+    name="migrate_image_scales"
+    class=".migration.FixImageScales"
+    permission="cmf.ManagePortal"
+    for="*"
+    />
+
+  <browser:page
+    name="overview"
+    class=".views.LandItemsOverview"
+    permission="cmf.ManagePortal"
+    for="Products.CMFCore.interfaces.ISiteRoot"
+    template="templates/overview.pt"
+    />
+
+  <browser:page
+    name="download-land-file"
+    class=".download.DownloadLandFileView"
+    for="land.copernicus.content.content.landfile.LandFile"
+    permission="land.copernicus.content.download_landfile"
+    />
+
+  <browser:page
+    name="download-land-files"
+    for="land.copernicus.content.content.landitem.LandItem"
+    class=".download.DownloadAsyncView"
+    template="templates/download-land-files.pt"
+    permission="land.copernicus.content.download_landfile"
+    />
+
+  <browser:page
+    name="download-land-files-estimate"
+    for="land.copernicus.content.content.landitem.LandItem"
+    class=".download.DownloadAsyncView"
+    attribute="estimate"
+    permission="land.copernicus.content.download_landfile"
+    />
+
+  <browser:page
+    name="fetch-land-file"
+    for="land.copernicus.content.content.landitem.LandItem"
+    class=".download.FetchLandFileView"
+    template="templates/fetch-land-file.pt"
+    permission="land.copernicus.content.download_landfile"
+    />
+
+  <!-- <browser:page -->
+  <!--   name="tpdb" -->
+  <!--   class=".views.GoPDB" -->
+  <!--   permission="cmf.ManagePortal" -->
+  <!--   for="*" -->
+  <!--   /> -->
+
+  <browser:page
+    name="export_users_xls"
+    for="plone.app.layout.navigation.interfaces.INavigationRoot"
+    class=".views.ExportUsersXLS"
+    permission="cmf.ManagePortal"
+    />
+
+  <browser:page
+    name="admin_land_files"
+    for="land.copernicus.content.content.landitem.LandItem"
+    class=".views.AdminLandFilesView"
+    permission="cmf.ManagePortal"
+    />
+
+  <browser:resource
+    name="frozenEntrynoclick.js"
+    file="frozenEntrynoclick.js"
+    />
+
+  <browser:resource
+    name="markFrozen.js"
+    file="markFrozen.js"
+    />
+
+</configure>
