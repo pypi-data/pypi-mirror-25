@@ -1,0 +1,31 @@
+0.4.0 - 2017-10-14
+==================
+
+* Added Marshmallow Middleware for auto schema loading (655cf76_)
+
+.. _655cf76: https://gitlab.com/skosh/falcon-helpers/commit/655cf76
+
+
+0.3.1 - 2017-10-09
+==================
+
+* [FEAT] Add a number of helpful SQLAlchemy Features
+
+0.3.0 - 2017-10-07
+==================
+
+* [FEAT] Setup SQLAlchemy
+* [BUG] Install cryptography for JWT's with RSA algo
+
+0.2.1 - 2017-10-07
+==================
+* Fix issue when using HS256 tokens for authentication
+
+0.2.0 - 2017-09-23
+==================
+* Release the Package and update the source location
+
+0.1.0 - 2017-08-22
+==================
+
+* Added StaticsMiddleware
