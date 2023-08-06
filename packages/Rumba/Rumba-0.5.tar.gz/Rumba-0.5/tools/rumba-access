@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+FILE=/tmp/rumba/ssh_info
+
+MACHINE_ID=$1
+if [ "$MACHINE_ID" == "" ]; then
+	echo "usage: $0 NODE_NAME"
+	exit 255
+fi
+
+USER=$(grep "\<${MACHINE_ID}\>" ${FILE} | awk -F';' '{print $2}')
+if [ "$USER" == "" ]; then
+	echo "Error: Node ${MACHINE_ID} unknown"
+	exit 255
+fi
+
+HOST=$(grep "\<${MACHINE_ID}\>" ${FILE} | awk -F';' '{print $3}')
+if [ "$HOST" == "" ]; then
+	echo "Error: Node ${MACHINE_ID} unknown"
+	exit 255
+fi
+
+SSH_PORT=$(grep "\<${MACHINE_ID}\>" ${FILE} | awk -F';' '{print $4}')
+if [ "$SSH_PORT" == "" ]; then
+	echo "Error: Node ${MACHINE_ID} unknown"
+	exit 255
+fi
+
+PROXY_CMD=$(grep "\<${MACHINE_ID}\>" ${FILE} | awk -F';' '{print $5}')
+if [ "$PROXY_CMD" == "" ]; then
+	echo "Error: Node ${MACHINE_ID} unknown"
+	exit 255
+fi
+
+echo "Accessing Rumba node ${MACHINE_ID}"
+if [[ $PROXY_CMD = "None" ]]; then
+    ssh -A -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p ${SSH_PORT} ${USER}@${HOST}
+else
+    ssh -A -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -oProxyCommand="$PROXY_CMD" -p ${SSH_PORT} ${USER}@${HOST}
+fi
