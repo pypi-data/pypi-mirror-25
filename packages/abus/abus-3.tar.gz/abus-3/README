@@ -1,0 +1,138 @@
+ABuS is a script for backing up (and restoring) your files to a local disk.
+
+The backups are encrypted, compressed, and deduplicated.
+It is assumed that another program (e.g. rsync) is used to make off-site
+copies of the backups (see below).
+
+ABuS only backs up file content at the moment. In particular the backups do not
+include permissions, symbolic links, hard links, or special files.
+
+
+Missing Features
+================
+
+- Documentation
+- Deletion of old backups
+- "Flattening" of restores
+- Restore target directory other than "."
+
+
+Installation
+============
+
+1. Install Python 3.6 from python.org
+
+   - include pip
+   - it helps to add python to path
+
+2. From the command line, "as administrator" if python has been installed "for all users":
+
+   ``c:\path\to\python36\scripts\pip install abus``
+
+3. Create minimal config file, e.g.::
+
+    logfile c:/my/home/abus.log
+    archive e:/backups
+    password password1234 just kidding!
+    [include]
+    c:/my/home
+
+4. Initialise the backup directory and the cache database with
+
+   ``c:\path\to\python36\scripts\abus.exe -f c:/my/home/abus.cfg --init``
+
+5. Add to Task Scheduler:
+
+   ``c:\path\to\python36\scripts\abus.exe -f c:/my/home/abus.cfg --backup``
+
+   If there are any problems that prevent abus from getting as far as opening
+   the log file (and Windows permissions can cause many such problems), then
+   use cmd.exe to allow redirection:
+
+   ``cmd /c c:\path\to\python36\scripts\abus.exe -f c:/my/home/abus.cfg --backup >c:\abus.err 2>&1``
+
+
+Documentation
+=============
+
+Overview
+--------
+
+ABuS is a single script for handling backups. Its command line parameters determine whether the
+backups are to be created, listed, or restored. The backups are stored in subdirectories of the
+*backup directory* which must be on a local filesystem. For off-site copies another program is to be
+used, for example rsync. **N.B.:** Off-site copies must be made correctly to minimise the risk of
+propagating any local corruption.
+
+A configuration file is used to point to the backup directory, define the backup set, and some options.
+ABuS finds the configuration file either via a command line parameter or an environment variable.
+
+
+Configuration file
+------------------
+
+The file has three sections
+
+* parameters at the beginning
+* inclusions
+* exclusions
+
+ABuS uses slashes as path separators internally. All filenames given in the config file or on the
+command line may use backslashes or slashes; all backslashes are converted to slashes.
+
+Parameters
+~~~~~~~~~~
+The first word of each line is a parameter name, the following words for the value.
+Leading and trailing spaces are trimmed while spaces within the value are preserved.
+
+* ``logfile``  Specifies the path of a file to which all log entries are made.
+  The parameter should be given first so that any subsequent errors in the configuration can be reported
+  to the log.
+* ``archive``  Specifies the path to the root backup directory containing all backup files and the cache
+  database are written.
+* ``password`` Specifies the encryption password to be used for all backup files. The encryption allows
+  copying the backup archive to an offsite location.
+
+Inclusions
+~~~~~~~~~~
+A line containing the header ``[include]`` starts the inclusion section,
+each line of which is a directory path which will be backed up recursively.
+There must be at least one inclusion.
+
+Exclusions
+~~~~~~~~~~
+A line containing the header ``[exclude]`` starts the exclusion section,
+each line if which is a shell global pattern.
+All file paths that would be backed up (or directory paths that would be searched for files)
+are skipped if they match any of the patterns.
+
+A * in the patterns also matches the directory separators.
+``*.bak`` ignores any file with the extension .bak;
+``*/~*`` ignores any file or directory starting with a tilde.
+
+
+Off-site copies
+---------------
+
+ABuS only backs up to local filesystems. This means that the backups themselves
+are subject to corruption, for example from ramsomware. It is important that another copy of the backup is made and
+that it fulfuls these criteria:
+
+* It must not be on a local filesystem, so that the machine being backed up cannot corrupt it.
+* Files must never be overwritten, once created, so that any local corruption does not propagate.
+
+
+History
+=======
+
+v3 (alpha) 2017-10-15
+
+- feature: reconstruction of cache database from backup meta data
+
+v2 (alpha) 2017-10-07
+
+- not excruciatingly slow any more
+
+v1 (alpha) 2017-10-04
+
+- first version
