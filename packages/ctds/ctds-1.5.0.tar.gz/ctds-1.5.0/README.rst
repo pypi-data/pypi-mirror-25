@@ -1,0 +1,141 @@
+cTDS
+====
+
+.. include-documentation-begin-marker
+
+.. image:: https://travis-ci.org/zillow/ctds.svg?branch=master
+        :target: https://travis-ci.org/zillow/ctds
+
+.. image:: http://img.shields.io/pypi/dm/ctds.svg
+        :target: https://pypi.python.org/pypi/ctds/
+
+.. image:: http://img.shields.io/pypi/v/ctds.svg
+        :target: https://pypi.python.org/pypi/ctds/
+
+.. image:: https://codecov.io/gh/zillow/ctds/branch/master/graph/badge.svg
+        :target: https://codecov.io/gh/zillow/ctds
+
+.. image:: https://ci.appveyor.com/api/projects/status/voa33r7qdnxh6wwp/branch/master?svg=true
+        :target: https://ci.appveyor.com/project/joshuahlang/ctds/branch/master
+
+
+`cTDS` is a full Python `DB API-2.0`_-compliant
+SQL Server database library for `Linux`, `Windows`, and `Mac OS X` supporting
+both Python 2 and Python 3.
+
+
+Features
+--------
+
+* Supports `Microsoft SQL Server <http://www.microsoft.com/sqlserver/>`_ 2008 and up.
+* Complete `DB API-2.0`_ support.
+* Python 2.6, Python 2.7, Python 3.3, Python 3.4, Python 3.5, and Python 3.6 support.
+* Bulk insert (bcp) support.
+* Written entirely in C.
+
+Dependencies
+------------
+
+* `FreeTDS`_
+
+.. _`FreeTDS`: http://www.freetds.org/
+.. _`DB API-2.0`: <https://www.python.org/dev/peps/pep-0249>
+
+.. include-documentation-end-marker
+
+
+Documentation
+-------------
+
+The full documentation for `cTDS` can be found
+`here <https://zillow.github.io/ctds/>`_.
+
+Generate documentation using the following:
+
+.. code-block:: console
+
+    make doc
+    # Generated to ./.gh-pages
+
+Documentation is hosted on `GitHub Pages <https://pages.github.com/>`_.
+As such, the source code for the documentation pages must be committed
+to the master branch in order to update the live documentation.
+
+
+Development
+-----------
+
+Local development and testing is supported on linux-based systems running
+`Docker`_. Docker containers are used for both running a local instance
+of `SQL Server on Linux`_ and creating containers for each combination
+of Python and `FreeTDS`_ version supported.
+
+Local development *can* be done by simply installing **ctds** against the
+system versions of `FreeTDS`_ and `Python`_.
+
+.. code-block:: console
+
+    # Install as a "develop" egg
+    pip install -e .
+
+    # Install tests.
+    pip install -e .[tests]
+
+    # Run tests (requires SQL Server running)
+    python setup.py test
+
+
+However, given the various supported combinations of `FreeTDS`_ and `Python`_,
+it is easier to create a separate `Docker`_ container for each.
+
+
+Development and testing will require an instance of
+`SQL Server on Linux`_ running for validation. A script is provided to
+start a `Docker`_ container running the database and create the login
+used by the tests.
+
+.. code-block:: console
+
+    # Start a docker-based SQL Server instance.
+    make start-sqlserver
+
+    # Run tests as needed ...
+
+    # Stop the docker-base SQL Server instance.
+    make stop-sqlserver
+
+
+Testing
+-------
+
+Testing is designed to be relatively seemless, using `Docker`_ containers
+and `SQL Server on Linux`_. All *test* targets will ensure a running
+database instance docker container exists and is accessible prior to running.
+
+To run the tests against the most recent versions of `FreeTDS`_ and `Python`_,
+use:
+
+.. code-block:: console
+
+    make test
+
+
+To run the tests against an arbitrary version of `FreeTDS`_ and `Python`_:
+
+.. code-block:: console
+
+    # Python X.Y & FreeTDS Z.ZZ.ZZ
+    make test_X.Y_Z.ZZ.ZZ
+
+
+To run tests against all supported versions of `FreeTDS`_ and `Python`_
+and additional linting and metadata checks:
+
+.. code-block:: console
+
+    make check
+
+
+.. _`Docker`: https://www.docker.com/
+.. _`SQL Server on Linux`: https://hub.docker.com/r/microsoft/mssql-server-linux/
+.. _`Python`: https://www.python.org/
