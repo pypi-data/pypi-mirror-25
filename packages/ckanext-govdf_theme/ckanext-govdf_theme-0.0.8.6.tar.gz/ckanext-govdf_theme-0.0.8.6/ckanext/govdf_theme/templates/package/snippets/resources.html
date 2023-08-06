@@ -1,0 +1,91 @@
+{#
+Displays a sidebard module with navigation containing the provided resources.
+If no resources are provided then the module will not be displayed.
+
+pkg       - The package dict that owns the resources.
+active    - The id of the currently displayed resource.
+action    - The controller action to use (default: 'resource_read').
+
+Example:
+
+  {% snippet "package/snippets/resources.html", pkg=pkg, active=res.id %}
+
+#}
+{% set resources = pkg.resources or [] %}
+{% if resources %}
+  {% block resources %}
+    <div class="panel panel-primary panel-menu-servico panel-resources">
+      {% block resources_inner %}
+        {% block resources_title %}
+          <h2 class="panel-heading">{{ _("Resources") }}</h2>
+        {% endblock %}
+        {% block resources_list %}
+          <ul class="unstyled nav nav-facet panel-body-menu">
+            {% for resource in resources %}
+              <li class="nav-item{{ ' active' if active == resource.id }}">
+                {% link_for h.resource_display_name(resource)|truncate(25), controller='package', action=action or 'resource_read', id=pkg.name, resource_id=resource.id, inner_span=true, class_="titulo" %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endblock %}
+        <p class="module-footer"></p>
+      {% endblock %}
+    </div>
+  {% endblock %}
+{% endif %}
+
+{#% block facet_list %}
+  {% set hide_empty = hide_empty or false %}
+  {% with items = items or h.get_facet_items_dict(name) %}
+    {% if items or not hide_empty %}
+      {% if within_tertiary %}
+        {% set nav_class = 'nav nav-pills nav-stacked' %}
+        {% set nav_item_class = ' ' %}
+        {% set wrapper_class = 'nav-facet nav-facet-tertiary' %}
+      {% endif %}
+
+      {% block facet_list_item %}
+        <div class="panel panel-primary panel-menu-servico">
+          {% block facet_list_heading %}
+            <h2 class="panel-heading">
+              {% set title = title or h.get_facet_title(name) %}
+              {{ title }}
+            </h2>
+          {% endblock %}
+          {% block facet_list_items %}
+            {% with items = items or h.get_facet_items_dict(name) %}
+            {% if items %}
+              <nav>
+                <ul class="{{ nav_class or 'unstyled nav nav-facet panel-body-menu' }}">
+                  {% for item in items %}
+                    {% set href = h.remove_url_param(name, item.name, extras=extras, alternative_url=alternative_url) if item.active else h.add_url_param(new_params={name: item.name}, extras=extras, alternative_url=alternative_url) %}
+                    {% set label = label_function(item) if label_function else item.display_name %}
+                    {% set count = count_label(item['count']) if count_label else ('(%d)' % item['count']) %}
+                      <li class="{{ nav_item_class or 'nav-item' }}{% if item.active %} active{% endif %}">
+                        <a class="titulo" href="{{ href }}" title="{{ label if label != label_truncated else '' }}">
+                          <span>{{ label }} {{ count }}</span>
+                        </a>
+                      </li>
+                  {% endfor %}
+                </ul>
+              </nav>
+
+              <p class="module-footer">
+                {% if h.get_param_int('_%s_limit' % name) %}
+                  {% if h.has_more_facets(name) %}
+                    <a href="{{ h.remove_url_param('_%s_limit' % name, replace=0, extras=extras, alternative_url=alternative_url) }}" class="read-more">{{ _('Show More {facet_type}').format(facet_type=title) }}</a>
+                  {% endif %}
+                {% else %}
+                  <a href="{{ h.remove_url_param('_%s_limit' % name, extras=extras, alternative_url=alternative_url) }}" class="read-more">{{ _('Show Only Popular {facet_type}').format(facet_type=title) }}</a>
+                {% endif %}
+              </p>
+            {% else %}
+              <p class="module-content empty">{{ _('There are no {facet_type} that match this search').format(facet_type=title) }}</p>
+            {% endif %}
+            {% endwith %}
+          {% endblock %}
+        </div>
+      {% endblock %}
+    {% endif %}
+  {% endwith %}
+{% endblock %#}
