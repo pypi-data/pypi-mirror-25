@@ -1,0 +1,72 @@
+metadata:
+  title: Nested for loops
+  documentation: "https://docassemble.org/docs/groups.html"
+  example start: 12
+  example end: 12
+---
+modules:
+  - docassemble.base.legal
+---
+objects:
+  - person: PartyList
+---
+generic object: Individual
+sets: x.allergy
+code: |
+  x.allergy = DAList()
+---
+question: |
+  Is there another person?
+yesno: person.there_is_another
+---
+generic object: Individual
+question: |
+  Does ${ x } have any children?
+yesno: x.child.there_are_any
+---
+generic object: Individual
+question: |
+  Does ${ x } have any children other than ${ x.child }?
+yesno: x.child.there_is_another
+---
+generic object: Individual
+question: |
+  Does ${ x } have any allergies?
+yesno: x.allergy.there_are_any
+---
+generic object: Individual
+question: |
+  Does ${ x } have any allergies other than ${ x.allergy }?
+yesno: x.allergy.there_is_another
+---
+question: |
+  What is the name of the ${ ordinal(i) } person?
+fields:
+  - First: person[i].name.first
+  - Last: person[i].name.first
+---
+generic object: Individual
+question: |
+  What is the name of ${ x.possessive(ordinal(i) + ' child') }?
+fields:
+  - First: x.child[i].name.first
+  - Last: x.child[i].name.first
+---
+generic object: Individual
+question: |
+  What allergy does ${ x } have?
+fields:
+  - Allergy: x.allergy[i]
+---
+mandatory: True
+code: |
+  for the_person in person.elements:
+      for the_child in the_person.child.elements:
+          the_child.allergy.gather()
+      the_person.child.gather()
+  person.gather(minimum=1)
+---
+mandatory: True
+question: Information retrieved
+buttons:
+  - Restart: restart
