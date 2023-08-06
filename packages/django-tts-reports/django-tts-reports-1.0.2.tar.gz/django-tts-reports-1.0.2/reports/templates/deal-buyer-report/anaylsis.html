@@ -1,0 +1,72 @@
+{% load base_extras %}
+{% load humanize %}
+<table>
+<caption><b style="color: #c0230e"> Deal Analysis</b> </caption>
+    <tr>
+        <td>
+        <table class="td v">
+        <tr>
+            <td align="center"><b style="color: #c0230e">Commodity</b></td>
+            <td align="center"><b style="color: #c0230e">Amount For Farmers</b></td>
+            <td align="center"><b style="color: #c0230e">Maximum COB to break even</b></td>
+            <td align="center"><b style="color: #c0230e">Bonus</b></td>
+{#            <td align="center"><b style="color: #c0230e">Total Profit Share</b></td>#}
+        </tr>
+        {% for i in x %}
+        <tr class="tb">
+            <td align="center">{% with com=i.commodity|load_json  %}{{ com.commodity.name }}{% endwith %}</td>
+            <td align="center">{{ i.value|floatformat:1 }}</td>
+            <td align="center">{{ i.max_cob_even|floatformat:1 }}</td>
+            <td align="center">{{ i.bonus|floatformat:1 }}</td>
+{#            <td align="center">{% total_bonus i.value i.max_cob_even i.bonus  as f %}{{ f|intcomma }}</td>#}
+        </tr>
+        {% endfor %}
+        </table>
+        </td>
+    </tr>
+    <tr>
+{#        {% for a in analysis %}#}
+        <td>
+            <table class="td v">
+{#                Working Capital #}
+                <tr><td><b style="color: #c0230e"> Working Capital</b></td><td style="color: #c0230e; text-align: right; padding-right: 4px;"><b>{{ seller_currency|floatformat:1 }}</b></td></tr>
+                <tr><td>Total COB Paid to Farmers</td><td class="an">{{ analy.total_cob_paid_to_farmers|floatformat:1 }}</td></tr>
+                <tr><td>Total Middle Costs</td> <td class="an">{{ analy.total_middle_costs|floatformat:1 }}</td></tr>
+                <tr><td>TruTrade Advance Required</td> <td class="an">{{ analy.advance|floatformat:1 }}</td></tr>
+                <tr><td>Trade Finance Fee {{ trade_and_insurance_fee }} %</td> <td class="an">{{ analy.trade_and_finance|floatformat:1 }}</td></tr>
+                <tr><td>Contingency ( {{ contingency }}% of total middle costs)</td><td class="an">{{ analy.contingency|floatformat:1 }}</td></tr>
+                <tr><td>Total Investment</td><td class="an">{{ analy.advance|add:analy.trade_and_finance|add:analy.contingency|floatformat:1 }}</td></tr>
+{#                COB Price Calculation (UGX)#}
+                <tr><td><b style="color: #c0230e">COB Price Calculation</b></td><td style="color: #c0230e; text-align: right; padding-right: 4px;"><b>{{ seller_currency|floatformat:1 }}</b></td></tr>
+                <tr><td>Amount for Full Deal</td><td class="an">{{ analy.total_on_deal|floatformat:1 }}</td></tr>
+                <tr><td>Total Side Incomes</td><td class="an">{{ analy.total_side_income|floatformat:1 }}</td></tr>
+                <tr><td>Total Deal Value</td><td class="an">{{ analy.total_deal_value|floatformat:1 }}</td></tr>
+                <tr><td>Trade Finance Fee + Middle Costs</td><td class="an">{{ analy.total_middle_costs|floatformat:1 }}</td></tr>
+                <tr><td>Commission is Calculated From</td><td class="an">{{ analy.calc_commissions_from|floatformat:1 }}</td></tr>
+                <tr><td>Total Commissions %</td><td class="an">{{ analy.total_commission_percentage|floatformat:1 }} %</td></tr>
+                <tr><td>Actual Amount for Commissions</td><td class="an">{{ analy.total_commissions.actual_commission|floatformat:1 }}</td></tr>
+                <tr><td>Available Amount for Commissions</td><td class="an">{{ analy.total_commissions.available_commission|floatformat:1 }}</td></tr>
+                <tr>
+                    <td>{% if analy.profit > 0 %}Total Profit share{% else %}<b style="color: #c0230e">Loss</b>{% endif %}</td>
+                    <td class="an">{% if analy.profit > 0 %}{{ analy.profit|floatformat:1 }}{% else %}<b style="color: #c0230e">{{ analy.loss|floatformat:1 }}</b>{% endif %}</td></tr>
+
+                {% if analy.profit > 0 %}
+                <tr>
+                    <td>Bonus to Farmers (50% of Profit Share)</td>
+                    <td class="an">{% total_bonus_share analy.profit as profit %} {{ profit|intcomma|floatformat:1 }}</td></tr>
+                <tr>
+                    <td>TruTrade Profit (50% of Profit Share)</td>
+                    <td class="an">{% total_bonus_share analy.profit as proft %}{{ profit|intcomma|floatformat:1 }}</td></tr>
+                {% endif %}
+{#                Agent Commissions #}
+                <tr><td><b style="color: #c0230e">Agent Commissions</b></td><td style="color: #c0230e; text-align: right; padding-right: 4px;"><b>{{ seller_currency }}</b></td></tr>
+                <tr><td>TTS Agents ({% role agent_commissions 'agent' 'perc' %} %)</td><td class="an"> {% role agent_commissions 'agent' 'tt' as ag %}{{ ag|intcomma }}</td></tr>
+                <tr><td>Sourcing Coordinator ({% role agent_commissions 'NM' 'perc' %} %)</td><td class="an">{% role agent_commissions 'NM' 'tt' as sc %}{{ sc|intcomma }}</td></tr>
+                <tr><td>TruTrade ({% role agent_commissions 'TruTrade' 'perc' %} %)</td><td class="an">{% role agent_commissions 'TruTrade' 'tt' as trutrade %}{{ trutrade|intcomma }}</td></tr>
+            </table>
+        </td>
+{#        {% endfor %}#}
+    </tr>
+</table>
+
+
