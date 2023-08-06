@@ -1,0 +1,893 @@
+---
+version: '2.0'
+name: tripleo.baremetal.v1
+description: TripleO Baremetal Workflows
+
+workflows:
+
+  set_node_state:
+    input:
+      - node_uuid
+      - state_action
+      - target_state
+
+    tasks:
+
+      set_provision_state:
+        on-success: wait_for_provision_state
+        action: ironic.node_set_provision_state node_uuid=<% $.node_uuid %> state=<% $.state_action %>
+
+      wait_for_provision_state:
+        action: ironic.node_get node_id=<% $.node_uuid %>
+        timeout: 1200 #20 minutes
+        retry:
+          delay: 3
+          count: 400
+          continue-on: <% task(wait_for_provision_state).result.provision_state != $.target_state %>
+
+  set_power_state:
+    input:
+      - node_uuid
+      - state_action
+      - target_state
+
+    tasks:
+
+      set_provision_state:
+        on-success: wait_for_power_state
+        action: ironic.node_set_power_state node_id=<% $.node_uuid %> state=<% $.state_action %>
+
+      wait_for_power_state:
+        action: ironic.node_get node_id=<% $.node_uuid %>
+        timeout: 120 #2 minutes
+        retry:
+          delay: 6
+          count: 20
+          continue-on: <% task(wait_for_power_state).result.power_state != $.target_state %>
+
+  manual_cleaning:
+    input:
+      - node_uuid
+      - clean_steps
+      - timeout: 7200  # 2 hours (cleaning can take really long)
+      - retry_delay: 10
+      - retry_count: 720
+      - queue_name: tripleo
+
+    tasks:
+
+      set_provision_state:
+        on-success: wait_for_provision_state
+        on-error: set_provision_state_failed
+        action: ironic.node_set_provision_state node_uuid=<% $.node_uuid %> state='clean' cleansteps=<% $.clean_steps %>
+
+      set_provision_state_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_provision_state).result %>
+
+      wait_for_provision_state:
+        on-success: send_message
+        action: ironic.node_get node_id=<% $.node_uuid %>
+        timeout: <% $.timeout %>
+        retry:
+          delay: <% $.retry_delay %>
+          count: <% $.retry_count %>
+          continue-on: <% task(wait_for_provision_state).result.provision_state != 'manageable' %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.manual_cleaning
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  register_or_update:
+    description: Take nodes JSON and create nodes in a "manageable" state
+
+    input:
+     - nodes_json
+     - remove: False
+     - queue_name: tripleo
+     - kernel_name: null
+     - ramdisk_name: null
+     - instance_boot_option: local
+     - initial_state: manageable
+
+    tasks:
+      register_or_update_nodes:
+        action: tripleo.baremetal.register_or_update_nodes
+        on-success:
+          - set_nodes_managed: <% $.initial_state != "enroll" %>
+          - send_message: <% $.initial_state = "enroll" %>
+        on-error: set_status_failed_register_or_update_nodes
+        input:
+           nodes_json: <% $.nodes_json %>
+           remove: <% $.remove %>
+           kernel_name: <% $.kernel_name %>
+           ramdisk_name: <% $.ramdisk_name %>
+           instance_boot_option: <% $.instance_boot_option %>
+        publish:
+          registered_nodes: <% task(register_or_update_nodes).result %>
+          new_nodes: <% task(register_or_update_nodes).result.where($.provision_state = 'enroll') %>
+
+      set_status_failed_register_or_update_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(register_or_update_nodes).result %>
+          registered_nodes: []
+
+      set_nodes_managed:
+        on-success:
+          - set_nodes_available: <% $.initial_state = "available" %>
+          - send_message: <% $.initial_state != "available" %>
+        on-error: set_status_failed_nodes_managed
+        workflow: tripleo.baremetal.v1.manage
+        input:
+          node_uuids: <% $.new_nodes.uuid %>
+          queue_name: <% $.queue_name %>
+        publish:
+          status: SUCCESS
+          message: Nodes set to managed.
+
+      set_status_failed_nodes_managed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_nodes_managed).result %>
+
+      set_nodes_available:
+        on-success: send_message
+        on-error: set_status_failed_nodes_available
+        workflow: tripleo.baremetal.v1.provide node_uuids=<% $.new_nodes.uuid %> queue_name=<% $.queue_name %>
+        publish:
+          status: SUCCESS
+          message: Nodes set to available.
+
+      set_status_failed_nodes_available:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_nodes_available).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.register_or_update
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                registered_nodes: <% $.registered_nodes or [] %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+
+  provide:
+    description: Take a list of nodes and move them to "available"
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tasks:
+
+      set_nodes_available:
+        on-success: wait_for_nova_resources
+        on-error: set_status_failed_nodes_available
+        with-items: uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.set_node_state
+        input:
+          node_uuid: <% $.uuid %>
+          queue_name: <% $.queue_name %>
+          state_action: 'provide'
+          target_state: 'available'
+
+      set_status_failed_nodes_available:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_nodes_available).result %>
+
+      wait_for_nova_resources:
+        on-success: cell_v2_discover_hosts
+        on-error: wait_for_nova_resources_failed
+        with-items: node_uuid in <% $.node_uuids %>
+        action: nova.hypervisors_find hypervisor_hostname=<% $.node_uuid %>
+        timeout: 900 #15 minutes
+        retry:
+          delay: 30
+          count: 30
+
+      wait_for_nova_resources_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(wait_for_nova_resources).result %>
+
+      cell_v2_discover_hosts:
+        on-success: try_power_off
+        on-error: cell_v2_discover_hosts_failed
+        workflow: tripleo.baremetal.v1.cellv2_discovery
+        input:
+          node_uuids: <% $.node_uuids %>
+          queue_name: <% $.queue_name %>
+
+      cell_v2_discover_hosts_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(cell_v2_discover_hosts).result %>
+
+      try_power_off:
+        on-success: send_message
+        on-error: power_off_failed
+        with-items: uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.set_power_state
+        input:
+          node_uuid: <% $.uuid %>
+          queue_name: <% $.queue_name %>
+          state_action: 'off'
+          target_state: 'power off'
+        publish:
+          status: SUCCESS
+          message: 'Successfully set nodes state to available.'
+
+      power_off_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(try_power_off).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.provide
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  provide_manageable_nodes:
+    description: Provide all nodes in a 'manageable' state.
+
+    input:
+      - queue_name: tripleo
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list maintenance=False associated=False
+        on-success: provide_manageable
+        on-error: set_status_failed_get_manageable_nodes
+        publish:
+          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+
+      set_status_failed_get_manageable_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_manageable_nodes).result %>
+
+      provide_manageable:
+        on-success: send_message
+        workflow: tripleo.baremetal.v1.provide
+        input:
+          node_uuids: <% $.managed_nodes %>
+          queue_name: <% $.queue_name %>
+        publish:
+          status: SUCCESS
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.provide_manageable_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  manage:
+    description: Set a list of nodes to 'manageable' state
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tasks:
+
+      set_nodes_manageable:
+        on-success: send_message
+        on-error: set_status_failed_nodes_manageable
+        with-items: uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.set_node_state
+        input:
+          node_uuid: <% $.uuid %>
+          state_action: 'manage'
+          target_state: 'manageable'
+
+      set_status_failed_nodes_manageable:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_nodes_manageable).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.manage
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  _introspect:
+    description: >
+        An internal workflow. The tripleo.baremetal.v1.introspect workflow
+        should be used for introspection.
+
+    input:
+      - node_uuid
+      - queue_name
+
+    output:
+      result: <% task(start_introspection).result %>
+
+    tasks:
+      start_introspection:
+        action: baremetal_introspection.introspect uuid=<% $.node_uuid %>
+        on-success: wait_for_introspection_to_finish
+        on-error: set_status_failed_start_introspection
+
+      set_status_failed_start_introspection:
+        publish:
+          status: FAILED
+          message: <% task(start_introspection).result %>
+          introspected_nodes: []
+        on-success: send_message
+
+      wait_for_introspection_to_finish:
+        action: baremetal_introspection.wait_for_finish
+        input:
+          uuids: <% [$.node_uuid] %>
+        publish:
+          introspected_node: <% task().result.values().first() %>
+          status: <% bool(task().result.values().first().error) and "FAILED" or "SUCCESS" %>
+        publish-on-error:
+          status: FAILED
+          message: <% task().result %>
+        on-success: wait_for_introspection_to_finish_success
+        on-error: send_message
+
+      wait_for_introspection_to_finish_success:
+        publish:
+          message: <% "Introspection of node {0} completed. Status:{1}. Errors:{2}".format($.introspected_node.uuid, $.status, $.introspected_node.error) %>
+        on-success: send_message
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1._introspect
+              payload:
+                status: <% $.status %>
+                message: <% $.message %>
+                introspected_node: <% $.get('introspected_node') %>
+                execution: <% execution() %>
+        on-success:
+          - fail: <% $.get('status') = "FAILED" %>
+
+  introspect:
+    description: Take a list of nodes and move them through introspection.
+
+    input:
+      - node_uuids
+      - run_validations: False
+      - queue_name: tripleo
+      - concurrency: 20
+
+    tasks:
+      pre_run_validations:
+        on-complete:
+          - run_validations: <% $.run_validations %>
+          - introspect_nodes: <% not $.run_validations %>
+
+      run_validations:
+        workflow: tripleo.validations.v1.run_groups
+        input:
+          group_names:
+            - 'pre-introspection'
+          queue_name: <% $.queue_name %>
+        on-success: introspect_nodes
+        on-error: set_validations_failed
+
+      set_validations_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(run_validations).result %>
+
+      introspect_nodes:
+        with-items: uuid in <% $.node_uuids %>
+        concurrency: <% $.concurrency %>
+        workflow: _introspect
+        input:
+          node_uuid: <% $.uuid %>
+          queue_name: <% $.queue_name %>
+        on-success: wait_for_introspection_to_finish
+        on-error: set_status_failed_introspect_nodes
+
+      set_status_failed_introspect_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(introspect_nodes).result %>
+          introspected_nodes: []
+
+      wait_for_introspection_to_finish:
+        on-success: send_message
+        action: baremetal_introspection.wait_for_finish
+        input:
+          uuids: <% $.node_uuids %>
+        publish:
+          introspected_nodes: <% task(wait_for_introspection_to_finish).result %>
+          status: SUCCESS
+          message: 'Successfully introspected nodes.'
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.introspect
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                introspected_nodes: <% $.get('introspected_nodes', []) %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+
+  introspect_manageable_nodes:
+    description: Introspect all nodes in a 'manageable' state.
+
+    input:
+      - run_validations: False
+      - queue_name: tripleo
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list maintenance=False associated=False
+        on-success: introspect_manageable
+        on-error: set_status_failed_get_manageable_nodes
+        publish:
+          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+
+      set_status_failed_get_manageable_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_manageable_nodes).result %>
+
+      introspect_manageable:
+        on-success: send_message
+        on-error: set_status_introspect_manageable
+        workflow: tripleo.baremetal.v1.introspect
+        input:
+          node_uuids: <% $.managed_nodes %>
+          run_validations: <% $.run_validations %>
+          queue_name: <% $.queue_name %>
+        publish:
+          introspected_nodes: <% task(introspect_manageable).result.introspected_nodes %>
+          message: 'Nodes introspected successfully.'
+
+      set_status_introspect_manageable:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(introspect_manageable).result %>
+          introspected_nodes: []
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.introspect_manageable_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+                introspected_nodes: <% $.get('introspected_nodes', []) %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  configure:
+    description: Take a list of manageable nodes and update their boot configuration.
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+      - kernel_name: bm-deploy-kernel
+      - ramdisk_name: bm-deploy-ramdisk
+      - instance_boot_option: null
+      - root_device: null
+      - root_device_minimum_size: 4
+      - overwrite_root_device_hints: False
+
+    tasks:
+
+      configure_boot:
+        on-success: configure_root_device
+        on-error: set_status_failed_configure_boot
+        with-items: node_uuid in <% $.node_uuids %>
+        action: tripleo.baremetal.configure_boot node_uuid=<% $.node_uuid %> kernel_name=<% $.kernel_name %> ramdisk_name=<% $.ramdisk_name %> instance_boot_option=<% $.instance_boot_option %>
+
+      configure_root_device:
+        on-success: send_message
+        on-error: set_status_failed_configure_root_device
+        with-items: node_uuid in <% $.node_uuids %>
+        action: tripleo.baremetal.configure_root_device node_uuid=<% $.node_uuid %> root_device=<% $.root_device %> minimum_size=<% $.root_device_minimum_size %> overwrite=<% $.overwrite_root_device_hints %>
+        publish:
+          status: SUCCESS
+          message: 'Successfully configured the nodes.'
+
+      set_status_failed_configure_boot:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(configure_boot).result %>
+
+      set_status_failed_configure_root_device:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(configure_root_device).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.configure
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+
+  configure_manageable_nodes:
+    description: Update the boot configuration of all nodes in 'manageable' state.
+
+    input:
+      - queue_name: tripleo
+      - kernel_name: 'bm-deploy-kernel'
+      - ramdisk_name: 'bm-deploy-ramdisk'
+      - instance_boot_option: null
+      - root_device: null
+      - root_device_minimum_size: 4
+      - overwrite_root_device_hints: False
+
+    tasks:
+
+      get_manageable_nodes:
+        action: ironic.node_list maintenance=False associated=False
+        on-success: configure_manageable
+        on-error: set_status_failed_get_manageable_nodes
+        publish:
+          managed_nodes: <% task(get_manageable_nodes).result.where($.provision_state = 'manageable').uuid %>
+
+      configure_manageable:
+        on-success: send_message
+        on-error: set_status_failed_configure_manageable
+        workflow: tripleo.baremetal.v1.configure
+        input:
+          node_uuids: <% $.managed_nodes %>
+          queue_name: <% $.queue_name %>
+          kernel_name: <% $.kernel_name %>
+          ramdisk_name: <% $.ramdisk_name %>
+          instance_boot_option: <% $.instance_boot_option %>
+          root_device: <% $.root_device %>
+          root_device_minimum_size: <% $.root_device_minimum_size %>
+          overwrite_root_device_hints: <% $.overwrite_root_device_hints %>
+        publish:
+          message: 'Manageable nodes configured successfully.'
+
+      set_status_failed_configure_manageable:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(configure_manageable).result %>
+
+      set_status_failed_get_manageable_nodes:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(get_manageable_nodes).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.configure_manageable_nodes
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+
+  tag_node:
+    description: Tag a node with a role
+    input:
+      - node_uuid
+      - role: null
+      - queue_name: tripleo
+
+    task-defaults:
+      on-error: send_message
+
+    tasks:
+
+      update_node:
+        on-success: send_message
+        action: tripleo.baremetal.update_node_capability node_uuid=<% $.node_uuid %> capability='profile' value=<% $.role %>
+        publish:
+          message: <% task(update_node).result %>
+          status: SUCCESS
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.tag_node
+              payload:
+                status: <% $.get('status', 'FAILED') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+
+  tag_nodes:
+    description: Runs the tag_node workflow in a loop
+    input:
+      - tag_node_uuids
+      - untag_node_uuids
+      - role
+      - plan: overcloud
+      - queue_name: tripleo
+
+    task-defaults:
+      on-error: send_message
+
+    tasks:
+
+      tag_nodes:
+        with-items: node_uuid in <% $.tag_node_uuids %>
+        workflow: tripleo.baremetal.v1.tag_node
+        input:
+          node_uuid: <% $.node_uuid %>
+          queue_name: <% $.queue_name %>
+          role: <% $.role %>
+        concurrency: 1
+        on-success: untag_nodes
+
+      untag_nodes:
+        with-items: node_uuid in <% $.untag_node_uuids %>
+        workflow: tripleo.baremetal.v1.tag_node
+        input:
+          node_uuid: <% $.node_uuid %>
+          queue_name: <% $.queue_name %>
+        concurrency: 1
+        on-success: update_role_parameters
+
+      update_role_parameters:
+        on-success: send_message
+        action: tripleo.parameters.update_role role=<% $.role %> container=<% $.plan %>
+        publish:
+          message: <% task(update_role_parameters).result %>
+          status: SUCCESS
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.tag_nodes
+              payload:
+                status: <% $.get('status', 'FAILED') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+  create_raid_configuration:
+    description: Create and apply RAID configuration for given nodes
+    input:
+      - node_uuids
+      - configuration
+      - queue_name: tripleo
+
+    tasks:
+
+      set_configuration:
+        with-items: node_uuid in <% $.node_uuids %>
+        action: ironic.node_set_target_raid_config node_ident=<% $.node_uuid %> target_raid_config=<% $.configuration %>
+        on-success: apply_configuration
+        on-error: set_configuration_failed
+
+      set_configuration_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(set_configuration).result %>
+
+      apply_configuration:
+        with-items: node_uuid in <% $.node_uuids %>
+        workflow: tripleo.baremetal.v1.manual_cleaning
+        input:
+          node_uuid: <% $.node_uuid %>
+          clean_steps:
+            - interface: raid
+              step: delete_configuration
+            - interface: raid
+              step: create_configuration
+          timeout: 1800  # building RAID should be fast than general cleaning
+          retry_count: 180
+          retry_delay: 10
+        on-success: send_message
+        on-error: apply_configuration_failed
+        publish:
+          message: <% task(apply_configuration).result %>
+          status: SUCCESS
+
+      apply_configuration_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(apply_configuration).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.create_raid_configuration
+              payload:
+                status: <% $.get('status', 'FAILED') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
+
+
+  cellv2_discovery:
+    description: Run cell_v2 host discovery
+
+    input:
+      - node_uuids
+      - queue_name: tripleo
+
+    tasks:
+
+      cell_v2_discover_hosts:
+        on-success: send_message
+        on-error: cell_v2_discover_hosts_failed
+        action: tripleo.baremetal.cell_v2_discover_hosts
+
+      cell_v2_discover_hosts_failed:
+        on-success: send_message
+        publish:
+          status: FAILED
+          message: <% task(cell_v2_discover_hosts).result %>
+
+      send_message:
+        action: zaqar.queue_post
+        retry: count=5 delay=1
+        input:
+          queue_name: <% $.queue_name %>
+          messages:
+            body:
+              type: tripleo.baremetal.v1.cellv2_discovery
+              payload:
+                status: <% $.get('status', 'SUCCESS') %>
+                message: <% $.get('message', '') %>
+                execution: <% execution() %>
+        on-success:
+          - fail_workflow: <% $.get('status') = "FAILED" %>
+
+      fail_workflow:
+        action: std.fail
