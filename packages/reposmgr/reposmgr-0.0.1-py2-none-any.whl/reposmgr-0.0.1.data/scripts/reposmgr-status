@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+repo_names=$(reposmgr properties name)
+for name in $repo_names; do
+    repo_path=$(reposmgr repo_property $name path)
+    echo "==============================="
+    (
+        cd $repo_path
+        echo "$repo_path ($(reposmgr repo_property $name url))"
+        echo "   ----"
+        git status | sed "s/^/    /g"
+        echo "   ----"
+        git log --oneline -n 3 | sed "s/^/    /g"
+    )
+done
