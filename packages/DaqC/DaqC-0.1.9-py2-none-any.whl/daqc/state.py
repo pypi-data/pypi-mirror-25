@@ -1,0 +1,9 @@
+class State:
+    RUNNING = "Running"
+    ONLINE = "Online"
+    STOPPED = "Stopped"
+    STOPPING = "Stopping"
+    STARTING = "Starting"
+    CRASHED = "Crashed"
+    STANDBY = "Standby"
+    ERROR = "Error"
