@@ -1,0 +1,38 @@
+import os
+
+from setuptools import setup, find_packages
+
+requires = ['kombu==3.0.26',
+            'requests>=2.3.0',
+            'six==1.10.0'
+            ]
+
+extras_require = {
+    'test': [
+        'pytest>=3.2.2'
+    ],
+    'cli': ['click==3.1']
+}
+
+setup(name='requests-celery-adapters',
+      version='2.0.3',
+      description='Requests lib adapters to send Celery messages (tasks)',
+      # long_description=README + '\n\n' + CHANGES,
+      classifiers=["Programming Language :: Python"],
+      author='Diog Fernandes',
+      author_email='diogo@geru.com.br',
+      url='',
+      keywords='worker celery',
+      packages=find_packages(),
+      include_package_data=True,
+      zip_safe=False,
+      test_suite='requests-celery-adapter',
+      install_requires=requires,
+      extras_require=extras_require,
+      entry_points="""\
+      [paste.app_factory]
+      main = rca:main
+      [console_scripts]
+      celery-send-task = rca.scripts.cli:send_task
+      """,
+      )
