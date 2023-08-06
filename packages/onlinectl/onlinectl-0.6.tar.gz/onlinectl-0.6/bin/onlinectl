@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+import argparse
+import logging
+import os
+from prettytable import PrettyTable
+import getpass
+from onlinectl import OnlineCtl
+
+def main():
+    parser = argparse.ArgumentParser(description='online command tools')
+    parser.add_argument('-v', '--verbose', dest='log', action='count')
+    parser.add_argument('--token', dest='token')
+    parser.add_argument('--list',action='store_true', help='list all server with id')
+    parser.add_argument('--list-keys', dest='get_ssh', action='store_true')
+    parser.add_argument('--os', dest='os')
+    parser.add_argument('--install', dest='install', action='store_true')
+    parser.add_argument('--server-id', dest='serverid', help='with --install option')
+    parser.add_argument('--os-id', dest='osid', help='with --install option')
+    parser.add_argument('--hostname')
+    parser.add_argument('--user-login', dest='userlogin', help='with --install option')
+    parser.add_argument('--user-password', dest='userpassword', help='with --install option')
+    parser.add_argument('--root-password', dest='rootpassword', help='with --install option')
+    parser.add_argument('--sshkey-id', dest='sshkeyid', help='with --install option')
+    parser.add_argument('--part-template', dest='parttemp', help='with --install option')
+    parser.add_argument('--partitionning', help='with --install option')
+    parser.add_argument('--console-password', dest='console_pass')
+    args = parser.parse_args()
+
+    if  args.log and args.log == 1:
+        logging.basicConfig(level=logging.WARNING)
+    elif args.log == 2:
+        logging.basicConfig(level=logging.INFO)
+    elif args.log == 3:
+        logging.basicConfig(level=logging.DEBUG)
+
+    if args.token:
+        logging.debug("Use --token to provide Online token")
+        online_client = OnlineCtl(args.token)
+    elif os.getenv("ONLINE_TOKEN"):
+        logging.debug("Use ONLINE_TOKEN env var")
+        online_client = OnlineCtl(os.getenv("ONLINE_TOKEN"))
+    else:
+        logging.error("You must provide Online private token")
+
+    if args.list:
+        server_array = PrettyTable()
+        server_array.field_names = ["Hostname", "id"]
+        for i in online_client.get_lists_of_servers():
+            server_array.add_row([i['hostname'], i['id']])
+        print(server_array)
+
+    if args.os:
+        os_array = PrettyTable()
+        os_array.field_names = ["Name", "Version", "id", "arch"]
+        for i in online_client.get_available_os(args.os):
+            os_array.add_row([i['name'], i['version'], i['id'], i.get('arch','-')])
+        print(os_array)
+
+    if args.get_ssh:
+        ssh_array = PrettyTable()
+        ssh_array.field_names = ["Nom", "UUID"]
+        for i in online_client.get_sshkeys():
+            ssh_array.add_row([i['description'], i['uuid_ref']])
+        print(ssh_array)
+
+    if args.install:
+        if not args.console_pass:
+            panelpasswd = getpass.getpass()
+        else:
+            panelpasswd = args.console_pass
+
+        if args.parttemp:
+            online_client.install_server(args.serverid, args.osid, args.hostname, args.userlogin, args.userpassword, args.rootpassword, panelpasswd, args.sshkeyid, partition_template=args.parttemp)
+        elif args.partitionning:
+            online_client.install_server(args.serverid, args.osid, args.hostname, args.userlogin, args.userpassword, args.rootpassword, panelpasswd, args.sshkeyid, partition=args.partitionning)
+        else:
+            logging.error("You must use --part-template or --partitionning with --install")
+
+if __name__ == "__main__":
+    main()
