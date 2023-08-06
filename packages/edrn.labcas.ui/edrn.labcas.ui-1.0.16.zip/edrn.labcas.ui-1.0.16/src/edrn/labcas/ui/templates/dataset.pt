@@ -1,0 +1,150 @@
+<?xml version='1.0' encoding='UTF-8'?> 
+<!DOCTYPE html>
+<html
+    xmlns='http://www.w3.org/1999/xhtml'
+    xmlns:tal='http://xml.zope.org/namespaces/tal'
+    xmlns:metal='http://xml.zope.org/namespaces/metal'
+    lang='en'
+    xml:lang='en'
+    metal:use-macro='load:edrn.labcas.ui:templates/master.pt'>
+    <head>
+        <title>Dataset</title>
+        <!--
+            provided names:
+            - collection: parent collection
+            - dataset: current dataset
+            - showCheckboxes: boolean indicating if the download checkboxes should be showed
+        -->
+        <metal:javascript fill-slot='javascript_head_slot'>
+            <script type='text/javascript' tal:condition='showCheckboxes'>
+            </script>
+        </metal:javascript>
+    </head>
+    <body>
+        <div metal:fill-slot='content'>
+            <div class='container'>
+                <ol class='breadcrumb'>
+                    <li><a href='#' tal:attributes='href python:request.route_url("collections")'>Collections</a></li>
+                    <li>
+                        <a href='#' tal:content='collection.name' tal:attributes='
+                            href python:request.route_url("collection", collectionID=collection.identifier)
+                        '>urn:id:collection</a>
+                    </li>
+                    <li class='active' tal:content='python:dataset.name'>Some Dataset Name</li>
+                </ol>
+
+                <h1>Dataset: <span tal:replace='dataset.name'>urn:whatever:blah-blah</span></h1>
+
+                <dl class='dl-horizontal'>
+                    <dt>Identifier:</dt>
+                    <dd tal:content='dataset.identifier'>urn:id:datasetID</dd>
+                    <dt>Name:</dt>
+                    <dd tal:content='dataset.name'>Some Dataset Name</dd>
+                    <dt>Description:</dt>
+                    <dd tal:content='python:dataset.description'>
+                        Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+                        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+                        quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+                        cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+                        proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                    </dd>
+                </dl>
+
+                <h4>Other Metadata</h4>
+
+                <table id='metadata' class='table' tal:define='metadata dataset.getMetadata()'>
+                    <tbody>
+                        <tr tal:repeat='row metadata'>
+                            <td><label tal:content='python:row[0]'>Number of sheep</label></td>
+                            <td tal:define='values python:row[1]'>
+                                <span tal:condition='python:len(values) == 0' class='text-muted'>
+                                    No values.
+                                </span>
+                                <span tal:condition='python:len(values) == 1'
+                                    tal:content='structure python:values[0]'>
+                                    One value
+                                </span>
+                                <ul tal:condition='python:len(values) &gt; 1'>
+                                    <li tal:repeat='value values'>
+                                        <span tal:replace='value'>One of several values</span>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Files</h3>
+                <div tal:define='files python:dataset.files()'>
+                    <form action='#' method='POST' tal:attributes='action python:request.current_route_url()'>
+                        <table class='table' id='file-table'>
+                            <thead>
+                                <tr>
+                                    <th tal:condition='showCheckboxes'>
+                                        <input type='checkbox' name='select-all' id='select-all'/>
+                                    </th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Thumbnail</th>
+                                    <th style='text-align: right;'>Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr tal:repeat='f python:files'>
+                                    <td tal:condition='showCheckboxes'>
+                                        <input type='checkbox' name='include.name'
+                                            tal:attributes='name python:u"include." + f.identifier'/>
+                                    </td>
+                                    <td tal:define='fileURL python:request.route_url(
+                                        "file",
+                                        collectionID=collection.identifier,
+                                        datasetID=dataset.identifier,
+                                        fileID=f.identifier,
+                                    )'>
+                                        <a href='#' tal:attributes='href fileURL' tal:content='f.name'>
+                                            Some file name
+                                        </a>
+                                    </td>
+                                    <td tal:content='python:view.humanFriendlyMimeType(f)'>
+                                        application/get-a-life
+                                    </td>
+                                    <td tal:content='f.description'>
+                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+                                        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+                                        quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                                        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+                                        cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+                                        proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                                    </td>
+                                    <td>
+                                        <img src='#' tal:condition='f.thumbnailURL' tal:attributes='src f.thumbnailURL'
+                                            style='border-width: 1px; border-color: black; border-style: solid;'
+                                            width='80' />
+                                    </td>
+                                    <td tal:content='python:view.humanFriendlySize(f.size)'
+                                        style='text-align: right;'>
+                                        42M
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type='submit' class='btn bth-default' name='Download checked files'
+                            value='download' tal:condition='showCheckboxes'>
+                            <span class='glyphicon glyphicon-download-alt' aria-hidden='true'></span>
+                            Download checked files
+                        </button>
+                    </form>
+                    <script type='text/javascript' tal:condition='showCheckboxes'>
+                        $(document).ready(function() {
+                            $("#select-all").click(function() {
+                                $("#file-table input[type='checkbox']").prop('checked', this.checked);
+                            });
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
