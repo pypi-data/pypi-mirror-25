@@ -1,0 +1,75 @@
+Metadata-Version: 2.0
+Name: plenario-mailer-core
+Version: 0.0.2
+Summary: common email templates and functions
+Home-page: https://github.com/UrbanCCD-UChicago/plenario-mailer-core
+Author: Vince Forgione
+Author-email: vforgione@uhicago.edu
+License: GPLv3
+Keywords: plenario
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Programming Language :: Python :: 3.6
+Requires-Python: >=3.6
+Requires-Dist: Django (<1.12,>=1.11)
+Requires-Dist: plenario-core
+
+Plenario Mailer Core
+====================
+
+.. image:: https://travis-ci.org/UrbanCCD-UChicago/plenario-mailer-core.svg?branch=master
+   :target: https://travis-ci.org/UrbanCCD-UChicago/plenario-mailer-core
+
+.. image:: https://coveralls.io/repos/github/UrbanCCD-UChicago/plenario-mailer-core/badge.svg?branch=master
+   :target: https://coveralls.io/github/UrbanCCD-UChicago/plenario-mailer-core?branch=master
+
+
+Usage
+-----
+
+This package has a handful of useful shortcuts to send informational emails to
+data set contributors and admins. The functions can be wired up to be used
+with the data set event signals provided in ``plenario-core``. For example::
+
+    from plenario_core.signals import data_set_approved
+    from plenario_core_mailer import mailer
+
+    def notify_approval(meta_model: MetaBase) -> None:
+        mailer.send_data_set_approved(meta_model)
+
+    data_set_approved.connect(notify_approval)
+
+Now, when a data set is marked as approved, ``plenario-core`` will fire off the
+signal and the defined handler will pick it up and call the mailer function.
+
+
+Development
+-----------
+
+Fire up a virtualenv and install the dev requirements::
+
+    $ python3.6 -m venv .env
+    $ source .env/bin/activate
+    $ pip install -r dev-requirements.txt
+
+To run the tests, in a separate terminal pull in the PostGIS docker image and create the database::
+
+    $ docker pull mdillon/postgis
+    $ docker run -d -p 5432:5432 mdillon/postgis
+    $ docker ps
+    ...
+    $ docker exec -it {container hash} /bin/bash
+    ...
+    # su postgres -c psql
+    ...
+    > create database plenario;
+
+Then all you have to do is run the tests normally::
+
+    $ coverage run manage.py test
+    $ coverage report
+    $ flake8
+
+
+
