@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tox and pytest &mdash; tox 2.9.0rc2.dev63 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="tox 2.9.0rc2.dev63 documentation" href="../index.html"/>
+        <link rel="up" title="Examples" href="../examples.html"/>
+        <link rel="next" title="unittest2, discover and tox" href="unittest.html"/>
+        <link rel="prev" title="Basic usage" href="basic.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> tox
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic.html">Basic usage</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tox and pytest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-example">Basic example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-example">Advanced example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-test-on-multiple-cpus">Run test on multiple CPUs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#issues-and-limitations">Issues and limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unittest.html">unittest2, discover and tox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nose.html">tox and nose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="general.html">General tips and tricks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jenkins.html">Using tox with Jenkins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devenv.html">Development environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devenv.html#advanced-scenario">Advanced  scenario</a></li>
+<li class="toctree-l2"><a class="reference internal" href="platform.html">Platform specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="result-json.html">Write a json report file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">tox.ini reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config-advanced.html">Advanced configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins.html">Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer-faq.html">Developer FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../org.html">Organisatorical</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">tox</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../examples.html">Examples</a> &raquo;</li>
+        
+      <li>tox and pytest</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tox-and-pytest">
+<h1>tox and pytest<a class="headerlink" href="#tox-and-pytest" title="Permalink to this headline">¶</a></h1>
+<p>It is easy to integrate <a class="reference external" href="http://pytest.org">pytest</a> runs with tox.  If you encounter
+issues, please check if they are <a class="reference internal" href="#listed-as-a-known-issue">listed as a known issue</a> and/or use the <a class="reference internal" href="../org.html#support"><span class="std std-ref">Paid professional support</span></a>.</p>
+<div class="section" id="basic-example">
+<h2>Basic example<a class="headerlink" href="#basic-example" title="Permalink to this headline">¶</a></h2>
+<p>Assuming the following layout:</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>tox.ini      <span class="c1"># see below for content</span>
+setup.py     <span class="c1"># a classic distutils/setuptools setup.py file</span>
+</pre></div>
+</div>
+<p>and the following <code class="docutils literal"><span class="pre">tox.ini</span></code> content:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="k">[tox]</span>
+<span class="na">envlist</span> <span class="o">=</span> <span class="s">py26,py31</span>
+
+<span class="k">[testenv]</span>
+<span class="na">deps</span> <span class="o">=</span> <span class="s">pytest               # PYPI package providing pytest</span>
+<span class="na">commands</span> <span class="o">=</span> <span class="s">pytest {posargs} # substitute with tox&#39; positional arguments</span>
+</pre></div>
+</div>
+<p>you can now invoke <code class="docutils literal"><span class="pre">tox</span></code> in the directory where your <code class="docutils literal"><span class="pre">tox.ini</span></code> resides.
+<code class="docutils literal"><span class="pre">tox</span></code> will sdist-package your project, create two virtualenv environments
+with the <code class="docutils literal"><span class="pre">python2.6</span></code> and <code class="docutils literal"><span class="pre">python3.1</span></code> interpreters, respectively, and will
+then run the specified test command in each of them.</p>
+</div>
+<div class="section" id="advanced-example">
+<h2>Advanced example<a class="headerlink" href="#advanced-example" title="Permalink to this headline">¶</a></h2>
+<p><em>change dir before test and use per-virtualenv tempdir</em></p>
+<p>Assuming the following layout:</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>tox.ini      <span class="c1"># see below for content</span>
+setup.py     <span class="c1"># a classic distutils/setuptools setup.py file</span>
+tests        <span class="c1"># the directory containing tests</span>
+</pre></div>
+</div>
+<p>and the following <code class="docutils literal"><span class="pre">tox.ini</span></code> content:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="k">[tox]</span>
+<span class="na">envlist</span> <span class="o">=</span> <span class="s">py26,py31</span>
+<span class="k">[testenv]</span>
+<span class="na">changedir</span><span class="o">=</span><span class="s">tests</span>
+<span class="na">deps</span><span class="o">=</span><span class="s">pytest</span>
+<span class="na">commands</span><span class="o">=</span> <span class="s">pytest  --basetemp={envtmpdir}  \ # pytest tempdir setting</span>
+<span class="s">                  {posargs}                 # substitute with tox&#39; positional arguments</span>
+</pre></div>
+</div>
+<p>you can invoke <code class="docutils literal"><span class="pre">tox</span></code> in the directory where your <code class="docutils literal"><span class="pre">tox.ini</span></code> resides.
+Differently than in the previous example the <code class="docutils literal"><span class="pre">pytest</span></code> command
+will be executed with a current working directory set to <code class="docutils literal"><span class="pre">tests</span></code>
+and the test run will use the per-virtualenv temporary directory.</p>
+</div>
+<div class="section" id="run-test-on-multiple-cpus">
+<span id="passing-positional-arguments"></span><h2>Run test on multiple CPUs<a class="headerlink" href="#run-test-on-multiple-cpus" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">pytest</span></code> supports distributing tests to multiple processes and hosts
+through the <a class="reference external" href="https://pypi.python.org/pypi/pytest-xdist">pytest-xdist</a> plugin.  Here is an example configuration
+to make <code class="docutils literal"><span class="pre">tox</span></code> use this feature:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="k">[testenv]</span>
+<span class="na">deps</span><span class="o">=</span><span class="s">pytest-xdist</span>
+<span class="na">changedir</span><span class="o">=</span><span class="s">tests</span>
+<span class="na">commands</span><span class="o">=</span> <span class="s">pytest --basetemp={envtmpdir}  \</span>
+<span class="s">                 --confcutdir=..         \</span>
+<span class="s">                 -n 3                    \ # use three sub processes</span>
+<span class="s">                 {posargs}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="issues-and-limitations">
+<span id="listed-as-a-known-issue"></span><h2>Issues and limitations<a class="headerlink" href="#issues-and-limitations" title="Permalink to this headline">¶</a></h2>
+<p><strong>Too long filenames</strong>. you may encounter “too long filenames” for temporarily
+created files in your pytest run.  Try to not use the “–basetemp” parameter.</p>
+<p><strong>installed-versus-checkout version</strong>.  <code class="docutils literal"><span class="pre">pytest</span></code> collects test
+modules on the filesystem and then tries to import them under their
+<a class="reference external" href="https://docs.pytest.org/en/latest/goodpractices.html#test-package-name">fully qualified name</a>. This means that if your test files are
+importable from somewhere then your <code class="docutils literal"><span class="pre">pytest</span></code> invocation may end up
+importing the package from the checkout directory rather than the
+installed package.</p>
+<p>There are a few ways to prevent this.</p>
+<p>With installed tests (the tests packages are known to <code class="docutils literal"><span class="pre">setup.py</span></code>), a
+safe and explicit option is to give the explicit path
+<code class="docutils literal"><span class="pre">{envsitepackagesdir}/mypkg</span></code> to pytest.
+Alternatively, it is possible to use <code class="docutils literal"><span class="pre">changedir</span></code> so that checked-out
+files are outside the import path, then pass <code class="docutils literal"><span class="pre">--pyargs</span> <span class="pre">mypkg</span></code> to
+pytest.</p>
+<p>With tests that won’t be installed, the simplest way to run them
+against your installed package is to avoid <code class="docutils literal"><span class="pre">__init__.py</span></code> files in test
+directories; pytest will still find and import them by adding their
+parent directory to <code class="docutils literal"><span class="pre">sys.path</span></code> but they won’t be copied to
+other places or be found by Python’s import system outside of pytest.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="unittest.html" class="btn btn-neutral float-right" title="unittest2, discover and tox" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="basic.html" class="btn btn-neutral" title="Basic usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2010-2017, holger krekel and others.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'2.9.0rc2.dev63',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

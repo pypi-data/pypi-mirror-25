@@ -1,0 +1,401 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Using tox with Jenkins &mdash; tox 2.9.0rc2.dev63 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="tox 2.9.0rc2.dev63 documentation" href="../index.html"/>
+        <link rel="up" title="Examples" href="../examples.html"/>
+        <link rel="next" title="Development environment" href="devenv.html"/>
+        <link rel="prev" title="General tips and tricks" href="general.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> tox
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic.html">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pytest.html">tox and pytest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unittest.html">unittest2, discover and tox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nose.html">tox and nose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="general.html">General tips and tricks</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Using tox with Jenkins</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-jenkins-multi-configuration-jobs">Using Jenkins multi-configuration jobs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integrating-sphinx-documentation-checks-in-a-jenkins-job">Integrating “sphinx” documentation checks in a Jenkins job</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#access-package-artifacts-between-jenkins-jobs">Access package artifacts between Jenkins jobs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#avoiding-the-path-too-long-error-with-long-shebang-lines">Avoiding the “path too long” error with long shebang lines</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="devenv.html">Development environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devenv.html#advanced-scenario">Advanced  scenario</a></li>
+<li class="toctree-l2"><a class="reference internal" href="platform.html">Platform specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="result-json.html">Write a json report file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">tox.ini reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config-advanced.html">Advanced configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins.html">Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer-faq.html">Developer FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../org.html">Organisatorical</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">tox</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../examples.html">Examples</a> &raquo;</li>
+        
+      <li>Using tox with Jenkins</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="using-tox-with-jenkins">
+<h1>Using tox with Jenkins<a class="headerlink" href="#using-tox-with-jenkins" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="using-jenkins-multi-configuration-jobs">
+<h2>Using Jenkins multi-configuration jobs<a class="headerlink" href="#using-jenkins-multi-configuration-jobs" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference external" href="https://jenkins.io/index.html">Jenkins</a> continuous integration server allows to define “jobs” with
+“build steps” which can be test invocations.  install <code class="docutils literal"><span class="pre">tox</span></code> on your
+default Python installation on each Jenkins slave, you can easily create
+a Jenkins multi-configuration job that will drive your tox runs from the
+CI-server side, using these steps:</p>
+<ul>
+<li><p class="first">install the Python plugin for Jenkins under “manage jenkins”</p>
+</li>
+<li><p class="first">create a “multi-configuration” job, give it a name of your choice</p>
+</li>
+<li><p class="first">configure your repository so that Jenkins can pull it</p>
+</li>
+<li><p class="first">(optional) configure multiple nodes so that tox-runs are performed
+on multiple hosts</p>
+</li>
+<li><p class="first">configure <code class="docutils literal"><span class="pre">axes</span></code> by using <a class="reference internal" href="general.html#toxenv"><span class="std std-ref">TOXENV</span></a> as an axis
+name and as values provide space-separated test environment names
+you want Jenkins/tox to execute.</p>
+</li>
+<li><p class="first">add a <strong>Python-build step</strong> with this content (see also next example):</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tox</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;WORKSPACE&#39;</span><span class="p">))</span>
+<span class="n">tox</span><span class="o">.</span><span class="n">cmdline</span><span class="p">()</span> <span class="c1"># environment is selected by ``TOXENV`` env variable</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">check <code class="docutils literal"><span class="pre">Publish</span> <span class="pre">JUnit</span> <span class="pre">test</span> <span class="pre">result</span> <span class="pre">report</span></code> and enter
+<code class="docutils literal"><span class="pre">**/junit-*.xml</span></code> as the pattern so that Jenkins collects
+test results in the JUnit XML format.</p>
+</li>
+</ul>
+<p>The last point requires that your test command creates JunitXML files,
+for example with <code class="docutils literal"><span class="pre">pytest</span></code> it is done like this:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span><span class="na">commands</span> <span class="o">=</span> <span class="s">pytest --junitxml=junit-{envname}.xml</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="integrating-sphinx-documentation-checks-in-a-jenkins-job">
+<h2>Integrating “sphinx” documentation checks in a Jenkins job<a class="headerlink" href="#integrating-sphinx-documentation-checks-in-a-jenkins-job" title="Permalink to this headline">¶</a></h2>
+<p>If you are using a multi-configuration Jenkins job which collects
+JUnit Test results you will run into problems using the previous
+method of running the sphinx-build command because it will not
+generate JUnit results.  To accommodate this issue one solution
+is to have <code class="docutils literal"><span class="pre">pytest</span></code> wrap the sphinx-checks and create a
+JUnit result file which wraps the result of calling sphinx-build.
+Here is an example:</p>
+<ol class="arabic simple">
+<li>create a <code class="docutils literal"><span class="pre">docs</span></code> environment in your <code class="docutils literal"><span class="pre">tox.ini</span></code> file like this:</li>
+</ol>
+<blockquote>
+<div><div class="highlight-ini"><div class="highlight"><pre><span></span><span class="k">[testenv:docs]</span>
+<span class="na">basepython</span> <span class="o">=</span> <span class="s">python</span>
+<span class="na">changedir</span> <span class="o">=</span> <span class="s">doc # or wherever you keep your sphinx-docs</span>
+<span class="na">deps</span> <span class="o">=</span> <span class="s">sphinx</span>
+<span class="s">       py</span>
+<span class="na">commands</span> <span class="o">=</span> <span class="s">pytest --tb=line -v --junitxml=junit-{envname}.xml check_sphinx.py</span>
+</pre></div>
+</div>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li>create a <code class="docutils literal"><span class="pre">doc/check_sphinx.py</span></code> file like this:</li>
+</ol>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">py</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="k">def</span> <span class="nf">test_linkcheck</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">):</span>
+    <span class="n">doctrees</span> <span class="o">=</span> <span class="n">tmpdir</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;doctrees&quot;</span><span class="p">)</span>
+    <span class="n">htmldir</span> <span class="o">=</span> <span class="n">tmpdir</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;sphinx-build&quot;</span><span class="p">,</span> <span class="s2">&quot;-W&quot;</span><span class="p">,</span> <span class="s2">&quot;-blinkcheck&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">doctrees</span><span class="p">),</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">htmldir</span><span class="p">)])</span>
+
+<span class="k">def</span> <span class="nf">test_build_docs</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">):</span>
+    <span class="n">doctrees</span> <span class="o">=</span> <span class="n">tmpdir</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;doctrees&quot;</span><span class="p">)</span>
+    <span class="n">htmldir</span> <span class="o">=</span> <span class="n">tmpdir</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span>
+        <span class="s2">&quot;sphinx-build&quot;</span><span class="p">,</span> <span class="s2">&quot;-W&quot;</span><span class="p">,</span> <span class="s2">&quot;-bhtml&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">doctrees</span><span class="p">),</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">htmldir</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li>run <code class="docutils literal"><span class="pre">tox</span> <span class="pre">-e</span> <span class="pre">docs</span></code> and then you may integrate this environment
+along with your other environments into Jenkins.</li>
+</ol>
+<p>Note that <code class="docutils literal"><span class="pre">pytest</span></code> is only installed into the docs environment
+and does not need to be in use or installed with any other environment.</p>
+</div>
+<div class="section" id="access-package-artifacts-between-jenkins-jobs">
+<span id="jenkins-artifact-example"></span><h2>Access package artifacts between Jenkins jobs<a class="headerlink" href="#access-package-artifacts-between-jenkins-jobs" title="Permalink to this headline">¶</a></h2>
+<p>In an extension to <a class="reference internal" href="general.html#artifacts"><span class="std std-ref">Share package artifacts between testruns</span></a> you can also configure Jenkins jobs to
+access each others artifacts.  <code class="docutils literal"><span class="pre">tox</span></code> uses the <code class="docutils literal"><span class="pre">distshare</span></code> directory
+to access artifacts and in a Jenkins context (detected via existence
+of the environment variable <code class="docutils literal"><span class="pre">HUDSON_URL</span></code>); it defaults to
+to <code class="docutils literal"><span class="pre">{toxworkdir}/distshare</span></code>.</p>
+<p>This means that each workspace will have its own <code class="docutils literal"><span class="pre">distshare</span></code>
+directory and we need to configure Jenkins to perform artifact copying.
+The recommend way to do this is to install the <a class="reference external" href="https://wiki.jenkins.io/display/JENKINS/Copy+Artifact+Plugin">Jenkins Copy Artifact plugin</a>
+and for each job which “receives” artifacts you add a <strong>Copy artifacts from another project</strong> build step
+using roughly this configuration:</p>
+<blockquote>
+<div><div class="highlight-shell"><div class="highlight"><pre><span></span>Project-name: name of the other <span class="o">(</span>tox-managed<span class="o">)</span> job you want the artifact from
+Artifacts to copy: .tox/dist/*.zip   <span class="c1"># where tox jobs create artifacts</span>
+Target directory: .tox/distshare     <span class="c1"># where we want it to appear for us</span>
+Flatten Directories: CHECK           <span class="c1"># create no subdir-structure</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>You also need to configure the “other” job to archive artifacts; This
+is done by checking <code class="docutils literal"><span class="pre">Archive</span> <span class="pre">the</span> <span class="pre">artifacts</span></code> and entering:</p>
+<blockquote>
+<div><div class="highlight-shell"><div class="highlight"><pre><span></span>Files to archive: .tox/dist/*.zip
+</pre></div>
+</div>
+</div></blockquote>
+<p>So our “other” job will create an sdist-package artifact and
+the “copy-artifacts” plugin will copy it to our <code class="docutils literal"><span class="pre">distshare</span></code> area.
+Now everything proceeds as <a class="reference internal" href="general.html#artifacts"><span class="std std-ref">Share package artifacts between testruns</span></a> shows it.</p>
+<p>So if you are using defaults you can re-use and debug exactly the
+same <code class="docutils literal"><span class="pre">tox.ini</span></code> file and make use of automatic sharing of
+your artifacts between runs or Jenkins jobs.</p>
+</div>
+<div class="section" id="avoiding-the-path-too-long-error-with-long-shebang-lines">
+<h2>Avoiding the “path too long” error with long shebang lines<a class="headerlink" href="#avoiding-the-path-too-long-error-with-long-shebang-lines" title="Permalink to this headline">¶</a></h2>
+<p>If you are using Jenkins builds you might run into the issue
+that tox can not call <code class="docutils literal"><span class="pre">pip</span></code> because the so called “shebang”
+line is too long.  There is a limit of 127 chars on some systems.
+Probably the best way to fix the problem is to use the
+new <code class="docutils literal"><span class="pre">--workdir</span></code> option which tells tox to use a specific
+directory for its virtualenvironments.  Set it to some unique
+enough short path.  If somebody is interested to do a PR
+you could add a new option to tox which uses a random
+directory for storing its workdir results and removes
+it after the tox run finishes.  This could be used
+from CI environments where you probably anyway want
+to recreate everything on new runs.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="devenv.html" class="btn btn-neutral float-right" title="Development environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="general.html" class="btn btn-neutral" title="General tips and tricks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2010-2017, holger krekel and others.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'2.9.0rc2.dev63',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

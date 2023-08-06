@@ -1,0 +1,693 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>tox.venv &mdash; tox 2.9.0rc2.dev63 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="tox 2.9.0rc2.dev63 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> tox
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">tox.ini reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config-advanced.html">Advanced configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins.html">Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developer-faq.html">Developer FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../org.html">Organisatorical</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">tox</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tox.venv</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tox.venv</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">py</span>
+
+<span class="kn">import</span> <span class="nn">tox</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="k">import</span> <span class="n">DepConfig</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="k">import</span> <span class="n">hookimpl</span>
+
+
+<span class="k">class</span> <span class="nc">CreationConfig</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">md5</span><span class="p">,</span> <span class="n">python</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">sitepackages</span><span class="p">,</span>
+                 <span class="n">usedevelop</span><span class="p">,</span> <span class="n">deps</span><span class="p">,</span> <span class="n">alwayscopy</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">md5</span> <span class="o">=</span> <span class="n">md5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">python</span> <span class="o">=</span> <span class="n">python</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sitepackages</span> <span class="o">=</span> <span class="n">sitepackages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">usedevelop</span> <span class="o">=</span> <span class="n">usedevelop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alwayscopy</span> <span class="o">=</span> <span class="n">alwayscopy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deps</span> <span class="o">=</span> <span class="n">deps</span>
+
+    <span class="k">def</span> <span class="nf">writeconfig</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">md5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">python</span><span class="p">)]</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%d</span><span class="s2"> </span><span class="si">%d</span><span class="s2"> </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sitepackages</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">usedevelop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alwayscopy</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">deps</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">dep</span><span class="p">)</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">ensure</span><span class="p">()</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">readconfig</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">readlines</span><span class="p">(</span><span class="n">cr</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">md5</span><span class="p">,</span> <span class="n">python</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">version</span><span class="p">,</span> <span class="n">sitepackages</span><span class="p">,</span> <span class="n">usedevelop</span><span class="p">,</span> <span class="n">alwayscopy</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+            <span class="n">sitepackages</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">sitepackages</span><span class="p">))</span>
+            <span class="n">usedevelop</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">usedevelop</span><span class="p">))</span>
+            <span class="n">alwayscopy</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">alwayscopy</span><span class="p">))</span>
+            <span class="n">deps</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                <span class="n">md5</span><span class="p">,</span> <span class="n">depstring</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">deps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">md5</span><span class="p">,</span> <span class="n">depstring</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">CreationConfig</span><span class="p">(</span><span class="n">md5</span><span class="p">,</span> <span class="n">python</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">sitepackages</span><span class="p">,</span> <span class="n">usedevelop</span><span class="p">,</span> <span class="n">deps</span><span class="p">,</span> <span class="n">alwayscopy</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">other</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">md5</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">md5</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">python</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">python</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">version</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sitepackages</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">sitepackages</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">usedevelop</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">usedevelop</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alwayscopy</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">alwayscopy</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">deps</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">deps</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="VirtualEnv"><a class="viewcode-back" href="../../plugins.html#tox.venv.VirtualEnv">[docs]</a><span class="k">class</span> <span class="nc">VirtualEnv</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">envconfig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span> <span class="o">=</span> <span class="n">envconfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">pluginmanager</span><span class="o">.</span><span class="n">hook</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Path to environment base dir. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envdir</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;.tox-config1&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; test environment name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envname</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;VirtualEnv at </span><span class="si">%r</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VirtualEnv.getcommandpath"><a class="viewcode-back" href="../../plugins.html#tox.venv.VirtualEnv.getcommandpath">[docs]</a>    <span class="k">def</span> <span class="nf">getcommandpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">venv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return absolute path (str or localpath) for specified command name.</span>
+
+<span class="sd">        - If it&#39;s a local path we will rewrite it as as a relative path.</span>
+<span class="sd">        - If venv is True we will check if the command is coming from the venv</span>
+<span class="sd">          or is whitelisted to come from external.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">cwd</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">check</span><span class="p">():</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">venv</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_venv_lookup_and_check_external_whitelist</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normal_lookup</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">tox</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">InvocationError</span><span class="p">(</span>
+                <span class="s2">&quot;could not find executable </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,))</span>
+
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>  <span class="c1"># will not be rewritten for reporting</span></div>
+
+    <span class="k">def</span> <span class="nf">_venv_lookup_and_check_external_whitelist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_venv_lookup</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normal_lookup</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_check_external_allowed_and_warn</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">path</span>
+
+    <span class="k">def</span> <span class="nf">_venv_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">py</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">local</span><span class="o">.</span><span class="n">sysfind</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">paths</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envbindir</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_normal_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">py</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">local</span><span class="o">.</span><span class="n">sysfind</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_external_allowed_and_warn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_allowed_external</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;test command found but not installed in testenv</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;  cmd: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;  env: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Maybe you forgot to specify a dependency? &quot;</span>
+                <span class="s2">&quot;See also the whitelist_externals envconfig setting.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envdir</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">is_allowed_external</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">tryadd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s2">&quot;win32&quot;</span><span class="p">:</span>
+            <span class="n">tryadd</span> <span class="o">+=</span> <span class="p">[</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PATHEXT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">py</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">local</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">whitelist_externals</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">add</span> <span class="ow">in</span> <span class="n">tryadd</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">add</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_ispython3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;python3&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">basepython</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VirtualEnv.update"><a class="viewcode-back" href="../../plugins.html#tox.venv.VirtualEnv.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return status string for updating actual venv to match configuration.</span>
+<span class="sd">            if status string is empty, all is ok.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rconfig</span> <span class="o">=</span> <span class="n">CreationConfig</span><span class="o">.</span><span class="n">readconfig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_config</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">recreate</span> <span class="ow">and</span> <span class="n">rconfig</span> <span class="ow">and</span> \
+           <span class="n">rconfig</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getliveconfig</span><span class="p">()):</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;reusing&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envdir</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">rconfig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envdir</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;recreate&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envdir</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hook</span><span class="o">.</span><span class="n">tox_testenv_create</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span> <span class="n">venv</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">just_created</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">tox</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">UnsupportedInterpreter</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="n">tox</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">InterpreterNotFound</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hook</span><span class="o">.</span><span class="n">tox_testenv_install_deps</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span> <span class="n">venv</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">tox</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">InvocationError</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">return</span> <span class="s2">&quot;could not install deps </span><span class="si">%s</span><span class="s2">; v = </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">deps</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_getliveconfig</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">python</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">python_info</span><span class="o">.</span><span class="n">executable</span>
+        <span class="n">md5</span> <span class="o">=</span> <span class="n">getdigest</span><span class="p">(</span><span class="n">python</span><span class="p">)</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">tox</span><span class="o">.</span><span class="n">__version__</span>
+        <span class="n">sitepackages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">sitepackages</span>
+        <span class="n">develop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">usedevelop</span>
+        <span class="n">alwayscopy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">alwayscopy</span>
+        <span class="n">deps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getresolvedeps</span><span class="p">():</span>
+            <span class="n">raw_dep</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">md5</span> <span class="o">=</span> <span class="n">getdigest</span><span class="p">(</span><span class="n">raw_dep</span><span class="p">)</span>
+            <span class="n">deps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">md5</span><span class="p">,</span> <span class="n">raw_dep</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">CreationConfig</span><span class="p">(</span><span class="n">md5</span><span class="p">,</span> <span class="n">python</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span>
+                              <span class="n">sitepackages</span><span class="p">,</span> <span class="n">develop</span><span class="p">,</span> <span class="n">deps</span><span class="p">,</span> <span class="n">alwayscopy</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getresolvedeps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">deps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dep</span><span class="o">.</span><span class="n">indexserver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">_resolve_pkg</span><span class="p">(</span><span class="n">dep</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">res</span> <span class="o">!=</span> <span class="n">dep</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                    <span class="n">dep</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dep</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">l</span>
+
+    <span class="k">def</span> <span class="nf">getsupportedinterpreter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">getsupportedinterpreter</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">matching_platform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">platform</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getliveconfig</span><span class="p">()</span><span class="o">.</span><span class="n">writeconfig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_config</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_needs_reinstall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setupdir</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="n">setup_py</span> <span class="o">=</span> <span class="n">setupdir</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;setup.py&#39;</span><span class="p">)</span>
+        <span class="n">setup_cfg</span> <span class="o">=</span> <span class="n">setupdir</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;setup.cfg&#39;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envpython</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">setup_py</span><span class="p">),</span> <span class="s1">&#39;--name&#39;</span><span class="p">]</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getenv</span><span class="p">()</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">popen</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">setupdir</span><span class="p">,</span> <span class="n">redirect</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">returnout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envpython</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;import sys; print(sys.path)&#39;</span><span class="p">]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">popen</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">redirect</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">returnout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sys_path</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">SyntaxError</span><span class="p">:</span>
+            <span class="n">sys_path</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">egg_info_fname</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;egg-info&#39;</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">sys_path</span><span class="p">):</span>
+            <span class="n">egg_info</span> <span class="o">=</span> <span class="n">py</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">local</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">egg_info_fname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">egg_info</span><span class="o">.</span><span class="n">check</span><span class="p">():</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">conf_file</span> <span class="ow">in</span> <span class="p">(</span><span class="n">setup_py</span><span class="p">,</span> <span class="n">setup_cfg</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">conf_file</span><span class="o">.</span><span class="n">check</span><span class="p">()</span> <span class="ow">and</span> <span class="n">conf_file</span><span class="o">.</span><span class="n">mtime</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">egg_info</span><span class="o">.</span><span class="n">mtime</span><span class="p">():</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">developpkg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setupdir</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;just_created&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;develop-inst&quot;</span><span class="p">,</span> <span class="n">setupdir</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+            <span class="n">extraopts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needs_reinstall</span><span class="p">(</span><span class="n">setupdir</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+                <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;develop-inst-noop&quot;</span><span class="p">,</span> <span class="n">setupdir</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;develop-inst-nodeps&quot;</span><span class="p">,</span> <span class="n">setupdir</span><span class="p">)</span>
+            <span class="n">extraopts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;--no-deps&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">venv</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">extras</span><span class="p">:</span>
+            <span class="n">setupdir</span> <span class="o">+=</span> <span class="s1">&#39;[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">venv</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">extras</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_install</span><span class="p">([</span><span class="s1">&#39;-e&#39;</span><span class="p">,</span> <span class="n">setupdir</span><span class="p">],</span> <span class="n">extraopts</span><span class="o">=</span><span class="n">extraopts</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">installpkg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sdistpath</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;just_created&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;inst&quot;</span><span class="p">,</span> <span class="n">sdistpath</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+            <span class="n">extraopts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;inst-nodeps&quot;</span><span class="p">,</span> <span class="n">sdistpath</span><span class="p">)</span>
+            <span class="n">extraopts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-U&#39;</span><span class="p">,</span> <span class="s1">&#39;--no-deps&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">venv</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">extras</span><span class="p">:</span>
+            <span class="n">sdistpath</span> <span class="o">+=</span> <span class="s1">&#39;[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">venv</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">extras</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_install</span><span class="p">([</span><span class="n">sdistpath</span><span class="p">],</span> <span class="n">extraopts</span><span class="o">=</span><span class="n">extraopts</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_installopts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexserver</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">indexserver</span><span class="p">:</span>
+            <span class="n">l</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">indexserver</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">pip_pre</span><span class="p">:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--pre&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">l</span>
+
+    <span class="k">def</span> <span class="nf">run_install_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packages</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">()):</span>
+        <span class="n">argv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">install_command</span><span class="p">[:]</span>
+        <span class="c1"># use pip-script on win32 to avoid the executable locking</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">argv</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{packages}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">packages</span>
+        <span class="k">if</span> <span class="s1">&#39;</span><span class="si">{opts}</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">argv</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{opts}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;PIP_RESPECT_VIRTUALENV&#39;</span><span class="p">,</span> <span class="s1">&#39;PIP_REQUIRE_VIRTUALENV&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;__PYVENV_LAUNCHER__&#39;</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;PYTHONPATH&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">passenv</span><span class="p">:</span>
+            <span class="c1"># If PYTHONPATH not explicitly asked for, remove it.</span>
+            <span class="k">if</span> <span class="s1">&#39;PYTHONPATH&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Discarding $PYTHONPATH from environment, to override &quot;</span>
+                    <span class="s2">&quot;specify PYTHONPATH in &#39;passenv&#39; in your configuration.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;PYTHONPATH&#39;</span><span class="p">)</span>
+
+        <span class="n">old_stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">getwriter</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pcall</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">toxinidir</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
+                    <span class="n">redirect</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">old_stdout</span>
+
+    <span class="k">def</span> <span class="nf">_install</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deps</span><span class="p">,</span> <span class="n">extraopts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">deps</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">deps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">py</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">local</span><span class="p">)):</span>
+                <span class="n">dep</span> <span class="o">=</span> <span class="n">DepConfig</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dep</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="n">DepConfig</span><span class="p">),</span> <span class="n">dep</span>
+            <span class="k">if</span> <span class="n">dep</span><span class="o">.</span><span class="n">indexserver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ixserver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">indexserver</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ixserver</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">indexserver</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">ixserver</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dep</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ixserver</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
+                <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ixserver</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">ixserver</span><span class="o">.</span><span class="n">url</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ixserver</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ixserver</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
+            <span class="n">packages</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">ixserver</span><span class="p">]</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_installopts</span><span class="p">(</span><span class="n">ixserver</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">extraopts</span><span class="p">:</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">extraopts</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_install_command</span><span class="p">(</span><span class="n">packages</span><span class="o">=</span><span class="n">packages</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+                                     <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getenv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">testcommand</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">testcommand</span><span class="p">:</span>
+            <span class="c1"># for executing tests we construct a clean environment</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">envname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">passenv</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">envname</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+                    <span class="n">env</span><span class="p">[</span><span class="n">envname</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">envname</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># for executing non-test commands we use the full</span>
+            <span class="c1"># invocation environment</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># in any case we honor per-testenv setenv configuration</span>
+        <span class="n">env</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">setenv</span><span class="p">)</span>
+
+        <span class="n">env</span><span class="p">[</span><span class="s1">&#39;VIRTUAL_ENV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">env</span>
+
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redirect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">newaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;runtests&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">action</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">make_emptydir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envtmpdir</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envtmpdir</span><span class="o">.</span><span class="n">ensure</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">cwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">changedir</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getenv</span><span class="p">(</span><span class="n">testcommand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># Display PYTHONHASHSEED to assist with reproducibility.</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;runtests&quot;</span><span class="p">,</span> <span class="s2">&quot;PYTHONHASHSEED=</span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PYTHONHASHSEED&#39;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">argv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">commands</span><span class="p">):</span>
+                <span class="c1"># have to make strings as _pcall changes argv[0] to a local()</span>
+                <span class="c1"># happens if the same environment is invoked twice</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;commands[</span><span class="si">%s</span><span class="s2">] | </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">]))</span>
+                <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;runtests&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+                <span class="c1"># check to see if we need to ignore the return code</span>
+                <span class="c1"># if so, we need to alter the command line arguments</span>
+                <span class="k">if</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">):</span>
+                    <span class="n">ignore_ret</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;-&quot;</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ignore_ret</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pcall</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">cwd</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span> <span class="n">redirect</span><span class="o">=</span><span class="n">redirect</span><span class="p">,</span>
+                                <span class="n">ignore_ret</span><span class="o">=</span><span class="n">ignore_ret</span><span class="p">,</span> <span class="n">testcommand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">tox</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">InvocationError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">ignore_outcome</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="s2">&quot;command failed but result from testenv is ignored</span><span class="se">\n</span><span class="s2">&quot;</span>
+                            <span class="s2">&quot;  cmd: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">),))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;ignored failed command&quot;</span>
+                        <span class="k">continue</span>  <span class="c1"># keep processing commands</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;commands failed&quot;</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">ignore_errors</span><span class="p">:</span>
+                        <span class="k">break</span>  <span class="c1"># Don&#39;t process remaining commands</span>
+                <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;keyboardinterrupt&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+                    <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">_pcall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">cwd</span><span class="p">,</span> <span class="n">venv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">testcommand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">action</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">redirect</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_ret</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;VIRTUALENV_PYTHON&quot;</span><span class="p">,</span> <span class="s2">&quot;PYTHONDONTWRITEBYTECODE&quot;</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">cwd</span><span class="o">.</span><span class="n">ensure</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getcommandpath</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">venv</span><span class="p">,</span> <span class="n">cwd</span><span class="p">)</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getenv</span><span class="p">(</span><span class="n">testcommand</span><span class="o">=</span><span class="n">testcommand</span><span class="p">)</span>
+        <span class="n">bindir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">envbindir</span><span class="p">)</span>
+        <span class="n">env</span><span class="p">[</span><span class="s1">&#39;PATH&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">bindir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">verbosity2</span><span class="p">(</span><span class="s2">&quot;setting PATH=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">p</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">action</span><span class="o">.</span><span class="n">popen</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">cwd</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                            <span class="n">redirect</span><span class="o">=</span><span class="n">redirect</span><span class="p">,</span> <span class="n">ignore_ret</span><span class="o">=</span><span class="n">ignore_ret</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">getdigest</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">py</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">local</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;0&quot;</span> <span class="o">*</span> <span class="mi">32</span>
+    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">computehash</span><span class="p">()</span>
+
+
+<span class="nd">@hookimpl</span>
+<span class="k">def</span> <span class="nf">tox_testenv_create</span><span class="p">(</span><span class="n">venv</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="c1"># if self.getcommandpath(&quot;activate&quot;).dirpath().check():</span>
+    <span class="c1">#    return</span>
+    <span class="n">config_interpreter</span> <span class="o">=</span> <span class="n">venv</span><span class="o">.</span><span class="n">getsupportedinterpreter</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;virtualenv&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">venv</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">sitepackages</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;--system-site-packages&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">venv</span><span class="o">.</span><span class="n">envconfig</span><span class="o">.</span><span class="n">alwayscopy</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;--always-copy&#39;</span><span class="p">)</span>
+    <span class="c1"># add interpreter explicitly, to prevent using</span>
+    <span class="c1"># default (virtualenv.ini)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;--python&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config_interpreter</span><span class="p">)])</span>
+    <span class="c1"># if sys.platform == &quot;win32&quot;:</span>
+    <span class="c1">#    f, path, _ = imp.find_module(&quot;virtualenv&quot;)</span>
+    <span class="c1">#    f.close()</span>
+    <span class="c1">#    args[:1] = [str(config_interpreter), str(path)]</span>
+    <span class="c1"># else:</span>
+    <span class="n">venv</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">make_emptydir</span><span class="p">(</span><span class="n">venv</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">basepath</span> <span class="o">=</span> <span class="n">venv</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirpath</span><span class="p">()</span>
+    <span class="n">basepath</span><span class="o">.</span><span class="n">ensure</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">venv</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">)</span>
+    <span class="n">venv</span><span class="o">.</span><span class="n">_pcall</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">venv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">basepath</span><span class="p">)</span>
+    <span class="c1"># Return non-None to indicate the plugin has completed</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="nd">@hookimpl</span>
+<span class="k">def</span> <span class="nf">tox_testenv_install_deps</span><span class="p">(</span><span class="n">venv</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="n">deps</span> <span class="o">=</span> <span class="n">venv</span><span class="o">.</span><span class="n">_getresolvedeps</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">deps</span><span class="p">:</span>
+        <span class="n">depinfo</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">deps</span><span class="p">))</span>
+        <span class="n">action</span><span class="o">.</span><span class="n">setactivity</span><span class="p">(</span><span class="s2">&quot;installdeps&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">depinfo</span><span class="p">)</span>
+        <span class="n">venv</span><span class="o">.</span><span class="n">_install</span><span class="p">(</span><span class="n">deps</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+    <span class="c1"># Return non-None to indicate the plugin has completed</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="nd">@hookimpl</span>
+<span class="k">def</span> <span class="nf">tox_runtest</span><span class="p">(</span><span class="n">venv</span><span class="p">,</span> <span class="n">redirect</span><span class="p">):</span>
+    <span class="n">venv</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">redirect</span><span class="o">=</span><span class="n">redirect</span><span class="p">)</span>
+    <span class="c1"># Return non-None to indicate the plugin has completed</span>
+    <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2010-2017, holger krekel and others.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'2.9.0rc2.dev63',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,609 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Plugins &mdash; tox 2.9.0rc2.dev63 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="tox 2.9.0rc2.dev63 documentation" href="index.html"/>
+        <link rel="next" title="Developer FAQ" href="developer-faq.html"/>
+        <link rel="prev" title="Advanced configuration" href="config-advanced.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> tox
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">tox.ini reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config-advanced.html">Advanced configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#simple-example">Simple example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#write-hook-implementations">Write hook implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-tox.hookspecs">Hook specifications and API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer-faq.html">Developer FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="org.html">Organisatorical</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">tox</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Plugins</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="plugins">
+<h1>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h1>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.0.</span></p>
+</div>
+<p>Sonce tox 2 a few aspects of tox running can be experimentally modified by writing hook functions.
+The list of of available hook function is growing on a per-need basis.</p>
+<div class="section" id="simple-example">
+<h2>Simple example<a class="headerlink" href="#simple-example" title="Permalink to this headline">¶</a></h2>
+<p>If you have a <code class="docutils literal"><span class="pre">tox_MYPLUGIN.py</span></code> module you could use the following
+rough <code class="docutils literal"><span class="pre">setup.py</span></code> to make it into a package which you can upload to the
+Python packaging index:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># content of setup.py</span>
+<span class="kn">from</span> <span class="nn">setuptools</span> <span class="kn">import</span> <span class="n">setup</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">setup</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;tox-MYPLUGIN&#39;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;tox plugin decsription&#39;</span><span class="p">,</span>
+        <span class="n">license</span><span class="o">=</span><span class="s2">&quot;MIT license&quot;</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="s1">&#39;0.1&#39;</span><span class="p">,</span>
+        <span class="n">py_modules</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;tox_MYPLUGIN&#39;</span><span class="p">],</span>
+        <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tox&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MYPLUGIN = tox_MYPLUGIN&#39;</span><span class="p">]},</span>
+        <span class="n">install_requires</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;tox&gt;=2.0&#39;</span><span class="p">],</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>If installed, the <code class="docutils literal"><span class="pre">entry_points</span></code> part will make tox see and integrate
+your plugin during startup.</p>
+<p>You can install the plugin for development (“in-place”) via:</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>pip install -e .
+</pre></div>
+</div>
+<p>and later publish it via something like:</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>python setup.py sdist register upload
+</pre></div>
+</div>
+</div>
+<div class="section" id="write-hook-implementations">
+<h2>Write hook implementations<a class="headerlink" href="#write-hook-implementations" title="Permalink to this headline">¶</a></h2>
+<p>A plugin module defines one or more hook implementation functions
+by decorating them with tox’s <code class="docutils literal"><span class="pre">hookimpl</span></code> marker:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tox</span> <span class="kn">import</span> <span class="n">hookimpl</span>
+
+<span class="nd">@hookimpl</span>
+<span class="k">def</span> <span class="nf">tox_addoption</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+    <span class="c1"># add your own command line options</span>
+
+
+<span class="nd">@hookimpl</span>
+<span class="k">def</span> <span class="nf">tox_configure</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="c1"># post process tox configuration after cmdline/ini file have</span>
+    <span class="c1"># been parsed</span>
+</pre></div>
+</div>
+<p>If you put this into a module and make it pypi-installable with the <code class="docutils literal"><span class="pre">tox</span></code>
+entry point you’ll get your code executed as part of a tox run.</p>
+</div>
+<div class="section" id="module-tox.hookspecs">
+<span id="hook-specifications-and-api"></span><h2>Hook specifications and API<a class="headerlink" href="#module-tox.hookspecs" title="Permalink to this headline">¶</a></h2>
+<p>Hook specifications for tox.</p>
+<dl class="function">
+<dt id="tox.hookspecs.tox_addoption">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_addoption</code><span class="sig-paren">(</span><em>parser</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_addoption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_addoption" title="Permalink to this definition">¶</a></dt>
+<dd><p>add command line options to the argparse-style parser object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tox.hookspecs.tox_configure">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_configure</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_configure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_configure" title="Permalink to this definition">¶</a></dt>
+<dd><p>called after command line options have been parsed and the ini-file has
+been read.  Please be aware that the config object layout may change as its
+API was not designed yet wrt to providing stability (it was an internal
+thing purely before tox-2.0).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tox.hookspecs.tox_get_python_executable">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_get_python_executable</code><span class="sig-paren">(</span><em>envconfig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_get_python_executable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_get_python_executable" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a python executable for the given python base name.
+The first plugin/hook which returns an executable path will determine it.</p>
+<p><code class="docutils literal"><span class="pre">envconfig</span></code> is the testenv configuration which contains
+per-testenv configuration, notably the <code class="docutils literal"><span class="pre">.envname</span></code> and <code class="docutils literal"><span class="pre">.basepython</span></code>
+setting.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tox.hookspecs.tox_runtest">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_runtest</code><span class="sig-paren">(</span><em>venv</em>, <em>redirect</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_runtest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_runtest" title="Permalink to this definition">¶</a></dt>
+<dd><p>[experimental] run the tests for this venv.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This hook uses <code class="docutils literal"><span class="pre">firstresult=True</span></code> (see <a class="reference external" href="http://pluggy.readthedocs.io/en/latest/#first-result-only">pluggy</a>) – hooks
+implementing this will be run until one returns non-<code class="docutils literal"><span class="pre">None</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="tox.hookspecs.tox_runtest_post">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_runtest_post</code><span class="sig-paren">(</span><em>venv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_runtest_post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_runtest_post" title="Permalink to this definition">¶</a></dt>
+<dd><p>[experimental] perform arbitrary action after running tests for this venv.</p>
+<p>This could be used to have per-venv test reporting of pass/fail status.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tox.hookspecs.tox_runtest_pre">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_runtest_pre</code><span class="sig-paren">(</span><em>venv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_runtest_pre"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_runtest_pre" title="Permalink to this definition">¶</a></dt>
+<dd><p>[experimental] perform arbitrary action before running tests for this venv.</p>
+<p>This could be used to indicate that tests for a given venv have started, for instance.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tox.hookspecs.tox_testenv_create">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_testenv_create</code><span class="sig-paren">(</span><em>venv</em>, <em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_testenv_create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_testenv_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>[experimental] perform creation action for this venv.</p>
+<p>Some example usage:</p>
+<ul class="simple">
+<li>To <em>add</em> behavior but still use tox’s implementation to set up a
+virtualenv, implement this hook but do not return a value (or explicitly
+return <code class="docutils literal"><span class="pre">None</span></code>).</li>
+<li>To <em>override</em> tox’s virtualenv creation, implement this hook and return
+a non-<code class="docutils literal"><span class="pre">None</span></code> value.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This api is experimental due to the unstable api of
+<a class="reference internal" href="#tox.venv.VirtualEnv" title="tox.venv.VirtualEnv"><code class="xref py py-class docutils literal"><span class="pre">tox.venv.VirtualEnv</span></code></a>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This hook uses <code class="docutils literal"><span class="pre">firstresult=True</span></code> (see <a class="reference external" href="http://pluggy.readthedocs.io/en/latest/#first-result-only">pluggy</a>) – hooks
+implementing this will be run until one returns non-<code class="docutils literal"><span class="pre">None</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="tox.hookspecs.tox_testenv_install_deps">
+<code class="descclassname">tox.hookspecs.</code><code class="descname">tox_testenv_install_deps</code><span class="sig-paren">(</span><em>venv</em>, <em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/hookspecs.html#tox_testenv_install_deps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.hookspecs.tox_testenv_install_deps" title="Permalink to this definition">¶</a></dt>
+<dd><p>[experimental] perform install dependencies action for this venv.</p>
+<p>Some example usage:</p>
+<ul class="simple">
+<li>To <em>add</em> behavior but still use tox’s implementation to install
+dependencies, implement this hook but do not return a value (or
+explicitly return <code class="docutils literal"><span class="pre">None</span></code>).  One use-case may be to install (or ensure)
+non-python dependencies such as debian packages.</li>
+<li>To <em>override</em> tox’s installation of dependencies, implement this hook
+and return a non-<code class="docutils literal"><span class="pre">None</span></code> value.  One use-case may be to install via
+a different installation tool such as <a class="reference external" href="https://github.com/paylogic/pip-accel">pip-accel</a> or <a class="reference external" href="https://github.com/Yelp/venv-update">pip-faster</a>.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This api is experimental due to the unstable api of
+<a class="reference internal" href="#tox.venv.VirtualEnv" title="tox.venv.VirtualEnv"><code class="xref py py-class docutils literal"><span class="pre">tox.venv.VirtualEnv</span></code></a>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This hook uses <code class="docutils literal"><span class="pre">firstresult=True</span></code> (see <a class="reference external" href="http://pluggy.readthedocs.io/en/latest/#first-result-only">pluggy</a>) – hooks
+implementing this will be run until one returns non-<code class="docutils literal"><span class="pre">None</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="tox.config.Parser">
+<em class="property">class </em><code class="descclassname">tox.config.</code><code class="descname">Parser</code><a class="reference internal" href="_modules/tox/config.html#Parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.Parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>command line and ini-parser control object.</p>
+<dl class="method">
+<dt id="tox.config.Parser.add_argument">
+<code class="descname">add_argument</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/config.html#Parser.add_argument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.Parser.add_argument" title="Permalink to this definition">¶</a></dt>
+<dd><p>add argument to command line parser.  This takes the
+same arguments that <code class="docutils literal"><span class="pre">argparse.ArgumentParser.add_argument</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.config.Parser.add_testenv_attribute">
+<code class="descname">add_testenv_attribute</code><span class="sig-paren">(</span><em>name</em>, <em>type</em>, <em>help</em>, <em>default=None</em>, <em>postprocess=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/config.html#Parser.add_testenv_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.Parser.add_testenv_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>add an ini-file variable for “testenv” section.</p>
+<p>Types are specified as strings like “bool”, “line-list”, “string”, “argv”, “path”,
+“argvlist”.</p>
+<p>The <code class="docutils literal"><span class="pre">postprocess</span></code> function will be called for each testenv
+like <code class="docutils literal"><span class="pre">postprocess(testenv_config=testenv_config,</span> <span class="pre">value=value)</span></code>
+where <code class="docutils literal"><span class="pre">value</span></code> is the value as read from the ini (or the default value)
+and <code class="docutils literal"><span class="pre">testenv_config</span></code> is a <a class="reference internal" href="#tox.config.TestenvConfig" title="tox.config.TestenvConfig"><code class="xref py py-class docutils literal"><span class="pre">tox.config.TestenvConfig</span></code></a> instance
+which will receive all ini-variables as object attributes.</p>
+<p>Any postprocess function must return a value which will then be set
+as the final value in the testenv section.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.config.Parser.add_testenv_attribute_obj">
+<code class="descname">add_testenv_attribute_obj</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/config.html#Parser.add_testenv_attribute_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.Parser.add_testenv_attribute_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>add an ini-file variable as an object.</p>
+<p>This works as the <code class="docutils literal"><span class="pre">add_testenv_attribute</span></code> function but expects
+“name”, “type”, “help”, and “postprocess” attributes on the object.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tox.config.Config">
+<em class="property">class </em><code class="descclassname">tox.config.</code><code class="descname">Config</code><a class="reference internal" href="_modules/tox/config.html#Config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.Config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Global Tox config object.</p>
+<dl class="attribute">
+<dt id="tox.config.Config.envconfigs">
+<code class="descname">envconfigs</code><em class="property"> = None</em><a class="headerlink" href="#tox.config.Config.envconfigs" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary containing envname to envconfig mappings</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.config.Config.option">
+<code class="descname">option</code><em class="property"> = None</em><a class="headerlink" href="#tox.config.Config.option" title="Permalink to this definition">¶</a></dt>
+<dd><p>option namespace containing all parsed command line options</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tox.config.TestenvConfig">
+<em class="property">class </em><code class="descclassname">tox.config.</code><code class="descname">TestenvConfig</code><a class="reference internal" href="_modules/tox/config.html#TestenvConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.TestenvConfig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Testenv Configuration object.
+In addition to some core attributes/properties this config object holds all
+per-testenv ini attributes as attributes, see “tox –help-ini” for an overview.</p>
+<dl class="attribute">
+<dt id="tox.config.TestenvConfig.config">
+<code class="descname">config</code><em class="property"> = None</em><a class="headerlink" href="#tox.config.TestenvConfig.config" title="Permalink to this definition">¶</a></dt>
+<dd><p>global tox config object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.config.TestenvConfig.envname">
+<code class="descname">envname</code><em class="property"> = None</em><a class="headerlink" href="#tox.config.TestenvConfig.envname" title="Permalink to this definition">¶</a></dt>
+<dd><p>test environment name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.config.TestenvConfig.envpython">
+<code class="descname">envpython</code><a class="headerlink" href="#tox.config.TestenvConfig.envpython" title="Permalink to this definition">¶</a></dt>
+<dd><p>path to python executable.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.config.TestenvConfig.factors">
+<code class="descname">factors</code><em class="property"> = None</em><a class="headerlink" href="#tox.config.TestenvConfig.factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>set of factors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.config.TestenvConfig.get_envbindir">
+<code class="descname">get_envbindir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/config.html#TestenvConfig.get_envbindir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.TestenvConfig.get_envbindir" title="Permalink to this definition">¶</a></dt>
+<dd><p>path to directory where scripts/binaries reside.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.config.TestenvConfig.get_envpython">
+<code class="descname">get_envpython</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/config.html#TestenvConfig.get_envpython"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.TestenvConfig.get_envpython" title="Permalink to this definition">¶</a></dt>
+<dd><p>path to python/jython executable.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.config.TestenvConfig.get_envsitepackagesdir">
+<code class="descname">get_envsitepackagesdir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/config.html#TestenvConfig.get_envsitepackagesdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.config.TestenvConfig.get_envsitepackagesdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>return sitepackagesdir of the virtualenv environment.
+(only available during execution, not parsing)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.config.TestenvConfig.missing_subs">
+<code class="descname">missing_subs</code><em class="property"> = None</em><a class="headerlink" href="#tox.config.TestenvConfig.missing_subs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Holds substitutions that could not be resolved.</p>
+<p>Pre 2.8.1 missing substitutions crashed with a ConfigError although this would not be a
+problem if the env is not part of the current testrun. So we need to remember this and
+check later when the testenv is actually run and crash only then.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.config.TestenvConfig.python_info">
+<code class="descname">python_info</code><a class="headerlink" href="#tox.config.TestenvConfig.python_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>return sitepackagesdir of the virtualenv environment.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tox.venv.VirtualEnv">
+<em class="property">class </em><code class="descclassname">tox.venv.</code><code class="descname">VirtualEnv</code><a class="reference internal" href="_modules/tox/venv.html#VirtualEnv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.venv.VirtualEnv" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="tox.venv.VirtualEnv.getcommandpath">
+<code class="descname">getcommandpath</code><span class="sig-paren">(</span><em>name</em>, <em>venv=True</em>, <em>cwd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/venv.html#VirtualEnv.getcommandpath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.venv.VirtualEnv.getcommandpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return absolute path (str or localpath) for specified command name.</p>
+<ul class="simple">
+<li>If it’s a local path we will rewrite it as as a relative path.</li>
+<li>If venv is True we will check if the command is coming from the venv
+or is whitelisted to come from external.</li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.venv.VirtualEnv.name">
+<code class="descname">name</code><a class="headerlink" href="#tox.venv.VirtualEnv.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>test environment name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tox.venv.VirtualEnv.path">
+<code class="descname">path</code><a class="headerlink" href="#tox.venv.VirtualEnv.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to environment base dir.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.venv.VirtualEnv.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/venv.html#VirtualEnv.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.venv.VirtualEnv.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>return status string for updating actual venv to match configuration.
+if status string is empty, all is ok.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tox.session.Session">
+<em class="property">class </em><code class="descclassname">tox.session.</code><code class="descname">Session</code><a class="reference internal" href="_modules/tox/session.html#Session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.session.Session" title="Permalink to this definition">¶</a></dt>
+<dd><p>(unstable API).  the session object that ties
+together configuration, reporting, venv creation, testing.</p>
+<dl class="method">
+<dt id="tox.session.Session.get_installpkg_path">
+<code class="descname">get_installpkg_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/session.html#Session.get_installpkg_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.session.Session.get_installpkg_path" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Path to the distribution</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">py.path.local</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.session.Session.getvenv">
+<code class="descname">getvenv</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/session.html#Session.getvenv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.session.Session.getvenv" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a VirtualEnv controler object for the ‘name’ env.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tox.session.Session.installpkg">
+<code class="descname">installpkg</code><span class="sig-paren">(</span><em>venv</em>, <em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tox/session.html#Session.installpkg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tox.session.Session.installpkg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Install package in the specified virtual environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>venv</strong> (<em>VenvConfig</em>) – Destination environment</li>
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Path to the distribution package.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if package installed otherwise False.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)">bool</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="developer-faq.html" class="btn btn-neutral float-right" title="Developer FAQ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="config-advanced.html" class="btn btn-neutral" title="Advanced configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2010-2017, holger krekel and others.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.9.0rc2.dev63',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

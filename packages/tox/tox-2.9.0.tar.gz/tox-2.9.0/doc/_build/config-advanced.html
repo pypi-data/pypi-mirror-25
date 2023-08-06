@@ -1,0 +1,469 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Advanced configuration &mdash; tox 2.9.0rc2.dev63 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="tox 2.9.0rc2.dev63 documentation" href="index.html"/>
+        <link rel="next" title="Plugins" href="plugins.html"/>
+        <link rel="prev" title="tox.ini reference" href="config.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> tox
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">tox.ini reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#generate-and-select-variants">Generate and select variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-platform-setting">The platform setting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#expand-the-envlist-setting">Expand the <code class="docutils literal"><span class="pre">envlist</span></code> setting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#templating-based-on-environment-names">Templating based on environment names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#show-all-sections">Show all sections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#make-sure-your-packages-installs-with-easy-install">Make sure your packages installs with easy_install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#default-settings-related-to-environments-names-variants">Default settings related to environments names/variants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-more-bash-style-syntax">Use more bash-style syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-django-rest">Example: django-rest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-django-treebeard">Example: django-treebeard</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer-faq.html">Developer FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="org.html">Organisatorical</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">tox</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Advanced configuration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="advanced-configuration">
+<h1>Advanced configuration<a class="headerlink" href="#advanced-configuration" title="Permalink to this headline">¶</a></h1>
+<p><strong>factor-based, multi-dimensional, platform-specific configuration</strong></p>
+<div class="section" id="generate-and-select-variants">
+<h2>Generate and select variants<a class="headerlink" href="#generate-and-select-variants" title="Permalink to this headline">¶</a></h2>
+<p>Suppose you want to test your package against python2.6, python2.7 and on the
+windows and linux platforms.  Today you would have to
+write down 2*2 = 4 <code class="docutils literal"><span class="pre">[testenv:*]</span></code> sections and then instruct
+tox to run a specific list of environments on each platform.</p>
+<p>With tox-1.X you can directlys specify combinations:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># combination syntax gives 2 * 2 = 4 testenv names</span>
+<span class="c1">#</span>
+<span class="n">envlist</span> <span class="o">=</span> <span class="p">{</span><span class="n">py26</span><span class="p">,</span><span class="n">py27</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">win</span><span class="p">,</span><span class="n">linux</span><span class="p">}</span>
+
+<span class="p">[</span><span class="n">testenv</span><span class="p">]</span>
+<span class="n">deps</span> <span class="o">=</span> <span class="n">pytest</span>
+<span class="n">platform</span> <span class="o">=</span>
+       <span class="n">win</span><span class="p">:</span> <span class="n">windows</span>
+       <span class="n">linux</span><span class="p">:</span> <span class="n">linux</span>
+<span class="n">basepython</span> <span class="o">=</span>
+       <span class="n">py26</span><span class="p">:</span> <span class="n">python2</span><span class="o">.</span><span class="mi">6</span>
+       <span class="n">py27</span><span class="p">:</span> <span class="n">python2</span><span class="o">.</span><span class="mi">7</span>
+<span class="n">commands</span> <span class="o">=</span> <span class="n">pytest</span>
+</pre></div>
+</div>
+<p>Let’s go through this step by step:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">envlist</span> <span class="o">=</span> <span class="p">{</span><span class="n">py26</span><span class="p">,</span><span class="n">py27</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">windows</span><span class="p">,</span><span class="n">linux</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This is bash-style syntax and will create <code class="docutils literal"><span class="pre">2*2=4</span></code> environment names
+like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">py26</span><span class="o">-</span><span class="n">windows</span>
+<span class="n">py26</span><span class="o">-</span><span class="n">linux</span>
+<span class="n">py27</span><span class="o">-</span><span class="n">windows</span>
+<span class="n">py27</span><span class="o">-</span><span class="n">linux</span>
+</pre></div>
+</div>
+<p>Our <code class="docutils literal"><span class="pre">[testenv]</span></code> uses a new templating style for the <code class="docutils literal"><span class="pre">platform</span></code> definition:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">platform</span><span class="o">=</span>
+       <span class="n">windows</span><span class="p">:</span> <span class="n">windows</span>
+       <span class="n">linux</span><span class="p">:</span> <span class="n">linux</span>
+</pre></div>
+</div>
+<p>These two conditional settings will lead to either <code class="docutils literal"><span class="pre">windows</span></code> or
+<code class="docutils literal"><span class="pre">linux</span></code> as the platform string.  When the test environment is run,
+its platform string needs to be contained in the string returned
+from <code class="docutils literal"><span class="pre">platform.platform()</span></code>. Otherwise the environment will be skipped.</p>
+<p>The next configuration item in the <code class="docutils literal"><span class="pre">testenv</span></code> section deals with
+the python interpreter:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">basepython</span> <span class="o">=</span>
+       <span class="n">py26</span><span class="p">:</span> <span class="n">python2</span><span class="o">.</span><span class="mi">6</span>
+       <span class="n">py27</span><span class="p">:</span> <span class="n">python2</span><span class="o">.</span><span class="mi">7</span>
+</pre></div>
+</div>
+<p>This defines a python executable, depending on if <code class="docutils literal"><span class="pre">py26</span></code> or <code class="docutils literal"><span class="pre">py27</span></code>
+appears in the environment name.</p>
+<p>The last config item is simply the invocation of the test runner:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">commands</span> <span class="o">=</span> <span class="n">pytest</span>
+</pre></div>
+</div>
+<p>Nothing special here :)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>tox provides good defaults for platform and basepython
+settings, so the above ini-file can be further reduced:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">tox</span><span class="p">]</span>
+<span class="n">envlist</span> <span class="o">=</span> <span class="p">{</span><span class="n">py26</span><span class="p">,</span><span class="n">py27</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">win</span><span class="p">,</span><span class="n">linux</span><span class="p">}</span>
+
+<span class="p">[</span><span class="n">testenv</span><span class="p">]</span>
+<span class="n">deps</span> <span class="o">=</span> <span class="n">pytest</span>
+<span class="n">commands</span> <span class="o">=</span> <span class="n">pytest</span>
+</pre></div>
+</div>
+<p class="last">Voila, this multi-dimensional <code class="docutils literal"><span class="pre">tox.ini</span></code> configuration
+defines 2*2=4 environments.</p>
+</div>
+</div>
+<div class="section" id="the-platform-setting">
+<h2>The platform setting<a class="headerlink" href="#the-platform-setting" title="Permalink to this headline">¶</a></h2>
+<p>A testenv can define a <code class="docutils literal"><span class="pre">platform</span></code> setting.  If its value
+is not contained in the string obtained from calling
+<code class="docutils literal"><span class="pre">sys.platform</span></code> the environment will be skipped.</p>
+</div>
+<div class="section" id="expand-the-envlist-setting">
+<h2>Expand the <code class="docutils literal"><span class="pre">envlist</span></code> setting<a class="headerlink" href="#expand-the-envlist-setting" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">envlist</span></code> setting allows to use <code class="docutils literal"><span class="pre">{}</span></code> bash-style
+expressions.  XXX explanation or pointer to bash-docs</p>
+</div>
+<div class="section" id="templating-based-on-environment-names">
+<h2>Templating based on environment names<a class="headerlink" href="#templating-based-on-environment-names" title="Permalink to this headline">¶</a></h2>
+<p>For a given environment name, all lines in a testenv section which
+start with “NAME: …” will be checked for being part in the environment
+name.  If they are part of it, the remainder will be the new line.
+If they are not part of it, the whole line will be left out.
+Parts of an environment name are obtained by <code class="docutils literal"><span class="pre">-</span></code>-splitting it.</p>
+<p>Variant specification with [variant:VARNAME]</p>
+</div>
+<div class="section" id="show-all-sections">
+<h2>Show all sections<a class="headerlink" href="#show-all-sections" title="Permalink to this headline">¶</a></h2>
+<p>To help with understanding how the variants will produce section values,
+you can ask tox to show their expansion with a new option:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ tox -[v]l
+</pre></div>
+</div>
+<p>To show all environments (including ones not in envlist):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ tox -[v]a
+</pre></div>
+</div>
+<p><strong>note:</strong> adding the <code class="docutils literal"><span class="pre">v</span></code> flag outputs the descriptions of environments if they are set via
+the <cite>description</cite> key.</p>
+</div>
+<div class="section" id="make-sure-your-packages-installs-with-easy-install">
+<h2>Make sure your packages installs with easy_install<a class="headerlink" href="#make-sure-your-packages-installs-with-easy-install" title="Permalink to this headline">¶</a></h2>
+<p>The “installer” testenv setting allows to specify the tool for
+installation in a given test environment:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">testenv</span><span class="p">]</span>
+<span class="n">installer</span> <span class="o">=</span>
+    <span class="n">easy</span><span class="p">:</span> <span class="n">easy_install</span>
+    <span class="n">pip</span><span class="p">:</span> <span class="n">pip</span>
+</pre></div>
+</div>
+<p>If you want to have your package installed with both easy_install
+and pip, you can list them in your envlist likes this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">tox</span><span class="p">]</span>
+<span class="n">envlist</span> <span class="o">=</span> <span class="n">py</span><span class="p">[</span><span class="mi">26</span><span class="p">,</span><span class="mi">27</span><span class="p">,</span><span class="mi">32</span><span class="p">]</span><span class="o">-</span><span class="n">django</span><span class="p">[</span><span class="mi">13</span><span class="p">,</span><span class="mi">14</span><span class="p">]</span><span class="o">-</span><span class="p">[</span><span class="n">easy</span><span class="p">,</span><span class="n">pip</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>If no installer is specified, <code class="docutils literal"><span class="pre">pip</span></code> will be used.</p>
+</div>
+<div class="section" id="default-settings-related-to-environments-names-variants">
+<h2>Default settings related to environments names/variants<a class="headerlink" href="#default-settings-related-to-environments-names-variants" title="Permalink to this headline">¶</a></h2>
+<p>tox comes with predefined settings for certain variants, namely:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">{easy,pip}</span></code> use easy_install or pip respectively</li>
+<li><code class="docutils literal"><span class="pre">{py24,py25,py26,py27,py31,py32,py33,py34,pypy19]</span></code> use the respective
+pythonNN or PyPy interpreter</li>
+<li><code class="docutils literal"><span class="pre">{win32,linux,darwin}</span></code> defines the according <code class="docutils literal"><span class="pre">platform</span></code>.</li>
+</ul>
+<p>You can use those in your “envlist” specification
+without the need to define them yourself.</p>
+</div>
+<div class="section" id="use-more-bash-style-syntax">
+<h2>Use more bash-style syntax<a class="headerlink" href="#use-more-bash-style-syntax" title="Permalink to this headline">¶</a></h2>
+<p>tox leverages bash-style syntax if you specify mintoxversion = 1.4:</p>
+<ul class="simple">
+<li>$VARNAME or ${…} syntax instead of the older {} substitution.</li>
+<li>XXX go through config.rst and see how it would need to be changed</li>
+</ul>
+</div>
+<div class="section" id="example-django-rest">
+<h2>Example: django-rest<a class="headerlink" href="#example-django-rest" title="Permalink to this headline">¶</a></h2>
+<p>The original <a class="reference external" href="https://github.com/encode/django-rest-framework/blob/b001a146d73348af18cfc4c943d87f2f389349c9/tox.ini">django-rest-framework tox.ini</a>
+file has 159 lines and a lot of repetition, the new one would +have 20
+lines and almost no repetition:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>[tox]
+envlist = {py25,py26,py27}-{django12,django13}{,-example}
+
+[testenv]
+deps=
+    coverage==3.4
+    unittest-xml-reporting==1.2
+    Pyyaml==3.10
+    django12: django==1.2.4
+    django13: django==1.3.1
+    # some more deps for running examples
+    example: wsgiref==0.1.2
+    example: Pygments==1.4
+    example: httplib2==0.6.0
+    example: Markdown==2.0.3
+
+commands =
+   !example: python setup.py test
+   example: python examples/runtests.py
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal"><span class="pre">{,-example}</span></code> in the envlist denotes two values, an empty
+one and a <code class="docutils literal"><span class="pre">example</span></code> one.  The empty value means that there are no specific
+settings and thus no need to define a variant name.</p>
+</div>
+<div class="section" id="example-django-treebeard">
+<h2>Example: django-treebeard<a class="headerlink" href="#example-django-treebeard" title="Permalink to this headline">¶</a></h2>
+<p>Another <a class="reference external" href="https://bitbucket.org/tabo/django-treebeard/raw/93b579395a9c/tox.ini">tox.ini</a>
+has 233 lines and runs tests against multiple Postgres and Mysql
+engines.  It also performs backend-specific test commands, passing
+different command line options to the test script.  With the new tox-1.X
+we not only can do the same with 32 non-repetive configuration lines but
+we also produce 36 specific testenvs with specific dependencies and test
+commands:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">tox</span><span class="p">]</span>
+<span class="n">envlist</span> <span class="o">=</span> <span class="p">{</span><span class="n">py24</span><span class="p">,</span><span class="n">py25</span><span class="p">,</span><span class="n">py26</span><span class="p">,</span><span class="n">py27</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">django11</span><span class="p">,</span><span class="n">django12</span><span class="p">,</span><span class="n">django13</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">nodb</span><span class="p">,</span><span class="n">pg</span><span class="p">,</span><span class="n">mysql</span><span class="p">},</span> <span class="n">docs</span>
+
+<span class="p">[</span><span class="n">testenv</span><span class="p">:</span><span class="n">docs</span><span class="p">]</span>
+<span class="n">changedir</span> <span class="o">=</span> <span class="n">docs</span>
+<span class="n">deps</span> <span class="o">=</span>
+    <span class="n">Sphinx</span>
+    <span class="n">Django</span>
+<span class="n">commands</span> <span class="o">=</span>
+    <span class="n">make</span> <span class="n">clean</span>
+    <span class="n">make</span> <span class="n">html</span>
+
+<span class="p">[</span><span class="n">testenv</span><span class="p">]</span>
+<span class="n">deps</span><span class="o">=</span>
+    <span class="n">coverage</span>
+    <span class="n">pysqlite</span>
+    <span class="n">django11</span><span class="p">:</span> <span class="n">django</span><span class="o">==</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">4</span>
+    <span class="n">django12</span><span class="p">:</span> <span class="n">django</span><span class="o">==</span><span class="mf">1.2</span><span class="o">.</span><span class="mi">7</span>
+    <span class="n">django13</span><span class="p">:</span> <span class="n">django</span><span class="o">==</span><span class="mf">1.3</span><span class="o">.</span><span class="mi">1</span>
+    <span class="n">django14</span><span class="p">:</span> <span class="n">django</span><span class="o">==</span><span class="mf">1.4</span>
+    <span class="n">nodb</span><span class="p">:</span> <span class="n">pysqlite</span>
+    <span class="n">pg</span><span class="p">:</span> <span class="n">psycopg2</span>
+    <span class="n">mysql</span><span class="p">:</span> <span class="n">MySQL</span><span class="o">-</span><span class="n">python</span>
+
+<span class="n">commands</span> <span class="o">=</span>
+    <span class="n">nodb</span><span class="p">:</span> <span class="p">{</span><span class="n">envpython</span><span class="p">}</span> <span class="n">runtests</span><span class="o">.</span><span class="n">py</span> <span class="p">{</span><span class="n">posargs</span><span class="p">}</span>
+    <span class="n">pg</span><span class="p">:</span> <span class="p">{</span><span class="n">envpython</span><span class="p">}</span> <span class="n">runtests</span><span class="o">.</span><span class="n">py</span> <span class="p">{</span><span class="n">posargs</span><span class="p">}</span> \
+                    <span class="o">--</span><span class="n">DATABASE_ENGINE</span><span class="o">=</span><span class="n">postgresql_psycopg2</span> \
+                    <span class="o">--</span><span class="n">DATABASE_USER</span><span class="o">=</span><span class="n">postgres</span> <span class="p">{</span><span class="n">posargs</span><span class="p">}</span>
+    <span class="n">mysql</span><span class="p">:</span> <span class="p">{</span><span class="n">envpython</span><span class="p">}</span> <span class="n">runtests</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">DATABASE_ENGINE</span><span class="o">=</span><span class="n">mysql</span> \
+                                   <span class="o">--</span><span class="n">DATABASE_USER</span><span class="o">=</span><span class="n">root</span> <span class="p">{</span><span class="n">posargs</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="plugins.html" class="btn btn-neutral float-right" title="Plugins" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="config.html" class="btn btn-neutral" title="tox.ini reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2010-2017, holger krekel and others.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.9.0rc2.dev63',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
