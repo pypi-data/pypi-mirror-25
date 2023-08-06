@@ -1,0 +1,53 @@
+{% extends "appbuilder/general/model/add.html" %} {%block navbar%} {%endblock%} {% block body %}
+<HTML>
+
+<HEAD>
+    <script src="/static/assets/resources/role/js/jquery-2.1.1.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        let user;
+        $(document).ready(function () {
+            user = $(".js-example-basic-multiple").select2();
+            const users = JSON.parse($('#users').attr('data'));
+            $.each(users, function (index, obj) {
+                $('#userId').append('<option value="' + obj.id + '">' + obj.text + '</option>');
+            });
+        });
+        function doSubmit() {//回调函数，在编辑和保存动作时，供openDialog调用提交表单。
+            $("#userIds").val(user.val())
+            $("#inputForm").submit();
+            return true;
+        }
+        
+    </script>
+</HEAD>
+
+<BODY>
+
+<form id="inputForm" class="form-horizontal" action="/hand/roles/adds" method="post">
+
+    <table class="table table-bordered no-footer">
+        <tbody>
+            <tr style="height: 50px">
+                <td class="width-15 active"><label class="pull-right">{{ _("Role Name:") }}</label></td>
+                <td class="width-35">
+                    <input style="width: 248px;" required id="roleName" name="roleName"  class="form-control" type="text" maxlength="50" aria-required="true"
+                aria-invalid="false">
+            </tr>
+            <tr style="height: 50px">
+                <td class="width-15"><label class="pull-right">{{ _("User:") }}</label></td>
+                <td class="width-35">
+                    <select style="width: 248px;" class="js-example-basic-multiple" id="userId" multiple=”multiple” name="userId"></select>
+                    <input type="hidden" id="userIds" name="userIds" />
+                </td>
+            </tr>
+
+        </tbody>
+    </tbody>
+</table>
+</form>
+<div id="users" data="{{users}}"> </div>
+
+</BODY>
+
+</HTML>
+{%endblock%}
