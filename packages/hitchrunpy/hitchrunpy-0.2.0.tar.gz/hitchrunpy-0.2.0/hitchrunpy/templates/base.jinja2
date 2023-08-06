@@ -1,0 +1,72 @@
+# -*- coding: utf-8 -*-
+import sys
+
+if sys.version_info[0] == 3:
+    unicode = str
+
+def _save_exception():
+    import json
+
+    tb_id = 0
+    _, exception, tb = sys.exc_info()
+    
+    if exception is None:
+        return None
+
+    # Create list of tracebacks
+    tracebacks = []
+    while tb is not None:
+        filename = tb.tb_frame.f_code.co_filename
+        if filename == '<frozen importlib._bootstrap>':
+            break
+
+        tracebacks.append({
+            "tb_id": tb_id,
+            "filename": tb.tb_frame.f_code.co_filename,
+            "line": tb.tb_lineno,
+            "function": tb.tb_frame.f_code.co_name,
+        })
+        
+        tb_id = tb_id + 1
+        tb = tb.tb_next
+    
+    with open("{{ error_path }}", "w") as handle:
+        handle.write(json.dumps({
+            "tracebacks": tracebacks,
+            "exception_string": unicode(exception),
+            "docstring": exception.__doc__ if exception.__doc__ is not None else None,
+            "exception_type": "{}.{}".format(
+                type(exception).__module__, type(exception).__name__
+            ),
+            "event": "exception",
+        }))
+
+def not_equal(lhs, rhs):
+    import json
+
+    with open("{{ error_path }}", "w") as handle:
+        handle.write(json.dumps({
+            "event": "notequal",
+            "lhs": repr(lhs),
+            "rhs": repr(rhs),
+        }))
+
+{% if long_strings %}
+{% for name, value in long_strings.items() %}
+{{ name }} = u"""{{ value }}"""
+{% endfor %}
+{% endif %}
+
+{% if code or setup_code %}
+try:
+    {{ setup_code|indent(4) }}
+
+    {{ code|indent(4) }}
+except Exception as error:
+    _save_exception()
+    sys.exit(0)
+{% endif %}
+
+{% block main %}
+
+{% endblock %}
