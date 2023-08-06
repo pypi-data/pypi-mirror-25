@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% from "macros.html" import igv_open_file %}
+{% block title %}Statistics{% endblock %}
+{% block body %}
+    <table class="datatable" style="margin-top: 20px;">
+        <thead>
+            <tr>
+                <th>Sample</th>
+                <th>Disease</th>
+                <th>Examined Reads<br /><small>(in reads &times; 10<sup>6</sup>)</small></th>
+                <th>Duplication Rate</th>
+                <th>Unmapped Reads<br /><small>(in reads &times; 10<sup>6</sup>)</small></th>
+                <th>Coverage</th>
+                <th>Cov > 1</th>
+                <th>Cov > 5</th>
+                <th>Cov > 10</th>
+                <th>Cov > 20</th>
+                <th>Cov > 50</th>
+                <th>Cov > 100</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in samples %}
+            <tr>
+                <td>{{ igv_open_file('bam' + "/" + s.basename + '.bam', s.basename) }}</td>
+                <td>{{ s.disease }}</td>
+                <td>{{ ((s.examined_pairs() * 2)/1000000)|round(1) }}</td>
+                <td>{{ s.duplication_rate()|round(2) }}</td>
+                <td>{{ (s.unmapped_reads()/1000000)|round(1) }}</td>
+                <td>{{ (s.capturekit_coverage)|round(2) }}</td>
+                <td>{{ (s.capturekit_coverage_greater(1)) | round(3) }}</td>
+                <td>{{ (s.capturekit_coverage_greater(5)) | round(3) }}</td>
+                <td>{{ (s.capturekit_coverage_greater(10)) | round(3) }}</td>
+                <td>{{ (s.capturekit_coverage_greater(20)) | round(3) }}</td>
+                <td>{{ (s.capturekit_coverage_greater(50)) | round(3) }}</td>
+                <td>{{ (s.capturekit_coverage_greater(100)) | round(3) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
