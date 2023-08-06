@@ -1,0 +1,40 @@
+{% load i18n cms_tags pcart_core theme_tags %}
+
+{% if template != 'index' %}
+<div class="breadcrumb_wrap">
+    <div class="container">
+        <ul class="breadcrumb">
+            <li><a href="/" class="homepage-link" title="Back to the frontpage">{% trans "Home" %}</a></li>
+            {% if "product" in template %}
+                {% if collection %}
+                    {% if collection.handle %}
+                        <li>
+                            {% capture as url silent %}/collections/{{ collection.handle }}{% endcapture %}
+                            {{ collection.title|link_to:url }}
+                         </li>
+                    {% elif collection.all_products_count > 0 and collection.products.first.type == collection.title %}
+                        <li>{# collection.title|link_to_type #} </li>
+                    {% elif collection.all_products_count > 0 and collection.products.first.vendor == collection.title %}
+                        <li>{# collection.title|link_to_vendor #} </li>
+                    {% endif %}
+                {% else %}
+                    {# product.type|link_to_type #}
+                {% endif %}
+                <li><span class="page-title">{{ page_title }}</span></li>
+            {% elif template == "article" %}
+                <li>{{ blog.title|link_to:blog.url }} </li>
+                <li><span class="page-title">{{ page_title }}</span></li>
+            {% elif "collection" in template %}
+                {% if current_tags.size > 0 %}
+                    <li>{{ collection.title|link_to:collection.url }} </li>
+                    <li><span class="page-title">{{ current_tags.first }}</span></li>
+                {% else %}
+                    <li><span class="page-title">{{ page_title }}</span></li>
+                {% endif %}
+            {% else %}
+                <li><span class="page-title">{% page_attribute "page_title" %}</span></li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endif %}

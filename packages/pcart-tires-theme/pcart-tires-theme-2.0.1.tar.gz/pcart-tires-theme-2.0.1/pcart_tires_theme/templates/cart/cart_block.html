@@ -1,0 +1,21 @@
+{% load i18n pcart_core %}
+{# <div class="header_currency" style="padding:0 15px;"></div> #}
+<!-- HEADER CART -->
+<div class="header_cart">
+    <a href="{% url 'pcart_cart:cart' %}">
+        <i class="fa fa-shopping-cart" title="{% trans "Shopping cart" %}"></i>
+        <span class="cart-total-items"><span class="count">{{ cart.item_count }}</span></span>
+    </a>
+    <a class="small" href="{% optional_url 'pcart_customers:customer-profile-section' 'comparison' %}">
+        <i class="fa fa-balance-scale" title="{% trans "Comparison" %}"></i><b>{{ cart.customer.comparison.count }}</b>
+    </a>
+    <a class="small" href="{% optional_url 'pcart_customers:customer-profile-section' 'wishlist' %}">
+        <i class="fa fa-heart" title="{% trans "Wish list" %}"></i><b>{{ cart.customer.wishlisted.count }}</b>
+    </a>
+</div>
+<script>
+$('button.btn[data-product-id]').removeClass('btn-pushed');
+$('{% for item in cart.customer.wishlisted.all %}button.btn[data-role="wishlist"][data-product-id="{{ item.product_id }}"]{% if not forloop.last %}, {% endif %}{% endfor %}').addClass('btn-pushed');
+$('{% for item in cart.customer.comparison.all %}button.btn[data-role="compare"][data-product-id="{{ item.product_id }}"]{% if not forloop.last %}, {% endif %}{% endfor %}').addClass('btn-pushed');
+$('{% for item in cart.items %}button.btn[data-role="cart"][data-product-id="{{ item.product.id }}"]{% if not forloop.last %}, {% endif %}{% endfor %}').addClass('btn-pushed');
+</script>

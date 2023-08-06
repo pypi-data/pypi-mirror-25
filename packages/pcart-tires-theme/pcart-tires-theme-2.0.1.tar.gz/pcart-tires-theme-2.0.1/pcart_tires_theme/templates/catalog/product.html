@@ -1,0 +1,177 @@
+{% extends CMS_TEMPLATE %}
+{% load i18n l10n cms_tags pcart_catalog pcart_core theme_tags pcart_statistics thumbnail staticfiles %}
+
+{% block title %}{% include "catalog/includes/product/meta_title.html" %} | {{site.name}}{% endblock %}
+{% block meta_description %}{% include "catalog/includes/product/meta_description.html" %}{% endblock %}
+{% block meta_keywords %}{% include "catalog/includes/product/meta_keywords.html" %}{% endblock %}
+
+{% block breadcrumb %}{% include "catalog/includes/product/breadcrumb.html" %}{% endblock %}
+
+{% block base_content %}
+<div class="row">
+<div class="main_content {% block main_content_classes %}col-sm-12 {% endblock %}">
+
+<div itemscope itemtype="http://schema.org/Product" class="product-scope">
+
+    <meta itemprop="url" content="{% build_absolute_uri product.get_absolute_url %}" />
+    <meta itemprop="image" content="{{im.image|thumbnail_url:'product_zoom'}}" />
+
+    <div class="product_wrap">
+        <div class="row">
+            <div class="col-sm-6 col-lg-5 product_images">
+                {% with p_images=product.images.all %}
+                    {% if p_images %}
+                        {% if p_images|len > 1 %}
+                            {% with image=p_images.first %}
+                                <img id="elevatezoom_big" src="{{image.image|thumbnail_url:'product_large'}}" alt="{{image}}" data-zoom-image="{{image.image|thumbnail_url:'product_zoom'}}" />
+                            {% endwith %}
+
+                            <div id="elevatezoom_gallery">
+                                {% for image in p_images %}
+                                    <a href="#" data-image="{{image.image|thumbnail_url:'product_large'}}"
+                                        data-zoom-image="{{image.image|thumbnail_url:'product_zoom'}}">
+                                        <img src="{{image.image|thumbnail_url:'product_small'}}" alt="{{image}}" />
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {% for image in p_images %}
+                            <img id="elevatezoom_big" class="fancybox"
+                                 src="{{image.image|thumbnail_url:'product_large'}}"
+                                 data-zoom-image="{{image.image|thumbnail_url:'product_zoom'}}" alt="{{image}}" />
+                            {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                {% endwith %}
+                {% include 'snippets/snippet-addthis.html' %}
+            </div>
+
+            <div class="col-sm-6 col-lg-7">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h1 itemprop="name" class="product_name">{% render_model product "title" %}</h1>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 col-lg-8">
+                        {% if product.available %}
+                            {% include "catalog/includes/product/buy_button.html" %}
+                        {% else %}
+                            <div id="product-actions" class="sold-out">
+                                <div id="purchase">
+                                    <p class="price">{{product.status}}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% include "catalog/includes/product/properties.html" %}
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        {% render_placeholder product.product_type.primary_placeholder %}
+                    </div>
+                </div>
+        </div><!-- /.row -->
+    </div><!-- /.product_wrap -->
+</div>
+
+{% include "catalog/includes/product/description.html" %}
+{% include "catalog/includes/product/reviews.html" %}
+
+{% render_placeholder product.product_type.secondary_placeholder %}
+
+{% include "catalog/includes/collection/meta_text.html" %}
+
+{# include 'widget-related-products' #}
+
+<script>
+jQuery(function($) {
+    /* product image zoom */
+    $(window).load(function(){
+        $("#elevatezoom_big").elevateZoom({
+            gallery : "elevatezoom_gallery",
+            zoomType : "window",
+            scrollZoom : true,
+            zoomWindowFadeIn : 500,
+            zoomLensFadeIn: 500,
+            imageCrossfade: true,
+            zoomWindowWidth : 345,
+            zoomWindowHeight : 345,
+            zoomWindowOffetx : 12,
+            zoomWindowOffety : 0,
+            borderSize : 1,
+            borderColour : "{{ settings.border_color }}"
+        });
+    });
+
+    /* big image fancybox */
+    $("#elevatezoom_big").bind("click", function() {
+        var ez = $('#elevatezoom_big').data('elevateZoom');
+        $.fancybox(ez.getGalleryList());
+        return false;
+    });
+
+    /* thumbs slider */
+    $('#elevatezoom_gallery').bxSlider({
+        infiniteLoop: true,
+        minSlides: 1,
+        maxSlides: 3,
+        moveSlides: 1,
+        slideWidth: 101,
+        slideMargin: 12,
+        pager: false,
+        prevText: '',
+        nextText: ''
+    });
+});
+</script>
+
+{% if product.available %}
+<script>
+
+    var selectCallback = function(variant, selector) {
+        if ( variant && variant.available ) {
+            jQuery('#add-to-cart').removeAttr('disabled').removeClass('disabled'); // remove unavailable class from add-to-cart button, and re-enable button
+
+            if( variant.price < variant.compare_at_price ){
+                jQuery('#product_price .price').addClass('product_price_sale').html('<span class="money">' + Shopify.formatMoney(variant.price, "{{ shop.money_format }}") + '</span><span class="money compare-at-price">' + Shopify.formatMoney(variant.compare_at_price, "{{ shop.money_format }}") + '</span>');
+            }
+            else {
+                jQuery('#product_price .price').html('<span class="money">' + Shopify.formatMoney(variant.price, "{{ shop.money_format }}") + '</span>');
+            };
+        }
+        else {
+            jQuery('#add-to-cart').addClass('disabled').attr('disabled', 'disabled'); // set add-to-cart button to unavailable class and disable button
+
+            var message = variant ? "Sold Out" : "Unavailable";
+            jQuery('#product_price .price').text(message);
+        };
+
+        if (variant && variant.featured_image) {
+            var originalImage = $("#elevatezoom_big");
+            var newImage = variant.featured_image;
+            var element = originalImage[0];
+
+            Shopify.Image.switchImage(newImage, element, function (newImageSizedSrc, newImage, element) {
+                jQuery('#elevatezoom_big').attr('src', newImageSizedSrc).attr('data-zoom-image', newImageSizedSrc);
+
+                jQuery("#elevatezoom_gallery a").each(function(){
+                    if ( jQuery(this).attr('data-zoom-image').replace(/\?v=.*/ , '') == newImageSizedSrc.replace(/\?v=.*/ , '') ) {
+                        jQuery(this).trigger('click');
+                    };
+                });
+            });
+        };
+    };
+</script>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# 'option_selection.js'|shopify_asset_url|script_tag #}
+{{ 'jquery.bxslider.min.js'|asset_url|script_tag }}
+{{ 'jquery.elevatezoom.js'|asset_url|script_tag }}
+{{ 'jquery.fancybox.min.js'|asset_url|script_tag }}
+{% track_product_visit product %}
+{% endblock %}

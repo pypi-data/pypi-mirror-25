@@ -1,0 +1,71 @@
+{% extends CMS_TEMPLATE %}
+{% load i18n thumbnail pcart_core theme_tags staticfiles cms_tags %}
+
+{% block title %}{% trans "Search" %}{% if query %} "{{ query }}"{% endif %} | {{site.name}}{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block sidebar %}
+    {% static_placeholder "search_sidebar" %}
+{% endblock %}
+
+{% block content %}
+<div id="searchresults" class="search-scope">
+
+<h2 class="page_heading">{% blocktrans %}Search results for "{{query}}"{% endblocktrans %}</h2>
+
+  <form action="{% optional_url 'pcart_search:search' %}" method="get" class="search-form clearfix" role="search">
+      <input class="form-control" type="text" name="query" value="{{ query }}" placeholder="{%  trans "Search" %}" />
+      <button type="submit"><i class="fa fa-search"></i></button>
+  </form>
+
+{% if products.paginator.count %}
+  <p>Found {{products.paginator.count}} products.</p>
+
+    <div id="collection_sorted">
+        <!-- products listing -->
+        <div class="product_listing_main row">
+            {% for product in products %}
+                {% include 'catalog/includes/collection/product_line.html' %}
+            {% empty %}
+                <div class="col-sm-12">
+                    <p class="alert alert-info">{% trans "There are no products in this view." %}</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- pagination -->
+    {% include "catalog/includes/pagination.html" %}
+    </div>
+
+    {% comment %}
+  <ol class="search-results">
+  {% for product in products %}
+      <li class="search-result">
+        <h2 class="product_name">
+          <a href="{{ product.get_absolute_url }}">{{ product.title|truncatechars:75 }}</a>
+        </h2>
+        <div class="search-result_container">
+          <div class="search-result_image pull-left">
+            <a href="{{ product.get_absolute_url }}">
+                {% with im=product.get_image %}
+                    {% if im %}
+                        <img src="{{im.image|thumbnail_url:"collection_small"}}" alt="{{im}}" />
+                    {% else %}
+                        <img src="{% static 'assets/empty.480x480.png' %}" />
+                    {% endif %}
+                {% endwith %}
+            </a>
+          </div>
+          <div class="product_desc">{{ product.description|striptags|truncatechars:300 }}</div>
+        </div>
+      </li>
+  {% endfor %}
+  </ol>
+  <div class="clearfix"></div>
+  {% include "catalog/includes/pagination.html" %}
+  {%  endcomment %}
+{% else %}
+    <p class="alert alert-error">{% trans "Your search did not yield any results." %}</p>
+{% endif %}
+</div>
+{% endblock %}
