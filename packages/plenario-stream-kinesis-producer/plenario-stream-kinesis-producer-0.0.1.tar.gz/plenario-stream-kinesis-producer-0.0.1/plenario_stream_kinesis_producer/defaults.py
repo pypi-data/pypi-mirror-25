@@ -1,0 +1,2 @@
+KINESIS_STREAM = '*'
+PARTITION_KEY = '*'
