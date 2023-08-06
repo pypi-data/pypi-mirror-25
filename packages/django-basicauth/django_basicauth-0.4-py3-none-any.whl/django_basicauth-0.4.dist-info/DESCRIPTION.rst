@@ -1,0 +1,92 @@
+================
+django-basicauth
+================
+
+Basic auth utilities for Django.
+
+Requires
+========
+
+Tested under...
+
+* Python
+
+  * 2.7
+  * 3.6
+
+* Django
+
+  * 1.8
+  * 1.10
+  * 1.11
+
+Installation
+============
+
+::
+
+    pip install django-basicauth
+
+
+Usage
+=====
+
+.. code-block:: python
+
+    from basicauth.decorators import basic_auth_required
+
+    @basic_auth_required
+    def myview(request):
+        ...
+
+or by a middleware.
+
+.. code-block:: python
+
+    MIDDLEWARE_CLASSES = (
+        'basicauth.middleware.BasicAuthMiddleware',
+        ...
+    )
+
+Settings
+========
+
+* ``BASICAUTH_USERS`` (required): Dictionary including keys as username and values as passwords.
+* ``BASICAUTH_REALM``: realm string, default is "Secure resource".
+* ``BASICAUTH_DISABLE``: Disable all of barriers by this library.
+
+
+Changes
+=======
+
+0.4 (2017-09-30)
+----------------
+
+* Supported Python 2.7
+* Dropped Django1.9
+* Supported Django 1.10+ style middleware
+
+0.3 (2017-08-28)
+----------------
+
+* Added ``BASICAUTH_DISABLE`` setting
+* Changed API of ``basicauthutils.validate_request``
+    * Fixed to return True/False
+    * Adding REMOTE_USER by this function
+
+0.2.1 (2017-08-28)
+------------------
+
+* Officially supported Django 1.11, 1.10, 1.9
+
+0.2 (2016-03-31)
+----------------
+
+* Added BasicAuthMiddleware https://github.com/hirokiky/django-basicauth/pull/3
+
+0.1 (2015-04-20)
+----------------
+
+* Initial
+
+
