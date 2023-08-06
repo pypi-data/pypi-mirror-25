@@ -1,0 +1,24 @@
+=======
+History
+=======
+0.7.5 (2017-10-05)
+------------------
+* change the package's use of the loglevel arg from NM GUI.  The log level set in the GUI admin screen for a formula is now used to suppress all messages below the target for the entire python `logging` module. This changes default behavior for logging from the formula and all dependencies.  Formula writers may explicitly override this behavior within their formulas as desired with the standard `logging.disable()` method.
+* add exception logging in case of import error when loading a user's formula module.  This will make it easier for formula writers to understand if they have problems in their module's `run()` method.
+* add a default handler for the TryAgain button inside the `ScreenBase.handle_back_button` method
+
+0.7.4 (2017-08-25)
+------------------
+* renamed the internal NetMagusSession.start() method to _start since it is not intended to be part of user API
+
+0.7.2 (2017-08-22)
+------------------
+* Add new ScreenBase() arg to allow over-ride of default behavior to wipe the HTML pop-up area afer each screen passes user data validation
+
+0.7.1 (2017-08-21)
+------------------
+* changed session.display_screen() to re-raise a CancelButtonPressed exception to be handled by the caller
+
+0.7.0 (2017-08-18)
+------------------
+* add new ScreenBase abstract base class
