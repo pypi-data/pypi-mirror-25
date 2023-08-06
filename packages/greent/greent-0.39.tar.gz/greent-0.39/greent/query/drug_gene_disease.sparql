@@ -1,0 +1,34 @@
+prefix kegg:           <http://chem2bio2rdf.org/kegg/resource/>
+prefix kegg_path:      <http://chem2bio2rdf.org/kegg/resource/kegg_pathway/>
+prefix pharmgkb:       <http://chem2bio2rdf.org/pharmgkb/resource/>
+prefix pharmgkb_genes: <http://chem2bio2rdf.org/pharmgkb/resource/pharmgkb_genes/>
+prefix db_resource:    <http://chem2bio2rdf.org/drugbank/resource/>
+prefix db_drug:        <http://chem2bio2rdf.org/drugbank/resource/drugbank_drug/>
+prefix db_inter:       <http://chem2bio2rdf.org/drugbank/resource/drugbank_interaction/>
+prefix pc_compound:    <http://chem2bio2rdf.org/pubchem/resource/pubchem_compound/>
+prefix pc_resource:    <http://chem2bio2rdf.org/pubchem/resource/>
+prefix ctd:            <http://chem2bio2rdf.org/ctd/resource/>
+prefix GenBank:        <http://www.ncbi.nlm.nih.gov/nuccore/>
+prefix ncbi_gene:      <http://www.ncbi.nlm.nih.gov/gene/>
+prefix uniprot:        <http://chem2bio2rdf.org/uniprot/resource/>
+prefix omim:           <http://chem2bio2rdf.org/omim/resource/>
+prefix pubchem:        <http://chem2bio2rdf.org/pubchem/resource/>
+                      
+select ?drugGenericName ?uniprotSym ?phenotype ?diseaseID ?diseaseName ?diseasePMIDs where {
+    values ( ?diseaseName ) { ( "$diseaseName" ) }
+    values ( ?drugName ) { ( "$drugName" ) }
+    ?ctdChemGene ctd:cid                        ?pubChemCID;
+                 ctd:gene                       ?uniprotSym;
+                 ctd:interaction                ?phenotype;
+                 ctd:pubmedids                  ?chemGenePMIDs.
+  
+    ?ctdChemDis  ctd:cid                        ?pubChemCID;
+                 ctd:diseasename                ?diseaseName;
+                 ctd:diseaseid                  ?diseaseID;
+                 ctd:pubmedids                  ?diseasePMIDs.
+                 
+    ?drugID      db_resource:CID                ?pubChemCID ;
+  	         	 db_resource:Generic_Name       ?drugGenericName .
+
+  filter regex(lcase(str(?drugGenericName)), lcase(?drugName))
+}
