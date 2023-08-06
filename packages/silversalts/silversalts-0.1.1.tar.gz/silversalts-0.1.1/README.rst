@@ -1,0 +1,93 @@
+SilverSalts project
+=======================
+
+This project aims to offer python api to access SilverSalts online services.
+
+----
+
+***************
+Updates since last version
+***************
+10/09/2017 - added a new option: use_cache, default True. If it's True and cache exists, customer will be free of charge.
+
+***************
+API
+***************
+
+===================================================================================
+ocr(spec, user, secret, host, protocol)
+===================================================================================
+
+spec: A dictionary specifying the options for the OCR process. Supported:
+
+    - data: Actual input data, usually the buffer from file read.
+
+    - input_scheme: A string representing the scheme of input data. Supported: raw
+
+    - output_scheme: A string representing the scheme of output data. Supported: hocr, pdf
+
+    - use_cache: A boolean indicating whether to use cached results. Default: True. If cache is used, no charge
+
+    - psm: an integer indicating tesseract psm value, e.g. 11
+
+    - lang: an array of strings indicating languages, e.g. ['eng']
+
+    (the following are considered only when the output_scheme is pdf)
+
+    - text_visible: a boolean value indicating if the recognized text is visible
+
+    - orig_visible: a boolean value indicating if the original pdf is visible
+
+    - text_color: an array of 3 floats, range from 0 to 1, indicating the rgb of desired text color, e.g. [1, 0, 0], which means red
+
+    - text_color_reflects_cl: an integer value of 1 or -1, indicating if the text (if visible) color correlates to the recognition confidence level. If -1, higher confidence means brighter color; If 1, higher confidence means darker color.
+
+user: email of the registered user
+
+secret: secret of the registered user (available on dashboard page after registration)
+
+host: server url, default: api.silversalts.com
+
+protocol: http or https, default: https
+
+
+============
+Examples
+============
+
+from silversalts.api import ocr
+
+with open('input.pdf', 'rb') as i:
+    with open('output.pdf', 'wb') as o:
+        spec = {
+            'data': i.read(),
+            # currently only supported value for input_scheme
+            'input_scheme': 'raw',
+            # output in pdf, or alternatively hocr
+            'output_scheme': 'pdf',
+            # use cached results (if cache is used, no charge)
+            'use_cache': True,
+            # tesseract psm value
+            'psm': 11,
+            # language, array of language strings
+            'lang': ['eng'],
+            # the following are considered only when the output_scheme is pdf
+            # hide the original content so it's easier to examine the newly ocr-ed content
+            'orig_visible': False,
+            # display the ocr-ed text so we can examine the results
+            'text_visible': True,
+            # r, g, b, each ranging 0 to 1
+            'text_color': [1, 0.5, 1],
+            #  1 : the more confident, the darker
+            # -1 : the more confident, the brighter
+            'text_color_reflects_cl': 1,
+        }
+        o.write(ocr(
+            spec,
+            'you@email.com',
+            'your_secret_string',
+            # optional
+            'api.silversalts.com',
+            # optional
+            'https'
+        ))
