@@ -1,0 +1,1 @@
+'''This package contains a pycrutils.streams unit tests'''
