@@ -1,0 +1,2574 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" targetNamespace="http://www.opengis.net/sld" elementFormDefault="qualified" version="1.0.0.2">
+
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      STYLED LAYER DESCRIPTOR version 1.0.0
+
+      SLD is an OGC Standard.
+      Copyright (c) 2001,2010 Open Geospatial Consortium.
+      To obtain additional rights of use, visit http://www.opengeospatial.org/legal/ .
+        </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="StyledLayerDescriptor">
+        <xsd:annotation>
+            <xsd:documentation>
+        A StyledLayerDescriptor is a sequence of styled layers, represented
+        at the first level by NamedLayer and UserLayer elements.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name" minOccurs="0"/>
+                <xsd:element ref="sld:Title" minOccurs="0"/>
+                <xsd:element ref="sld:Abstract" minOccurs="0"/>
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                    <xsd:element ref="sld:NamedLayer"/>
+                    <xsd:element ref="sld:UserLayer"/>
+                </xsd:choice>
+            </xsd:sequence>
+            <xsd:attribute name="version" type="xsd:string" use="required" fixed="1.0.0"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Name" type="xsd:string"/>
+    <xsd:element name="Title" type="xsd:string"/>
+    <xsd:element name="Abstract" type="xsd:string"/>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      LAYERS AND STYLES
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="NamedLayer">
+        <xsd:annotation>
+            <xsd:documentation>
+        A NamedLayer is a layer of data that has a name advertised by a WMS.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name"/>
+                <xsd:element ref="sld:LayerFeatureConstraints" minOccurs="0"/>
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                    <xsd:element ref="sld:NamedStyle"/>
+                    <xsd:element ref="sld:UserStyle"/>
+                </xsd:choice>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="NamedStyle">
+        <xsd:annotation>
+            <xsd:documentation>
+        A NamedStyle is used to refer to a style that has a name in a WMS.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="UserLayer">
+        <xsd:annotation>
+            <xsd:documentation>
+        A UserLayer allows a user-defined layer to be built from WFS and
+        WCS data.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name" minOccurs="0"/>
+                <xsd:element ref="sld:RemoteOWS" minOccurs="0"/>
+                <xsd:element ref="sld:LayerFeatureConstraints"/>
+                <xsd:element ref="sld:UserStyle" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="RemoteOWS">
+        <xsd:annotation>
+            <xsd:documentation>
+        A RemoteOWS gives a reference to a remote WFS/WCS/other-OWS server.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Service"/>
+                <xsd:element ref="sld:OnlineResource"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Service">
+        <xsd:annotation>
+            <xsd:documentation>
+        A Service refers to the type of a remote OWS server.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+                <xsd:enumeration value="WFS"/>
+                <xsd:enumeration value="WCS"/>
+            </xsd:restriction>
+        </xsd:simpleType>
+    </xsd:element>
+    <xsd:element name="OnlineResource">
+        <xsd:annotation>
+            <xsd:documentation>
+        An OnlineResource is typically used to refer to an HTTP URL.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="LayerFeatureConstraints">
+        <xsd:annotation>
+            <xsd:documentation>
+        LayerFeatureConstraints define what features &amp; feature types are
+        referenced in a layer.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:FeatureTypeConstraint" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="FeatureTypeConstraint">
+        <xsd:annotation>
+            <xsd:documentation>
+        A FeatureTypeConstraint identifies a specific feature type and
+        supplies fitlering.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:FeatureTypeName" minOccurs="0"/>
+                <xsd:element ref="ogc:Filter" minOccurs="0"/>
+                <xsd:element ref="sld:Extent" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="FeatureTypeName" type="xsd:string"/>
+    <xsd:element name="Extent">
+        <xsd:annotation>
+            <xsd:documentation>
+        An Extent gives feature/coverage/raster/matrix dimension extent.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name"/>
+                <xsd:element ref="sld:Value"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Value" type="xsd:string"/>
+    <xsd:element name="UserStyle">
+        <xsd:annotation>
+            <xsd:documentation>
+        A UserStyle allows user-defined styling and is semantically
+        equivalent to a WMS named style.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name" minOccurs="0"/>
+                <xsd:element ref="sld:Title" minOccurs="0"/>
+                <xsd:element ref="sld:Abstract" minOccurs="0"/>
+                <xsd:element ref="sld:IsDefault" minOccurs="0"/>
+                <xsd:element ref="sld:FeatureTypeStyle" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="IsDefault" type="xsd:boolean"/>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      FEATURE-TYPE STYLING
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="FeatureTypeStyle">
+        <xsd:annotation>
+            <xsd:documentation>
+      A FeatureTypeStyle contains styling information specific to one
+      feature type.  This is the SLD level that separates the 'layer'
+      handling from the 'feature' handling.
+    </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name" minOccurs="0"/>
+                <xsd:element ref="sld:Title" minOccurs="0"/>
+                <xsd:element ref="sld:Abstract" minOccurs="0"/>
+                <xsd:element ref="sld:FeatureTypeName" minOccurs="0"/>
+                <xsd:element ref="sld:SemanticTypeIdentifier" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element ref="sld:Rule" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="SemanticTypeIdentifier" type="xsd:string"/>
+    <xsd:element name="Rule">
+        <xsd:annotation>
+            <xsd:documentation>
+        A Rule is used to attach property/scale conditions to and group
+        the individual symbolizers used for rendering.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Name" minOccurs="0"/>
+                <xsd:element ref="sld:Title" minOccurs="0"/>
+                <xsd:element ref="sld:Abstract" minOccurs="0"/>
+                <xsd:element ref="sld:LegendGraphic" minOccurs="0"/>
+                <xsd:choice minOccurs="0">
+                    <xsd:element ref="ogc:Filter"/>
+                    <xsd:element ref="sld:ElseFilter"/>
+                </xsd:choice>
+                <xsd:element ref="sld:MinScaleDenominator" minOccurs="0"/>
+                <xsd:element ref="sld:MaxScaleDenominator" minOccurs="0"/>
+                <xsd:element ref="sld:Symbolizer" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="LegendGraphic">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Graphic"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="ElseFilter">
+        <xsd:complexType/>
+    </xsd:element>
+    <xsd:element name="MinScaleDenominator" type="xsd:double"/>
+    <xsd:element name="MaxScaleDenominator" type="xsd:double"/>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      SYMBOLIZERS
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="Symbolizer" type="sld:SymbolizerType" abstract="true"/>
+    <xsd:complexType name="SymbolizerType" abstract="true">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "SymbolizerType" is an abstract type for encoding the graphical
+        properties used to portray geographic information.  Concrete symbol
+        types are derived from this base type.
+      </xsd:documentation>
+        </xsd:annotation>
+    </xsd:complexType>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      LINE SYMBOLIZER
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="LineSymbolizer" substitutionGroup="sld:Symbolizer">
+        <xsd:annotation>
+            <xsd:documentation>
+        A LineSymbolizer is used to render a "stroke" along a linear geometry.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="sld:SymbolizerType">
+                    <xsd:sequence>
+                        <xsd:element ref="sld:Geometry" minOccurs="0"/>
+                        <xsd:element ref="sld:Stroke" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Geometry">
+        <xsd:annotation>
+            <xsd:documentation>
+        A Geometry gives reference to a (the) geometry property of a
+        feature to be used for rendering.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="ogc:PropertyName"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Stroke">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Stroke" specifies the appearance of a linear geometry.  It is
+        defined in parallel with SVG strokes.  The following CssParameters
+        may be used: "stroke" (color), "stroke-opacity", "stroke-width",
+        "stroke-linejoin", "stroke-linecap", "stroke-dasharray", and
+        "stroke-dashoffset".
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:choice minOccurs="0">
+                    <xsd:element ref="sld:GraphicFill"/>
+                    <xsd:element ref="sld:GraphicStroke"/>
+                </xsd:choice>
+                <xsd:element ref="sld:CssParameter" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="CssParameter">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "CssParameter" refers to an SVG/CSS graphical-formatting
+        parameter.  The parameter is identified using the "name" attribute
+        and the content of the element gives the SVG/CSS-coded value.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType mixed="true">
+            <xsd:complexContent mixed="true">
+                <xsd:extension base="sld:ParameterValueType">
+                    <xsd:attribute name="name" type="xsd:string" use="required"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:complexType name="ParameterValueType" mixed="true">
+        <xsd:annotation>
+            <xsd:documentation>
+        The "ParameterValueType" uses WFS-Filter expressions to give
+        values for SLD graphic parameters.  A "mixed" element-content
+        model is used with textual substitution for values.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element ref="ogc:expression"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="GraphicFill">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "GraphicFill" defines repeated-graphic filling (stippling)
+        pattern for an area geometry.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Graphic"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="GraphicStroke">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "GraphicStroke" defines a repated-linear graphic pattern to be used
+        for stroking a line.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Graphic"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      POLYGON SYMBOLIZER
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="PolygonSymbolizer" substitutionGroup="sld:Symbolizer">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "PolygonSymbolizer" specifies the rendering of a polygon or
+        area geometry, including its interior fill and border stroke.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="sld:SymbolizerType">
+                    <xsd:sequence>
+                        <xsd:element ref="sld:Geometry" minOccurs="0"/>
+                        <xsd:element ref="sld:Fill" minOccurs="0"/>
+                        <xsd:element ref="sld:Stroke" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Fill">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Fill" specifies the pattern for filling an area geometry.
+        The allowed CssParameters are: "fill" (color) and "fill-opacity".
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:GraphicFill" minOccurs="0"/>
+                <xsd:element ref="sld:CssParameter" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      POINT SYMBOLIZER
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="PointSymbolizer" substitutionGroup="sld:Symbolizer">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "PointSymbolizer" specifies the rendering of a "graphic symbol"
+        at a point.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="sld:SymbolizerType">
+                    <xsd:sequence>
+                        <xsd:element ref="sld:Geometry" minOccurs="0"/>
+                        <xsd:element ref="sld:Graphic" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Graphic">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Graphic" specifies or refers to a "graphic symbol" with inherent
+        shape, size, and coloring.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                    <xsd:element ref="sld:ExternalGraphic"/>
+                    <xsd:element ref="sld:Mark"/>
+                </xsd:choice>
+                <xsd:sequence>
+                    <xsd:element ref="sld:Opacity" minOccurs="0"/>
+                    <xsd:element ref="sld:Size" minOccurs="0"/>
+                    <xsd:element ref="sld:Rotation" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Opacity" type="sld:ParameterValueType"/>
+    <xsd:element name="Size" type="sld:ParameterValueType"/>
+    <xsd:element name="Rotation" type="sld:ParameterValueType"/>
+    <xsd:element name="ExternalGraphic">
+        <xsd:annotation>
+            <xsd:documentation>
+        An "ExternalGraphic" gives a reference to an external raster or
+        vector graphical object.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:OnlineResource"/>
+                <xsd:element ref="sld:Format"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Format" type="xsd:string"/>
+    <xsd:element name="Mark">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Mark" specifies a geometric shape and applies coloring to it.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:WellKnownName" minOccurs="0"/>
+                <xsd:element ref="sld:Fill" minOccurs="0"/>
+                <xsd:element ref="sld:Stroke" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="WellKnownName" type="xsd:string"/>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      TEXT SYMBOLIZER
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="TextSymbolizer" substitutionGroup="sld:Symbolizer">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "TextSymbolizer" is used to render text labels according to
+        various graphical parameters.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="sld:SymbolizerType">
+                    <xsd:sequence>
+                        <xsd:element ref="sld:Geometry" minOccurs="0"/>
+                        <xsd:element ref="sld:Label" minOccurs="0"/>
+                        <xsd:element ref="sld:Font" minOccurs="0"/>
+                        <xsd:element ref="sld:LabelPlacement" minOccurs="0"/>
+                        <xsd:element ref="sld:Halo" minOccurs="0"/>
+                        <xsd:element ref="sld:Fill" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Label" type="sld:ParameterValueType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Label" specifies the textual content to be rendered.
+      </xsd:documentation>
+        </xsd:annotation>
+    </xsd:element>
+    <xsd:element name="Font">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Font" element specifies the text font to use.  The allowed
+        CssParameters are: "font-family", "font-style", "font-weight",
+        and "font-size".
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:CssParameter" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="LabelPlacement">
+        <xsd:annotation>
+            <xsd:documentation>
+        The "LabelPlacement" specifies where and how a text label should
+        be rendered relative to a geometry.  The present mechanism is
+        poorly aligned with CSS/SVG.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:choice>
+                <xsd:element ref="sld:PointPlacement"/>
+                <xsd:element ref="sld:LinePlacement"/>
+            </xsd:choice>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="PointPlacement">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "PointPlacement" specifies how a text label should be rendered
+        relative to a geometric point.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:AnchorPoint" minOccurs="0"/>
+                <xsd:element ref="sld:Displacement" minOccurs="0"/>
+                <xsd:element ref="sld:Rotation" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="AnchorPoint">
+        <xsd:annotation>
+            <xsd:documentation>
+        An "AnchorPoint" identifies the location inside of a text label to
+        use an an 'anchor' for positioning it relative to a point geometry.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:AnchorPointX"/>
+                <xsd:element ref="sld:AnchorPointY"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="AnchorPointX" type="sld:ParameterValueType"/>
+    <xsd:element name="AnchorPointY" type="sld:ParameterValueType"/>
+    <xsd:element name="Displacement">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Displacement" gives X and Y offset displacements to use for
+        rendering a text label near a point.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:DisplacementX"/>
+                <xsd:element ref="sld:DisplacementY"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="DisplacementX" type="sld:ParameterValueType"/>
+    <xsd:element name="DisplacementY" type="sld:ParameterValueType"/>
+    <xsd:element name="LinePlacement">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "LinePlacement" specifies how a text label should be rendered
+        relative to a linear geometry.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:PerpendicularOffset" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="PerpendicularOffset" type="sld:ParameterValueType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "PerpendicularOffset" gives the perpendicular distance away
+        from a line to draw a label.
+      </xsd:documentation>
+        </xsd:annotation>
+    </xsd:element>
+    <xsd:element name="Halo">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "Halo" fills an extended area outside the glyphs of a rendered
+        text label to make the label easier to read over a background.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:Radius" minOccurs="0"/>
+                <xsd:element ref="sld:Fill" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Radius" type="sld:ParameterValueType"/>
+    <!-- *********************************************************************** -->
+    <xsd:annotation>
+        <xsd:documentation>
+      RASTER SYMBOLIZER
+    </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="RasterSymbolizer" substitutionGroup="sld:Symbolizer">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "RasterSymbolizer" is used to specify the rendering of raster/
+        matrix-coverage data (e.g., satellite images, DEMs).
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="sld:SymbolizerType">
+                    <xsd:sequence>
+                        <xsd:element ref="sld:Geometry" minOccurs="0"/>
+                        <xsd:element ref="sld:Opacity" minOccurs="0"/>
+                        <xsd:element ref="sld:ChannelSelection" minOccurs="0"/>
+                        <xsd:element ref="sld:OverlapBehavior" minOccurs="0"/>
+                        <xsd:element ref="sld:ColorMap" minOccurs="0"/>
+                        <xsd:element ref="sld:ContrastEnhancement" minOccurs="0"/>
+                        <xsd:element ref="sld:ShadedRelief" minOccurs="0"/>
+                        <xsd:element ref="sld:ImageOutline" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="ChannelSelection">
+        <xsd:annotation>
+            <xsd:documentation>
+        "ChannelSelection" specifies the false-color channel selection
+        for a multi-spectral raster source.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:choice>
+                <xsd:sequence>
+                    <xsd:element ref="sld:RedChannel"/>
+                    <xsd:element ref="sld:GreenChannel"/>
+                    <xsd:element ref="sld:BlueChannel"/>
+                </xsd:sequence>
+                <xsd:element ref="sld:GrayChannel"/>
+            </xsd:choice>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="RedChannel" type="sld:SelectedChannelType"/>
+    <xsd:element name="GreenChannel" type="sld:SelectedChannelType"/>
+    <xsd:element name="BlueChannel" type="sld:SelectedChannelType"/>
+    <xsd:element name="GrayChannel" type="sld:SelectedChannelType"/>
+    <xsd:complexType name="SelectedChannelType">
+        <xsd:sequence>
+            <xsd:element ref="sld:SourceChannelName"/>
+            <xsd:element ref="sld:ContrastEnhancement" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="SourceChannelName" type="xsd:string"/>
+    <xsd:element name="OverlapBehavior">
+        <xsd:annotation>
+            <xsd:documentation>
+        "OverlapBehavior" tells a system how to behave when multiple
+        raster images in a layer overlap each other, for example with
+        satellite-image scenes.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:choice>
+                <xsd:element ref="sld:LATEST_ON_TOP"/>
+                <xsd:element ref="sld:EARLIEST_ON_TOP"/>
+                <xsd:element ref="sld:AVERAGE"/>
+                <xsd:element ref="sld:RANDOM"/>
+            </xsd:choice>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="LATEST_ON_TOP">
+        <xsd:complexType/>
+    </xsd:element>
+    <xsd:element name="EARLIEST_ON_TOP">
+        <xsd:complexType/>
+    </xsd:element>
+    <xsd:element name="AVERAGE">
+        <xsd:complexType/>
+    </xsd:element>
+    <xsd:element name="RANDOM">
+        <xsd:complexType/>
+    </xsd:element>
+    <xsd:element name="ColorMap">
+        <xsd:annotation>
+            <xsd:documentation>
+        A "ColorMap" defines either the colors of a pallet-type raster
+        source or the mapping of numeric pixel values to colors.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element ref="sld:ColorMapEntry"/>
+            </xsd:choice>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="ColorMapEntry">
+        <xsd:complexType>
+            <xsd:attribute name="color" type="xsd:string" use="required"/>
+            <xsd:attribute name="opacity" type="xsd:double"/>
+            <xsd:attribute name="quantity" type="xsd:double"/>
+            <xsd:attribute name="label" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="ContrastEnhancement">
+        <xsd:annotation>
+            <xsd:documentation>
+        "ContrastEnhancement" defines the 'stretching' of contrast for a
+        channel of a false-color image or for a whole grey/color image.
+        Contrast enhancement is used to make ground features in images
+        more visible.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:choice minOccurs="0">
+                    <xsd:element ref="sld:Normalize"/>
+                    <xsd:element ref="sld:Histogram"/>
+                </xsd:choice>
+                <xsd:element ref="sld:GammaValue" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Normalize">
+        <xsd:complexType/>
+    </xsd:element>
+    <xsd:element name="Histogram">
+        <xsd:complexType/>
+    </xsd:element>
+    <xsd:element name="GammaValue" type="xsd:double"/>
+    <xsd:element name="ShadedRelief">
+        <xsd:annotation>
+            <xsd:documentation>
+        "ShadedRelief" specifies the application of relief shading
+        (or "hill shading") to a DEM raster to give it somewhat of a
+        three-dimensional effect and to make elevation changes more
+        visible.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="sld:BrightnessOnly" minOccurs="0"/>
+                <xsd:element ref="sld:ReliefFactor" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="BrightnessOnly" type="xsd:boolean"/>
+    <xsd:element name="ReliefFactor" type="xsd:double"/>
+    <xsd:element name="ImageOutline">
+        <xsd:annotation>
+            <xsd:documentation>
+        "ImageOutline" specifies how individual source rasters in
+        a multi-raster set (such as a set of satellite-image scenes)
+        should be outlined to make the individual-image locations visible.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:choice>
+                <xsd:element ref="sld:LineSymbolizer"/>
+                <xsd:element ref="sld:PolygonSymbolizer"/>
+            </xsd:choice>
+        </xsd:complexType>
+    </xsd:element>
+<!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:annotation>
+  <xsd:documentation>This schema document provides attribute declarations and
+attribute group, complex type and simple type definitions which can be used in
+the construction of user schemas to define the structure of particular linking
+constructs, e.g.
+
+&lt;xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:xl="http://www.w3.org/1999/xlink"&gt;
+
+ &lt;xs:import namespace="http://www.w3.org/1999/xlink"
+            location="http://www.w3.org/1999/xlink.xsd"&gt;
+
+ &lt;xs:element name="mySimple"&gt;
+  &lt;xs:complexType&gt;
+   ...
+   &lt;xs:attributeGroup ref="xl:simpleAttrs"/&gt;
+   ...
+  &lt;/xs:complexType&gt;
+ &lt;/xs:element&gt;
+ ...
+&lt;/xs:schema&gt;</xsd:documentation>
+ </xsd:annotation>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="type" type="xlink:typeType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="typeType">
+  <xsd:restriction base="xs:token">
+   <xsd:enumeration value="simple"/>
+   <xsd:enumeration value="extended"/>
+   <xsd:enumeration value="title"/>
+   <xsd:enumeration value="resource"/>
+   <xsd:enumeration value="locator"/>
+   <xsd:enumeration value="arc"/>
+  </xsd:restriction>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="href" type="xlink:hrefType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="hrefType">
+  <xsd:restriction base="xs:anyURI"/>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="role" type="xlink:roleType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="roleType">
+  <xsd:restriction base="xs:anyURI">
+   <xsd:minLength value="1"/>
+  </xsd:restriction>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="arcrole" type="xlink:arcroleType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="arcroleType">
+  <xsd:restriction base="xs:anyURI">
+   <xsd:minLength value="1"/>
+  </xsd:restriction>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="title" type="xlink:titleAttrType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="titleAttrType">
+  <xsd:restriction base="xs:string"/>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="show" type="xlink:showType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="showType">
+  <xsd:restriction base="xs:token">
+   <xsd:enumeration value="new"/>
+   <xsd:enumeration value="replace"/>
+   <xsd:enumeration value="embed"/>
+   <xsd:enumeration value="other"/>
+   <xsd:enumeration value="none"/>
+  </xsd:restriction>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="actuate" type="xlink:actuateType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="actuateType">
+  <xsd:restriction base="xs:token">
+   <xsd:enumeration value="onLoad"/>
+   <xsd:enumeration value="onRequest"/>
+   <xsd:enumeration value="other"/>
+   <xsd:enumeration value="none"/>
+  </xsd:restriction>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="label" type="xlink:labelType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="labelType">
+  <xsd:restriction base="xs:NCName"/>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="from" type="xlink:fromType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="fromType">
+  <xsd:restriction base="xs:NCName"/>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attribute name="to" type="xlink:toType"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:simpleType name="toType">
+  <xsd:restriction base="xs:NCName"/>
+ </xsd:simpleType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attributeGroup name="simpleAttrs">
+  <xsd:attribute ref="xlink:type" fixed="simple"/>
+  <xsd:attribute ref="xlink:href"/>
+  <xsd:attribute ref="xlink:role"/>
+  <xsd:attribute ref="xlink:arcrole"/>
+  <xsd:attribute ref="xlink:title"/>
+  <xsd:attribute ref="xlink:show"/>
+  <xsd:attribute ref="xlink:actuate"/>
+ </xsd:attributeGroup>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:group name="simpleModel">
+  <xsd:sequence>
+   <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+ </xsd:group>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:complexType mixed="true" name="simple">
+  <xsd:annotation>
+   <xsd:documentation>
+    Intended for use as the type of user-declared elements to make them
+    simple links.
+   </xsd:documentation>
+  </xsd:annotation>
+  <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+  <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+ </xsd:complexType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attributeGroup name="extendedAttrs">
+  <xsd:attribute ref="xlink:type" fixed="extended" use="required"/>
+  <xsd:attribute ref="xlink:role"/>
+  <xsd:attribute ref="xlink:title"/>
+ </xsd:attributeGroup>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:group name="extendedModel">
+   <xsd:choice>
+    <xsd:element ref="xlink:title"/>
+    <xsd:element ref="xlink:resource"/>
+    <xsd:element ref="xlink:locator"/>
+    <xsd:element ref="xlink:arc"/>
+  </xsd:choice>
+ </xsd:group>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:complexType name="extended">
+  <xsd:annotation>
+   <xsd:documentation>
+    Intended for use as the type of user-declared elements to make them
+    extended links.
+    Note that the elements referenced in the content model are all abstract.
+    The intention is that by simply declaring elements with these as their
+    substitutionGroup, all the right things will happen.
+   </xsd:documentation>
+  </xsd:annotation>
+  <xsd:element ref="xlink:title" minOccurs="0" maxOccurs="unbounded"/>
+    <xsd:element ref="xlink:resource" minOccurs="0" maxOccurs="unbounded"/>
+    <xsd:element ref="xlink:locator" minOccurs="0" maxOccurs="unbounded"/>
+    <xsd:element ref="xlink:arc" minOccurs="0" maxOccurs="unbounded"/>
+  <xsd:attributeGroup ref="xlink:extendedAttrs"/>
+ </xsd:complexType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:element name="title" type="xlink:titleEltType" abstract="true"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attributeGroup name="titleAttrs">
+  <xsd:attribute ref="xlink:type" fixed="title" use="required"/>
+  <xsd:attribute ref="xml:lang">
+   <xsd:annotation>
+    <xsd:documentation>
+     xml:lang is not required, but provides much of the
+     motivation for title elements in addition to attributes, and so
+     is provided here for convenience.
+    </xsd:documentation>
+   </xsd:annotation>
+  </xsd:attribute>
+ </xsd:attributeGroup>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:group name="titleModel">
+  <xsd:sequence>
+   <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+ </xsd:group>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:complexType mixed="true" name="titleEltType">
+  <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+  <xsd:attributeGroup ref="xlink:titleAttrs"/>
+ </xsd:complexType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:element name="resource" type="xlink:resourceType" abstract="true"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attributeGroup name="resourceAttrs">
+  <xsd:attribute ref="xlink:type" fixed="resource" use="required"/>
+  <xsd:attribute ref="xlink:role"/>
+  <xsd:attribute ref="xlink:title"/>
+  <xsd:attribute ref="xlink:label"/>
+ </xsd:attributeGroup>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:group name="resourceModel">
+  <xsd:sequence>
+   <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+ </xsd:group>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:complexType mixed="true" name="resourceType">
+  <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+  <xsd:attributeGroup ref="xlink:resourceAttrs"/>
+ </xsd:complexType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:element name="locator" type="xlink:locatorType" abstract="true"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attributeGroup name="locatorAttrs">
+  <xsd:attribute ref="xlink:type" fixed="locator" use="required"/>
+  <xsd:attribute ref="xlink:href" use="required"/>
+  <xsd:attribute ref="xlink:role"/>
+  <xsd:attribute ref="xlink:title"/>
+  <xsd:attribute ref="xlink:label">
+   <xsd:annotation>
+    <xsd:documentation>
+     label is not required, but locators have no particular
+     XLink function if they are not labeled.
+    </xsd:documentation>
+   </xsd:annotation>
+  </xsd:attribute>
+ </xsd:attributeGroup>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:group name="locatorModel">
+  <xsd:sequence>
+   <xsd:element ref="xlink:title" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+ </xsd:group>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:complexType name="locatorType">
+  <xsd:element ref="xlink:title" minOccurs="0" maxOccurs="unbounded"/>
+  <xsd:attributeGroup ref="xlink:locatorAttrs"/>
+ </xsd:complexType>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:element name="arc" type="xlink:arcType" abstract="true"/>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:attributeGroup name="arcAttrs">
+  <xsd:attribute ref="xlink:type" fixed="arc" use="required"/>
+  <xsd:attribute ref="xlink:arcrole"/>
+  <xsd:attribute ref="xlink:title"/>
+  <xsd:attribute ref="xlink:show"/>
+  <xsd:attribute ref="xlink:actuate"/>
+  <xsd:attribute ref="xlink:from"/>
+  <xsd:attribute ref="xlink:to">
+   <xsd:annotation>
+    <xsd:documentation>
+     from and to have default behavior when values are missing
+    </xsd:documentation>
+   </xsd:annotation>
+  </xsd:attribute>
+ </xsd:attributeGroup>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:group name="arcModel">
+  <xsd:sequence>
+   <xsd:element ref="xlink:title" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+ </xsd:group>
+
+ <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    -->
+<xsd:complexType name="arcType">
+  <xsd:element ref="xlink:title" minOccurs="0" maxOccurs="unbounded"/>
+  <xsd:attributeGroup ref="xlink:arcAttrs"/>
+ </xsd:complexType>
+
+<!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:annotation xmlns:html="http://www.w3.org/1999/xhtml">
+  <xsd:documentation>
+   <html:div>
+    <html:h1>About the XML namespace</html:h1>
+
+    <html:div class="bodytext">
+     <html:p>
+      This schema document describes the XML namespace, in a form
+      suitable for import by other schema documents.
+     </html:p>
+     <html:p>
+      See <html:a href="http://www.w3.org/XML/1998/namespace.html">
+      http://www.w3.org/XML/1998/namespace.html</html:a> and
+      <html:a href="http://www.w3.org/TR/REC-xml">
+      http://www.w3.org/TR/REC-xml</html:a> for information
+      about this namespace.
+     </html:p>
+     <html:p>
+      Note that local names in this namespace are intended to be
+      defined only by the World Wide Web Consortium or its subgroups.
+      The names currently defined in this namespace are listed below.
+      They should not be used with conflicting semantics by any Working
+      Group, specification, or document instance.
+     </html:p>
+     <html:p>
+      See further below in this document for more information about <html:a href="#usage">how to refer to this schema document from your own
+      XSD schema documents</html:a> and about <html:a href="#nsversioning">the
+      namespace-versioning policy governing this schema document</html:a>.
+     </html:p>
+    </html:div>
+   </html:div>
+  </xsd:documentation>
+ </xsd:annotation>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:attribute xmlns:html="http://www.w3.org/1999/xhtml" name="lang">
+  <xsd:annotation>
+   <xsd:documentation>
+    <html:div>
+
+      <html:h3>lang (as an attribute name)</html:h3>
+      <html:p>
+       denotes an attribute whose value
+       is a language code for the natural language of the content of
+       any element; its value is inherited.  This name is reserved
+       by virtue of its definition in the XML specification.</html:p>
+
+    </html:div>
+    <html:div>
+     <html:h4>Notes</html:h4>
+     <html:p>
+      Attempting to install the relevant ISO 2- and 3-letter
+      codes as the enumerated possible values is probably never
+      going to be a realistic possibility.
+     </html:p>
+     <html:p>
+      See BCP 47 at <html:a href="http://www.rfc-editor.org/rfc/bcp/bcp47.txt">
+       http://www.rfc-editor.org/rfc/bcp/bcp47.txt</html:a>
+      and the IANA language subtag registry at
+      <html:a href="http://www.iana.org/assignments/language-subtag-registry">
+       http://www.iana.org/assignments/language-subtag-registry</html:a>
+      for further information.
+     </html:p>
+     <html:p>
+      The union allows for the 'un-declaration' of xml:lang with
+      the empty string.
+     </html:p>
+    </html:div>
+   </xsd:documentation>
+  </xsd:annotation>
+  <xsd:simpleType>
+   <xsd:union memberTypes="xs:language">
+    <xsd:simpleType>
+     <xsd:restriction base="xs:string">
+      <xsd:enumeration value=""/>
+     </xsd:restriction>
+    </xsd:simpleType>
+   </xsd:union>
+  </xsd:simpleType>
+ </xsd:attribute>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:attribute xmlns:html="http://www.w3.org/1999/xhtml" name="space">
+  <xsd:annotation>
+   <xsd:documentation>
+    <html:div>
+
+      <html:h3>space (as an attribute name)</html:h3>
+      <html:p>
+       denotes an attribute whose
+       value is a keyword indicating what whitespace processing
+       discipline is intended for the content of the element; its
+       value is inherited.  This name is reserved by virtue of its
+       definition in the XML specification.</html:p>
+
+    </html:div>
+   </xsd:documentation>
+  </xsd:annotation>
+  <xsd:simpleType>
+   <xsd:restriction base="xs:NCName">
+    <xsd:enumeration value="default"/>
+    <xsd:enumeration value="preserve"/>
+   </xsd:restriction>
+  </xsd:simpleType>
+ </xsd:attribute>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:attribute xmlns:html="http://www.w3.org/1999/xhtml" name="base" type="xs:anyURI"> <xsd:annotation>
+   <xsd:documentation>
+    <html:div>
+
+      <html:h3>base (as an attribute name)</html:h3>
+      <html:p>
+       denotes an attribute whose value
+       provides a URI to be used as the base for interpreting any
+       relative URIs in the scope of the element on which it
+       appears; its value is inherited.  This name is reserved
+       by virtue of its definition in the XML Base specification.</html:p>
+
+     <html:p>
+      See <html:a href="http://www.w3.org/TR/xmlbase/">http://www.w3.org/TR/xmlbase/</html:a>
+      for information about this attribute.
+     </html:p>
+    </html:div>
+   </xsd:documentation>
+  </xsd:annotation>
+ </xsd:attribute>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:attribute xmlns:html="http://www.w3.org/1999/xhtml" name="id" type="xs:ID">
+  <xsd:annotation>
+   <xsd:documentation>
+    <html:div>
+
+      <html:h3>id (as an attribute name)</html:h3>
+      <html:p>
+       denotes an attribute whose value
+       should be interpreted as if declared to be of type ID.
+       This name is reserved by virtue of its definition in the
+       xml:id specification.</html:p>
+
+     <html:p>
+      See <html:a href="http://www.w3.org/TR/xml-id/">http://www.w3.org/TR/xml-id/</html:a>
+      for information about this attribute.
+     </html:p>
+    </html:div>
+   </xsd:documentation>
+  </xsd:annotation>
+ </xsd:attribute>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:attributeGroup name="specialAttrs">
+  <xsd:attribute ref="xml:base"/>
+  <xsd:attribute ref="xml:lang"/>
+  <xsd:attribute ref="xml:space"/>
+  <xsd:attribute ref="xml:id"/>
+ </xsd:attributeGroup>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:annotation xmlns:html="http://www.w3.org/1999/xhtml">
+  <xsd:documentation>
+   <html:div>
+
+    <html:h3>Father (in any context at all)</html:h3>
+
+    <html:div class="bodytext">
+     <html:p>
+      denotes Jon Bosak, the chair of
+      the original XML Working Group.  This name is reserved by
+      the following decision of the W3C XML Plenary and
+      XML Coordination groups:
+     </html:p>
+     <html:blockquote>
+       <html:p>
+    In appreciation for his vision, leadership and
+    dedication the W3C XML Plenary on this 10th day of
+    February, 2000, reserves for Jon Bosak in perpetuity
+    the XML name "xml:Father".
+       </html:p>
+     </html:blockquote>
+    </html:div>
+   </html:div>
+  </xsd:documentation>
+ </xsd:annotation>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:annotation xmlns:html="http://www.w3.org/1999/xhtml">
+  <xsd:documentation>
+   <html:div xml:id="usage" id="usage">
+    <html:h2><html:a name="usage">About this schema document</html:a></html:h2>
+
+    <html:div class="bodytext">
+     <html:p>
+      This schema defines attributes and an attribute group suitable
+      for use by schemas wishing to allow <html:code>xml:base</html:code>,
+      <html:code>xml:lang</html:code>, <html:code>xml:space</html:code> or
+      <html:code>xml:id</html:code> attributes on elements they define.
+     </html:p>
+     <html:p>
+      To enable this, such a schema must import this schema for
+      the XML namespace, e.g. as follows:
+     </html:p>
+     <html:pre>
+          &lt;schema . . .&gt;
+           . . .
+           &lt;import namespace="http://www.w3.org/XML/1998/namespace"
+                      schemaLocation="http://www.w3.org/2001/xml.xsd"/&gt;
+     </html:pre>
+     <html:p>
+      or
+     </html:p>
+     <html:pre>
+           &lt;import namespace="http://www.w3.org/XML/1998/namespace"
+                      schemaLocation="http://www.w3.org/2009/01/xml.xsd"/&gt;
+     </html:pre>
+     <html:p>
+      Subsequently, qualified reference to any of the attributes or the
+      group defined below will have the desired effect, e.g.
+     </html:p>
+     <html:pre>
+          &lt;type . . .&gt;
+           . . .
+           &lt;attributeGroup ref="xml:specialAttrs"/&gt;
+     </html:pre>
+     <html:p>
+      will define a type which will schema-validate an instance element
+      with any of those attributes.
+     </html:p>
+    </html:div>
+   </html:div>
+  </xsd:documentation>
+ </xsd:annotation>
+
+ <!--<xs:import xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+
+ -->
+<xsd:annotation xmlns:html="http://www.w3.org/1999/xhtml">
+  <xsd:documentation>
+   <html:div id="nsversioning" xml:id="nsversioning">
+    <html:h2><html:a name="nsversioning">Versioning policy for this schema document</html:a></html:h2>
+    <html:div class="bodytext">
+     <html:p>
+      In keeping with the XML Schema WG's standard versioning
+      policy, this schema document will persist at
+      <html:a href="http://www.w3.org/2009/01/xml.xsd">
+       http://www.w3.org/2009/01/xml.xsd</html:a>.
+     </html:p>
+     <html:p>
+      At the date of issue it can also be found at
+      <html:a href="http://www.w3.org/2001/xml.xsd">
+       http://www.w3.org/2001/xml.xsd</html:a>.
+     </html:p>
+     <html:p>
+      The schema document at that URI may however change in the future,
+      in order to remain compatible with the latest version of XML
+      Schema itself, or with the XML namespace itself.  In other words,
+      if the XML Schema or XML namespaces change, the version of this
+      document at <html:a href="http://www.w3.org/2001/xml.xsd">
+       http://www.w3.org/2001/xml.xsd
+      </html:a>
+      will change accordingly; the version at
+      <html:a href="http://www.w3.org/2009/01/xml.xsd">
+       http://www.w3.org/2009/01/xml.xsd
+      </html:a>
+      will not change.
+     </html:p>
+     <html:p>
+      Previous dated (and unchanging) versions of this schema
+      document are at:
+     </html:p>
+     <html:ul>
+      <html:li><html:a href="http://www.w3.org/2009/01/xml.xsd">
+    http://www.w3.org/2009/01/xml.xsd</html:a></html:li>
+      <html:li><html:a href="http://www.w3.org/2007/08/xml.xsd">
+    http://www.w3.org/2007/08/xml.xsd</html:a></html:li>
+      <html:li><html:a href="http://www.w3.org/2004/10/xml.xsd">
+    http://www.w3.org/2004/10/xml.xsd</html:a></html:li>
+      <html:li><html:a href="http://www.w3.org/2001/03/xml.xsd">
+    http://www.w3.org/2001/03/xml.xsd</html:a></html:li>
+     </html:ul>
+    </html:div>
+   </html:div>
+  </xsd:documentation>
+ </xsd:annotation>
+
+<!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:import namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="FeatureId" type="ogc:FeatureIdType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Filter" type="ogc:FilterType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="comparisonOps" type="ogc:ComparisonOpsType" abstract="true"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsEqualTo" type="ogc:BinaryComparisonOpType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsNotEqualTo" type="ogc:BinaryComparisonOpType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsLessThan" type="ogc:BinaryComparisonOpType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsGreaterThan" type="ogc:BinaryComparisonOpType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsLessThanOrEqualTo" type="ogc:BinaryComparisonOpType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsGreaterThanOrEqualTo" type="ogc:BinaryComparisonOpType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsLike" type="ogc:PropertyIsLikeType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsNull" type="ogc:PropertyIsNullType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="PropertyIsBetween" type="ogc:PropertyIsBetweenType" substitutionGroup="ogc:comparisonOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="ComparisonOpsType" abstract="true"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="spatialOps" type="ogc:SpatialOpsType" abstract="true"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Equals" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Disjoint" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Touches" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Within" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Overlaps" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Crosses" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Intersects" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Contains" type="ogc:BinarySpatialOpType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="DWithin" type="ogc:DistanceBufferType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Beyond" type="ogc:DistanceBufferType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="BBOX" type="ogc:BBOXType" substitutionGroup="ogc:spatialOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="SpatialOpsType" abstract="true"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="logicOps" type="ogc:LogicOpsType" abstract="true"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="And" type="ogc:BinaryLogicOpType" substitutionGroup="ogc:logicOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Or" type="ogc:BinaryLogicOpType" substitutionGroup="ogc:logicOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:element name="Not" type="ogc:UnaryLogicOpType" substitutionGroup="ogc:logicOps"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="LogicOpsType" abstract="true"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="FilterType">
+        <xsd:choice>
+            <xsd:element ref="ogc:spatialOps"/>
+            <xsd:element ref="ogc:comparisonOps"/>
+            <xsd:element ref="ogc:logicOps"/>
+            <xsd:element ref="ogc:FeatureId" maxOccurs="unbounded"/>
+        </xsd:choice>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="FeatureIdType">
+        <xsd:attribute name="fid" type="xsd:anyURI" use="required"/>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="BinaryComparisonOpType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:ComparisonOpsType">
+                <xsd:sequence>
+                    <xsd:element ref="ogc:expression" minOccurs="2" maxOccurs="2"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="PropertyIsLikeType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:ComparisonOpsType">
+                <xsd:sequence>
+                    <xsd:element ref="ogc:PropertyName"/>
+                    <xsd:element ref="ogc:Literal"/>
+                </xsd:sequence>
+                <xsd:attribute name="wildCard" type="xsd:string" use="required"/>
+                <xsd:attribute name="singleChar" type="xsd:string" use="required"/>
+                <xsd:attribute name="escape" type="xsd:string" use="required"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="PropertyIsNullType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:ComparisonOpsType">
+                <xsd:choice>
+                    <xsd:element ref="ogc:PropertyName"/>
+                    <xsd:element ref="ogc:Literal"/>
+                </xsd:choice>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="PropertyIsBetweenType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:ComparisonOpsType">
+                <xsd:sequence>
+                    <xsd:element ref="ogc:expression"/>
+                    <xsd:element name="LowerBoundary" type="ogc:LowerBoundaryType"/>
+                    <xsd:element name="UpperBoundary" type="ogc:UpperBoundaryType"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="LowerBoundaryType">
+        <xsd:choice>
+            <xsd:element ref="ogc:expression"/>
+        </xsd:choice>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="UpperBoundaryType">
+        <xsd:sequence>
+            <xsd:element ref="ogc:expression"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="BinarySpatialOpType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:SpatialOpsType">
+                <xsd:sequence>
+                    <xsd:element ref="ogc:PropertyName"/>
+                    <xsd:choice>
+                        <xsd:element ref="gml:_Geometry"/>
+                        <xsd:element ref="gml:Box"/>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="BBOXType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:SpatialOpsType">
+                <xsd:sequence>
+                    <xsd:element ref="ogc:PropertyName"/>
+                    <xsd:element ref="gml:Box"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="DistanceBufferType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:SpatialOpsType">
+                <xsd:sequence>
+                    <xsd:element ref="ogc:PropertyName"/>
+                    <xsd:element ref="gml:_Geometry"/>
+                    <xsd:element name="Distance" type="ogc:DistanceType"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="DistanceType" mixed="true">
+        <xsd:attribute name="units" type="xsd:string" use="required"/>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="BinaryLogicOpType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:LogicOpsType">
+                <xsd:choice minOccurs="2" maxOccurs="unbounded">
+                    <xsd:element ref="ogc:comparisonOps"/>
+                    <xsd:element ref="ogc:spatialOps"/>
+                    <xsd:element ref="ogc:logicOps"/>
+                </xsd:choice>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ogc="http://www.opengis.net/ogc" xmlns:sld="http://www.opengis.net/sld" namespace="http://www.opengis.net/ogc" schemaLocation="http://schemas.opengis.net/filter/1.0.0/filter.xsd"/>
+    -->
+<xsd:complexType name="UnaryLogicOpType">
+        <xsd:complexContent>
+            <xsd:extension base="ogc:LogicOpsType">
+                <xsd:sequence>
+                    <xsd:choice>
+                        <xsd:element ref="ogc:comparisonOps"/>
+                        <xsd:element ref="ogc:spatialOps"/>
+                        <xsd:element ref="ogc:logicOps"/>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+<!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="Add" type="ogc:BinaryOperatorType" substitutionGroup="ogc:expression"/>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="Sub" type="ogc:BinaryOperatorType" substitutionGroup="ogc:expression"/>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="Mul" type="ogc:BinaryOperatorType" substitutionGroup="ogc:expression"/>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="Div" type="ogc:BinaryOperatorType" substitutionGroup="ogc:expression"/>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="PropertyName" type="ogc:PropertyNameType" substitutionGroup="ogc:expression"/>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="Function" type="ogc:FunctionType" substitutionGroup="ogc:expression"/>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="Literal" type="ogc:LiteralType" substitutionGroup="ogc:expression"/>
+
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:element name="expression" type="ogc:ExpressionType" abstract="true"/>
+
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+    <xsd:complexType name="ExpressionType" abstract="true" mixed="true">
+        <xsd:complexContent mixed="true">
+        </xsd:complexContent>
+    </xsd:complexType>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:complexType name="BinaryOperatorType" mixed="true">
+    <xsd:complexContent mixed="true">
+      <xsd:extension base="ogc:ExpressionType">
+        <xsd:sequence>
+          <xsd:element ref="ogc:expression" minOccurs="2" maxOccurs="2"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:complexType name="FunctionType" mixed="true">
+    <xsd:complexContent mixed="true">
+      <xsd:extension base="ogc:ExpressionType">
+        <xsd:sequence>
+          <xsd:element ref="ogc:expression" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:complexType name="LiteralType" mixed="true">
+    <xsd:complexContent mixed="true">
+      <xsd:extension base="ogc:ExpressionType">
+        <xsd:sequence>
+          <xsd:any minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<xsd:include xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" schemaLocation="expr.xsd"/>
+    -->
+<xsd:complexType name="PropertyNameType" mixed="true">
+    <xsd:complexContent mixed="true">
+      <xsd:extension base="ogc:ExpressionType"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+<!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:annotation>
+        <xsd:appinfo>geometry.xsd v2.1.2.2</xsd:appinfo>
+        <xsd:documentation xml:lang="en">
+      GML Geometry schema.
+
+      GML is an OGC Standard.
+      Copyright (c) 2001,2002,2010 Open Geospatial Consortium.
+      To obtain additional rights of use, visit http://www.opengeospatial.org/legal/ .
+        </xsd:documentation>
+    </xsd:annotation>
+
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:import namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="_Geometry" type="gml:AbstractGeometryType" abstract="true"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="_GeometryCollection" type="gml:GeometryCollectionType" abstract="true" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="geometryMember" type="gml:GeometryAssociationType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="pointMember" type="gml:PointMemberType" substitutionGroup="gml:geometryMember"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="lineStringMember" type="gml:LineStringMemberType" substitutionGroup="gml:geometryMember"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="polygonMember" type="gml:PolygonMemberType" substitutionGroup="gml:geometryMember"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="outerBoundaryIs" type="gml:LinearRingMemberType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="innerBoundaryIs" type="gml:LinearRingMemberType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="Point" type="gml:PointType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="LineString" type="gml:LineStringType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="LinearRing" type="gml:LinearRingType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="Polygon" type="gml:PolygonType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="Box" type="gml:BoxType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="MultiGeometry" type="gml:GeometryCollectionType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="MultiPoint" type="gml:MultiPointType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="MultiLineString" type="gml:MultiLineStringType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="MultiPolygon" type="gml:MultiPolygonType" substitutionGroup="gml:_Geometry"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="coord" type="gml:CoordType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:element name="coordinates" type="gml:CoordinatesType"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:attribute name="remoteSchema" type="anyURI"/>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="AbstractGeometryType" abstract="true">
+        <xsd:annotation>
+            <xsd:documentation>
+        All geometry elements are derived from this abstract supertype;
+        a geometry element may have an identifying attribute (gid).
+        It may be associated with a spatial reference system.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="anyType">
+                <xsd:attribute name="gid" type="ID" use="optional"/>
+                <xsd:attribute name="srsName" type="anyURI" use="optional"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="AbstractGeometryCollectionBaseType" abstract="true">
+        <xsd:annotation>
+            <xsd:documentation>
+        This abstract base type for geometry collections just makes the
+        srsName attribute mandatory.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:AbstractGeometryType">
+                <xsd:attribute name="gid" type="ID" use="optional"/>
+                <xsd:attribute name="srsName" type="anyURI" use="required"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:attributeGroup name="AssociationAttributeGroup">
+        <xsd:annotation>
+            <xsd:documentation>
+        These attributes can be attached to any element, thus allowing it
+        to act as a pointer. The 'remoteSchema' attribute allows an element
+        that carries link attributes to indicate that the element is declared
+        in a remote schema rather than by the schema that constrains the
+        current document instance.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+    </xsd:attributeGroup>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="GeometryAssociationType">
+        <xsd:annotation>
+            <xsd:documentation>
+        An instance of this type (e.g. a geometryMember) can either
+        enclose or point to a primitive geometry element. When serving
+        as a simple link that references a remote geometry instance,
+        the value of the gml:remoteSchema attribute can be used to
+        locate a schema fragment that constrains the target instance.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence minOccurs="0">
+            <xsd:element ref="gml:_Geometry"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+        <!-- <attributeGroup ref="gml:AssociationAttributeGroup"/> -->
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="PointMemberType">
+        <xsd:annotation>
+            <xsd:documentation>Restricts the geometry member to being a Point instance.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:GeometryAssociationType">
+                <xsd:sequence minOccurs="0">
+                    <xsd:element ref="gml:Point"/>
+                </xsd:sequence>
+                <xsd:attributeGroup ref="gml:AssociationAttributeGroup"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="LineStringMemberType">
+        <xsd:annotation>
+            <xsd:documentation>Restricts the geometry member to being a LineString instance.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:GeometryAssociationType">
+                <xsd:sequence minOccurs="0">
+                    <xsd:element ref="gml:LineString"/>
+                </xsd:sequence>
+                <xsd:attributeGroup ref="gml:AssociationAttributeGroup"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="PolygonMemberType">
+        <xsd:annotation>
+            <xsd:documentation>Restricts the geometry member to being a Polygon instance.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:GeometryAssociationType">
+                <xsd:sequence minOccurs="0">
+                    <xsd:element ref="gml:Polygon"/>
+                </xsd:sequence>
+                <xsd:attributeGroup ref="gml:AssociationAttributeGroup"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="LinearRingMemberType">
+        <xsd:annotation>
+            <xsd:documentation>Restricts the outer or inner boundary of a polygon instance
+            to being a LinearRing.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:GeometryAssociationType">
+                <xsd:sequence minOccurs="0">
+                    <xsd:element ref="gml:LinearRing"/>
+                </xsd:sequence>
+                <xsd:attributeGroup ref="gml:AssociationAttributeGroup"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="PointType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A Point is defined by a single coordinate tuple.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="gml:AbstractGeometryType">
+                <xsd:sequence>
+                    <xsd:choice>
+                        <xsd:element ref="gml:coord"/>
+                        <xsd:element ref="gml:coordinates"/>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="LineStringType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A LineString is defined by two or more coordinate tuples, with
+        linear interpolation between them.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="gml:AbstractGeometryType">
+                <xsd:sequence>
+                    <xsd:choice>
+                        <xsd:element ref="gml:coord" minOccurs="2" maxOccurs="unbounded"/>
+                        <xsd:element ref="gml:coordinates"/>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="LinearRingType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A LinearRing is defined by four or more coordinate tuples, with
+        linear interpolation between them; the first and last coordinates
+        must be coincident.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="gml:AbstractGeometryType">
+                <xsd:sequence>
+                    <xsd:choice>
+                        <xsd:element ref="gml:coord" minOccurs="4" maxOccurs="unbounded"/>
+                        <xsd:element ref="gml:coordinates"/>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="BoxType">
+        <xsd:annotation>
+            <xsd:documentation>
+        The Box structure defines an extent using a pair of coordinate tuples.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="gml:AbstractGeometryType">
+                <xsd:sequence>
+                    <xsd:choice>
+                        <xsd:element ref="gml:coord" minOccurs="2" maxOccurs="2"/>
+                        <xsd:element ref="gml:coordinates"/>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="PolygonType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A Polygon is defined by an outer boundary and zero or more inner
+        boundaries which are in turn defined by LinearRings.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="gml:AbstractGeometryType">
+                <xsd:sequence>
+                    <xsd:element ref="gml:outerBoundaryIs"/>
+                    <xsd:element ref="gml:innerBoundaryIs" minOccurs="0" maxOccurs="unbounded"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="GeometryCollectionType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A geometry collection must include one or more geometries, referenced
+        through geometryMember elements. User-defined geometry collections
+        that accept GML geometry classes as members must instantiate--or
+        derive from--this type.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="gml:AbstractGeometryCollectionBaseType">
+                <xsd:sequence maxOccurs="unbounded">
+                    <xsd:element ref="gml:geometryMember"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="MultiPointType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A MultiPoint is defined by one or more Points, referenced through
+        pointMember elements.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:GeometryCollectionType">
+                <xsd:sequence maxOccurs="unbounded">
+                    <xsd:element ref="gml:pointMember"/>
+                </xsd:sequence>
+                <xsd:attribute name="gid" type="ID" use="optional"/>
+                <xsd:attribute name="srsName" type="anyURI" use="required"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="MultiLineStringType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A MultiLineString is defined by one or more LineStrings, referenced
+        through lineStringMember elements.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:GeometryCollectionType">
+                <xsd:sequence maxOccurs="unbounded">
+                    <xsd:element ref="gml:lineStringMember"/>
+                </xsd:sequence>
+                <xsd:attribute name="gid" type="ID" use="optional"/>
+                <xsd:attribute name="srsName" type="anyURI" use="required"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="MultiPolygonType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A MultiPolygon is defined by one or more Polygons, referenced through
+        polygonMember elements.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:restriction base="gml:GeometryCollectionType">
+                <xsd:sequence maxOccurs="unbounded">
+                    <xsd:element ref="gml:polygonMember"/>
+                </xsd:sequence>
+                <xsd:attribute name="gid" type="ID" use="optional"/>
+                <xsd:attribute name="srsName" type="anyURI" use="required"/>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="CoordType">
+        <xsd:annotation>
+            <xsd:documentation>
+        Represents a coordinate tuple in one, two, or three dimensions.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="X" type="decimal"/>
+            <xsd:element name="Y" type="decimal" minOccurs="0"/>
+            <xsd:element name="Z" type="decimal" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <!--<xsd:import xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" namespace="http://www.opengis.net/gml" schemaLocation="http://schemas.opengis.net/gml/2.1.2/geometry.xsd"/>
+    -->
+<xsd:complexType name="CoordinatesType">
+        <xsd:annotation>
+            <xsd:documentation>
+        Coordinates can be included in a single string, but there is no
+        facility for validating string content. The value of the 'cs' attribute
+        is the separator for coordinate values, and the value of the 'ts'
+        attribute gives the tuple separator (a single space by default); the
+        default values may be changed to reflect local usage.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:simpleContent>
+            <xsd:extension base="string">
+                <xsd:attribute name="decimal" type="string" use="optional" default="."/>
+                <xsd:attribute name="cs" type="string" use="optional" default=","/>
+                <xsd:attribute name="ts" type="string" use="optional" default=" "/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+<!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="gml.xsd"/>
+    -->
+<xsd:annotation>
+        <xsd:appinfo>gml.xsd v2.1.2.5</xsd:appinfo>
+        <xsd:documentation xml:lang="en">
+            GML 'all-components' schema.
+
+            GML is an OGC Standard.
+            Copyright (c) 2001,2002,2010 Open Geospatial Consortium.
+            To obtain additional rights of use, visit http://www.opengeospatial.org/legal/ .
+        </xsd:documentation>
+        </xsd:annotation>
+    <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:annotation>
+    <xsd:appinfo>feature.xsd v2.1.2.2</xsd:appinfo>
+    <xsd:documentation xml:lang="en">
+      GML Feature schema.
+
+      GML is an OGC Standard.
+      Copyright (c) 2001,2002,2010 Open Geospatial Consortium.
+      To obtain additional rights of use, visit http://www.opengeospatial.org/legal/ .
+    </xsd:documentation>
+  </xsd:annotation>
+
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:import namespace="http://www.w3.org/1999/xlink" schemaLocation="http://www.w3.org/1999/xlink.xsd"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="_Feature" type="gml:AbstractFeatureType" abstract="true"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="_FeatureCollection" type="gml:AbstractFeatureCollectionType" abstract="true" substitutionGroup="gml:_Feature"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="featureMember" type="gml:FeatureAssociationType"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="_geometryProperty" type="gml:GeometryAssociationType" abstract="true"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="geometryProperty" type="gml:GeometryAssociationType"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="boundedBy" type="gml:BoundingShapeType"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="pointProperty" type="gml:PointPropertyType" substitutionGroup="gml:_geometryProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="polygonProperty" type="gml:PolygonPropertyType" substitutionGroup="gml:_geometryProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="lineStringProperty" type="gml:LineStringPropertyType" substitutionGroup="gml:_geometryProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiPointProperty" type="gml:MultiPointPropertyType" substitutionGroup="gml:_geometryProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiLineStringProperty" type="gml:MultiLineStringPropertyType" substitutionGroup="gml:_geometryProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiPolygonProperty" type="gml:MultiPolygonPropertyType" substitutionGroup="gml:_geometryProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiGeometryProperty" type="gml:MultiGeometryPropertyType" substitutionGroup="gml:_geometryProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="location" type="gml:PointPropertyType" substitutionGroup="gml:pointProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="centerOf" type="gml:PointPropertyType" substitutionGroup="gml:pointProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="position" type="gml:PointPropertyType" substitutionGroup="gml:pointProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="extentOf" type="gml:PolygonPropertyType" substitutionGroup="gml:polygonProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="coverage" type="gml:PolygonPropertyType" substitutionGroup="gml:polygonProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="edgeOf" type="gml:LineStringPropertyType" substitutionGroup="gml:lineStringProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="centerLineOf" type="gml:LineStringPropertyType" substitutionGroup="gml:lineStringProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiLocation" type="gml:MultiPointPropertyType" substitutionGroup="gml:multiPointProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiCenterOf" type="gml:MultiPointPropertyType" substitutionGroup="gml:multiPointProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiPosition" type="gml:MultiPointPropertyType" substitutionGroup="gml:multiPointProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiCenterLineOf" type="gml:MultiLineStringPropertyType" substitutionGroup="gml:multiLineStringProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiEdgeOf" type="gml:MultiLineStringPropertyType" substitutionGroup="gml:multiLineStringProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiCoverage" type="gml:MultiPolygonPropertyType" substitutionGroup="gml:multiPolygonProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="multiExtentOf" type="gml:MultiPolygonPropertyType" substitutionGroup="gml:multiPolygonProperty"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="description" type="string"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:element name="name" type="string"/>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="AbstractFeatureType" abstract="true">
+    <xsd:annotation>
+      <xsd:documentation>
+        An abstract feature provides a set of common properties. A concrete
+        feature type must derive from this type and specify additional
+        properties in an application schema. A feature may optionally
+        possess an identifying attribute ('fid').
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:sequence>
+      <xsd:element ref="gml:description" minOccurs="0"/>
+      <xsd:element ref="gml:name" minOccurs="0"/>
+      <xsd:element ref="gml:boundedBy" minOccurs="0"/>
+      <!-- additional properties must be specified in an application schema -->
+    </xsd:sequence>
+    <xsd:attribute name="fid" type="ID" use="optional"/>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="AbstractFeatureCollectionBaseType" abstract="true">
+    <xsd:annotation>
+      <xsd:documentation>
+        This abstract base type just makes the boundedBy element mandatory
+        for a feature collection.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:AbstractFeatureType">
+        <xsd:sequence>
+          <xsd:element ref="gml:description" minOccurs="0"/>
+          <xsd:element ref="gml:name" minOccurs="0"/>
+          <xsd:element ref="gml:boundedBy"/>
+        </xsd:sequence>
+        <xsd:attribute name="fid" type="ID" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="AbstractFeatureCollectionType" abstract="true">
+    <xsd:annotation>
+      <xsd:documentation>
+        A feature collection contains zero or more featureMember elements.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:extension base="gml:AbstractFeatureCollectionBaseType">
+        <xsd:sequence>
+          <xsd:element ref="gml:featureMember" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="GeometryPropertyType">
+        <xsd:annotation>
+            <xsd:documentation>
+        A simple geometry property encapsulates a geometry element.
+        Alternatively, it can function as a pointer (simple-type link)
+        that refers to a remote geometry element.
+      </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence minOccurs="0">
+            <xsd:element ref="gml:_Geometry"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+             <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="FeatureAssociationType">
+    <xsd:annotation>
+      <xsd:documentation>
+        An instance of this type (e.g. a featureMember) can either
+        enclose or point to a feature (or feature collection); this
+        type can be restricted in an application schema to allow only
+        specified features as valid participants in the association.
+        When serving as a simple link that references a remote feature
+        instance, the value of the gml:remoteSchema attribute can be
+        used to locate a schema fragment that constrains the target
+        instance.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:sequence minOccurs="0">
+      <xsd:element ref="gml:_Feature"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+    <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="BoundingShapeType">
+    <xsd:annotation>
+      <xsd:documentation>
+        Bounding shapes--a Box or a null element are currently allowed.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:sequence>
+      <xsd:choice>
+        <xsd:element ref="gml:Box"/>
+        <xsd:element name="null" type="gml:NullType"/>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="PointPropertyType">
+    <xsd:annotation>
+      <xsd:documentation>
+        Encapsulates a single point to represent position, location, or
+        centerOf properties.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:GeometryAssociationType">
+        <xsd:sequence minOccurs="0">
+          <xsd:element ref="gml:Point"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="PolygonPropertyType">
+    <xsd:annotation>
+      <xsd:documentation>
+        Encapsulates a single polygon to represent coverage or extentOf
+        properties.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:GeometryAssociationType">
+        <xsd:sequence minOccurs="0">
+          <xsd:element ref="gml:Polygon"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="LineStringPropertyType">
+    <xsd:annotation>
+      <xsd:documentation>
+        Encapsulates a single LineString to represent centerLineOf or
+        edgeOf properties.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:GeometryAssociationType">
+        <xsd:sequence minOccurs="0">
+          <xsd:element ref="gml:LineString"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="MultiPointPropertyType">
+    <xsd:annotation>
+      <xsd:documentation>
+        Encapsulates a MultiPoint element to represent the following
+        discontiguous geometric properties: multiLocation, multiPosition,
+        multiCenterOf.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:GeometryAssociationType">
+        <xsd:sequence minOccurs="0">
+          <xsd:element ref="gml:MultiPoint"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="MultiLineStringPropertyType">
+    <xsd:annotation>
+      <xsd:documentation>
+        Encapsulates a MultiLineString element to represent the following
+        discontiguous geometric properties: multiEdgeOf, multiCenterLineOf.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:GeometryAssociationType">
+        <xsd:sequence minOccurs="0">
+          <xsd:element ref="gml:MultiLineString"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="MultiPolygonPropertyType">
+    <xsd:annotation>
+      <xsd:documentation>
+        Encapsulates a MultiPolygon to represent the following discontiguous
+        geometric properties: multiCoverage, multiExtentOf.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:GeometryAssociationType">
+        <xsd:sequence minOccurs="0">
+          <xsd:element ref="gml:MultiPolygon"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:complexType name="MultiGeometryPropertyType">
+    <xsd:annotation>
+      <xsd:documentation>Encapsulates a MultiGeometry element.</xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexContent>
+      <xsd:restriction base="gml:GeometryAssociationType">
+        <xsd:sequence minOccurs="0">
+          <xsd:element ref="gml:MultiGeometry"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="xlink:simpleAttrs"/>
+        <xsd:attribute ref="gml:remoteSchema" use="optional"/>
+      </xsd:restriction>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<include xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml" xmlns:xlink="http://www.w3.org/1999/xlink" schemaLocation="feature.xsd"/>
+    -->
+<xsd:simpleType name="NullType">
+    <xsd:annotation>
+      <xsd:documentation>
+        If a bounding shape is not provided for a feature collection,
+        explain why. Allowable values are:
+        innapplicable - the features do not have geometry
+        unknown - the boundingBox cannot be computed
+        unavailable - there may be a boundingBox but it is not divulged
+        missing - there are no features
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:restriction base="string">
+      <xsd:enumeration value="inapplicable"/>
+      <xsd:enumeration value="unknown"/>
+      <xsd:enumeration value="unavailable"/>
+      <xsd:enumeration value="missing"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+<!--Raised anonymous complexType definitions-->
+
+</xsd:schema>
