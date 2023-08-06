@@ -1,0 +1,147 @@
+#+TITLE: HighlyProbable SDK and CLI Documentation
+#+OPTIONS: toc:nil author:nil
+
+* HPCLI
+A SDK and CLI for https://highlyprobable.com.
+
+** SDK Tutorial
+
+*** Initial Setup
+The Python3 HighlyProbable SDK is designed to as easy as possible to use.
+Before we begin, make sure you have an account on https://highlyprobable.com and that you've verified your email.
+To install the SDK, open your favourite shell and type:
+
+#+BEGIN_SRC bash
+pip install hpcli
+#+END_SRC
+
+If you get errors installing the SDK, try installing it with `sudo`:
+
+#+BEGIN_SRC bash
+sudo pip install hpcli
+#+END_SRC
+
+Great! Now let's make sure it installed correct by loading the API module:
+
+#+BEGIN_SRC bash
+~ python                           
+>>> from hpcli.sdk.base import API
+>>> (no errors, nice! it installed correctly)
+#+END_SRC
+
+Now, you'll need to get your secret key. Installing the SDK also installs the `hpcli` tool, which we'll use to grab your secret key.
+In your favourite shell, type =hpcli login= and follow the prompts (see below). Take note of the secret key.
+
+#+BEGIN_SRC bash
+~ hpcli login
+Please enter your email: your@email.com
+Please enter your password: XXXXXXXXX
+Your Secret Key is: SECRET_KEY_BE_SURE_TO_COPY
+You have successfully logged in!
+#+END_SRC
+
+Great! That's all we needed to do get setup. Now we can try out some MicroServices!
+
+*** Trying out some MicroServices
+
+Let's try out the =detect-language= microservice! It's super simple, just open a python shell
+and follow the steps below (be sure to change =api_key= to your secret key!):
+
+#+BEGIN_SRC python :result code,
+~ python                           
+>>> from hpcli.sdk.base import API as HP                # Import the SDK
+>>> api_key = 'the_secret_key_you_copied_earlier'       # Your Secret Key
+>>> hp = HP('ab758a/detect-language', api_key=api_key)  # HighlyProbable Client
+>>> hp.post({"text": "Hello world!"})                   # Your first HP post!
+['en', -23.71974611282348]                              # The result
+
+#+END_SRC
+
+And that's it! Check out some other microservices on https://highlyprobable.com, they're all as easy as this.
+
+*** Analyzing Reddit Threads
+
+Reddit is one of the most popular websites on the internet and its forum style threads give great insight into how its population thinks and feels.
+
+Take for example [[https://www.reddit.com/r/AskReddit/comments/5bzjgp/breaking_news_donald_trump_will_be_the_45th][this thread]] reacting to the declaration of Donald Trump as the next President of the United States.
+We would like to determine if the population of Reddit is generally positive or negative about it. Thankfully, our Sentiment Analysis Microservice makes this easy.
+
+To analyze that thread, open a =python= prompt and lets import =requests=, =json=, and the HighlyProbable SDK:
+
+#+BEGIN_SRC python
+import requests
+import json
+from hpcli.sdk.base import API as HP
+#+END_SRC
+
+If you get a =ModuleNotFound= error try =pip install requests=. Now lets download and parse the reddit thread (be sure to put your own api_key):
+
+#+BEGIN_SRC python
+# Reddit threads appended with '.json' will return a json document
+url = \
+'https://www.reddit.com/r/AskReddit/comments/5bzjgp/breaking_news_donald_trump_will_be_the_45th.json'
+# Download the webpage, turn it into json document
+res = json.loads(requests.get(url).text)
+# Extract the comments
+comments = "."join(
+    [x['data']['body'] for x in res[1]['data']['children'] if 'body' in x['data']]
+)
+# Send the comments to our Sentiment Analysis API for analyizing
+sentiment_analysis = API('ab758a/sentiment-analysis',
+                          api_key="YOUR_API_KEY_HERE").post({'text': comments})
+# Finally, print the overall result
+print(sentiment_analysis['overall']
+#> 'negative'
+#+END_SRC
+
+So the population of Reddit didn't seem too happy about it, but that's a great insight! Neat!
+
+The full code is then:
+
+#+BEGIN_SRC python
+import requests
+import json
+from hpcli.sdk.base import API as HP
+url = 'https://www.reddit.com/r/AskReddit/comments/5bzjgp/breaking_news_donald_trump_will_be_the_45th.json'
+res = json.loads(requests.get(url).text)
+comments = "."join([x['data']['body'] for x in res[1]['data']['children'] if 'body' in x['data']])
+sentiment_analysis = API('ab758a/sentiment-analysis', api_key="YOUR_API_KEY_HERE").post({'text': comments})
+print(sentiment_analysis['overall']
+# 'negative'
+
+#+END_SRC
+
+** CLI Tutorial
+
+** CLI Usage
+#+BEGIN_EXAMPLE
+➜  foobar hpcli --help
+HighlyProbable-cli.
+
+Usage:
+  hpcli login
+  hpcli create-account
+  hpcli create-project [<template-type>] [<project-name>]
+  hpcli config-project (<project-name>)
+  hpcli run [<project-name>] [<custom-docker-image>] [--use-remote=<use-remote>]
+  hpcli remote deploy [<project-name>]
+  hpcli remote upload [<project-name>]
+  hpcli remote create [<project-name>]
+  hpcli remote start [<project-name>]
+  hpcli remote stop [<project-name>]
+  hpcli remote ping [<project-name>]
+
+Options:
+  -h --help     Show this screen.
+  --use-remote=<use-remote>  Use a remote url for the code source eg: s3://foo.bar.baz [default: None]
+
+Templates:
+- python3-generic
+
+#+END_EXAMPLE
+
+** Workflow
+1. Create a project:
+`hpcli create-project`
+2. Run the project:
+`hpcli run $project-name`
