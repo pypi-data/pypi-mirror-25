@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scrapydd</title>
+    <style>
+        td.success {
+            color:white;
+            background-color:green;
+        }
+        td.fail {
+            background-color:red;
+            color:#fff;
+        }
+        td.warning {
+            background-color:orange;
+            color:#fff;
+        }
+    </style>
+</head>
+<body>
+    Welcome.
+
+    <ul>
+        <li><a href="/jobs">Jobs</a></li>
+        <li><a href="/spiders">Spiders</a></li>
+    </ul>
+    <table border="1">
+        <tr>
+            <th>Project</th>
+            <th>Spiders</th>
+            <th>Last Run</th>
+            <th>Last Status</th>
+            <th>Last Items</th>
+            <th>Triggers</th>
+        </tr>
+        {% for project in projects %}
+            <tr>
+                <td rowspan="{{len(project.spiders) or 1}}"><strong>{{project.name}}</strong></td>
+                {% if project.spiders %}
+
+                    {% for spider in project.spiders[0:1]%}
+                    <td>
+                        <a href="/projects/{{project.name}}/spiders/{{spider.name}}">{{spider.name}}</a>
+                     </td>
+                    <td>
+                        {% if spider.historical_jobs %}
+                            {{spider.historical_jobs[0].start_time}}
+                        {% end %}
+                    </td>
+                {% if spider.historical_jobs %}
+                    {% set job = spider.historical_jobs[0] %}
+                    <td class="{{job.status_obj.name}}">{{job.status_obj.name.upper()}}</td>
+                {% else %}
+                    <td>
+                    </td>
+                {% end %}
+                    <td>
+                        {% if spider.historical_jobs %}
+                            {{spider.historical_jobs[0].items_count or ''}}
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if spider.triggers %}
+                            {{len(spider.triggers)}}
+                        {% end %}
+
+                    </td>
+                    {% end %}
+                {% end %}
+            </tr>
+                    {% for spider in project.spiders[1:] %}
+                        <tr>
+                            <td>
+                        <a href="/projects/{{project.name}}/spiders/{{spider.name}}">{{spider.name}}</a>
+                            </td>
+                            <td>
+                                {% if spider.historical_jobs %}
+                                    {{spider.historical_jobs[0].start_time}}
+                                {% end %}
+                            </td>
+                        {% if spider.historical_jobs %}
+                            {% set job = spider.historical_jobs[0] %}
+                            <td class="{{job.status_obj.name}}">{{job.status_obj.name.upper()}}</td>
+                        {% else %}
+                            <td>
+                            </td>
+                        {% end %}
+                            <td>
+                                {% if spider.historical_jobs %}
+                                    {{spider.historical_jobs[0].items_count or ''}}
+                                {% end %}
+                            </td>
+                            <td>
+                                {% if spider.triggers %}
+                                   {{len(spider.triggers)}}
+                                {% end %}
+                            </td>
+                        </tr>
+                    {% end %}
+        {% end %}
+    </table>
+</body>
+</html>

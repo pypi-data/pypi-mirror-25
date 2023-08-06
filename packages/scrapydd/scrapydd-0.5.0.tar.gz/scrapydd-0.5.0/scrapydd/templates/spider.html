@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        td.success {
+            color:white;
+            background-color:green;
+        }
+        td.fail {
+            background-color:red;
+            color:#fff;
+        }
+        td.warning {
+            background-color:orange;
+            color:#fff;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <label>Project:</label>
+        <input value="{{project.name}}" />
+    </div>
+    <div>
+        <label>Name:</label>
+        <input value="{{spider.name}}" />
+    </div>
+    <div>
+        <label>Triggers:</label>
+        <table>
+            {% for trigger in spider.triggers %}
+                <tr>
+                    <td>{{trigger.cron_pattern}}</td>
+                    <td>
+                        <form action="/projects/{{spider.project.name}}/spiders/{{spider.name}}/triggers/{{trigger.id}}/delete" method="post">
+                            <button value="X">X</button>
+                        </form>
+                    </td>
+                </tr>
+            {% end %}
+        </table>
+        <div><a href="/projects/{{spider.project.name}}/spiders/{{spider.name}}/triggers">Create Trigger</a>
+        <a href="/">Back</a></div>
+        <div>
+            <form action="/schedule.json" method="POST">
+                <input type="hidden" name="project" value="{{spider.project.name}}" />
+                <input type="hidden" name="spider" value="{{spider.name}}" />
+                <input type="submit" value="Schedule" />
+            </form>
+
+        </div>
+    </div>
+    <div>
+        <a href="/projects/{{spider.project.name}}/spiders/{{spider.name}}/settings">Settings</a>
+        <table>
+            {% for setting in settings %}
+                <tr>
+                    <td>{{setting.setting_key}}</td>
+                    <td>{{setting.value}}</td>
+                </tr>
+            {% end %}
+        </table>
+    </div>
+    <div>
+        <label>Jobs:</label>
+        <table border="1">
+            <tr>
+                <th>JobID</th>
+                <th>Start At</th>
+                <th>Duration</th>
+                <th>Log</th>
+                <th>Items</th>
+                <th>Status</th>
+            </tr>
+            {% for job in running_jobs %}
+                <tr>
+                    <td>{{job.id}}</td>
+                    <td>
+                        {% if job.start_time %}
+                        {{job.start_time}}
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if job.update_time and job.start_time %}
+                        {{job.update_time-job.start_time}}
+                        {% end %}
+                    </td>
+                    <td></td>
+                    <td>
+
+                    </td>
+                    <td class="{{job.status_obj.name}}">{{job.status_obj.name.upper()}}</td>
+                </tr>
+            {% end %}
+            {% for job in jobs %}
+                <tr>
+                    <td>{{job.id}}</td>
+                    <td>{{job.start_time}}</td>
+                    <td>{{job.complete_time-job.start_time}}</td>
+                    <td><a href="/logs/{{job.project_name}}/{{job.spider_name}}/{{job.id}}.log">Log</a></td>
+                    <td>
+                        {% if job.items_count %}
+                        <a href="/items/{{job.project_name}}/{{job.spider_name}}/{{job.id}}.jl">{{job.items_count}}</a>
+                        {% end %}
+                    </td>
+                    <td class="{{job.status_obj.name}}">{{job.status_obj.name.upper()}}</td>
+                </tr>
+            {% end %}
+        </table>
+    </div>
+    {%if webhook_jobs%}
+    <div>
+        <label>Webhook Jobs:</label>
+        <table border="1">
+            <tr>
+                <th>JobID</th>
+                <th>Status</th>
+            </tr>
+            {% for webhook_job in webhook_jobs %}
+                <tr>
+                    <td>{{webhook_job.id}}</td>
+                    <td class="{{webhook_job.status_obj.name}}">{{webhook_job.status_obj.name.upper()}}</td>
+                </tr>
+            {% end %}
+        </table>
+    </div>
+    {% end %}
+</body>
+</html>
