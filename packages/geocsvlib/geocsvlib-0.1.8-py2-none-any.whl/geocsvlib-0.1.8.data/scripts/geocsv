@@ -1,0 +1,64 @@
+#!python
+import sys
+import argparse
+import time
+
+from geocsvlib import init
+
+from geocsvlib.constants import CONFIG_DEFAULT
+from geocsvlib.constants import CONFIG_FLAG
+from geocsvlib.constants import CONFIG_FLAG_HELP
+from geocsvlib.constants import CSV_HELP
+from geocsvlib.constants import DESCRIPTION
+
+# probably a good idea to stick with class or function not mix match
+from geocsvlib.parsers.loader import parse_json_file
+from geocsvlib.parsers.reader import Reader
+
+
+def is_good_config(config_object):
+    """
+    checks for good configuration
+    """
+    vendor = config_object.get("vendor")
+    database = config_object.get("database")
+    return vendor and database
+
+
+if __name__ == '__main__':
+    argument_parser = argparse.ArgumentParser(description=DESCRIPTION)
+    argument_parser.add_argument('csv', help='CSV File Location')
+    argument_parser.add_argument(CONFIG_FLAG, type=str, help=CONFIG_FLAG_HELP,
+                                 default=CONFIG_DEFAULT)
+    try:
+        arguments = argument_parser.parse_args()
+    except:
+        print CSV_HELP
+    else:
+        # get passed in arguments for library customization
+        config_file = arguments.config
+        csv_file = arguments.csv
+
+    try:
+        configuration = parse_json_file(config_file)
+    except:
+        print "Could not load the configuration file. Type geocsv -h for help"
+        sys.exit(0)
+
+    if not is_good_config(configuration):
+        from geocsvlib.models import Model
+        import pdb; pdb.set_trace()
+        print "Bad configuration file detected"
+        sys.exit(0)
+
+    init(configuration)
+
+    try:
+        reader = Reader(csv_file)
+    except NotImplementedError as e:
+        print "Oops, That feature is not yet available. Wait a bit. {0}".format(e.message)
+    else:
+        start_time = time.time()
+        reader.process_csv_data()
+        end_time = time.time()
+        print reader.show_csv_stats(start_time, end_time)
