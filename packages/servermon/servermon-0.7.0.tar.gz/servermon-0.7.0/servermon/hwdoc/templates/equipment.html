@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load url from future %}
+{% block heading %}
+{% if equipment.prev %}
+<a class="btn" href="{% url "hwdoc.views.equipment" equipment.prev.pk %}"><i class="icon-step-backward"></i></a>
+{% endif %}
+{{ equipment }}
+{% if equipment.next %}
+<a class="btn" href="{% url "hwdoc.views.equipment" equipment.next.pk %}"><i class="icon-step-forward"></i></a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="row-fluid text-center">
+  <div id="equipment" class="span8 offset2">
+    <table class="table table-striped table-condensed">
+      <tbody>
+        <tr><th>{% trans "Project" %}:</th><td>{% if equipment.allocation %}<a href="{% url "hwdoc.views.project" equipment.allocation.pk %}">{{ equipment.allocation.name }}</a>{% else %}-{% endif %}</td></tr>
+        <tr><th>{% trans "Model" %}:</th><td>{{ equipment.model }}</td></tr>
+        <tr><th>{% trans "Serial" %}:</th><td>{{ equipment.serial }}</td></tr>
+        <tr><th>{% trans "Rack" %}:</th><td>{% if equipment.rack %}<a href="{% url "hwdoc.views.rack" equipment.rack.pk %}">{{ equipment.rack }}</a>{% else %}-{% endif %}</td></tr>
+        <tr><th>{% trans "RackUnit" %}:</th><td>{% if equipment.rack %}{{ equipment.rack }}</a>{% if equipment.unit %}{{ equipment.unit|stringformat:"02d" }}{% endif %}{% else %}-{% endif %}</td></tr>
+        <tr><th>{% trans "Purpose" %}:</th><td>{{ equipment.purpose }}</td></tr>
+        <tr><th>{% trans "OOB MAC" %}:</th><td>{% if equipment.servermanagement %}{{ equipment.servermanagement.mac }}{% endif %}</td></tr>
+        <tr><th>{% trans "OOB Hostname" %}:</th><td>{% if equipment.servermanagement %}<a href="https://{{ equipment.servermanagement.hostname }}">{{ equipment.servermanagement.hostname }}</a>{% endif %}</td></tr>
+        <tr><th>{% trans "Tickets" %}:</th><td>
+            {% for ticket in equipment.ticket_set.all %}
+            <a href="{{ ticket.url }}">{{ ticket.name }}</a>{% if not forloop.last %},{% endif %}
+            {% endfor %}</td></tr>
+        <tr><th>{% trans "Comments" %}:</th><td>{% if equipment.comments %}{{ equipment.comments }}{% endif %}</td></tr>
+	<tr><th>{% trans "Attributes" %}:</th><td>{{ equipment.attrs.all|join:"<br/>" }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="span2"></div>
+</div>
+{% endblock %}

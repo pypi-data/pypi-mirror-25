@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load url from future %}
+
+{% block heading %}
+{% if rack.prev %}
+<a class="btn" href="{% url "hwdoc.views.rack" rack.prev.pk %}"><i class="icon-step-backward"></i></a>
+{% endif %}
+{{ rack }}
+{% if rack.next %}
+<a class="btn" href="{% url "hwdoc.views.rack" rack.next.pk %}"><i class="icon-step-forward"></i></a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="row-fluid text-center">
+  <div id="rack" class="span8 offset2">
+    <h3>{% trans "Rack Info" %}</h3>
+    <table class="table table-striped table-condensed">
+      <tbody>
+        <tr><th>{% trans "Name" %}:</th><td>{{ rack.name }}</td></tr>
+        <tr><th>{% trans "Model" %}:</th><td>{{ rack.model }}</td></tr>
+        <tr><th>{% trans "Mounted Depth" %}:</th><td>{{ rack.mounted_depth }}</td></tr>
+        <tr><th>{% trans "Rack Row" %}:</th><td>{{ rack.rackposition.rr }}</td></tr>
+        <tr><th>{% trans "Position in Rack Row" %}:</th><td>{{ rack.rackposition.position }}</td></tr>
+        <tr><th>{% trans "In Row AC" %}:</th><td>{{ rack.model.inrow_ac }}</td></tr>
+      </tbody>
+    </table>
+    <h3>{% trans "Equipment Info" %}</h3>
+    {% with equipments as results %}
+    {% include "hwdoc_searchresults.html" %}
+    {% endwith %}
+  </div>
+  <div class="span2"></div>
+</div>
+
+{% endblock %}
+{% block extrahead %}
+<link href="{{ MEDIA_URL }}rotation.css" rel="stylesheet" media="screen">
+{% endblock %}

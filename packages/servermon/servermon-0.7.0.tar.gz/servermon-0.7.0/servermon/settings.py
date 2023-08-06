@@ -1,0 +1,182 @@
+# Django settings for servermon project.
+import os
+from django.conf import global_settings
+from django import VERSION as DJANGO_VERSION
+here = lambda x: os.path.join(os.path.abspath(os.path.dirname(__file__)), x)
+
+DEBUG = True
+TEMPLATE_DEBUG = DEBUG
+
+ADMINS = (
+    # ('Your Name', 'your_email@example.com'),
+)
+
+MANAGERS = ADMINS
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': '',             # Or path to database file if using sqlite3.
+        'USER': '',             # Not used with sqlite3.
+        'PASSWORD': '',         # Not used with sqlite3.
+        'HOST': '',             # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',             # Set to empty string for default. Not used with sqlite3.
+    }
+}
+
+# Local time zone for this installation. Choices can be found here:
+# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+# although not all choices may be available on all operating systems.
+# If running in a Windows environment this must be set to the same as your
+# system time zone.
+TIME_ZONE = 'UTC'
+
+# Language code for this installation. All choices can be found here:
+# http://www.i18nguy.com/unicode/language-identifiers.html
+LANGUAGE_CODE = 'en-us'
+
+SITE_ID = 1
+
+# If you set this to False, Django will make some optimizations so as not
+# to load the internationalization machinery.
+USE_I18N = True
+
+# If you set this to False, Django will not format dates, numbers and
+# # calendars according to the current locale.
+USE_L10N = True
+
+# If you set this to False, Django will not use timezone-aware datetimes.
+USE_TZ = True
+
+# Absolute path to the directory that holds media.
+# Example: "/home/media/media.lawrence.com/"
+MEDIA_ROOT = here('static')
+
+# URL that handles the media served from MEDIA_ROOT. Make sure to use a
+# trailing slash if there is a path component (optional in other cases).
+# Examples: "http://media.lawrence.com", "http://example.com/media/"
+MEDIA_URL = '/static/'
+
+# Abuse STATIC_URL for now without having collectstatic and by having already
+# provisioned an admin directory under static
+STATIC_URL = '/static/'
+
+# URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
+# trailing slash.
+# Examples: "http://foo.com/media/", "/media/".
+#
+# Important: make sure to have django.contrib.admin in your INSTALLED_APPS
+#
+# serve this with e.g.
+# Alias /media  /usr/share/pyshared/django/contrib/admin/media
+ADMIN_MEDIA_PREFIX = '/media/'
+
+# Make this unique, and don't share it with anybody.
+SECRET_KEY = 'CHANGE_THIS_IF_YOU_DONT_WANT_ALL_KINDS_OF_PROBLEMS'
+
+# List of callables that know how to import templates from various sources.
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+    # 'django.template.loaders.eggs.Loader',
+)
+
+TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
+    'djangobackends.context_processors.installed_apps',
+)
+
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'djangobackends.StripWhitespaceMiddleware.StripWhitespaceMiddleware',
+)
+
+ROOT_URLCONF = 'servermon.urls'
+
+AUTHENTICATION_BACKENDS = (
+    # 'djangobackends.ldapBackend.ldapBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+LDAP_AUTH_SETTINGS = (
+    {'url': 'ldap://ldap.example.org/', 'base': 'ou=People,dc=example,dc=org'},
+)
+
+LDAP_AUTH_GROUP = 'not-auth'
+LDAP_AUTH_IS_STAFF = True
+
+TEMPLATE_DIRS = (
+    here('templates'),
+    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+)
+
+# You probably want to uncomment pretty much everything here
+INSTALLED_APPS = (
+    # 'django.contrib.auth',
+    # 'django.contrib.admin',
+    # 'django.contrib.contenttypes',
+    # 'django.contrib.sessions',
+    # 'django.contrib.sites',
+    'projectwide',
+    # 'updates',
+    # 'puppet',
+    # 'hwdoc',
+    'keyvalue',
+)
+
+# South
+if DJANGO_VERSION[:2] < (1, 7):
+    INSTALLED_APPS = INSTALLED_APPS + ('south',)
+SKIP_SOUTH_TESTS = True
+
+# Settings for puppet views
+DATE_FORMAT = "d/m/Y H:i"
+DATETIME_FORMAT = "d/m/Y H:i"
+HOST_TIMEOUT = 1800
+MANAGED_PUPPET_MODELS = False
+
+# Ticketing
+TICKETING_SYSTEM = 'dummy'  # dummy, comments, jira are possible values
+COMMENTS_TICKETING_URL = 'http://ticketing.example.com/'
+JIRA_TICKETING = {
+    'url': 'http://ticketing.example.com/',
+    'search_string': 'text ~ {}',  # {} replaced by double-quoted serial number for search
+    'projects': {  # empty dict means "all projects"
+        'project1': {'closed_string': 'closed'},
+        'project2': {'closed_string': 'done'},
+        'project3': {'closed_string': 'pining_for_the_fjords'},
+        'project4': {},
+    },
+    'projects_defaults': {'closed_string': 'closed'},
+    'auth': {
+        'type': 'none',  # none, basic, oauth are possible values
+        'user': '',                             # only used for basic
+        'password': '',                         # only used for basic
+        'access_token': '',                     # only used for oauth
+        'access_token_secret': '',              # only used for oauth
+        'consumer_key': 'jira-oauth-consumer',  # only used for oauth
+        'key_cert': '/path/to/file',            # only used for oauth
+    },
+}
+
+# Since Django 1.7 uses migrations for itself, move old South based migrations
+# to their own directory
+SOUTH_MIGRATION_MODULES = {
+    'hwdoc': 'hwdoc.south_migrations',
+    'updates': 'updates.south_migrations',
+}
+
+# Silence the erroneous 1_6.W001 check. It was removed in
+# https://code.djangoproject.com/ticket/23469 anyway
+SILENCED_SYSTEM_CHECKS = ['1_6.W001']
+
+# Django extensions (apt-get install python-django-extensions)
+try:
+    import django_extensions  # noqa
+    INSTALLED_APPS = INSTALLED_APPS + ('django_extensions',)
+except ImportError:
+    pass
