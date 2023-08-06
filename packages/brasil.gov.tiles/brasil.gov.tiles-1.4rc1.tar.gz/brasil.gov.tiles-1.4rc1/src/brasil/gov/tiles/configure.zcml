@@ -1,0 +1,58 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:grok="http://namespaces.zope.org/grok"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:monkey="http://namespaces.plone.org/monkey"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="brasil.gov.tiles">
+
+    <includeDependencies package="." />
+
+    <include package=".tiles" />
+
+    <!-- Inicializamos a magia do Grok -->
+    <include package="five.grok" />
+    <grok:grok package="." />
+
+    <include package="plone4.csrffixes" />
+
+    <!-- Profiles de Generic Setup -->
+    <include file="profiles.zcml" />
+
+    <!-- Registra pasta de traducoes -->
+    <i18n:registerTranslations directory="locales" />
+
+    <!-- Registra pasta de elementos estaticos -->
+    <browser:resourceDirectory
+            name="brasil.gov.tiles"
+            directory="static"
+    />
+
+    <!-- Oculta products -->
+    <utility
+      factory=".config.HiddenProducts"
+      name="brasil.gov.tiles" />
+
+    <!-- Oculta profile -->
+    <utility
+      factory=".config.HiddenProfiles"
+      name="brasil.gov.tiles"
+      provides="Products.CMFPlone.interfaces.INonInstallable"
+      />
+
+  <!--FIXME: Correção de Banner Rotativo enquanto o tipo lista de brasil.gov.tiles-->
+  <!--não é substituído pelo de collective.cover.-->
+  <!--Exclusão-->
+  <include package="collective.monkeypatcher" file="meta.zcml"/>
+  <monkey:patch
+    preconditions="collective.cover+=1.1b1"
+    description="Testa interface lista do brasil.gov.tiles na hora de remover itens ao invés interface da lista de collective.cover."
+    class="collective.cover.browser.compose.RemoveItemFromListTile"
+    original="render"
+    replacement=".patches_banner_rotativo.render"
+    preserveOriginal="true"
+    />
+  <!--Exclusão-->
+
+</configure>
