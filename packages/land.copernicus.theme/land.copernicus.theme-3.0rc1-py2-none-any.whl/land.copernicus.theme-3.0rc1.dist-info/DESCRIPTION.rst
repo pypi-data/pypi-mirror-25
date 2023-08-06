@@ -1,0 +1,133 @@
+land.copernicus.theme
+=====================
+
+Plone theme for land.copernicus.eu
+
+Changelog
+=========
+
+3.0rc1 - (2017-09-26)
+---------------------
+- Improvement: Optimise resources, page loading speed.
+  [batradav refs #88278]
+
+2.4 - (2016-08-08)
+------------------
+- Feature: improve css styles, added styles for Registration form,
+  styles for Terms of Use, logout and login pages, cookies policy,
+  contact form, personal information edit form, eagle options in user corner,
+  styles for eea.pdf print pdf, styles for PloneHelpCenter sections,
+  styles for download information section, other minor fixes
+
+  [GhitaB refs #24843, #25172, #25381, #25385, #25462, #25684, #25846, #25848,
+   #25849, #25806, #25727, #25735, #25732, #27615, #28173, #28272, #28589, #28876,
+   #29507, #31006, #31044, #30206]
+
+- Change: Switched to curl in the jenkins build install script
+  [olimpiurob refs #22402]
+- Change: Changed fetch url for jenkins build install script to the install
+  script from the main EEA CPB repository
+  [olimpiurob refs #22402]
+
+2.3 - (2014-09-16)
+------------------
+- Bug fix: Updated Manifest file
+  [olimpiurob]
+- Fixed: Added condition to not rander an 'p' tag if is not necessary
+  [ovidiu]
+
+2.2 - (2014-05-27)
+------------------
+- Feature: Added custom view for file_view
+  [ovidiu #19560]
+
+2.1 - (2014-05-26)
+------------------
+- Feature: Create a user friendly interface for Events listing
+  [ovidiu #19561]
+
+2.0 - (2014-05-15)
+------------------
+- Fixed: included modifications from custom
+  [ovidiu]
+
+1.9 - (2014-05-15)
+------------------
+- Fixed: deleted entry for unused ie8.css and ie9.css
+  [ovidiu #19481]
+- Fixed: put z-index -1 for site-identity
+  [ovidiu #19557]
+
+1.8 - (2014-04-29)
+----------------------
+- Fixed: full-width map on 1024px resolutions, add custom resolution for iPad
+  mini selecto, remove duplicate target for 800px screens, enlarge map for
+  screens between 593px and 480px width, enlarge map on screens between 976px
+  619px width
+  [ovidiu #17785]
+
+1.7 - (2014-01-14)
+------------------
+- Bug fix: fix theme on smaller resolutions
+  [sonia #17916]
+
+1.6 - (2013-12-16)
+------------------
+- Fixed index.html linting issues
+  [olimpiurob]
+- Fixed portal-title in print style sheet and other cosmetics
+  [olimpiurob]
+
+1.5 - (2013-11-21)
+------------------
+- Feature: Added tests for theme
+  [olimpiurob #17345]
+- Bug fix: fix portal width in certain resolutions
+  [tiberich #17444]
+
+1.4 - (2013-11-14)
+------------------
+- Bug fix: fix spacing for logos
+  [sonia #17444]
+
+1.3 - (2013-11-14)
+------------------
+- Changed Copernicus image link to http://www.copernicus.eu/
+- Added .login-req-warning missing styling
+  [robaaoli #17444]
+- Added design.js browser resource
+- Updated theme stylesheets
+  [robaaoli #17452]
+
+1.2 - (2013-11-08)
+------------------
+* Improve site layout to make it wider
+  [tiberich #17266]
+* Move the partner logos to right column
+  [tiberich #17266]
+
+1.1 - (2013-11-05)
+------------------
+- Make the site layout wider
+  [#17266 sonia]
+
+1.0 - (initial release)
+-----------------------
+- Removed frozenEntry css class from in-situ portal-tab
+  [#16967 tiberiuichim]
+- Added copernicus.footer.info viewlet displaying realtime last update info
+  [#17000 tiberiuichim]
+- Updated theme with responsive layout
+  [#15251 robaaoli]
+- Undoing opening all "User corner" portlet links in new window
+  [#14653 robaaoli]
+- Open "User corner" portlet links in new window
+  [#14653 robaaoli]
+- Images and css moved from static to skins
+  [#14618 robaaoli]
+- Feature WIP: added diazo integration code for the theme; added static
+  resources provided by designer
+  [#14617 robaaoli]
+
+
+
