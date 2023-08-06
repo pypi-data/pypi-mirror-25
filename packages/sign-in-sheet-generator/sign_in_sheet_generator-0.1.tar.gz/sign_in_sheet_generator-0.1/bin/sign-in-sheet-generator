@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+import csv
+import click
+from sign_in_sheet_generator import SignInSheet
+
+def names_from_file(file_path, column_name=None):
+    reader = csv.reader
+    if column_name:
+        reader = csv.DictReader
+    else:
+        column_name = 0
+
+    with open(file_path, 'r') as file:
+        csv_reader = reader(file)
+        return [line[column_name] for line in csv_reader]
+
+
+@click.command()
+@click.option('--page_title', '-t', default=None, help='large header for each page')
+@click.option('--page_subtitle', '-s', default=None, help='small header for each page')
+@click.option('--input_file', '-i', required=True, help='csv_file')
+@click.option('--input_column', '-c', default=None, help='the name of the column containing names')
+@click.option('--output_file', '-o', help='csv_file')
+def go(page_title, page_subtitle, input_file, input_column, output_file):
+    names = names_from_file(input_file, input_column)
+    print("Found {} names in file {}".format(len(names), input_file))
+
+    s = SignInSheet(
+        page_title=page_title,
+        page_subtitle=page_subtitle,
+        names=names,
+        output_filepath=output_file
+    )
+    s.generate()
+    print("Generation complete; output to {}".format(s.output_filepath))
+
+if __name__ == '__main__':
+    go()
