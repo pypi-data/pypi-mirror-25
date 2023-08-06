@@ -1,0 +1,234 @@
+Metadata-Version: 1.1
+Name: FluoSQL
+Version: 1.0.0
+Summary: Connecteur SQL via HTTP & Outils SQL
+Home-page: https://gitlab.com/LaGvidilo/FluoSQL
+Author: Cyril Coelho
+Author-email: informabox.contact@gmail.com
+License: COPYLEFT
+Description: # FluoSQL
+        Outil pour le SQL
+        
+        Il faut savoir utiliser le SQL avant de se simplifier la vie.
+        
+        Creez une base de donnée pour tester "Exemples" et importez le fichier sql dans le dossier exemples.
+        
+        Auteur: Cyril Coelho 
+        
+        # Pas besoin de paniquer ceci va vous aider a comprendre comment ça marche
+        Les dependances sont locale a python
+        Après il est possible qu'il est necessaire d'installer: httplib, urllib
+        Installez le avec pip:
+        <pre><code>
+        pip install FluoSQL
+        </code></pre>
+        
+        Si ça ne marche pas:
+        <pre><code>
+        git clone https://gitlab.com/LaGvidilo/FluoSQL.git
+        cd FluoSQL
+        sudo pip install -e .
+        </code></pre>
+        A noter que vous pouvez aussi utiliser "setup.py install"
+        
+        Ensuite voilà comment utiliser cette librairie:
+        
+        Juste se connecter a une base de donnée directement avec le connecteur par défault:
+        <pre><code>
+        from FluoSQL import FluoSQL as FSQL #import FluoSQL and alias this
+        SQL_base = FSQL(IP="192.168.1.20",user="admin",password="1234",base="Exemple")
+        </code></pre>
+        
+        Et ensuite faire une requête:
+        <pre><code>
+        print SQL_base.make_simple_request(type_request = "select", selected_row="site,visit", selected_from="stats", WHERE={'visit>':0})
+        </code></pre>
+        
+        Ensuite voilà un client http FluoSQL:
+        <pre><code>
+        IP = "localhost"#IP of http server
+        username = "name@mail.com"#username (in Auth Table of database "Exemple")
+        password = "1234"#password (in Auth Table of database "Exemple")
+        RESULT ="NO RETURN"#Start message
+        
+        import FluoSQL#Import FluoSQL
+        try:
+        	SQL = FluoSQL.FluoSQL(IP=IP, user=username, password=password,http=True)#connection
+        
+        
+        	#utilisation
+        	#Set request
+        	SQL.make_simple_request(type_request = "select", selected_row="site,visit", selected_from="stats", WHERE={'visit>':0}, set_current=True,mode=-1)
+        	RESULT = SQL.send_request()#And send request & commit
+        except:
+        	print "error: connector"#if error of connector
+        
+        print "RESULT:"
+        print RESULT
+        </code></pre>
+        
+        Et voilà son serveur:
+        <pre><code>
+        #coding: utf-8
+        from FluoSQL import FluoSQL as FSQL
+        SQL_base = FSQL(IP="192.168.1.21",user="admin",password="1234",base="Exemple")#For make request simple
+        SQL_common = FSQL(IP="192.168.1.21",user="admin",password="1234",base="Exemple")#For send request
+        
+        
+        #SERVEUR FluoSQL======================================START
+        from bottle import route, run, template, get, post, request, response, static_file, redirect
+        
+        @post('/connect')
+        def connect_fluo():
+        	mode = request.POST['@mode']
+        	username = request.POST['@username']
+        	passhash = request.POST['@hash']
+        	if mode == "connect":
+        		print "\n/connect"
+        		SQL_base.make_simple_request(type_request = "select", selected_row="email, HASH, blocked", selected_from="Auth", WHERE={'email':username,'HASH':passhash}, set_current=True)
+        		print "REQUEST:",SQL_base.__REQUEST__
+        		RES = SQL_common.set_request(SQL_base.__REQUEST__,1)
+        		print "RESULT:",RES
+        		return str(RES)
+        	else:
+        		return None
+        
+        @post('/req')
+        def request_fluo():
+        	username = request.POST['@username']
+        	passhash = request.POST['@hash']
+        	securelogin=False
+        	SQL_base.make_simple_request(type_request = "select", selected_row="email, HASH, blocked", selected_from="Auth", WHERE={'email':username,'HASH':passhash}, set_current=True)
+        	print "SQL_base.__REQUEST__",SQL_base.__REQUEST__,'\n'
+        	RES = SQL_common.set_request(SQL_base.__REQUEST__,1)
+        	try:
+        		u,h,b = RES['email'],RES['HASH'],RES['blocked']
+        		if b==0:
+        			if u == username: 
+        				if h == passhash:
+        					securelogin=True
+        	except:
+        		print "Pas connecté"
+        
+        	if (securelogin==False): 
+        		return "<AUTH_ERROR>"
+        	else:
+        		Req = str(request.POST['@req'])+';'
+        		print "\n/req"
+        		print "(",Req,")"
+        		try:
+        			print "REQUEST:",Req
+        			print "RESULT:",str(SQL_common.set_request(Req))
+        			return str(SQL_common.set_request(Req))
+        		except:
+        			return "<SQL_ERROR>"
+        			
+        run(host='0.0.0.0', port=8000)
+        #SERVEUR FluoSQL======================================END
+        </code></pre>
+        
+        Je vous conseil de pas toucher au code serveur si vous voulez que ça marche.
+        Pour le serveur il y a une dépendance: bottle.
+        Installez le avant de tester:
+        <pre><code>
+        pip install bottle
+        </code></pre>
+        
+        Voila c'est pas plus compliqué
+        
+        
+        Ensuite en détail:
+        Vous pouvez utiliser l'autoloader html & template de FluoSQL:
+        <pre><code>
+        from FluoSQL import autoload
+        autoload = autoload()
+        pages = autoload.load_html()
+        tpl = autoload.load_tpl()
+        </code></pre>
+        
+        Sécuriser un mot de passe:
+        <pre><code>
+        from FluoSQL import hash_
+        print hash_("test")
+        </code></pre>
+        
+        Charger un site en lecture seule:
+        <pre><code>
+        from FluoSQL import Fluo
+        a = Fluo()
+        a.make_simple_get() 
+        a.execute()
+        </code></pre>
+        
+        
+        Se connecter avec le connecteur par défaut:
+        <pre><code>
+        From FluoSQL import FluoSQL
+        SQL = FluoSQL(IP="192.168.1.21",user="phpmyadmin",password="6345",base="Exemple",http=False)
+        </code></pre> 
+        
+        Se connecter avec le connecteur FluoSQL(http):
+        <pre><code>
+        From FluoSQL import FluoSQL
+        SQL = FluoSQL(IP="192.168.1.21",user="phpmyadmin",password="6345",base="Exemple",http=True)
+        </code></pre> 
+        
+        Se deconnecter:
+        <pre><code>
+        SQL.db_close()
+        </code></pre> 
+        
+        
+        Un simple select:
+        id>2
+        <pre><code>
+        SQL.make_simple_request(type_request = "select", selected_row="*", values="", selected_from="Auth", WHERE={'id>':2}, mode=0, set_current=False, inc=False)
+        </code></pre>
+        id = 1 
+        <pre><code>
+        SQL.make_simple_request(type_request = "select", selected_row="*", values="", selected_from="Auth", WHERE={'id':1}, mode=0, set_current=False, inc=False)
+        </code></pre> 
+        Mode : 0 ----> fetchall (dict)
+        Mode : 1 ----> fetchone (dict)
+        Mode : -1 ---> fetch element
+        
+        
+        Retourner la reponse:
+        <pre><code>
+        SQL.get_reponse(mode=1)
+        </code></pre> 
+        Mode : 0 ----> fetchall (dict)
+        Mode : 1 ----> fetchone (dict)
+        Mode : -1 ---> fetch element
+        
+        Pour fabriquer une requete custom:
+        <pre><code>
+        SQL.set_request(request,mode=0)
+        </code></pre> 
+        Mode : 0 ----> fetchall (dict)
+        Mode : 1 ----> fetchone (dict)
+        Mode : -1 ---> fetch element
+        
+        
+        Pour envoyer une requete:
+        <pre><code>
+        SQL.send_request()
+        </code></pre> 
+        
+        
+        Voilà c'est tout, plutôt puissant comme outils hien?
+        Je l'ai créé a cause de nombreux problème pour faire des applications connectees propres et stable avec le framework kivy.
+        
+        Fonctionne sous kivy et android! ;) 
+        
+        
+        A venir: un exemple de serveur SQLITE3(SQLITE3 n'a pas de connecteur online mais je compte en fabriquer un)
+        
+        Plus d'exemple si besoin.
+        
+        Contactez moi si vous avez des questions intélligentes.
+        
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Topic :: Communications
