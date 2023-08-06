@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls pcart_core staticfiles %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ module_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">{{ object|truncatewords:"18" }}</a>
+&rsaquo; {% trans 'Preview' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<div class="module">
+
+<p style="float:right;right:0;">
+    <a href="?limit=50">50</a> |
+    <a href="?limit=500">500</a> |
+    <a href="?limit=2000">2000</a> |
+    <a href="?limit=5000">5000</a>
+</p>
+
+<table style="width:100%;" id="result_list">
+    <thead>
+    <tr>
+        {% for column in meta.columns %}
+        <th scope="col">{{column.get_destination}}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in result %}
+    <tr class="{% cycle 'row1' 'row2' %}">
+        {% for v in item %}<td>{{v}}</td>{% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+</div>
+{% endblock %}
