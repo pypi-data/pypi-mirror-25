@@ -1,0 +1,1 @@
+Drop in replacement for django.contrib.session in a modelchemy context
