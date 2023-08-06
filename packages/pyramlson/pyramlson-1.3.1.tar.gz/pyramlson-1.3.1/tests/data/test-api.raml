@@ -1,0 +1,266 @@
+#%RAML 0.8
+title: Test API
+version: v1
+baseUri: http://{apiUri}/api/{version}/
+mediaType: application/json
+protocols: [ HTTP ]
+schemas:
+  - BookRecordJson: !include schemas/BookRecord.json
+  - BookRecordListJson: !include schemas/BookRecordList.json
+  - CommonResponseObject: |
+      {
+        "type": "object",
+        "$schema": "http://json-schema.org/draft-03/schema",
+        "id": "http://jsonschema.net",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "required": true
+          },
+          "message": {
+            "type": "string",
+            "required": false
+          }
+        }
+      }
+traits:
+  - sorted:
+      description: A sorted collection resource
+      queryParameters:
+        sort_by:
+          displayName: Sort by property
+          description: The name of the property to sort by
+          type: string
+          example: "title"
+          default: "id"
+        sort_reversed:
+          displayName: Reversed sort order
+          description: Reverse the sort order
+          type: boolean
+          example: true
+          default: false
+  - paged:
+      description: A paged collection resource
+      queryParameters:
+        limit:
+          displayName: Limit
+          description: The maximum number of items to return
+          type: integer
+          example: 10
+          minimum: 0
+          default: 20
+          maximum: 50
+        offset:
+          displayName: Offset
+          description: The index of the first item to return
+          type: integer
+          example: 5
+          default: 0
+
+/books:
+  displayName: Books Service
+  description: Get your books here!
+  post:
+    description: Creates a new book record
+    body:
+      application/json:
+        schema: BookRecordJson
+    responses:
+      201:
+        description: A book was successfully created
+        body:
+          application/json:
+            schema: CommonResponseObject
+            example: |
+              {
+                "success": true,
+                "message": "Book created"
+              }
+
+  get:
+    is: [paged, sorted]
+    responses:
+      200:
+        body:
+          application/json:
+            schema: BookRecordListJson
+            example: |
+              [{
+                "id": 100,
+                "title": "War and piece",
+                "author": "Leo Tolstoi",
+                "isbn": "12345"
+              }, {
+                "id": 200,
+                "title": "Catcher in the rye",
+                "author": "J. D. Salinger",
+                "isbn": "54321"
+              }]
+  /{bookId}:
+    displayName: Get or update a book by id
+    uriParameters:
+      bookId:
+        displayName: Book id
+        type: integer
+    get:
+        description: Get a book by its ID
+        responses:
+          200:
+            body:
+              application/json:
+                schema: BookRecordJson
+                example: |
+                  {
+                    "id": 200,
+                    "title": "Catcher in the rye",
+                    "author": "J. D. Salinger",
+                    "isbn": "54321"
+                  }
+          404:
+            body:
+              application/json:
+                schema: CommonResponseObject
+                example: |
+                  {
+                    "success": false,
+                    "message": "Book not found"
+                  }
+    put:
+      description: Update an existing book given book id
+      body:
+        application/json:
+          schema: BookRecordJson
+          example: |
+            {
+              "id": 200,
+              "title": "Catcher in the rye",
+              "author": "J. D. Salinger",
+              "isbn": "54321"
+            }
+      responses:
+        200:
+          description: A book was successfully updated
+          body:
+            application/json:
+              schema: CommonResponseObject
+              example: |
+                {
+                  "success": true,
+                  "message": "Book updated"
+                }
+        404:
+          description: Book not found
+          body:
+            application/json:
+              schema: CommonResponseObject
+              example: |
+                {
+                  "success": false,
+                  "message": "Book not found"
+                }
+  /some/other/things:
+    displayName: All your REST things!
+    description: Get your things here!
+    get:
+      queryParameters:
+        thingType:
+          displayName: The type of things you want
+          required: true
+          type: string
+          example: 'foo'
+      responses:
+        200:
+          body:
+            application/json: !!null
+/token:
+    displayName: Token
+    post:
+        description: Create session token
+        body:
+            application/json:
+                schema: !include schemas/credentials.json
+        response:
+            200:
+                description: Session token
+                schema: !include schemas/token.json
+                body:
+                    application/json:
+                        example: |
+                            {
+                                "token": "AQIC5w...srA.*AAJT...jI5OTg4*"
+                            }
+/parametrized:
+  description: Lots of parameters, wheee!
+  get:
+    queryParameters:
+      maxString:
+        type: string
+        default: xxx
+        maxLength: 10
+      minString:
+        type: string
+        default: zzz
+        minLength: 2
+      choiceString:
+        type: string
+        default: foo
+        enum: [ foo, bar, blah ]
+      patternString:
+        type: string
+        default: ABCD5432
+        pattern: ^[A-Z]{4}[0-9]*$
+      someNumber:
+        type: number
+      minMaxNumber:
+        type: number
+        minimum: -10
+        maximum: 100.55
+      minMaxInteger:
+        type: integer
+        minimum: 7
+        maximum: 42
+      someBool:
+        type: bool
+        default: false
+      someDate:
+        type: date
+      missingDefault:
+        type: string
+      nullDefault:
+        type: string
+        default: null
+    responses:
+      200:
+        description: Bla
+        body:
+          application/json:
+            example: |
+              {}
+
+/files/{fileId}:
+    displayName: Files Service
+    description: Get your files here!
+
+    post:
+      description: Creates a new file
+      body:
+        application/octet-stream:
+          description: file in the body
+      responses:
+        201:
+          description: A file was successfully created
+          body:
+            application/json:
+              schema: CommonResponseObject
+              example: |
+                {
+                  "success": true,
+                  "message": "File created"
+                }
+    get:
+      description: returns the file
+      responses:
+        200:
+          body:
+            application/octet-stream:
+              description: the file with the given id
