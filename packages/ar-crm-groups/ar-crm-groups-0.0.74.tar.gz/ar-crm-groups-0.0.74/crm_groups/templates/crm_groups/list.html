@@ -1,0 +1,67 @@
+{% extends "frbase/base.html" %}
+{% load url from future %}
+{% load sekizai_tags %}
+
+{% block doctitle %}
+Gruppen
+{% endblock %}
+
+{% block pagetitle_left %}
+<i class="icon-group"></i>
+Gruppen
+{% endblock %}
+
+{% block pagetitle_right %}
+<div class="pull-right">
+  <div class="btn-group">
+    <a class="btn btn-default btn-primary" href="{% url 'frcrm_group_create' %}" id="url-group-create"><i class="icon-plus"></i> Neue Gruppe</a>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="row-fluid">
+  <div class="box">
+    <div class="box-content">
+      <div id="dataTables">
+        <table id="groups_table" cellpadding="0" cellspacing="0" border="0" class="responsive">
+          <thead>
+            <tr>
+              <th><div>Gruppenname</div></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for g in groups  %}
+            <tr id="group-{{ g.id }}">
+              <td><a href="{{ g.get_absolute_url }}"><strong>{{ g.name }}</strong></a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% addtoblock "js" %}
+<script type="text/javascript">
+$(document).ready(function() {
+  $('.menu').removeClass('active');
+  $('#menu-gruppen').addClass("active");
+  $('#gruppen').collapse('show');
+
+  var oTable = $('#groups_table').dataTable({
+    "iDisplayLength": getDataTablesLength(),
+  });
+
+  // store the selected amount of items to dispaly in DataTables
+  $('select[name=groups_table_length]').on('change', function() {
+    setDataTablesLength(this.value);
+  });
+
+});
+</script>
+{% endaddtoblock %}
+
+{% endblock %}
