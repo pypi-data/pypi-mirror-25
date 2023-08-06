@@ -1,0 +1,595 @@
+Metadata-Version: 1.1
+Name: chat-api
+Version: 0.8.8
+Summary: Automated Chat & Surveys API
+Home-page: https://bitbucket.org/arabellatech/chat_api
+Author: Pawel Krzyzaniak
+Author-email: pawelk@arabel.la
+License: Proprietary
+Description: Chat API
+        ========
+        
+        --------------
+        
+        Library for surveys & chat with supporting automated & assisted conversations.
+        
+        
+        Chapters
+        --------
+        * `Known Issues and areas to improve`_
+        * `Setup and running`_
+        * `Configuration`_
+        * `Schemas`_
+        * `Chat modes`_
+        * `UserThreads`_
+        * `Notifications`_
+        * `Surveys`_
+        * `API description`_
+        
+        
+        --------------
+        
+        Known Issues and areas to improve
+        ---------------------------------
+        
+        No context & variables for scripted/assisted questions
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        Currently all questions are static, meaning there is no possibility of injecting any variables like user first_name, etc. when generating message from question. This functionality should be quite broad and extensible. For example for question with meta X or show_as_type Y there should be a possibility to generate context based on:
+        
+        - user
+        - previous responses (variables pool?)
+        - other objects in the DB
+        
+        TODO:
+        
+        - design
+        - task out
+        - implement
+        
+        Assisted mode has no test coverage
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        Assisted mode should work (with exception of making other user enter scripted mode), but it is not covered with tests yet.
+        
+        TODO:
+        
+        - first implement the APIs for thread control
+        - task out
+        - implement
+        
+        Repetition is not implemented
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        In order to use scripted chat mode as a tracker, repetition must be implemented. It was designed, and models contains necessary fields, but there is no test coverage and no scripts to restart schema.
+        
+        TODO:
+        
+        - task out
+        - implement
+        
+        Notifications - add email, sms & push
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        Currently only WebSocket notifications are sent out. It would be good to add some mechanisms to handle other kinds of notifications in a generic & highly customizable way.
+        
+        TODO:
+        
+        - design
+        - task out
+        - implement
+        
+        
+        Other small issues and places for improvement
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        - Schemas (so also scripted/assited chat mode & surveys) does not support multiple languages.
+        - add pagination to schema list
+        - custom validation, pre save, thumbnail generation etc. functions for attachments should receive also serializer object (so it has access to context & instance for example)
+        - add push notifications
+        - add email/sms notifications
+        - add resolvers to meta (and other places perhaps) - so you can use values from constance
+        
+        
+        Setup and running
+        -----------------
+        
+        
+        Requirements
+        ~~~~~~~~~~~~
+        
+        - Python 3.5+
+        - Django 1.8+, DRF & bunch of Arrabela tech like DRF Tweaks & Universal Notifications
+        - Celery
+        
+        
+        Installation
+        ~~~~~~~~~~~~
+        
+        
+        Add chat_api & universal_notifications to INSTALLED_APPS, define CELERY_APP_PATH:
+        
+        .. code:: python
+        
+            INSTALLED_APPS = (
+                ...
+                "chat_api",
+                "universal_notifications"
+            )
+            CELERY_APP_PATH = "tests.celery.app",
+        
+        Also, add settings related to MIME types & extensions:
+        
+        .. code:: python
+        
+            ACCEPTED_IMAGE_FILES = ("gif", "png", "jpg", "jpeg")
+            ACCEPTED_IMAGE_MIME = ("image/gif", "image/png", "image/jpg", "image/jpeg")
+        
+            MIME_TO_EXT = {
+                "image/gif": "gif",
+                "image/png": "png",
+                "image/jpg": "jpg",
+                "image/jpeg": "jpg",
+                "application/pdf": "pdf",
+                "application/x-pdf": "pdf",
+                "application/vnd.pdf": "pdf",
+                "text/pdf": "pdf"
+            }
+        
+        Add urls to the components you want to use:
+        
+        .. code:: python
+        
+            urlpatterns = [
+                ...
+                url(r"^", include("chat_api.chat.api_urls")),
+                url(r"^", include("chat_api.schemas.api_urls")),
+                url(r"^", include("chat_api.surveys.api_urls")),
+            ]
+        
+        In order to speed up schemas & automated flows, you need to setup django-cachalot.
+        
+        .. code:: python
+        
+            INSTALLED_APPS = (
+                ...
+                "cachalot"
+                ...
+            )
+        
+            CACHALOT_ONLY_CACHABLE_TABLES = [
+                "chat_api_answer", "chat_api_attachmenttemplate", "chat_api_group", "chat_api_group", "chat_api_question",
+                "chat_api_schema"
+            ]
+        
+        
+        REMI: please describe setting up search
+        
+        
+        Configuration
+        -------------
+        
+        Chat settings
+        ~~~~~~~~~~~~~
+        
+        Chat settings are accesible through the chat_settings singleton
+        
+        .. code:: python
+        
+            from chat_api.settings import chat_settings
+        
+            account_serializer_cls = chat_settings.ACCOUNT_SERIALIZER
+        
+        
+        Chat settings can be configured in settings:
+        
+        .. code:: python
+        
+            CHAT_SETTINGS = {
+                "ACCOUNT_SERIALIZER": "my_project.accounts.serializers.MyAccountClass"
+            }
+        
+        Chat settings can be overriden in tests using django's override_settings. However, the permissions classes are resolved earlier, so they will not be affected by this.
+        
+        Account serializer
+        ~~~~~~~~~~~~~~~~~~
+        
+        Default account serializer contains:
+        
+        - id
+        - first_name
+        - last_name
+        - avatar
+        
+        However there are no assumptions regarding fields that should be enclosed in this serializer, so it is fully customizable.
+        
+        
+        Schemas settings
+        ~~~~~~~~~~~~~~~~
+        
+        Schema types: each schema must have a type. Types can be freely defined in each project. Default types are "survey" and "automated_flow", but in the given project it is recommended to make them more descriptive, for instance: "onboarding_flow", "cancel_subscription_flow", "health_survey", etc.
+        
+        .. code:: python
+        
+            "TYPES_SCHEMA": (("schema_type", "Schema Type Label"), ("other_type", "Other Label")),
+        
+        
+        Schemas types that can be listed / obtained through API: Getting schemas / listing schemas through API can be limited to some selection (or compeletly). For example, we ant FE to be able to obtain full survey schema, but we don't want any automated flow to be obtainable.
+        
+        .. code:: python
+        
+            "TYPES_SCHEMA_LIST_THROUGH_API": ("health_survey", ),
+            "TYPES_SCHEMA_GET_THROUGH_API": ("health_survey", ),
+        
+        
+        Allowing published schemas to be edited: This funtionality should be user **ONLY** in developement environment. By default, schemas that are published are not editable. They can be copied to a new, unpublished version, edited, and once published - they'll make previous version obsolete. But if user X started schema Y in some version Z, he should be able to finish this schema version or else it will result in unpredicted behaviour. However, while developing, copying & publishing a new version each time something has to be adjusted would be too unconvenient.
+        
+        .. code:: python
+        
+            "ALLOW_EDIT_PUBLISHED_SCHEMAS": False,
+        
+        
+        Threads types
+        ~~~~~~~~~~~~~
+        
+        Type: each thread has it's own type. Types are for describing (and helping to define) certain distinct chat functionalities. For example: "onboarding", "one_on_one_chat", "group_chat". You may configure which types of chat will be listable through API, and which ones will be returned only through some other endpoints.
+        
+        .. code:: python
+        
+            "TYPES_CHAT": (("chat", "Chat"), ("survey", "Survey"), ("tracker", "Tracker")),
+            "TYPES_CHAT_DEFAULT": "chat",
+            "TYPES_CHAT_LIST_THROUGH_API": ("chat", "survey", "tracker"),
+        
+        
+        Messages types
+        ~~~~~~~~~~~~~~
+        
+        Each message in a given thread has a type. Default type is simply "message", but any type can be assigned. Some message types can be restricted for some types of users. To achieve two settings must be defined:
+        
+        .. code:: python
+        
+            # settings.py
+            CHAT_SETTINGS = {
+                ...
+                "CHAT_MESSAGE_FILTER_QUERYSET": "path.to.my_message_queryset_filter",
+                "CHAT_MESSAGE_USER_FILTER": "path.to.my_message_user_filter",
+            }
+        
+            # path/to.py
+            def my_message_queryset_filter(queryset, user):
+                if not user.is_superuser:
+                    return queryset.exclude(type="secret")
+        
+                return queryset
+        
+            def my_message_user_filter(message, user):
+                if user.is_superuser:
+                    return True
+        
+                return message.type != "secret"
+        
+        
+        The queryset filter is used when listing messages, the single message filter is used when sending WS and assigning last_message to an UserThread.
+        
+        **IMPORTANT** Once last message is assigned, it stays assigned (and obtainable through ThreadSerializer as last_message_data) until a new one is assigned, so if you change filters and you want be 100% sure noone has a last message that he should not see after that change, a migration would be required.
+        
+        
+        Schemas for surveys
+        ~~~~~~~~~~~~~~~~~~~
+        
+        You can limit which schemas types can be assigned to a survey.
+        
+        .. code:: python
+        
+            "SURVEYS_ALLOWED_SCHEMA_TYPES": ("survey", ),
+        
+        
+        Pagination
+        ~~~~~~~~~~
+        
+        Threads, Messages List & Surveys can be paginated. By default the NoCountLimitOffsetPagination is used (since it is the fastets and most convenient to user for endless scroll), but those can be overriden:
+        
+        .. code:: python
+        
+            "PAGINATION_THREAD_LIST": "any.pagination.class.YouLike",
+            "PAGINATION_MESSAGES_LIST": "any.pagination.class.YouLike",
+            "PAGINATION_GLOBAL_SURVEY_LIST": "any.pagination.class.YouLike",
+            "PAGINATION_ACCOUNT_SURVEY_LIST": "any.pagination.class.YouLike",
+        
+        
+        Permissions
+        ~~~~~~~~~~~
+        
+        Each API endpoint has a unique permission class that can be overriden through settings. This allows full customization of chat. For example, by default access to reading/writing given thread have only the thread's members with correct permissions defined in UserThread. But if you want for example given user type to read all threads, overwriting permission classes is a way to go.
+        
+        .. code:: python
+        
+            "PERMISSIONS_MESSAGES_LIST_BY_THREAD_ID": "any.permission.class.YouLike",
+            "PERMISSIONS_MESSAGE_OBJECT_BY_THREAD_ID": "any.permission.class.YouLike",
+        
+        
+        Attachments settings
+        ~~~~~~~~~~~~~~~~~~~~
+        
+        There are a predefined types of attachments with predefined behaviour:
+        
+        - image
+        - youtube (url)
+        - object_reference
+        
+        However this list can be extended by defining new types and behaviours:
+        
+        .. code:: python
+        
+            # settings.py
+            CHAT_SETTINGS = {
+                "TYPES_CUSTOM_ATTACHMENTS": (("pdf", "PDF File"), ),  # ("type", "Label")),
+                "CUSTOM_ATTACHMENTS_VALIDATION": {"pdf": "my.validation_func"},
+                "CUSTOM_ATTACHMENTS_PRE_SAVE": {"pdf": "my.pre_save_func"},
+                "CUSTOM_ATTACHMENTS_THUMBNAIL_GENERATOR": {"pdf": "my.thumbnail_generator_func"},
+                "CUSTOM_ATTACHMENTS_GET_SRC": {"pdf": "my.get_src_func"},
+                "CUSTOM_ATTACHMENTS_GET_THUMBNAIL": {"pdf": "my.get_thumbnail_func"},
+            }
+        
+            # my.py
+            def validation_func(data):
+                if "src" not in data:
+                    raise serializer.ValidationError("I want this field!")
+                return data
+        
+            def pre_save_func(validated_data):
+                # save PDF from src to some location
+                return validated_data
+        
+            def thumbnail_generator_func(validated_data):
+                # generate thumbnail of the pdf
+                return validate_data
+        
+            def get_src_func(obj):
+                return obj.src + "?some_magic_key=dsaokpdsa"
+        
+            def get_thumbnail_func(obj):
+                return obj.thumbnail["src"]
+        
+        
+        You can also define a default attachment thumbnail size:
+        
+        .. code:: python
+        
+            "ATTACHMENT_THUMBNAIL_SIZE": (100, 100),
+        
+        
+        Search settings
+        ~~~~~~~~~~~~~~~
+        
+        REMI: please describe
+        
+        Schemas
+        -------
+        
+        Schemas can be used both for chat (scripted or assisted mode) or for surveys.
+        
+        More details about schemas configuration may be found here:
+        https://docs.google.com/document/d/1d_beZNNWrHSGjMApa-9LoRpzpe1p3xFbDFmJpRbhEsY/edit
+        
+        
+        Chat modes
+        ----------
+        
+        Chat modes are defined per each user in a given thread. It means that one user can be in scripted mode, other user can be in an assisted mode, and yet another user can be in closed mode. Mode (state) for a given user in a given thread is defined in UserThread.
+        
+        Open
+        ~~~~
+        
+        In this mode there is no schema assigned to an UserThread. Thread member in such state can write messages freely.
+        
+        Closed
+        ~~~~~~
+        
+        In this mode there is no schema assigned to an UserThread. Thread member in such state can not write any messages.
+        
+        Scripted
+        ~~~~~~~~
+        
+        In this mode schema must be assigned to an UserThread. In this mode user can only send a message that is a correct answer to the current question (UserThread.question that generated UserThread.related_message), based on it's type, parameters and answers if applies.
+        
+        Once user answers the last question (next_qid == -1) the schema is either:
+        
+        - repeated (UserThread.on_finish == UserThread.ON_FINISH_REPEAT)
+        - opened (UserThread.on_finish == UserThread.ON_FINISH_OPEN)
+        - closed (UserThread.on_finish == UserThread.ON_FINISH_CLOSE)
+        
+        Scripted with FE Control
+        ~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        This mode works almost the same as the Scripted state, with following exceptions:
+        
+        - Answer is send along with question_id. This question must belong to a given schema and the answer must be a valid answer for the question. Question may differ from UserThread.question - in this mode there is assumption, that FE knows better.
+        - Messages from questions are not spawned in a moment that a schema is transitioning to another question, but along with message.
+        
+        Assisted
+        ~~~~~~~~
+        
+        In this mode schema must be assigned to an UserThread. There is no current question in the UserThread, there is also no related message. Assisted mode is just passing a schema_id to FE, so the user may choose a message from it and send it to chat. Once implemented, it will also allow such user to make other user enter the scripted state.
+        
+        Example use case:
+        
+        .. code::
+        
+            [patient, open state] Hi, I'm not feeling well
+            [doctor, assisted state] Hi, I'll need some more information
+            [doctor, assisted state, chooses "basic_assessment" part of the schema]
+            [automated message from doctor] Do you have elevated temperature?
+            [patient, scripted state, chooses from answers] Yes
+        
+        Breaking scripted states
+        ~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        If user A is in a scripted mode, and user B is in open mode, sending a message by user B will not affect user A. He will see it, but he'll not be able to react to it - since he is in a scripted mode and must provide answer to the current question from the schema. User B, if he has PERMISSION_THREAD_BREAK_STATE in his UserThread.permissions, can break user's A state by sending him message along "break_state": True. This will move user A to an open state.
+        
+        
+        UserThreads
+        -----------
+        
+        There are only few thread properties that are shared by all thread members:
+        
+        - thread id
+        - title
+        - updated & created timestamps
+        
+        All the other important properties are unique for each thread member:
+        - state & all related properties
+        - permissions & notifications
+        - last message
+        
+        Also, permissions for various APIs are determined based on UserThread. Therefore even if object contains a FK to a thread, if thread_data is going to be serialized it will be UserThread, not Thread serialized there. Chat is doing those replacement during the serialization, but if you add FK to a thread in some other object and you want to serialize it properly, you should copy solution from chat.
+        
+        Default UserThread
+        ~~~~~~~~~~~~~~~~~~
+        
+        Since you can override permissions, giving access to threads to users that are not it's members, there is a necessity to define in such cases some default UserThread before serialization. Example:
+        
+        .. code:: python
+        
+            default_thread = UserThread(
+                notifications=UserThread.NOTIFICATIONS_WS, state=UserThread.STATE_OPEN, updated=thread.updated,
+                permissions=UserThread.PERMISSION_MESSAGES_READ | UserThread.PERMISSION_THREAD_READ, thread=thread,
+                created=thread.created, last_message=thread.last_message
+            )
+        
+        
+        Notifications
+        -------------
+        
+        Each user, in UserThread may be assigned a custom notification level. By default he will get unread states and websocket notifications. There is also flag for Push notifications, however it is not yet implemented. Email/SMS/other notifications should be added in the future.
+        
+        .. code:: python
+        
+            UserThread.objects.create(
+                notifications=UserThread.NOTIFICATIONS_WS | UserThread.NOTIFIACTIONS_UNREAD,  ...
+            )
+        
+        
+        Unread states
+        ~~~~~~~~~~~~~
+        
+        Each member of a given thread may have an unread state for each message if he has UserThread.NOTIFICATIONS_UNREAD flag on in his notifications flags in his UserThread. Enabling or disabling the flag is not affecting the previous messages - they either keep their unread state or lack of it.
+        
+        For optimization reasons, the unread states are a separate objects, that are deleted when the user marks the message as read.
+        
+        Messages are marked as read in two cases:
+        
+        - when they are obtained by API (GET /api/threads/{thread_id}/messages) by given user
+        - when the command "mark_message_as_read" is send through WS Multiplex
+        
+        .. code:: python
+        
+            ws_received.send(message_data={
+                "message": "mark_message_as_read",
+                "data": {
+                    "message": self.message1.id
+                }
+            }, channel_emails=[self.user2.email], sender=None)
+        
+        
+        Websockets
+        ~~~~~~~~~~
+        
+        There are currently two websockets send out:
+        
+        - message_created_or_updated
+        - thread_someone_is_writing ("marching ants")
+        
+        
+        Message created or updated
+        //////////////////////////
+        
+        This WS is send to any subscribed user for a given thread whenever message is created or updated. It contains also attachments & serialized user thread (so information about number of unread messages).
+        
+        Thread someone is writing
+        /////////////////////////
+        
+        Whis WS is send to any subscribed user for a given thread whenever any of the thread-member is sending the command through websocek multiplex.
+        
+        .. code:: python
+        
+            ws_received.send(message_data={
+                "message": "thread_someone_is_writing",
+                "data": {
+                    "thread": self.thread.id,
+                    "length": 1000  # in miliseconds
+                }
+            }, channel_emails=[self.user2.email], sender=None)
+        
+        
+        
+        Websockets for non-members
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        In case when user is not a thread member, but wishes to receive WS from a given thread (sample use cases: admin user checks what are happening in coversations; the whole group of user, eg. doctors have access to the same conversation, and it would be inefficient to add everyone of them to a thread) there is an api to subscribe to a given threads websockets: POST /api/threads/{thread_id}/ws-subscribe.
+        
+        One user can be subscribed to only one thread he is not a member of. Subscribing to a new thread automaticaly replaces the old subscription. By default this API is blocked - it's permission class must be overriden in order to use it.
+        
+        
+        Using Search
+        ------------
+        
+        REMI: please describe
+        
+        
+        Surveys
+        -------
+        
+        Obtaining schema & answers
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        In order to display questions, a given schema from survey object should be obtained through API (GET /api/schemas/{pk}).
+        
+        While listing answers (GET /api/surveys/{survey_id}/items), the questions for them are also returned (in related_question_data), however questions that were not answered are not returned with this method.
+        
+        State
+        ~~~~~
+        
+        Each survey contains a state objects, that is a dictionary conatining two things:
+        
+        - visibility: list of ids of questions that are currently visible
+        - completed: True if all visible required fields are answered, otherwise False
+        
+        Determining visibility
+        ~~~~~~~~~~~~~~~~~~~~~~
+        
+        Visibility is defined by following algorithm:
+        
+        - We assume the first question (with lowest position) is visible.
+        - If a question is visible, the question that it is referring to (by next_qid) is also visible.
+        - If there is an answer added to visible question, the question the answer is referring to (by next_qid) is also visible.
+        
+        Changing answers may affect visibility of a question (if the question looses all references to it) or even a whole group of questions. Visibility is determined after each time answer is saved and returned in state["visibility"] in a Survey object.
+        
+        Required fields
+        ~~~~~~~~~~~~~~~
+        
+        - Each question in schema may be marked as required.
+        - A question is only really required if it is visible (see the section above).
+        
+        Updating previous answers
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        There is only one answer allowed for a given question id. This means, that to update an answer you have to either put/patch the previous answer (PATCH /api/surveys/{survey_id}/items/{pk}) or first delete it (DELETE /api/surveys/{survey_id}/items/{pk}) and then add a new one.
+        
+        API description
+        ---------------
+        
+        All API functions can be found in swagger after plugging the chat library to a project.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Topic :: Internet :: WWW/HTTP
