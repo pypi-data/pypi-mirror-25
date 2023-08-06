@@ -1,0 +1,26 @@
+{% load i18n thumbnail pcart_core theme_tags staticfiles %}
+<div class="product_img">
+    <a href="{{ product.get_absolute_url }}">
+        {% with im=product.get_image %}
+            {% if im %}
+                {% if size %}
+                    <img src="{{im.image|thumbnail_url:size}}" alt="{{im}}" />
+                {% else %}
+                    <img src="{{im.image|thumbnail_url:"collection_small"}}" alt="{{im}}" />
+                {% endif %}
+            {% else %}
+                <img src="{% static 'assets/empty.480x480.png' %}" />
+            {% endif %}
+        {% endwith %}
+
+        {% if product.compare_at_price > product.price %}<span class="product_badge sale">–{{product.compare_at_price|minus:product.price|times:100.0|divided_by:product.compare_at_price|money:'without_currency'|times:100|remove:'.0'}}%</span>{% endif %}
+        {% comment %}{% if dates_diff <= new_products_period %}<span class="product_badge new">{% trans "New" %}</span>{% endif %}{% endcomment %}
+    </a>
+    {% comment %}
+    {% if not hide_buttons %}
+    <div class="product_img_hover">
+        {% include "catalog/includes/collection/buy_button.html" %}
+    </div>
+    {% endif %}
+    {% endcomment %}
+</div>

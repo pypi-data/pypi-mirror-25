@@ -1,0 +1,70 @@
+{% extends CMS_TEMPLATE %}
+{% load i18n l10n sekizai_tags cms_tags pcart_core theme_tags pcart_catalog staticfiles %}
+
+{% block title %}{% include "catalog/includes/collection/meta_title.html" %} | {{site.name}}{% endblock %}
+{% block meta_description %}{% include "catalog/includes/collection/meta_description.html" %}{% endblock %}
+{% block meta_keywords %}{% include "catalog/includes/collection/meta_keywords.html" %}{% endblock %}
+
+{% block breadcrumb %}{% include "catalog/includes/collection/breadcrumb.html" %}{% endblock %}
+
+{% block sidebar %}
+{% include "catalog/includes/collection/subcollections.html" %}
+{% include "catalog/includes/collection/filters.html" %}
+{% render_placeholder collection.secondary_placeholder %}
+{% endblock %}
+
+{% block content %}
+{% render_placeholder collection.primary_placeholder %}
+{% include "catalog/includes/collection/page_title.html" %}
+{% include "catalog/includes/collection/description.html" %}
+{% include "catalog/includes/collection/ordering.html" %}
+
+<div id="collection_sorted">
+    <!-- products listing -->
+    <div class="product_listing_main row">
+        {% for product in products %}
+            {% include 'catalog/includes/collection/product_line.html' %}
+        {% empty %}
+            <div class="col-sm-12">
+                <p class="alert alert-info">{% trans "There are no products in this view." %}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- pagination -->
+{% include "catalog/includes/pagination.html" %}
+</div>
+{% render_placeholder collection.extra_placeholder %}
+{% include "catalog/includes/collection/meta_text.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/jquery.collection-sort.js' %}"></script>
+<script>
+jQuery(document).ready(function ($) {
+   window.price_range = document.getElementById('price-slider');
+   noUiSlider.create(price_range, {
+       start: [{{min_selected_price|unlocalize}}, {{max_selected_price|unlocalize}}],
+       connect: true,
+       range: {
+           'min': {{min_available_price|unlocalize}},
+           'max': {{max_available_price|unlocalize}}
+       },
+       format: {
+           to: function (value) {
+               return Math.trunc(value);
+           },
+           from: function (value) {
+               return value;
+           }
+       }
+   });
+   price_range.noUiSlider.on('slide', function() {
+       var value = window.price_range.noUiSlider.get();
+       $('#price-input').val(value[0]+','+value[1]);
+       $('#price-from-input').val(value[0]);
+       $('#price-to-input').val(value[1]);
+   });
+});
+</script>
+{% endblock %}

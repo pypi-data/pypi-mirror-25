@@ -1,0 +1,45 @@
+{% load i18n cms_tags %}
+<div class="breadcrumb_wrap">
+    <div class="container">
+        <ul class="breadcrumb" itemscope itemtype="http://schema.org/BreadcrumbList">
+            <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                <a href="/" class="homepage-link" itemscope itemtype="http://schema.org/Thing" itemprop="item"><span itemprop="name">{% trans "Home" %}</span></a>
+            </li>
+            <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                <a href="{% url 'pcart_collection:all-collections' %}" itemscope itemtype="http://schema.org/Thing" itemprop="item"><span itemprop="name">{% trans "Catalog" %}</span></a>
+            </li>
+            {% if not collection.is_root_node %}
+                {% for parent in collection.get_ancestors %}
+                <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                    <a href="{{parent.get_absolute_url}}" itemscope itemtype="http://schema.org/Thing" itemprop="item"><span itemprop="name">{{parent}}</span></a>
+                </li>
+                {% endfor %}
+            {% endif %}
+            {% if filtered %}
+                <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                    <a href="{{collection.get_absolute_url}}" itemscope itemtype="http://schema.org/Thing" itemprop="item">
+                        <span itemprop="name">{{collection}}</span>
+                    </a>
+                </li>
+                {% for tag in vendor_tags %}
+                    {% if tag.selected %}
+                    <li><a href="{{tag.url}}">{{tag.label}} <i class="fa fa-times" aria-hidden="true"></i></a></li>
+                    {% endif %}
+                {% endfor %}
+                {% for tag_group in all_tags %}
+                    {% for tag in tag_group.tags %}
+                        {% if tag.selected %}
+                            <li><a href="{{tag.url}}">{{tag_group.group_label}}: {{tag.label}} <i class="fa fa-times" aria-hidden="true"></i></a></li>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                <li itemprop="itemListElement" itemtype="http://schema.org/ListItem">
+                    <a href="{{collection.get_absolute_url}}" itemscope itemtype="http://schema.org/Thing" itemprop="item">
+                        <span class="active" itemprop="name">{{collection}}</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>

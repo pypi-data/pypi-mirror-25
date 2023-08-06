@@ -1,0 +1,36 @@
+{% load i18n pcart_core %}
+{% capture as instance_pk silent %}{% randint 0 100 %}{% endcapture %}
+{% if history %}
+<div id="homepage_carousel__{{ instance_pk }}" class="product_listing_main homepage_carousel row">
+    {% for item in history %}
+        {% save item.variant|default:item.product as product %}
+        {% include "catalog/includes/product_listing_item.html" with loop_index=forloop.counter %}
+    {% endfor %}
+</div>
+<script>
+jQuery(document).ready(function($) {
+    if( device.desktop() || device.tablet() ) {
+        $('#homepage_carousel__{{ instance_pk }}').bxSlider({
+            infiniteLoop: true,
+            hideControlOnEnd: true,
+            minSlides: 4,
+            maxSlides: 4,
+            moveSlides: 1,
+            slideMargin: 0,
+            pager: false,
+            prevText: '',
+            nextText: '',
+        });
+    };
+});
+</script>
+{% else %}
+    <div class="alert alert-info">{% trans "There are no visited products." %}</div>
+    {% if instance_pk %}
+        <script>
+        jQuery(document).ready(function($) {
+           $('#homepage_carousel__{{ instance_pk }}').parent('.featured_products').hide();
+        });
+        </script>
+    {% endif %}
+{% endif %}

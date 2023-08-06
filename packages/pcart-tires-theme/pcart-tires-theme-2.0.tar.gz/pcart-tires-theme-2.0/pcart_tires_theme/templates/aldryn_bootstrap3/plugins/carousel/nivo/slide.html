@@ -1,0 +1,17 @@
+{% load cms_tags thumbnail %}
+{% if show_images %}
+{% with srcset=carousel.srcset %}
+{% with main_src=srcset.lg %}
+{% thumbnail image.file main_src.size crop=main_src.crop upscale=main_src.upscale subject_location=image.subject_location as main_thumb %}
+<a href="{{ instance.get_link_url }}">
+    <img src="{{ main_thumb.url }}" alt="" title="#htmlcaption-{{ instance.pk }}" />
+</a>
+{% endwith %}{% endwith %}
+{% else %}
+<div id="htmlcaption-{{ instance.pk }}">
+    {{ instance.content|safe }}
+    {% for plugin in instance.child_plugin_instances %}
+        {% render_plugin plugin %}
+    {% endfor %}
+</div>
+{% endif %}
