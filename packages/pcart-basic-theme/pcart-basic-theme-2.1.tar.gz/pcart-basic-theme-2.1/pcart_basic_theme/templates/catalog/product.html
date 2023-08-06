@@ -1,0 +1,45 @@
+{% extends CMS_TEMPLATE %}
+{% load i18n l10n cms_tags pcart_core pcart_reviews pcart_statistics %}
+
+{% block extra_js %}{% track_product_visit product %}{% endblock %}
+
+{% block base_content %}
+<h1>{% render_model product "get_page_title" %}</h1>
+
+{% include "catalog/includes/images.html" %}
+
+<p>{% render_model product "status" %}</p>
+
+<div>
+    {% with product.variants.all as variants %}
+    {% if variants %}
+        <ul>
+            {% prepare_query_object price=0 as zero_price %}
+            {% for variant in variants|exclude_from_queryset:zero_price|prefetch_related:'status'|order_by:'price' %}
+            <li>
+                <a href="{{variant.get_absolute_url}}">{{variant.title}}</a> {{variant.status}} <span>{{variant.price}}</span>
+                {% include "catalog/includes/buy_button.html" with product=variant quantity=4 %}
+            </li>
+            {% endfor %}
+        </ul>
+        <span>From {{product.min_variant_price}} to {{product.max_variant_price}}</span>
+    {% else %}
+        {% include "catalog/includes/buy_button.html" with quantity=4 %}
+        {% include "catalog/includes/add_to_comparison_button.html" %}
+        {% include "catalog/includes/add_to_wishlist_button.html" %}
+        <span>{{product.price}}</span>
+    {% endif %}
+    {% endwith %}
+</div>
+
+<div>
+<h3>{% trans "Reviews" %}</h3>
+
+{% reviews_for_product product %}
+
+<h4>{% trans "Write a review" %}</h4>
+
+<div id="review-form-container" class="__action--ajax-load" data-src="{% url 'pcart_reviews:review-form' %}?product-id={{product.id}}"></div>
+
+</div>
+{% endblock %}

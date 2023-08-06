@@ -1,0 +1,41 @@
+{% extends CMS_TEMPLATE %}
+{% load i18n l10n sekizai_tags cms_tags pcart_core pcart_catalog thumbnail staticfiles %}
+
+{% block base_content %}
+<h1>{% trans "Search results" %}</h1>
+<div class="row">
+<div class="col-md-12">
+<p>Found {{products.paginator.count}} products.</p>
+
+{% for product in products %}
+    <h2><a href="{{product.get_absolute_url}}">{{product.title}}</a></h2>
+    {% for image in product.images.all %}
+    <img src="{{image.image|thumbnail_url:'collection_small'}}" title="{{image}}">
+    {% endfor %}
+    <p>{{product.status}}</p>
+    {% with product.variants.all as variants %}
+    <p>Count: {{product.filtered_variants_count|default:product.variants_count}}</p>
+    {% if variants %}
+        <ul>
+            {% for variant in variants|sort_by_attr:'price' %}
+            <li><a href="{{variant.get_absolute_url}}">{{variant.title}}</a> <span>{{variant.price|money}}</span></li>
+            {% endfor %}
+        </ul>
+        {% with minvp=product.filtered_min_variant_price|default:product.min_variant_price maxvp=product.filtered_max_variant_price|default:product.max_variant_price %}
+        <span>
+            {% if minvp == maxvp %}
+                {{minvp|money}}
+            {% else %}
+                {{minvp|money}} - {{maxvp|money}}
+            {% endif %}
+        </span>
+        {% endwith %}
+    {% else %}
+        <span>{{product.price|money}}</span>
+    {% endif %}
+    {% endwith %}
+{% endfor %}
+{% include "catalog/includes/pagination.html" %}
+</div>
+</div>
+{% endblock %}

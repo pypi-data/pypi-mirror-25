@@ -1,0 +1,49 @@
+{% load i18n thumbnail pcart_core %}
+<form method="post" action="{% url 'pcart_cart:cart' %}?ignore-response=yes" class="__action--ajax-submit"
+      data-post-signal="update-cart" data-post-remove-element=".modal-backdrop">
+<div id="modal-cart" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">{% trans "Cart" %}</h4>
+      </div>
+      <div class="modal-body">
+
+{% csrf_token %}
+{% for item in cart.items %}
+<div class="row">
+    <div class="col-md-3">
+    {% with image=item.product.images.first %}
+        <a href="{{item.object.get_absolute_url}}">
+    {% if image %}<img src="{% thumbnail image.image 200x200 %}" title="{{image}}">{% endif %}
+        </a>
+    {% endwith %}
+    </div>
+    <div class="col-md-3">
+        <span><a href="{{item.object.get_absolute_url}}">{{item.object.title}}</a></span>
+    </div>
+    <div class="col-md-3">
+    <input type="number" step="1" min="0" name="item-quantity-{{item.id}}" value="{{item.quantity}}">
+        &times; {{item.price|money}} = {{item.line_price|money}}</div>
+    <div class="col-md-3">
+        <button type="submit" name="item-remove-{{item.id}}" class="btn btn-link" data-allow-ajax="true">{% trans "Remove" %}</button></div>
+</div>
+{% endfor %}
+    <h4>{% trans "Subtotal" %} {{cart.total_price|money}}</h4>
+          <p>{% trans "Weight" %} {{cart.total_weight|weight}}</p>
+
+
+      </div>
+        <button type="submit" name="update" class="btn btn-default" data-allow-ajax="true">{% trans "Update cart" %}</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Back to shopping" %}</button>
+        <button type="submit" name="checkout" class="btn btn-primary" data-disable-ajax="true">{% trans "Proceed to checkout" %}</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+</form>
+<script>
+$('#modal-cart').modal('show');
+</script>

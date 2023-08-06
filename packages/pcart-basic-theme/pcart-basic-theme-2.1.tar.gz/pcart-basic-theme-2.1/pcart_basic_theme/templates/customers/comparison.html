@@ -1,0 +1,66 @@
+{% extends CMS_TEMPLATE %}
+{% load i18n cms_tags pcart_core sekizai_tags %}
+
+{% block base_content %}
+<div class="row">
+    <form method="post">
+    {% csrf_token %}
+    <div class="col-md-2">{% include "customers/includes/profile_menu.html" %}</div>
+    <div class="col-md-10">
+        <h1>{% trans "Comparison" %}</h1>
+        {% if comparisons %}
+        {% save comparisons|length as comparisons_length %}
+        <table class="table table-bordered table-striped table-hovered">
+            <tr>
+                <td></td>
+                {% for item in comparisons %}
+                <td>
+                    {% if item.variant %}
+                        <h3><a href="{{item.variant.get_absolute_url}}">{{item.variant.title}}</a></h3>
+                    {% else %}
+                        <h3><a href="{{item.product.get_absolute_url}}">{{item.product.title}}</a></h3>
+                    {% endif %}
+                        <button type="submit"
+                                name="item-remove-{{item.id}}" class="btn btn-link">{% trans "Remove" %}</button>
+                </td>
+                {% endfor %}
+            </tr>
+        {% for product_type in product_types %}
+            <tr>
+                <td><strong>{{product_type}}</strong></td><td colspan="{{comparisons_length}}"></td>
+            </tr>
+            {% for prop in product_type.properties.all %}
+            <tr data-prop="{{prop}}" data-product-type="{{product_type}}">
+                <td style="text-align:right;">{{prop}}</td>
+                {% create_list as prop_line %}
+                {% for item in comparisons %}
+                {% if item.product.product_type == product_type %}
+                    {% if item.variant %}
+                        {% with value=item.variant.properties|get_element:prop.title %}
+                        <td>{{value|ignore_none}}</td>{% save prop_line|append_to_list:value as prop_line %}
+                        {% endwith %}
+                    {% else %}
+                        {% with value=item.product.properties|get_element:prop.title %}
+                        <td>{{value|ignore_none}}</td>{% save prop_line|append_to_list:value as prop_line %}
+                        {% endwith %}
+                    {% endif %}
+                {% else %}
+                    <td></td>
+                {% endif %}
+                {% endfor %}
+                {% if prop_line|to_set|length > 1 %}
+                    {% addtoblock "js" %}
+                        <script>$('tr[data-prop="{{prop}}"][data-product-type="{{product_type}}"]').addClass('text-bold');</script>
+                    {% endaddtoblock %}
+                {% endif %}
+            </tr>
+            {% endfor %}
+        {% endfor %}
+        </table>
+        {% else %}
+        <div class="alert alert-info">{% trans "The comparison list is empty." %}</div>
+        {% endif %}
+    </div>
+    </form>
+</div>
+{% endblock %}

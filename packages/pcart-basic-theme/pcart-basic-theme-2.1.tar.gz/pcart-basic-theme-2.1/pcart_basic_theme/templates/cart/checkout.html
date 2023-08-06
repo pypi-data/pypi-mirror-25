@@ -1,0 +1,62 @@
+{% extends CMS_TEMPLATE %}
+{% load i18n thumbnail cms_tags pcart_core %}
+
+{% block base_content %}
+<h1>{% trans "Checkout" %}</h1>
+
+<div>
+{% if cart.item_count > 0 %}
+<form method="post">
+{% csrf_token %}
+
+<div class="row">
+    <div class="col-md-6">
+        {% if user.is_anonymous %}<p>{% trans "If you already have an account use this link for login:" %}
+            <a href="{% optional_url 'pcart_customers:login' %}?move-cart&next={{request.path}}">{% trans "Login" %}</a></p>{% endif %}
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='name,email,phone' %}
+        <hr>
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='shipping_method' %}
+        {% save checkout_form.initial|get_element:"shipping_method" as initial_shipping_method %}
+        <div id="shipping-form-container"
+             class="__action--ajax-load __action--ajax-load-for-event __action--subform-onchange-ajax-reload"
+             data-src-eval="'{% url "pcart_cart:shipping-form-noslug" %}'+$('#id_shipping_method').val()+'/'"
+             data-event="change" data-target="#id_shipping_method" data-subform-method="post"></div>
+        <hr>
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='payment_method' %}
+        <div id="payment-form-container"></div>
+        <hr>
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='note,accept_toc' %}
+    </div>
+    <div class="col-md-6">
+        {% for item in cart.items %}
+        <div class="row">
+            <div class="col-md-4">
+            {% with image=item.product.images.first %}
+                <a href="{{item.object.get_absolute_url}}">
+            {% if image %}<img src="{% thumbnail image.image 200x200 %}" title="{{image}}">{% endif %}
+                </a>
+            {% endwith %}
+            </div>
+            <div class="col-md-8">
+                <h5><a href="{{item.object.get_absolute_url}}">{{item.object.title}}</a></h5>
+                <p>{{item.quantity}} &times; {{item.price|money}} = {{item.line_price|money}}</p>
+            </div>
+        </div>
+        {% endfor %}
+        <p><a class="btn btn-default" href="{% url 'pcart_cart:cart' %}">
+            <span class="glyphicon glyphicon-shopping-cart" aria-hidden="true"></span>
+            {% trans "Return to cart" %}</a></p>
+                <hr>
+        <h4>{% trans "Subtotal" %}: {{cart.total_price|money}}</h4>
+        <p>{% trans "Weight" %}: {{cart.total_weight|weight}}</p>
+    </div>
+</div>
+
+<button type="submit" name="checkout" class="btn btn-primary">{% trans "Submit checkout" %}</button>
+</form>
+{% else %}
+<h2>{% trans "It appears that your cart is currently empty!" %}</h2>
+<h3>{% trans 'You can continue browsing <a href="/">here</a>.' %}</h3>
+{% endif %}
+</div>
+{% endblock %}

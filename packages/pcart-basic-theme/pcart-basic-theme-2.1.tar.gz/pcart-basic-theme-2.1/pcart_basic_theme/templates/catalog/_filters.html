@@ -1,0 +1,55 @@
+{% load i18n l10n pcart_core pcart_catalog staticfiles %}
+<h4>{% trans "Filters" %}</h4>
+<form method="post" action="{% url 'pcart_collection:filter-form-dispatcher' collection.slug %}">
+
+{% if collection.show_vendor_filter %}
+<p>{% trans "Vendor" %}</p>
+<ul class="list-unstyled">
+{% for tag in vendor_tags %}
+<li>{% if tag.selected %}
+    <input type="checkbox" name="vendor" value="{{tag.tag}}" checked>
+    <strong><a href="{{tag.url}}">{{tag.label}}</a> ({{tag.filtered}})</strong>
+    {% else %}
+    <input type="checkbox" name="vendor" value="{{tag.tag}}" {% if tag.filtered == 0 %}disabled{% endif %}>
+        {% if tag.filtered == 0 %}<span class="text-muted">{% endif %}
+        {% if tag.url %}<a href="{{tag.url}}">{% endif %}{{tag.label}}{% if tag.url %}</a>{% endif %} {% if tag.active_filter %}+{{tag.filtered}}{% else %}({{tag.filtered}}){% endif %}
+        {% if tag.filtered == 0 %}</span>{% endif %}
+    {% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if collection.show_properties_filters %}
+{% for tag_group in all_tags %}
+{% if tag_group.group_label not in collection.exclude_properties_filters %}
+<p>{{tag_group.group_label}}</p>
+<ul class="list-unstyled">
+    {% for tag in tag_group.tags %}
+    <li>{% if tag.selected %}
+        <input type="checkbox" name="tag" value="{{tag.tag}}" checked>
+        <strong><a href="{{tag.url}}">{{tag.label|capfirst}}</a> ({{tag.filtered}})</strong>
+        {% else %}
+        <input type="checkbox" name="tag" value="{{tag.tag}}" {% if tag.filtered == 0 %}disabled{% endif %}>
+            {% if tag.filtered == 0 %}<span class="text-muted">{% endif %}
+            {% if tag.url %}<a href="{{tag.url}}">{% endif %}{{tag.label|capfirst}}{% if tag.url %}</a>{% endif %} {#tag.count#} {% if tag.active_filter %}+{{tag.filtered}}{% else %}({{tag.filtered}}){% endif %}
+            {% if tag.filtered == 0 %}</span>{% endif %}
+        {% endif %}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if collection.show_price_filter %}
+<div>
+    <p>Price</p>
+    <input name="price" type="hidden" id="price-input" value="{{min_selected_price|unlocalize}},{{max_selected_price|unlocalize}}" />
+    <input name="price-delimiter" type="hidden" id="price-delimiter-input" value="," />
+
+    <hr>
+    Price from: ({{min_available_price|money}}) <input name="price-from" value="{{min_selected_price|unlocalize}}">
+    Price to: <input name="price-to" value="{{max_selected_price|unlocalize}}"> ({{max_available_price|money}})
+</div>
+{% endif %}
+<input class="btn btn-info" type="submit" name="filter" value="Filter">
+</form>

@@ -1,0 +1,47 @@
+{% load i18n pcart_core %}
+<div class="row">
+<div class="col-md-12">
+{% if products.has_other_pages %}
+  {% with p_url=request.get_full_path %}
+  <ul class="pagination">
+    {% if products.has_previous %}
+      <li><a href="{% set_query_parameter p_url 'page' products.previous_page_number %}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&laquo;</span></li>
+    {% endif %}
+    {% for i in products.paginator.page_range %}
+        {# if we're beyond the first five pages, just show "..." until three pages before the current page #}
+        {# e.g. on page 12 show: "... 9 10 11 12" #}
+        {% if products.number > 5 and i < products.number|subtract:4 %}
+                {% if i|subtract:3 <= 0 %}<li><a href="{% set_query_parameter p_url 'page' i %}">{{ i }}</a></li>{% endif %}
+        {% elif products.number > 5 and i == products.number|subtract:4 %}
+                {# show '...' #}
+                <li class="disabled">
+                    <a href="#">...</a>
+                </li>
+
+        {# if we're before the last five pages, just show "..." for pages more than three after the current page #}
+        {# e.g. on page 1 of 10 show: "1 2 3 4 ..." #}
+        {% elif products.number < products.paginator.num_pages|subtract:5 and i > products.number|add:4 %}
+            {% if i|add:3 > products.paginator.num_pages %}<li><a href="{% set_query_parameter p_url 'page' i %}">{{ i }}</a></li>{% endif %}
+        {% elif products.number < products.paginator.num_pages|subtract:5 and i == products.number|add:4 %}
+            {# show '...' #}
+                <li class="disabled">
+                    <a href="#">...</a>
+                </li>
+        {% elif products.number == i %}
+            <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+        {% else %}
+            <li><a href="{% set_query_parameter p_url 'page' i %}">{{ i }}</a></li>
+        {% endif %}
+
+    {% endfor %}
+    {% if products.has_next %}
+      <li><a href="{% set_query_parameter p_url 'page' products.next_page_number %}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+  {% endwith %}
+{% endif %}
+</div></div>
