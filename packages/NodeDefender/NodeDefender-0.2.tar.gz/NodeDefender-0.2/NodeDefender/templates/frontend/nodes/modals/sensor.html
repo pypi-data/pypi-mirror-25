@@ -1,0 +1,102 @@
+{% macro SensorModal() %}
+{% from "frontend/macros/info.html" import FieldID %}
+{% from "frontend/macros/form.html" import render_manual %}
+<div class="modal fade" id="SensorModal" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h2 class="modal-title">Sensor</h2>
+			</div>
+			<div class="modal-body">
+				<ul class="nav nav-pills nav-justified">
+					<li class="active"><a data-toggle="pill" href="#SensorModalInfo">Information</a></li>
+					<li><a data-toggle="pill" href="#SensorModalRules">Events</a></li>
+					<li><a data-toggle="pill" href="#SensorModalConfig">Configure</a></li>
+				</ul>
+				<div class="tab-content">
+					<div id="SensorModalInfo" class="tab-pane fade in active">
+						<div class="row">
+							{{ FieldID("Name", "-", "sensorName") }}
+							{{ FieldID("iCPE", "-", "sensoriCPE") }}
+							{{ FieldID("Sensor Id", "-", "sensor_id") }}
+							{{ FieldID("Brand", "-", "sensorBrand") }}
+							{{ FieldID("Product Name", "-", "sensorProductName") }}
+							{{ FieldID("Library Type", "-", "sensorLibtype") }}
+							{{ FieldID("Device Type", "-", "sensorDevtype") }}
+						</div>
+					</div>
+					<div id="SensorModalRules" class="tab-pane fade">
+						<table class="table table-striped" id="sensoreventtable">
+							<thead>
+								<tr>
+									<th>Event</th>
+									<th>Date</th>
+								</tr>
+							</thead>
+							<tbody id="sensoreventbody">
+							</tbody>
+						</table>
+					</div>
+					<div id="SensorModalConfig" class="tab-pane fade">
+						<div class="row">
+							{{ render_manual("Name", "sensorConfigName") }}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="updateSensor">Update Fields</button>
+				<button type="button" class="btn btn-primary" id="updateSensorConfig">Update Config</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+	<script>
+var sensorEventTable = document.getElementById('sensoreventtable');
+var sensorEventBody = document.getElementById('sensoreventbody');
+
+function reload() {
+	location.reload();
+};
+
+document.getElementById('updateSensor').addEventListener('click', function() {
+	sensorSocket.emit('update', {'icpe' : document.getElementById('sensoriCPE').innerHTML,
+		'sensor' : document.getElementById('sensor_id').innerHTML});
+	setTimeout(reload, 5000);
+});
+
+document.getElementById('updateSensorConfig').addEventListener('click', function() {
+	var icpe = document.getElementById("sensoriCPE").innerHTML;
+	var sensor_id = document.getElementById("sensor_id").innerHTML;
+	var sensorName = document.getElementById('sensorConfigName').value;
+	sensorSocket.emit('update', icpe, sensor_id, {'name' : sensorName});
+});
+
+sensorSocket.on('info', function(info) {
+	document.getElementById("sensorName").innerHTML = info.name;
+	document.getElementById("sensorConfigName").value = info.name;
+	document.getElementById("sensor_id").innerHTML = info.sensor_id;
+	document.getElementById("sensoriCPE").innerHTML = info.icpe;
+	document.getElementById("sensorBrand").innerHTML = info.brand;
+	document.getElementById("sensorProductName").innerHTML = info.productName;
+	document.getElementById("sensorLibtype").innerHTML = info.librarytype;
+	document.getElementById("sensorDevtype").innerHTML = info.devicetype;
+});
+
+dataSocket.on('sensorEvents', function(events) {
+	for (var i = 0; i < events.length; i++) {
+		var newRow = sensorEventBody.insertRow(i);
+
+		var eventCell = newRow.insertCell(0);
+		var eventText = document.createTextNode(events[i].value);
+		eventCell.appendChild(eventText);
+
+		var dateCell = newRow.insertCell(1);
+		var dateText = document.createTextNode(moment(events[i].date, "YYYYMMDD, hh:mm:ss").fromNow());
+		dateCell.appendChild(dateText);
+	}
+});
+	</script>
+{% endmacro %}

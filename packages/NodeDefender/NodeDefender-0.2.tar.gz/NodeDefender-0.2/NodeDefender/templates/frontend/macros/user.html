@@ -1,0 +1,95 @@
+{% macro Info(user) %}
+{% from "frontend/macros/info.html" import Field %}
+{{Field("Firstname", user.firstname)}}
+{{Field("Lastname", user.lastname)}}
+{{Field("Email", user.email)}}
+{% endmacro %}
+
+{% macro Events(user) %}
+<p>Events</p>
+{% endmacro %}
+
+{% macro AdminSettings(User, Form, Form2) %}
+{% from "frontend/macros/form.html" import render_field_with_errors, render_submit %}
+<div class="modal fade" id="UserConfigure" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h2 class="modal-title">User Settings</h2>
+			</div>
+			<div class="modal-body">
+				<form action="{{url_for('admin_view.admin_user', email = serialize(User.email))}}" method="post" class="form-horizontal">
+					{{ Form.csfr_token }}
+					{{ Form.hidden_tag() }}
+					{{render_field_with_errors(Form.Firstname, User.firstname)}}
+					{{render_field_with_errors(Form.Lastname, User.lastname)}}
+					{{render_field_with_errors(Form.Email, User.email)}}
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-error" id="deleteUser">Delete User</button>
+				{% if User.active %}
+					<button type="button" class="btn btn-warning" id="freezeUser">Freeze User</button>
+				{% else %}
+					<button type="button" class="btn btn-warning" id="enableUser">Enable User</button>
+				{% endif %}
+				<button type="button" class="btn btn-warning" id="resetPassword">Reset Password</button>
+				<button type="submit" class="btn btn-primary">Save changes</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+	<script>
+$(document).ready(function() {
+	document.getElementById("deleteUser").onclick = function() {
+		userSocket.emit('delete', ('{{User.email}}'));
+	};
+	{% if User.active %}
+	document.getElementById("freezeUser").onclick = function() {
+		userSocket.emit('freeze', {'email' : '{{User.email}}'});
+	};
+	{% else %}
+	document.getElementById("enableUser").onclick = function() {
+		userSocket.emit('enable', {'email' : '{{User.email}}'});
+	};
+	{% endif %}
+	document.getElementById("resetPassword").onclick = function() {
+		userSocket.emit('resetPassword', {'email' : '{{User.email}}'});
+	};
+});
+	</script>
+{% endmacro %}
+
+{% macro ListUsers(users) %}
+<table class="table table-hover">
+	<thead>
+		<tr>
+			<th>Firstname</th>
+			<th>Lastname</th>
+			<th>Email</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for user in users %}
+		<tr>
+			<td>
+				<a href="{{url_for('admin_view.admin_user', email = serialize(user.email))}}">
+				{{user.firstname}}
+				</a>
+			</td>
+			<td>
+				<a href="{{url_for('admin_view.admin_user', email = serialize(user.email))}}">
+					{{user.lastname}}
+				</a>
+			</td>
+			<td>
+				<a href="{{url_for('admin_view.admin_user', email = serialize(user.email))}}">
+				{{user.email}}
+				</a>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endmacro %}

@@ -1,0 +1,53 @@
+{% macro Map(latitude, longitude) %}
+<div id="map" style="height: 100%; width: 100%;"></div>
+<script>
+var map = L.map('map',{
+		center: [{{latitude}}, {{longitude}}],
+    zoom: 12
+});
+
+var marker = L.marker([{{latitude}}, {{longitude}}]).addTo(map);
+
+L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+
+</script>
+{% endmacro %}
+
+{% macro MapGroup(nodes = None) %}
+<div id="map" style="height: 100%; width: 100%;"></div>
+<script>
+var initialized = false;
+var map = L.map('map',{
+	center: [57.691, 11.936],
+	zoom: 2
+});
+
+L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+		attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+
+function addMarker(node) {
+	var marker = L.marker([node.location.latitude, node.location.longitude]).addTo(map);
+	marker.bindPopup(node.name);
+	if (initialized === false) {
+		map.setView(new L.LatLng(node.location.latitude, node.location.longitude), 10);
+		initialized = true;
+	}
+}
+
+{% if nodes == None %}
+nodeSocket.on("list", function(nodes) {
+	for (var i = 0; i < nodes.length; i++) {
+		addMarker(nodes[i]);
+	}
+})
+{% else %}
+	{% for node in nodes %}
+	var marker = L.marker([{{node.location.latitude}}, {{node.location.longitude}}]).addTo(map);
+		marker.bindPopup("{{node.name}}");
+{% endfor %}
+{% endif %}
+</script>
+{% endmacro %}

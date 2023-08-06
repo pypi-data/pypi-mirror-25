@@ -1,0 +1,90 @@
+{% macro ListMQTT(mqtts, Form) %}
+{% from "frontend/macros/info.html" import FieldID %}
+<table class="table table-hover">
+	<thead>
+		<tr>
+			<th>IP</th>
+			<th>Port</th>
+			<th>Online</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for mqtt in mqtts %}
+		<tr>
+			<td>
+				<a href="#" onclick="MQTTInfo('{{mqtt.host}}', '{{mqtt.port}}')">
+				{{mqtt.host}}
+				</a>
+			</td>
+			<td>
+				<a href="#" onclick="MQTTInfo('{{mqtt.host}}', '{{mqtt.port}}')">
+					{{mqtt.port}}
+				</a>
+			</td>
+			<td>
+				<a href="#" onclick="MQTTInfo('{{mqtt.host}}', '{{mqtt.port}}')">
+				-
+				</a>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% from "frontend/macros/icpe.html" import iCPEList %}
+{% from "frontend/macros/group.html" import ListGroups %}
+<div class="modal fade" id="MQTTInfoModal" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h2 class="modal-title">MQTT <div id="mqttTitle"></div></h2>
+			</div>
+			<div class="modal-body">
+				<ul class="nav nav-pills nav-justified">
+					<li class="active"><a data-toggle="pill" href="#MQTTModalInfo">Information</a></li>
+					<li><a data-toggle="pill" href="#MQTTModaliCPEs">iCPEs</a></li>
+					<li><a data-toggle="pill" href="#MQTTModalGroups">Groups</a></li>
+				</ul>
+				<div class="tab-content">
+					<div id="MQTTModalInfo" class="tab-pane fade in active">
+						<div class="row">
+							{{ FieldID("Address", "-", "mqttInfoAddress") }}
+							{{ FieldID("Port", "-", "mqttInfoPort") }}
+							{{ FieldID("Online", "-", "mqttInfoOnline") }}
+							{{ FieldID("Created On", "-", "mqttInfoCreatedOn") }}
+						</div>
+					</div>
+					<div id="MQTTModaliCPEs" class="tab-pane fade">
+						{{ iCPEList() }}
+					</div>
+					<div id="MQTTModalGroups" class="tab-pane fade">
+						{{ ListGroups() }}
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+function MQTTInfo(host, port) {
+	$('#MQTTInfoModal').modal('show');
+	adminSocket.emit("mqttInfo", host, port);
+	$("#mqttTitle").text(host);
+}
+adminSocket.on("mqttInfo", function(info) {
+	cleariCPEList();
+	clearGroupList();
+
+	$("#mqttInfoAddress").text(info.host);
+	$("#mqttInfoPort").text(info.port);
+	$("#mqttInfoOnline").text(info.online);
+	$("#mqttInfoCreatedAt").text(info.createdAt);
+
+	iCPEList(info.icpes);
+	groupList(info.groups);
+});
+</script>
+{% endmacro %}
