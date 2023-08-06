@@ -1,0 +1,69 @@
+# ===================
+# Generate PDF report
+# ===================
+
+- slug: amplicon-report
+  name: Amplicon report
+  requirements:
+    expression-engine: jinja
+    executor:
+      docker:
+        image: resolwebio/latex:1.0.0
+  data_name: "Report ({{ coverage|sample_name|default('?') }})"
+  version: 0.1.6
+  type: data:report:amplicon
+  category: analyses:variants
+  flow_collection: sample
+  persistence: CACHED
+  description: >
+    Create amplicon report.
+  input:
+    - name: pcr_metrics
+      label: Picard TargetedPcrMetrics
+      type: data:picard:coverage
+    - name: coverage
+      label: Coverage
+      type: data:coverage
+    - name: master_file
+      label: Amplicon master file
+      type: data:masterfile:amplicon
+    - name: template
+      label: Report template
+      type: data:file
+    - name: logo
+      label: Logo
+      type: data:file
+    - name: annot_vars
+      label: Annotated variants (snpEff)
+      type: list:data:snpeff
+  output:
+    - name: report
+      label: Report
+      type: basic:file
+    - name: panel_name
+      label: Panel name
+      type: basic:string
+  run:
+    runtime: polyglot
+    language: bash
+    program: |
+      SAMPLE_NAME={{ coverage|sample_name }}
+      SAMPLE_SLUG={{ coverage|sample_slug }}
+
+      make_report.py --sample "${SAMPLE_NAME}" \
+        --cov {{coverage.amplicon_cov.file}} \
+        --covmetrics {{coverage.cov_metrics.file}} \
+        --covplot {{coverage.covplot.file}} \
+        --metrics {{pcr_metrics.target_pcr_metrics.file}} \
+        --template {{template.file.file}} \
+        --logo {{logo.file.file}} \
+        --vcf {% for vars in annot_vars %}{{vars.annotation.file}} {% endfor %} \
+        --panel {{master_file.panel_name}}
+
+      re-checkrc
+
+      mv report.pdf "${SAMPLE_SLUG}_report.pdf"
+
+      # Reference the original .tex file for the debugging purposes
+      re-save-file report "${SAMPLE_SLUG}_report.pdf" report.tex
+      re-save panel_name {{ master_file.panel_name }}
