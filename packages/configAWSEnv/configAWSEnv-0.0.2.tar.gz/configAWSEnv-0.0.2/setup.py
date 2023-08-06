@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+from setuptools import setup
+from setuptools.command.install import install as _install
+
+class install(_install):
+    def pre_install_script(self):
+        pass
+
+    def post_install_script(self):
+        pass
+
+    def run(self):
+        self.pre_install_script()
+
+        _install.run(self)
+
+        self.post_install_script()
+
+if __name__ == '__main__':
+    setup(
+        name = 'configAWSEnv',
+        version = '0.0.2',
+        description = 'An extensible, easy to use continuous build tool for Python',
+        long_description = 'PyBuilder is a build automation tool for python.\nPyBuilder is a software build tool written in pure Python which mainly targets Python applications.\nIt is based on the concept of dependency based programming but also comes along with powerful plugin mechanism that\nallows the construction of build life cycles similar to those known from other famous build tools like Apache Maven.\n',
+        author = 'Ittiel',
+        author_email = 'ittiel@gmail.com',
+        license = 'Apache License',
+        url = 'https://github.com/taykey/schedule-aws-env',
+        scripts = ['scripts/configEnv.py'],
+        packages = ['configAWSEnv'],
+        namespace_packages = [],
+        py_modules = ['__init__'],
+        classifiers = [
+            'Programming Language :: Python',
+            'Programming Language :: Python :: Implementation :: CPython',
+            'Programming Language :: Python :: Implementation :: PyPy',
+            'Programming Language :: Python :: 2.6',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.3',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Development Status :: 4 - Beta',
+            'Environment :: Console',
+            'Intended Audience :: Developers',
+            'License :: OSI Approved :: Apache Software License',
+            'Topic :: Software Development :: Build Tools',
+            'Topic :: Software Development :: Quality Assurance',
+            'Topic :: Software Development :: Testing'
+        ],
+        entry_points = {
+            'console_scripts': ['configAWSEnv=configAWSEnv:config_ec2_env.main']
+        },
+        data_files = [],
+        package_data = {
+            'pybuilder': ['LICENSE']
+        },
+        install_requires = [
+            'argparse==1.4.0',
+            'boto3==1.4.7'
+        ],
+        dependency_links = [],
+        zip_safe = True,
+        cmdclass = {'install': install},
+        keywords = '',
+        python_requires = '',
+        obsoletes = [],
+    )
