@@ -1,0 +1,150 @@
+#!python
+# -*- coding: utf-8 -*-
+# vim: set ai et ts=4 sts=4 sw=4 syntax=python:
+
+from __future__ import print_function
+
+import io
+import json
+import sys
+
+from malibu.text import table
+from malibu.util.args import ArgumentParser
+
+__description__ = """
+    `jsontable` is a simple command-line utility written in Python on top of
+    `malibu.text.table.ObjectTable`. It takes parameters that nearly match the
+    `ObjectTable` constructor one-to-one.
+
+    Any *valid* JSON document is accepted over stdin or via the
+    `filename / --infile / -f` option.
+
+    A table header can be provided through the `title / --title / -T` option.
+
+    A delimiter can be place between each value cell with the `delimit-cells /
+    --delimit-cells / -D` option.
+"""
+
+
+def initialize_argparser():
+    """ Sets up the argparser for this script.
+    """
+
+    ap = ArgumentParser.from_argv()
+    ap.add_option(
+        option="help",
+        desc="Show help information",
+        optype=ap.OPTION_SINGLE,
+        aliases=["h"],
+        map_name="help"
+    )
+    ap.add_option(
+        option="infile",
+        desc="Input file instead of stdin",
+        optype=ap.OPTION_PARAMETERIZED,
+        aliases=["f"],
+        map_name="input_file"
+    )
+    ap.add_option(
+        option="title",
+        desc="Header name for object table",
+        optype=ap.OPTION_PARAMETERIZED,
+        aliases=["T"],
+        map_name="header_title"
+    )
+    ap.add_option(
+        option="delimit-cells",
+        desc="Insert a delimiter line between cells",
+        optype=ap.OPTION_SINGLE,
+        aliases=["D"],
+        map_name="delimit_cells"
+    )
+
+    ap.parse()
+
+    return ap
+
+
+def dump_usage_info(argparser):
+    """ Generates and dumps help/usage information from the argparser.
+    """
+
+    helpstr = """USAGE:
+
+    {binary} [OPTIONS] < somefile.json
+    {binary} [OPTIONS] -f somefile.json
+
+SYNOPSIS:
+{program_description}
+OPTIONS:
+
+"""
+
+    optdescs = [[k, v] for k, v in argparser.get_option_descriptions().items()]
+
+    for pair in optdescs:
+        option = pair[0].lstrip('-')
+        aliases = argparser.get_formatted_option_aliases(option)
+        if not aliases:
+            all_keys = pair[0]
+        else:
+            all_keys = ', '.join([pair[0]] + aliases)
+
+        helpstr += "    {:<20}  {:<}\n".format(*(all_keys, pair[1]))
+
+    print(helpstr.format(
+        binary=argparser.exec_file,
+        program_description=__description__
+    ))
+
+
+def data_from_stdin():
+    """ Reads data from stdin until EOF.
+    """
+
+    lines = []
+    for line in sys.stdin.readlines():
+        lines.append(line)
+
+    return json.loads(''.join(lines))
+
+
+def data_from_file(filename):
+    """ Reads data from a file.
+    """
+
+    lines = []
+    with io.open(filename, 'r') as infile:
+        lines = infile.readlines()
+
+    return json.loads(''.join(lines))
+
+
+if __name__ == '__main__':
+
+    ap = initialize_argparser()
+    if ap.options.get("help", False):
+        dump_usage_info(ap)
+        exit(1)
+
+    indata = None
+    if ap.options.get("input_file", None):
+        indata = data_from_file(ap.options["input_file"])
+    else:
+        indata = data_from_stdin()
+
+    header = None
+    if ap.options.get("header_title", None):
+        header = ap.options["header_title"]
+
+    delimit_cells = False
+    if ap.options.get("delimit_cells", False):
+        delimit_cells = True
+
+    table.ObjectTable(
+        indata,
+        render_subtables=True,
+        subtable_depth=2,
+        title=header,
+        delimit_cells=delimit_cells
+    ).print_table()
