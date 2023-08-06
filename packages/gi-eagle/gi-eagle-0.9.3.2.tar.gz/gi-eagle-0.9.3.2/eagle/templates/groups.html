@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% from "macros.html" import igv_open_file %}
+{% block title %}Groups{% endblock %}
+{% block body %}
+{% if message %}
+<div data-alert class="alert-box {% if error %} alert {% else %} success {% endif %}">
+    {{ message }}
+        <a href="#" class="close">&times;</a>
+</div>
+{% endif %}
+<div class="row left">
+<div class="small-12">
+<ul class="accordion" data-accordion data-multi-expand>
+    {% for g in groups %}
+    <li class="accordion-navigation">
+        <a href="#{{g}}">{{g}}</a> 
+        <div id="{{g}}" class="content">
+            <form method=post action="{{ url_for('groups') }}">
+                <input type="hidden" name="action" value="update" />
+                <input type="hidden" name="group" value="{{g}}" />
+                <label>Samples</label>
+                <select tabindex="-1" multiple name="samples">
+                    {% for sample in available_samples %}
+                    <option value="{{ sample.samplename }}" {% if sample.samplename in group_samples[g] %}selected{%endif%}>{{ sample.samplename }} - {{ sample.disease }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" name="submit" value="submit" class="btn tiny success">Save</button>
+                <a href="#" onclick="$('#reveal-{{g}}').foundation('reveal', 'open');" class="button tiny alert">Delete</a>
+            </form>
+                <div id="reveal-{{g}}" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+                      <h2 id="modalTitle">Are you sure?</h2>
+                          <p>Deleting a group cannot be undone!</p>
+                            <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+            <form method=post action="{{ url_for('groups') }}">
+                <input type="hidden" name="action" value="update" />
+                <input type="hidden" name="group" value="{{g}}" />
+                <button type="submit" name="submit" value="delete" class="btn tiny alert">Yes, delete group {{g}}</button>
+                <a href="#" onclick="$('#reveal-{{g.basename}}').foundation('reveal', 'close');" class="button tiny">No, keep it</a>
+            </form>
+                </div>
+        </div>
+    </li>
+
+    {% endfor %}
+    <li class="accordion-navigation">
+        <a href="#add" class="button" style="background:#008CBA;color:#FFFFFF">Add Group</a>
+        <div id="add" class="content">
+            <form method=post action="{{ url_for('groups') }}">
+                <input type="hidden" name="action" value="create" />
+                <div class="row">
+                    <div class="small-12 medium-4 large-3">
+                        <label>Name</label>
+                        <input class="display: block" type="text" name="group"/>
+                    </div>
+                    <select tabindex="-1" multiple name="samples">
+                        {% for sample in available_samples %}
+                        <option value="{{ sample.samplename }}">{{ sample.samplename }} - {{ sample.disease }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn tiny success">Create</button>
+                    <button type="reset" class="btn tiny alert">Clear</button>
+                </div>
+            </form>
+        </div>
+    </li>
+</ul>
+</div>
+</div>
+
+<script>
+$(document).foundation({
+    accordion: {
+        // specify the class used for accordion panels
+        content_class: 'content',
+        // specify the class used for active (or open) accordion panels
+        active_class: 'active',
+        // allow multiple accordion panels to be active at the same time
+        multi_expand: true,
+        // allow accordion panels to be closed by clicking on their headers
+        // setting to false only closes accordion panels when another is opened
+        toggleable: true
+    }
+});
+</script>
+{% endblock %}
+

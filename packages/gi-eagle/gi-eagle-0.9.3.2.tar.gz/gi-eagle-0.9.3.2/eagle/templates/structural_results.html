@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% from "macros.html" import igv_open_file, all_link %}
+{% block caption %}{% endblock %}
+{% block title %}Structural{% endblock %}
+
+
+{% block body %}
+    <div class="row left">
+	<div class="columns small-12 medium-8 large-8">
+        <ul class="accordion" data-accordion="myAccordionGroup" style="margin-left:0px">
+            <li class="accordion-navigation">
+                <a href="#panel1c">Parameters</a>
+                <div id="panel1c" class="content">
+                    <div class="small-12 medium-12 large-12 columns left">
+                        <table>
+                            <thead>
+                                <tr><th>Name</th><th>Value</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Case</td>
+                                    <td>
+                                        {% for sample in query.case %}
+                                        {{ sample }}{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Chromosomes</td>
+                                    <td>
+                                        {% for chrom in query.chromosomes %}
+                                        {{ chrom }}{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>    
+                    </div>
+                </div>
+            </li>
+        </ul>
+	</div>
+    <button class="columns right small-12 medium-2 large-2 exportbutton" onclick="$(table2excel).toCSV('recessive.csv')">Export to .csv</button>
+	<button class="columns right small-12 medium-2 large-2" id="exportbutton" onclick="tableToExcel('table2excel', 'structural.xls')">Export to .xls</button>
+    </div>
+
+    <div class="row left">
+    <table class="datatable" id="table2excel" style="margin-top: 20px;">
+    <thead>
+        <tr>
+            <th></th>
+            <th>#</th>
+            <th>Sample</th>
+            <th>Position</th>
+            <th>Type</th>
+            <th>Length</th>
+            <th>Gene-ID</th>
+            <th colspan="3">Links</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in results %}
+        <tr>
+            <td></td>
+            <td>{{ loop.index }}</td>
+            <td>
+                {{ igv_open_file('bam' + "/" + r.sample + '.bam', r.sample) }}
+            </td>
+            <td>{{ r.chrom }}:{{ r.start }}-{{ r.end }}</td>
+            <td>{{ r.typ }}</td>
+            <td> {{ r.length }}</td>
+            <td>{{ r.gene_id }}</td>
+            {{ all_link(r.chrom, r.start, None, None, r.end+1) }}
+        </tr>
+    {% endfor%}
+    </tbody>
+    </table>
+    </div>
+{% endblock %}
+
