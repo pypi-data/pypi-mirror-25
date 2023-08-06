@@ -1,0 +1,623 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>modlamp.ml &#8212; modlAMP v3.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'v3.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/modlamp.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="modlAMP v3.3.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">modlAMP v3.3.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for modlamp.ml</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. currentmodule:: modlamp.ml</span>
+
+<span class="sd">.. moduleauthor:: modlab Gisela Gabernet ETH Zurich &lt;gisela.gabernet@pharma.ethz.ch&gt;,</span>
+<span class="sd">                  Alex Mueller ETH Zurich &lt;alex.mueller@pharma.ethz.ch&gt;</span>
+
+<span class="sd">This module contains different functions to facilitate machine learning with peptides, mainly making use of the</span>
+<span class="sd">scikit-learn Python package. Two machine learning models are available, whose parameters can be tuned. For more</span>
+<span class="sd">information on the machine learning modules please check the `scikit-learn documentation &lt;http://scikit-learn.org&gt;`_.</span>
+
+<span class="sd">**The two available machine learning models in this module are:**</span>
+
+<span class="sd">=========================   =======================================================================================</span>
+<span class="sd">Model                       Reference :sup:`[1]`</span>
+<span class="sd">=========================   =======================================================================================</span>
+<span class="sd">Support Vector Machine      `sklearn.svm.SVC &lt;http://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html&gt;`_</span>
+<span class="sd">Random Forest               `sklearn.ensemble.RandomForestClassifier &lt;http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html&gt;`_</span>
+<span class="sd">=========================   =======================================================================================</span>
+
+<span class="sd">[1] F. Pedregosa *et al., J. Mach. Learn. Res.* **2011**, 12, 2825–2830.</span>
+
+<span class="sd">**The following functions are included in this module:**</span>
+
+<span class="sd">============================================    ========================================================================</span>
+<span class="sd">Function name                                   Description</span>
+<span class="sd">============================================    ========================================================================</span>
+<span class="sd">:py:func:`modlamp.ml.train_best_model`          Performs a grid search on different model parameters and returns the</span>
+<span class="sd">                                                best fitted model and its performance as the cross-validation MCC.</span>
+<span class="sd">:py:func:`modlamp.ml.plot_validation_curve`     Plotting a validation curve for any parameter from the grid search.</span>
+<span class="sd">:py:func:`modlamp.ml.predict`                   Predict the class labels or class probabilities for given peptides.</span>
+<span class="sd">:py:func:`modlamp.ml.score_cv`                  Evaluate the performance of a given model through cross-validation.</span>
+<span class="sd">:py:func:`modlamp.ml.score_testset`             Evaluate the performance of a given model through test-set prediction.</span>
+<span class="sd">============================================    ========================================================================</span>
+
+
+<span class="sd">.. versionadded:: 2.2.0</span>
+<span class="sd">.. versionchanged: 2.7.8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">cross_val_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="k">import</span> <span class="n">RandomForestClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">GridSearchCV</span><span class="p">,</span> <span class="n">StratifiedKFold</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">validation_curve</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">mets</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="k">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">sklearn.svm</span> <span class="k">import</span> <span class="n">SVC</span>
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="k">import</span> <span class="n">clone</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Alex Müller, Gisela Gabernet&quot;</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s2">&quot;restructuredtext en&quot;</span>
+
+
+<div class="viewcode-block" id="train_best_model"><a class="viewcode-back" href="../../modlamp.html#modlamp.ml.train_best_model">[docs]</a><span class="k">def</span> <span class="nf">train_best_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">sample_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+                     <span class="n">score</span><span class="o">=</span><span class="n">make_scorer</span><span class="p">(</span><span class="n">matthews_corrcoef</span><span class="p">),</span> <span class="n">param_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function performs a parameter grid search on a selected classifier model and peptide training data set.</span>
+<span class="sd">    It returns a scikit-learn pipeline that performs standard scaling and contains the best model found by the</span>
+<span class="sd">    grid search according to the Matthews correlation coefficient.</span>
+<span class="sd">    (see `sklearn.preprocessing &lt;http://scikit-learn.org/stable/modules/preprocessing.html&gt;`_, `sklearn.grid_search</span>
+<span class="sd">    &lt;http://scikit-learn.org/stable/modules/grid_search.html#exhaustive-grid-search&gt;`_, `sklearn.pipeline.Pipeline</span>
+<span class="sd">    &lt;http://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html#sklearn.pipeline.Pipeline&gt;`_).</span>
+<span class="sd">    </span>
+<span class="sd">    :param model: {str} model to train. Choose between ``&#39;svm&#39;`` (Support Vector Machine) or ``&#39;rf&#39;`` (Random Forest).</span>
+<span class="sd">    :param x_train: {array} descriptor values for training data.</span>
+<span class="sd">    :param y_train: {array} class values for training data.</span>
+<span class="sd">    :param sample_weights: {array} sample weights for training data.</span>
+<span class="sd">    :param scaler: {scaler} scaler to use in the pipe to scale data prior to training. Choose from</span>
+<span class="sd">        ``sklearn.preprocessing``, e.g. ``StandardScaler()``, ``MinMaxScaler()``, ``Normalizer()``.</span>
+<span class="sd">    :param score: {metrics instance} scoring function built from make_scorer() or a predefined value in string form</span>
+<span class="sd">        (choose from the scikit-learn</span>
+<span class="sd">        `scoring-parameters &lt;http://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter&gt;`_).</span>
+<span class="sd">    :param param_grid: {dict} parameter grid for the gridsearch (see</span>
+<span class="sd">        `sklearn.grid_search &lt;http://scikit-learn.org/stable/modules/model_evaluation.html&gt;`_).</span>
+<span class="sd">    :param n_jobs: {int} number of parallel jobs to use for calculation. if ``-1``, all available cores are used.</span>
+<span class="sd">    :param cv: {int} number of folds for cross-validation.</span>
+<span class="sd">    :return: best estimator pipeline.</span>
+
+
+<span class="sd">    **Default parameter grids:**</span>
+
+<span class="sd">    ==============        ==============================================================================</span>
+<span class="sd">    Model                 Parameter grid</span>
+<span class="sd">    ==============        ==============================================================================</span>
+<span class="sd">    SVM Model             param_grid = [{&#39;clf__C&#39;: param_range, &#39;clf__kernel&#39;: [&#39;linear&#39;]},</span>
+<span class="sd">                          {&#39;clf__C&#39;: param_range,    &#39;clf__gamma&#39;: param_range, &#39;clf__kernel&#39;: [&#39;rbf&#39;]}]</span>
+
+<span class="sd">    Random Forest         param_grid = [{&#39;clf__n_estimators&#39;: [10, 50, 100, 500],</span>
+<span class="sd">                          &#39;clf__max_depth&#39;: [3, None],</span>
+<span class="sd">                          &#39;clf__max_features&#39;: [1, 2, 3, 5, 10],</span>
+<span class="sd">                          &#39;clf__min_samples_split&#39;: [1, 3, 5, 10],</span>
+<span class="sd">                          &#39;clf__min_samples_leaf&#39;: [1, 3, 5, 10],</span>
+<span class="sd">                          &#39;clf__bootstrap&#39;: [True, False],</span>
+<span class="sd">                          &#39;clf__criterion&#39;: [&quot;gini&quot;, &quot;entropy&quot;]}]</span>
+<span class="sd">    ==============        ==============================================================================</span>
+
+
+<span class="sd">    **Useful methods implemented in scikit-learn:**</span>
+
+<span class="sd">    =================            =============================================================</span>
+<span class="sd">    Method                       Description</span>
+<span class="sd">    =================            =============================================================</span>
+<span class="sd">    fit(X, y)                    fit the model with the same parameters to new training data.</span>
+<span class="sd">    score(X, y)                  get the score of the model for test data.</span>
+<span class="sd">    predict(X)                   get predictions for new data.</span>
+<span class="sd">    predict_proba(X)             get probability predictions for [class0, class1]</span>
+<span class="sd">    get_params()                 get parameters of the trained model</span>
+<span class="sd">    =================            =============================================================</span>
+
+<span class="sd">    :Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; from modlamp.ml import train_best_model</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.datasets import load_ACPvsRandom</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.descriptors import PeptideDescriptor</span>
+
+<span class="sd">    Loading a dataset for training:</span>
+
+<span class="sd">    &gt;&gt;&gt; data = load_ACPvsRandom()</span>
+<span class="sd">    &gt;&gt;&gt; len(data.sequences)</span>
+<span class="sd">    826</span>
+<span class="sd">    &gt;&gt;&gt;list(data.target_names)</span>
+<span class="sd">    [&#39;Random&#39;, &#39;ACP&#39;]</span>
+
+<span class="sd">    Calculating the pepCATS descriptor values in auto-correlation modality:</span>
+
+<span class="sd">    &gt;&gt;&gt; descr = PeptideDescriptor(data.sequences, scalename=&#39;pepcats&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; descr.calculate_autocorr(7)</span>
+<span class="sd">    &gt;&gt;&gt; descr.descriptor.shape</span>
+<span class="sd">    (826, 42)</span>
+<span class="sd">    &gt;&gt;&gt; descr.descriptor</span>
+<span class="sd">    array([[ 1.    ,  0.15      ,  0.        , ...,  0.35714286,  0.21428571,  0.        ],</span>
+<span class="sd">       [ 0.64      ,  0.12      ,  0.32      , ...,  0.05263158,  0.        ,  0.        ],</span>
+<span class="sd">       [ 1.        ,  0.23809524,  0.        , ...,  0.53333333,  0.26666667,  0.        ],</span>
+<span class="sd">       ...,</span>
+<span class="sd">       [ 0.5       ,  0.22222222,  0.44444444, ...,  0.33333333,  0.        ,  0.        ],</span>
+<span class="sd">       [ 0.70588235,  0.17647059,  0.23529412, ...,  0.09090909,  0.09090909,  0.        ],</span>
+<span class="sd">       [ 0.6875    ,  0.1875    ,  0.1875    , ...,  0.2       ,  0.        ,  0.        ]])</span>
+
+<span class="sd">    Training an SVM model on this descriptor data:</span>
+
+<span class="sd">    &gt;&gt;&gt; X_train = descr.descriptor</span>
+<span class="sd">    &gt;&gt;&gt; y_train = data.target</span>
+<span class="sd">    &gt;&gt;&gt; best_svm_model = train_best_model(&#39;svm&#39;, X_train, y_train)</span>
+<span class="sd">    Best score (scorer: make_scorer(matthews_corrcoef)) and parameters from a 10-fold cross validation:</span>
+<span class="sd">    0.739995453978</span>
+<span class="sd">    {&#39;clf__gamma&#39;: 0.1, &#39;clf__C&#39;: 10.0, &#39;clf__kernel&#39;: &#39;rbf&#39;}</span>
+
+<span class="sd">    &gt;&gt;&gt; best_svm_model.get_params()</span>
+<span class="sd">    {&#39;clf&#39;: SVC(C=10.0, cache_size=200, class_weight=&#39;balanced&#39;, coef0=0.0,</span>
+<span class="sd">       decision_function_shape=None, degree=3, gamma=0.1, kernel=&#39;rbf&#39;,</span>
+<span class="sd">       max_iter=-1, probability=True, random_state=1, shrinking=True, tol=0.001,</span>
+<span class="sd">       verbose=False),</span>
+<span class="sd">    ...</span>
+<span class="sd">    &#39;steps&#39;: [(&#39;scl&#39;, StandardScaler(copy=True, with_mean=True, with_std=True)),</span>
+<span class="sd">      (&#39;clf&#39;, SVC(C=10.0, cache_size=200, class_weight=&#39;balanced&#39;, coef0=0.0,</span>
+<span class="sd">         decision_function_shape=None, degree=3, gamma=0.1, kernel=&#39;rbf&#39;,</span>
+<span class="sd">         max_iter=-1, probability=True, random_state=1, shrinking=True, tol=0.001,</span>
+<span class="sd">         verbose=False))]}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;performing grid search...&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;svm&#39;</span><span class="p">:</span>
+        <span class="n">pipe_svc</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">([(</span><span class="s1">&#39;scl&#39;</span><span class="p">,</span> <span class="n">scaler</span><span class="p">),</span>
+                             <span class="p">(</span><span class="s1">&#39;clf&#39;</span><span class="p">,</span> <span class="n">SVC</span><span class="p">(</span><span class="n">class_weight</span><span class="o">=</span><span class="s1">&#39;balanced&#39;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">probability</span><span class="o">=</span><span class="kc">True</span><span class="p">))])</span>
+        
+        <span class="k">if</span> <span class="n">param_grid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">param_range</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.00001</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">]</span>
+            <span class="n">param_grid</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;clf__C&#39;</span><span class="p">:</span> <span class="n">param_range</span><span class="p">,</span>
+                           <span class="s1">&#39;clf__kernel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;linear&#39;</span><span class="p">]},</span>
+                          <span class="p">{</span><span class="s1">&#39;clf__C&#39;</span><span class="p">:</span> <span class="n">param_range</span><span class="p">,</span>
+                           <span class="s1">&#39;clf__gamma&#39;</span><span class="p">:</span> <span class="n">param_range</span><span class="p">,</span>
+                           <span class="s1">&#39;clf__kernel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;rbf&#39;</span><span class="p">]}]</span>
+
+        <span class="n">gs</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">estimator</span><span class="o">=</span><span class="n">pipe_svc</span><span class="p">,</span>
+                          <span class="n">param_grid</span><span class="o">=</span><span class="n">param_grid</span><span class="p">,</span>
+                          <span class="n">fit_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;clf__sample_weight&#39;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="p">},</span>
+                          <span class="n">scoring</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+                          <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">,</span>
+                          <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
+        
+        <span class="n">gs</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Best score (scorer: </span><span class="si">%s</span><span class="s2">) and parameters from a </span><span class="si">%d</span><span class="s2">-fold cross validation:&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">cv</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MCC score:</span><span class="se">\t</span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">gs</span><span class="o">.</span><span class="n">best_score_</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Parameters:</span><span class="se">\t</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">gs</span><span class="o">.</span><span class="n">best_params_</span><span class="p">)</span>
+        
+        <span class="c1"># Set the best parameters to the best estimator</span>
+        <span class="n">best_classifier</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">best_estimator_</span>
+        <span class="k">return</span> <span class="n">best_classifier</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">model</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;rf&#39;</span><span class="p">:</span>
+        <span class="n">pipe_rf</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">([(</span><span class="s1">&#39;scl&#39;</span><span class="p">,</span> <span class="n">scaler</span><span class="p">),</span>
+                            <span class="p">(</span><span class="s1">&#39;clf&#39;</span><span class="p">,</span> <span class="n">RandomForestClassifier</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">class_weight</span><span class="o">=</span><span class="s1">&#39;balanced&#39;</span><span class="p">))])</span>
+        
+        <span class="k">if</span> <span class="n">param_grid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">param_grid</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;clf__n_estimators&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">],</span>
+                           <span class="s1">&#39;clf__max_features&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;sqrt&#39;</span><span class="p">,</span> <span class="s1">&#39;log2&#39;</span><span class="p">],</span>
+                           <span class="s1">&#39;clf__bootstrap&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">True</span><span class="p">],</span>
+                           <span class="s1">&#39;clf__criterion&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;gini&quot;</span><span class="p">]}]</span>
+        
+        <span class="n">gs</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">estimator</span><span class="o">=</span><span class="n">pipe_rf</span><span class="p">,</span>
+                          <span class="n">param_grid</span><span class="o">=</span><span class="n">param_grid</span><span class="p">,</span>
+                          <span class="n">fit_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;clf__sample_weight&#39;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="p">},</span>
+                          <span class="n">scoring</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+                          <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">,</span>
+                          <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
+        
+        <span class="n">gs</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Best score (scorer: </span><span class="si">%s</span><span class="s2">) and parameters from a </span><span class="si">%d</span><span class="s2">-fold cross validation:&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">cv</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MCC score:</span><span class="se">\t</span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">gs</span><span class="o">.</span><span class="n">best_score_</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Parameters:</span><span class="se">\t</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">gs</span><span class="o">.</span><span class="n">best_params_</span><span class="p">)</span>
+        
+        <span class="c1"># Set the best parameters to the best estimator</span>
+        <span class="n">best_classifier</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">best_estimator_</span>
+        <span class="k">return</span> <span class="n">best_classifier</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Model not supported, please choose between &#39;svm&#39; and &#39;rf&#39;.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plot_validation_curve"><a class="viewcode-back" href="../../modlamp.html#modlamp.ml.plot_validation_curve">[docs]</a><span class="k">def</span> <span class="nf">plot_validation_curve</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_range</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">make_scorer</span><span class="p">(</span>
+        <span class="n">matthews_corrcoef</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Validation Curve&quot;</span><span class="p">,</span> <span class="n">xlab</span><span class="o">=</span><span class="s2">&quot;parameter range&quot;</span><span class="p">,</span> <span class="n">ylab</span><span class="o">=</span><span class="s2">&quot;MCC&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function plots a cross-validation curve for the specified classifier on all tested parameters given in the</span>
+<span class="sd">    option ``param_range``.</span>
+
+<span class="sd">    :param classifier: {classifier instance} classifier or validation curve (e.g. sklearn.svm.SVC).</span>
+<span class="sd">    :param x_train: {array} descriptor values for training data.</span>
+<span class="sd">    :param y_train: {array} class values for training data.</span>
+<span class="sd">    :param param_name: {string} parameter to assess in the validation curve plot. For SVM,</span>
+<span class="sd">        &quot;clf__C&quot; (C parameter), &quot;clf__gamma&quot; (gamma parameter). For Random Forest, &quot;clf__n_estimators&quot; (number of trees)</span>
+<span class="sd">        &quot;clf__max_depth&quot; (max num of branches per tree, &quot;clf__min_samples_split&quot; (min number of samples required to</span>
+<span class="sd">        split an internal tree node), &quot;clf__min_samples_leaf&quot; (min number of samples in newly created leaf).</span>
+<span class="sd">    :param param_range: {list} parameter range for the validation curve.</span>
+<span class="sd">    :param cv: {int} number of folds for cross-validation.</span>
+<span class="sd">    :param score: {metrics instance} scoring function built from make_scorer() or a predefined value in string form</span>
+<span class="sd">        `sklearn.model_evaluation.scoring-parameter</span>
+<span class="sd">        &lt;http://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter&gt;`_.</span>
+<span class="sd">    :param title: {str} graph title</span>
+<span class="sd">    :param xlab: {str} x axis label.</span>
+<span class="sd">    :param ylab: {str} y axis label.</span>
+<span class="sd">    :param n_jobs: {int} number of parallel jobs to use for calculation. if ``-1``, all available cores are used.</span>
+<span class="sd">    :param filename: {str} if filename given the figure is stored in the specified path.</span>
+<span class="sd">    :return: plot of the validation curve.</span>
+
+<span class="sd">    :Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; from modlamp.ml import train_best_model</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.datasets import load_ACPvsRandom</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.descriptors import PeptideDescriptor</span>
+
+<span class="sd">    Loading a dataset for training:</span>
+
+<span class="sd">    &gt;&gt;&gt; data = load_ACPvsRandom()</span>
+<span class="sd">    &gt;&gt;&gt; len(data.sequences)</span>
+<span class="sd">    826</span>
+<span class="sd">    &gt;&gt;&gt;list(data.target_names)</span>
+<span class="sd">    [&#39;Random&#39;, &#39;ACP&#39;]</span>
+
+<span class="sd">    Calculating the pepCATS descriptor values in auto-correlation modality:</span>
+
+<span class="sd">    &gt;&gt;&gt; descr = PeptideDescriptor(data.sequences, scalename=&#39;pepcats&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; descr.calculate_autocorr(7)</span>
+<span class="sd">    &gt;&gt;&gt; descr.descriptor.shape</span>
+<span class="sd">    (826, 42)</span>
+<span class="sd">    &gt;&gt;&gt; descr.descriptor</span>
+<span class="sd">    array([[ 1.    ,  0.15      ,  0.        , ...,  0.35714286,  0.21428571,  0.        ],</span>
+<span class="sd">       [ 0.64      ,  0.12      ,  0.32      , ...,  0.05263158,  0.        ,  0.        ],</span>
+<span class="sd">       [ 1.        ,  0.23809524,  0.        , ...,  0.53333333,  0.26666667,  0.        ],</span>
+<span class="sd">       ...,</span>
+<span class="sd">       [ 0.5       ,  0.22222222,  0.44444444, ...,  0.33333333,  0.        ,  0.        ],</span>
+<span class="sd">       [ 0.70588235,  0.17647059,  0.23529412, ...,  0.09090909,  0.09090909,  0.        ],</span>
+<span class="sd">       [ 0.6875    ,  0.1875    ,  0.1875    , ...,  0.2       ,  0.        ,  0.        ]])</span>
+
+<span class="sd">    Training an SVM model with this data:</span>
+
+<span class="sd">    &gt;&gt;&gt; X_train = descr.descriptor</span>
+<span class="sd">    &gt;&gt;&gt; y_train = data.target</span>
+<span class="sd">    &gt;&gt;&gt; best_svm_model = train_best_model(&#39;svm&#39;, X_train, y_train)</span>
+<span class="sd">    Best score (scorer: make_scorer(matthews_corrcoef)) and parameters from a 10-fold cross validation:</span>
+<span class="sd">    0.739995453978</span>
+<span class="sd">    {&#39;clf__gamma&#39;: 0.1, &#39;clf__C&#39;: 10.0, &#39;clf__kernel&#39;: &#39;rbf&#39;}</span>
+
+<span class="sd">    &gt;&gt;&gt; plot_validation_curve(best_svm_model, X_train, y_train, param_name=&#39;clf__gamma&#39;,</span>
+<span class="sd">                              param_range=[0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])</span>
+
+<span class="sd">    .. image:: ../docs/static/validation_curve.png</span>
+<span class="sd">        :height: 300px</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">train_scores</span><span class="p">,</span> <span class="n">test_scores</span> <span class="o">=</span> <span class="n">validation_curve</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_range</span><span class="p">,</span>
+                                                 <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="n">score</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
+    <span class="n">train_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">train_scores</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">train_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">train_scores</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">test_scores</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">test_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">test_scores</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="c1"># plotting</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">xlab</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">ylab</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">param_range</span><span class="p">,</span> <span class="n">train_mean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Training score&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">param_range</span><span class="p">,</span> <span class="n">train_mean</span> <span class="o">-</span> <span class="n">train_std</span><span class="p">,</span> <span class="n">train_mean</span> <span class="o">+</span> <span class="n">train_std</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">param_range</span><span class="p">,</span> <span class="n">test_mean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Cross-validation score&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;g&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">param_range</span><span class="p">,</span> <span class="n">test_mean</span> <span class="o">-</span> <span class="n">test_std</span><span class="p">,</span> <span class="n">test_mean</span> <span class="o">+</span> <span class="n">test_std</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;g&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="predict"><a class="viewcode-back" href="../../modlamp.html#modlamp.ml.predict">[docs]</a><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">seqs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function can be used to predict novel peptides with a trained classifier model. The function returns a</span>
+<span class="sd">    ``pandas.DataFrame`` with predictions using the specified estimator and test data. If true class is provided,</span>
+<span class="sd">    it returns the scoring value for the test data.</span>
+
+<span class="sd">    :param classifier: {classifier instance} classifier used for predictions.</span>
+<span class="sd">    :param X: {array} descriptor values of the peptides to be predicted.</span>
+<span class="sd">    :param seqs: {list} sequences of the peptides in ``X``.</span>
+<span class="sd">    :param names: {list} (optional) names of the peptides in ``X``.</span>
+<span class="sd">    :param y: {array} (optional) true (known) classes of the peptides.</span>
+<span class="sd">    :param filename: {string} (optional) output filename to store the predictions to (``.csv`` format); if ``None``:</span>
+<span class="sd">        not saved.</span>
+<span class="sd">    :return: ``pandas.DataFrame`` containing predictions for ``X``. ``P_class0`` and ``P_class1``</span>
+<span class="sd">        are the predicted probability of the peptide belonging to class 0 and class 1, respectively.</span>
+
+<span class="sd">    :Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; from modlamp.ml import train_best_model, predict</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.datasets import load_ACPvsRandom</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.descriptors import PeptideDescriptor</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.sequences import Helices</span>
+<span class="sd">    </span>
+<span class="sd">    Loading data for model training:</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; data = load_ACPvsRandom()</span>
+
+<span class="sd">    Calculating descriptor values from the data:</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; desc = PeptideDescriptor(data.sequences, scalename=&#39;pepcats&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; desc.calculate_autocorr(7)</span>
+<span class="sd">    &gt;&gt;&gt; best_svm_model = train_best_model(&#39;svm&#39;, desc.descriptor, data.target)</span>
+
+<span class="sd">    Generating 10 *de novo* helical sequences to predict their activity:</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; H = Helices(seqnum=10, lenmin=7, lenmax=30)</span>
+<span class="sd">    &gt;&gt;&gt; H.generate_sequences()</span>
+
+<span class="sd">    Calculating descriptor values for the newly generated sequences:</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; descH = PeptideDescriptor(H.sequences, scalename=&#39;pepcats&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; descH.calculate_autocorr(7)</span>
+
+<span class="sd">    &gt;&gt;&gt; df = predict(best_svm_model, X=descH.descriptor, seqs=descH.sequences)</span>
+<span class="sd">    &gt;&gt;&gt; df.head(3)  # all three shown sequences are predicted active (class 1)</span>
+<span class="sd">                     Sequence       P_class0        P_class1</span>
+<span class="sd">    IAGKLAKVGLKIGKIGGKLVKGVLK       0.009167        0.990833</span>
+<span class="sd">                  LGVRVLRIIIR       0.007239        0.992761</span>
+<span class="sd">                VGIRLARGVGRIG       0.071436        0.928564</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">preds</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">y</span> <span class="ow">and</span> <span class="n">names</span><span class="p">):</span>
+        <span class="n">d_pred</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;P_class0&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;P_class1&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]}</span>
+        <span class="n">df_pred</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">d_pred</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">seqs</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">y</span><span class="p">:</span>
+        <span class="n">d_pred</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="n">names</span><span class="p">,</span> <span class="s1">&#39;P_class0&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;P_class1&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]}</span>
+        <span class="n">df_pred</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">d_pred</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">seqs</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">d_pred</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;P_class0&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;P_class1&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;True_class&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+        <span class="n">df_pred</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">d_pred</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">seqs</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">d_pred</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="n">names</span><span class="p">,</span> <span class="s1">&#39;P_class0&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;P_class1&#39;</span><span class="p">:</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;True_class&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+        <span class="n">df_pred</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">d_pred</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">seqs</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">df_pred</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;-%Y%m</span><span class="si">%d</span><span class="s2">esc-%H%M%S.csv&quot;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">df_pred</span></div>
+
+
+<div class="viewcode-block" id="score_cv"><a class="viewcode-back" href="../../modlamp.html#modlamp.ml.score_cv">[docs]</a><span class="k">def</span> <span class="nf">score_cv</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function can be used to evaluate the performance of selected classifier model. It returns the average</span>
+<span class="sd">    **cross-validation scores** for the specified scoring metrics in a ``pandas.DataFrame``.</span>
+
+<span class="sd">    :param classifier: {classifier instance} a classifier model to be evaluated.</span>
+<span class="sd">    :param X: {array} descriptor values for training data.</span>
+<span class="sd">    :param y: {array} class values for training data.</span>
+<span class="sd">    :param sample_weights: {array} weights for training data.</span>
+<span class="sd">    :param cv: {int} number of folds for cross-validation.</span>
+<span class="sd">    :param shuffle: {bool} suffle data before making the K-fold split.</span>
+<span class="sd">    :return: ``pandas.DataFrame`` containing the cross validation scores for the specified metrics.</span>
+<span class="sd">    :Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; from modlamp.ml import train_best_model, score_cv</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.datasets import load_ACPvsRandom</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.descriptors import PeptideDescriptor</span>
+<span class="sd">    </span>
+<span class="sd">    Loading data for model training:</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; data = load_ACPvsRandom()</span>
+
+<span class="sd">    Calculating descriptor values from the data:</span>
+
+<span class="sd">    &gt;&gt;&gt; desc = PeptideDescriptor(data.sequences, scalename=&#39;pepcats&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; desc.calculate_autocorr(7)</span>
+<span class="sd">    &gt;&gt;&gt; best_svm_model = train_best_model(&#39;svm&#39;, desc.descriptor, data.target)</span>
+
+<span class="sd">    Get the cross-validation scores:</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; score_cv(best_svm_model, desc.descriptor, data.target, cv=5)</span>
+<span class="sd">                   CV_0   CV_1   CV_2   CV_3   CV_4   mean    std</span>
+<span class="sd">        MCC        0.785  0.904  0.788  0.757  0.735  0.794  0.059</span>
+<span class="sd">        accuracy   0.892  0.952  0.892  0.880  0.867  0.896  0.029</span>
+<span class="sd">        precision  0.927  0.974  0.953  0.842  0.884  0.916  0.048</span>
+<span class="sd">        recall     0.864  0.925  0.854  0.889  0.864  0.879  0.026</span>
+<span class="sd">        f1         0.894  0.949  0.901  0.865  0.874  0.896  0.029</span>
+<span class="sd">        roc_auc    0.893  0.951  0.899  0.881  0.868  0.898  0.028</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cv_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cv</span><span class="p">):</span>
+        <span class="n">cv_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;CV_</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+
+    <span class="n">cv_scores</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;matthews_corrcoef&#39;</span><span class="p">,</span> <span class="s1">&#39;accuracy_score&#39;</span><span class="p">,</span> <span class="s1">&#39;precision_score&#39;</span><span class="p">,</span> <span class="s1">&#39;recall_score&#39;</span><span class="p">,</span> <span class="s1">&#39;f1_score&#39;</span><span class="p">,</span> <span class="s1">&#39;roc_auc_score&#39;</span><span class="p">]</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MCC&#39;</span><span class="p">,</span> <span class="s1">&#39;accuracy&#39;</span><span class="p">,</span> <span class="s1">&#39;precision&#39;</span><span class="p">,</span> <span class="s1">&#39;recall&#39;</span><span class="p">,</span> <span class="s1">&#39;f1&#39;</span><span class="p">,</span> <span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span>
+
+    <span class="n">kf</span> <span class="o">=</span> <span class="n">StratifiedKFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="n">shuffle</span><span class="p">)</span>
+    <span class="n">clf</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">classifier</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">fold_train_index</span><span class="p">,</span> <span class="n">fold_test_index</span> <span class="ow">in</span> <span class="n">kf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="n">Xcv_train</span><span class="p">,</span> <span class="n">Xcv_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">fold_train_index</span><span class="p">],</span> <span class="n">X</span><span class="p">[</span><span class="n">fold_test_index</span><span class="p">]</span>
+        <span class="n">ycv_train</span><span class="p">,</span> <span class="n">ycv_test</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">fold_train_index</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">fold_test_index</span><span class="p">]</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">sample_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weightcv_train</span><span class="p">,</span> <span class="n">weightcv_test</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="p">[</span><span class="n">fold_train_index</span><span class="p">],</span> <span class="n">sample_weights</span><span class="p">[</span><span class="n">fold_test_index</span><span class="p">]</span>
+            <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Xcv_train</span><span class="p">,</span> <span class="n">ycv_train</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">weightcv_train</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+                <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">mets</span><span class="p">,</span> <span class="n">f</span><span class="p">)(</span><span class="n">ycv_test</span><span class="p">,</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">Xcv_test</span><span class="p">),</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">weightcv_test</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Xcv_train</span><span class="p">,</span> <span class="n">ycv_train</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+                <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">mets</span><span class="p">,</span> <span class="n">f</span><span class="p">)(</span><span class="n">ycv_test</span><span class="p">,</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">Xcv_test</span><span class="p">)))</span>
+
+        <span class="n">cv_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+
+    <span class="n">dict_scores</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">colname</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cv_names</span><span class="p">,</span> <span class="n">cv_scores</span><span class="p">):</span>
+        <span class="n">dict_scores</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">colname</span><span class="p">:</span> <span class="n">score</span><span class="p">})</span>
+
+    <span class="n">df_scores</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dict_scores</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+
+    <span class="n">df_scores</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">df_scores</span><span class="p">[</span><span class="s1">&#39;std&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_scores</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df_scores</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="score_testset"><a class="viewcode-back" href="../../modlamp.html#modlamp.ml.score_testset">[docs]</a><span class="k">def</span> <span class="nf">score_testset</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">sample_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the test set scores for the specified scoring metrics in a ``pandas.DataFrame``. The calculated metrics</span>
+<span class="sd">    are Matthews correlation coefficient, accuracy, precision, recall, f1 and area under the Receiver-Operator Curve</span>
+<span class="sd">    (roc_auc). See `sklearn.metrics &lt;http://scikit-learn.org/stable/modules/classes.html#sklearn-metrics-metrics&gt;`_</span>
+<span class="sd">    for more information.</span>
+
+<span class="sd">    :param classifier: {classifier instance} pre-trained classifier used for predictions.</span>
+<span class="sd">    :param x_test: {array} descriptor values of the test data.</span>
+<span class="sd">    :param y_test: {array} true class values of the test data.</span>
+<span class="sd">    :param sample_weights: {array} weights for the test data.</span>
+<span class="sd">    :return: ``pandas.DataFrame`` containing the cross validation scores for the specified metrics.</span>
+<span class="sd">    :Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; from modlamp.ml import train_best_model, score_testset</span>
+<span class="sd">    &gt;&gt;&gt; from sklearn.model_selection import train_test_split</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp.datasets import load_ACPvsRandom</span>
+<span class="sd">    &gt;&gt;&gt; from modlamp import descriptors</span>
+<span class="sd">    &gt;&gt;&gt; data = load_ACPvsRandom()</span>
+
+<span class="sd">    Calculating descriptor values from the data</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; desc = descriptors.PeptideDescriptor(data.sequences, scalename=&#39;pepcats&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; desc.calculate_autocorr(7)</span>
+
+<span class="sd">    Splitting data into train and test sets</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; X_train, X_test, y_train, y_test = train_test_split(desc.descriptor, data.target, test_size = 0.33)</span>
+
+<span class="sd">    Training a SVM model on the training set</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; best_svm_model = train_best_model(&#39;svm&#39;, X_train,y_train)</span>
+
+<span class="sd">    Calculating the scores of the predictions on the test set</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; score_testset(best_svm_model, X_test, y_test)</span>
+<span class="sd">       Metrics   Scores</span>
+<span class="sd">           MCC  0.839</span>
+<span class="sd">      accuracy  0.920</span>
+<span class="sd">     precision  0.924</span>
+<span class="sd">        recall  0.910</span>
+<span class="sd">            f1  0.917</span>
+<span class="sd">       roc_auc  0.919</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MCC&#39;</span><span class="p">,</span> <span class="s1">&#39;accuracy&#39;</span><span class="p">,</span> <span class="s1">&#39;precision&#39;</span><span class="p">,</span> <span class="s1">&#39;recall&#39;</span><span class="p">,</span> <span class="s1">&#39;f1&#39;</span><span class="p">,</span> <span class="s1">&#39;roc_auc&#39;</span><span class="p">]</span>
+    <span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;matthews_corrcoef&#39;</span><span class="p">,</span> <span class="s1">&#39;accuracy_score&#39;</span><span class="p">,</span> <span class="s1">&#39;precision_score&#39;</span><span class="p">,</span> <span class="s1">&#39;recall_score&#39;</span><span class="p">,</span> <span class="s1">&#39;f1_score&#39;</span><span class="p">,</span> <span class="s1">&#39;roc_auc_score&#39;</span><span class="p">]</span>
+    
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+        <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">mets</span><span class="p">,</span> <span class="n">f</span><span class="p">)(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">classifier</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x_test</span><span class="p">),</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">))</span>  <span class="c1"># fore every metric, calculate the scores</span>
+    
+    <span class="n">df_scores</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Scores&#39;</span><span class="p">:</span> <span class="n">scores</span><span class="p">},</span> <span class="n">index</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">df_scores</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/modlab.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">modlAMP v3.3.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016 - 2017 ETH Zurich, Switzerland; Alex Müller, Gisela Gabernet, Gisbert Schneider..
+      Last updated on Sep 27esc, 2017.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+    </div>
+  </body>
+</html>

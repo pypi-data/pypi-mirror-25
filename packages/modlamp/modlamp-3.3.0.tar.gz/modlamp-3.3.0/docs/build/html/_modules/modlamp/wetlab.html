@@ -1,0 +1,552 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>modlamp.wetlab &#8212; modlAMP v3.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'v3.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/modlamp.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="modlAMP v3.3.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">modlAMP v3.3.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for modlamp.wetlab</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. currentmodule:: modlamp.wetlab</span>
+
+<span class="sd">.. moduleauthor:: modlab Alex Mueller ETH Zurich &lt;alex.mueller@pharma.ethz.ch&gt;</span>
+
+<span class="sd">This module incorporates functions to load raw data files from wetlab experiments, calculate different</span>
+<span class="sd">characteristics and plot.</span>
+
+<span class="sd">=============================        ============================================================================</span>
+<span class="sd">Class                                Data</span>
+<span class="sd">=============================        ============================================================================</span>
+<span class="sd">:py:class:`CD`                       Class for handling Circular Dichroism data.</span>
+<span class="sd">=============================        ============================================================================</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">listdir</span><span class="p">,</span> <span class="n">makedirs</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span><span class="p">,</span> <span class="n">exists</span><span class="p">,</span> <span class="n">splitext</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">modlamp.descriptors</span> <span class="k">import</span> <span class="n">GlobalDescriptor</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Alex Müller, Gisela Gabernet&quot;</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s2">&quot;restructuredtext en&quot;</span>
+
+
+<div class="viewcode-block" id="CD"><a class="viewcode-back" href="../../modlamp.html#modlamp.wetlab.CD">[docs]</a><span class="k">class</span> <span class="nc">CD</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to handle circular dichroism data files and calculate several ellipticity and helicity values.</span>
+<span class="sd">    The class can handle data files of the *Applied Photophysics* type.</span>
+<span class="sd">    </span>
+<span class="sd">    For explanations of different units used in CD spectroscopy,</span>
+<span class="sd">    visit https://www.photophysics.com/resources/7-cd-units-conversions and read the following publication:</span>
+<span class="sd">    </span>
+<span class="sd">    N. J. Greenfield, *Nat. Protoc.* **2006**, 1, 2876–2890.</span>
+<span class="sd">    </span>
+<span class="sd">    .. note::</span>
+<span class="sd">        All files which should be read must have **4 header lines** as shown in the image below. CD data to be read</span>
+<span class="sd">        must start in line 5 (separated in 2 columns: *Wavelength* and *Signal*).</span>
+<span class="sd">        </span>
+<span class="sd">    .. image:: ../docs/static/fileheader.png</span>
+<span class="sd">        </span>
+<span class="sd">    First line: *Molecule Name*</span>
+<span class="sd">    </span>
+<span class="sd">    Second line: *Sequence*</span>
+<span class="sd">    </span>
+<span class="sd">    Third line: *concentration in µM*</span>
+<span class="sd">    </span>
+<span class="sd">    Fourth line: *solvent*</span>
+<span class="sd">    </span>
+<span class="sd">    Recognized solvents are **W** for water and **T** for TFE.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="CD.__init__"><a class="viewcode-back" href="../../modlamp.html#modlamp.wetlab.CD.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">wmin</span><span class="p">,</span> <span class="n">wmax</span><span class="p">,</span> <span class="n">amide</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pathlen</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Init method for class CD.</span>
+<span class="sd">        </span>
+<span class="sd">        :param directory: {str} directory containing all data files to be read. Files need a **.csv** ending</span>
+<span class="sd">        :param wmin: {int} smalles wavelength measured</span>
+<span class="sd">        :param wmax: {int} highest wavelength measured</span>
+<span class="sd">        :param amide: {bool} specifies whether the sequences have amidated C-termini</span>
+<span class="sd">        :param pathlen: {float} cuvette path length in mm</span>
+<span class="sd">        :Example:</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; cd = CD(&#39;/path/to/your/folder&#39;, 185, 260)</span>
+<span class="sd">        &gt;&gt;&gt; cd.filenames</span>
+<span class="sd">        [&#39;160819_Pep1_T_smooth.csv&#39;, &#39;160819_Pep1_W_smooth.csv&#39;, &#39;160819_Pep5_T_smooth.csv&#39;, ...]</span>
+<span class="sd">        &gt;&gt;&gt; cd.names</span>
+<span class="sd">        [&#39;Pep 10&#39;, &#39;Pep 10&#39;, &#39;Pep 11&#39;, &#39;Pep 11&#39;, ... ]</span>
+<span class="sd">        &gt;&gt;&gt; cd.conc_umol</span>
+<span class="sd">        [33.0,  33.0,  33.0,  33.0,  33.0,  33.0,  33.0,  33.0,  33.0,  33.0,  33.0,  ... ]</span>
+<span class="sd">        &gt;&gt;&gt; cd.meanres_mw</span>
+<span class="sd">        [114.29920769230768, 114.29920769230768, 111.68257692307689, 111.68257692307689, ... ]</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        
+        <span class="c1"># read filenames from directory</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">listdir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">filename</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.csv&#39;</span><span class="p">)]</span>  <span class="c1"># get all .csv files in dir</span>
+        
+        <span class="c1"># initialize attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequences</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conc_umol</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conc_mgml</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meanres_mw</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circular_dichroism</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">molar_ellipticity</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meanres_ellipticity</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wmin</span> <span class="o">=</span> <span class="n">wmin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wmax</span> <span class="o">=</span> <span class="n">wmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amide</span> <span class="o">=</span> <span class="n">amide</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pathlen</span> <span class="o">=</span> <span class="n">pathlen</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_read_header</span><span class="p">()</span>  <span class="c1"># call the _read_header function to fill up all attributes</span></div>
+    
+    <span class="k">def</span> <span class="nf">_read_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Priveat method called by ``__init__`` to read all file headers into the class attributes and calculate</span>
+<span class="sd">        sequence dependant values.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: headers in class attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">d</span> <span class="o">=</span> <span class="n">GlobalDescriptor</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">)</span>  <span class="c1"># template</span>
+        
+        <span class="c1"># loop through all files in the directory</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filenames</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="n">file</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  <span class="c1"># read first 4 lines as header, rest as data</span>
+                <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wmax</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">wmin</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)]</span>
+            
+            <span class="c1"># read headers into class attributes</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">head</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">head</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sequences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+            <span class="n">umol</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">head</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conc_umol</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">umol</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">head</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            
+            <span class="c1"># read CD data</span>
+            <span class="n">wlengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>  <span class="c1"># get rid of s***** line ends</span>
+            <span class="n">ellipts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">circular_dichroism</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">wlengths</span><span class="p">,</span> <span class="n">ellipts</span><span class="p">)))</span>
+            
+            <span class="c1"># calculate MW and transform concentration to mg/ml</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequence</span><span class="p">]</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">calculate_MW</span><span class="p">(</span><span class="n">amide</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">amide</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">descriptor</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conc_mgml</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">umol</span> <span class="o">/</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">6</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meanres_mw</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># mean residue molecular weight (MW / n-1)</span>
+    
+<div class="viewcode-block" id="CD.calc_molar_ellipticity"><a class="viewcode-back" href="../../modlamp.html#modlamp.wetlab.CD.calc_molar_ellipticity">[docs]</a>    <span class="k">def</span> <span class="nf">calc_molar_ellipticity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to calculate the molar ellipticity for all loaded data in :py:attr:`circular_dichroism` according</span>
+<span class="sd">        to the following formula:</span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">            </span>
+<span class="sd">            [\Theta] = (\Theta * MW) / (c * l)</span>
+
+<span class="sd">        :return: {numpy array} molar ellipticity in :py:attr:`molar_ellipticity`</span>
+<span class="sd">        :Example:</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; cd.calc_molar_ellipticity()</span>
+<span class="sd">        &gt;&gt;&gt; cd.molar_ellipticity</span>
+<span class="sd">        array([[  260.,  -1.40893636e+04],</span>
+<span class="sd">               [  259.,  -1.00558182e+04],</span>
+<span class="sd">               [  258.,  -1.25173636e+04], ...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circular_dichroism</span><span class="p">):</span>
+            <span class="c1"># calculate molar ellipticity: (theta * MW) / (conc * pathlength); and concat. with wavelengths</span>
+            <span class="n">mol_ellipt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conc_mgml</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathlen</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">molar_ellipticity</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mol_ellipt</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="CD.calc_meanres_ellipticity"><a class="viewcode-back" href="../../modlamp.html#modlamp.wetlab.CD.calc_meanres_ellipticity">[docs]</a>    <span class="k">def</span> <span class="nf">calc_meanres_ellipticity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to calculate the mean residue ellipticity for all loaded data in :py:attr:`circular_dichroism`</span>
+<span class="sd">        according to the following formula:</span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">            </span>
+<span class="sd">            (\Theta * MRW) / (c * l) = [\Theta]</span>
+<span class="sd">            </span>
+<span class="sd">            MRW = MW / (n - 1)</span>
+<span class="sd">        </span>
+<span class="sd">        With *MRW* = mean residue weight (g/mol), *n* = number of residues in the peptide, *c* = concentration (mg/mL)</span>
+<span class="sd">        and *l* = cuvette path length (mm).</span>
+<span class="sd">        </span>
+<span class="sd">        :return: {numpy array} molar ellipticity in :py:attr:`meanres_ellipticity`</span>
+<span class="sd">        :Example:</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; cd.calc_meanres_ellipticity()</span>
+<span class="sd">        &gt;&gt;&gt; cd.meanres_ellipticity</span>
+<span class="sd">        array([[   260.        ,   -2669.5804196],</span>
+<span class="sd">               [   259.        ,   -3381.3286713],</span>
+<span class="sd">               [   258.        ,   -3872.5174825], ...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circular_dichroism</span><span class="p">):</span>
+            <span class="c1"># calculate molar ellipticity: (theta * mrw) / (conc * pathlength); and concat. with wavelengths</span>
+            <span class="n">mol_ellipt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">meanres_mw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conc_mgml</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathlen</span><span class="p">))))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meanres_ellipticity</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mol_ellipt</span><span class="p">)</span></div>
+    
+    <span class="k">def</span> <span class="nf">_plot_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">y_label</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private plot function used by :py:func:`modlamp.wetlab.CD.plot()` for plotting single CD plots&quot;&quot;&quot;</span>
+        
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">d</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">)</span>  <span class="c1"># used legend is 10^3 so divide by 1000</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">col</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Wavelength [nm]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">y_label</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">((</span><span class="n">y_min</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">))</span>
+        <span class="n">img_name</span> <span class="o">=</span> <span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.pdf&#39;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;PDF&#39;</span><span class="p">,</span> <span class="n">img_name</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_plot_double</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dw</span><span class="p">,</span> <span class="n">y_label</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private plot function used by :py:func:`modlamp.wetlab.CD.plot()` for plotting combined CD plots&quot;&quot;&quot;</span>
+        
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+        <span class="n">line1</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">dt</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">)</span>
+        <span class="n">line2</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">dw</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">line1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;TFE&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">line2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Water&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Wavelength [nm]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">y_label</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">((</span><span class="n">y_min</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">img_name</span> <span class="o">=</span> <span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;_M.pdf&#39;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;PDF&#39;</span><span class="p">,</span> <span class="n">img_name</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_plot_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">y_lim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private plot function used by :py:func:`modlamp.wetlab.CD.plot()` for plotting combined CD plots&quot;&quot;&quot;</span>
+        
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#53777A&#39;</span><span class="p">,</span> <span class="s1">&#39;#542437&#39;</span><span class="p">,</span> <span class="s1">&#39;#C02942&#39;</span><span class="p">,</span> <span class="s1">&#39;#D95B43&#39;</span><span class="p">,</span> <span class="s1">&#39;#ECD078&#39;</span><span class="p">,</span> <span class="s1">&#39;#CFF09E&#39;</span><span class="p">,</span> <span class="s1">&#39;#A8DBA8&#39;</span><span class="p">,</span> <span class="s1">&#39;#79BD9A&#39;</span><span class="p">,</span> <span class="s1">&#39;#3B8686&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;#0B486B&#39;</span><span class="p">,</span> <span class="s1">&#39;#2790B0&#39;</span><span class="p">,</span> <span class="s1">&#39;#94BA65&#39;</span><span class="p">,</span> <span class="s1">&#39;#353432&#39;</span><span class="p">,</span> <span class="s1">&#39;#4E4D4A&#39;</span><span class="p">,</span> <span class="s1">&#39;##808080&#39;</span><span class="p">,</span> <span class="s1">&#39;#CCCCCC&#39;</span><span class="p">]</span>
+        
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+        <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>  <span class="c1"># assign empty</span>
+        <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># assign empty</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filenames</span><span class="p">):</span>
+            <span class="n">d</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">y_label</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_datatype</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="s1">&#39;all&#39;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">y_lim</span><span class="p">:</span>
+                <span class="n">y_min</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">y_lim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># * 1000 because axis are usually shown as 10^3</span>
+                <span class="n">y_max</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">y_lim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="nb">vars</span><span class="p">()[</span><span class="s1">&#39;line&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">d</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">)</span>  <span class="c1"># mark the line plots with the iterator, for labelling</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="nb">vars</span><span class="p">()[</span><span class="s1">&#39;line&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)],</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                         <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>  <span class="c1"># if more data than colors: start with dashed lines</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="nb">vars</span><span class="p">()[</span><span class="s1">&#39;line&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)],</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+                        <span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+        
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Combined Plot&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Wavelength [nm]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">y_label</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">((</span><span class="n">y_min</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;PDF&#39;</span><span class="p">,</span> <span class="s1">&#39;all.pdf&#39;</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_check_datatype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">comb_flag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private function to check data type; used by :py:func`modlamp.wetlab.CD.plot` and</span>
+<span class="sd">        :py:func`modlamp.wetlab.CD.dichroweb`&quot;&quot;&quot;</span>
+        
+        <span class="n">d2</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="o">==</span> <span class="s1">&#39;mean residue ellipticity&#39;</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meanres_ellipticity</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">comb_flag</span> <span class="o">==</span> <span class="s1">&#39;solvent&#39;</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">d2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meanres_ellipticity</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="s2">r&quot;$[\Theta] \ast 10^{-3} (deg \ast cm^2 \ast dmol^{-1})$&quot;</span>
+            <span class="n">y_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
+            <span class="n">y_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
+        <span class="k">elif</span> <span class="n">data</span> <span class="o">==</span> <span class="s1">&#39;molar ellipticity&#39;</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molar_ellipticity</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">comb_flag</span> <span class="o">==</span> <span class="s1">&#39;solvent&#39;</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">d2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molar_ellipticity</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="s2">r&quot;$[\Theta] \ast 10^{-3} (deg \ast cm^2 \ast dmol^{-1})$&quot;</span>
+            <span class="n">y_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
+            <span class="n">y_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">circular_dichroism</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">comb_flag</span> <span class="o">==</span> <span class="s1">&#39;solvent&#39;</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">d2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molar_ellipticity</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="s2">r&quot;$\Delta A \ast 32.986 \ast 10^{-3}$&quot;</span>
+            <span class="n">y_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
+            <span class="n">y_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
+        
+        <span class="k">return</span> <span class="n">d</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">y_label</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span>
+    
+<div class="viewcode-block" id="CD.plot"><a class="viewcode-back" href="../../modlamp.html#modlamp.wetlab.CD.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;mean residue ellipticity&#39;</span><span class="p">,</span> <span class="n">combine</span><span class="o">=</span><span class="s1">&#39;solvent&#39;</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to generate CD plots for all read data in the initial directory.</span>
+<span class="sd">        </span>
+<span class="sd">        :param data: {str} which data should be plotted (``mean residue ellipticity``, ``molar ellipticity`` or</span>
+<span class="sd">            ``circular dichroism``)</span>
+<span class="sd">        :param combine: {str} if ``solvent``, overlays of different solvents will be created for the same molecule.</span>
+<span class="sd">            The amino acid sequence in the header is used to find corresponding data.</span>
+<span class="sd">            if ``all``, all data is combined in one single plot. To ignore combination, pass an empty string.</span>
+<span class="sd">        :param ylim: {tuple} If not none, this tuple of values is taken as the minimum and maximum of the y axis</span>
+<span class="sd">        :return: .pdf plots saved to the directory containing the read files.</span>
+<span class="sd">        :Example:</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; cd = CD(&#39;/path/to/your/folder&#39;, 185, 260)</span>
+<span class="sd">        &gt;&gt;&gt; cd.calc_meanres_ellipticity()</span>
+<span class="sd">        &gt;&gt;&gt; cd.plot(data=&#39;mean residue ellipticity&#39;, combine=&#39;solvent&#39;)</span>
+<span class="sd">        </span>
+<span class="sd">        .. image:: ../docs/static/cd1.png</span>
+<span class="sd">            :height: 300px</span>
+<span class="sd">        .. image:: ../docs/static/cd2.png</span>
+<span class="sd">            :height: 300px</span>
+<span class="sd">        .. image:: ../docs/static/cd3.png</span>
+<span class="sd">            :height: 300px</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># prepare combination of solvent plots</span>
+            <span class="k">if</span> <span class="n">combine</span> <span class="o">==</span> <span class="s1">&#39;solvent&#39;</span><span class="p">:</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequences</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequences</span><span class="p">)}</span>  <span class="c1"># create dict with seq counts for combine</span>
+                <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">values</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span>
+            <span class="c1"># check if output folder exists already, else create one</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;PDF&#39;</span><span class="p">)):</span>
+                <span class="n">makedirs</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;PDF&#39;</span><span class="p">))</span>
+            
+            <span class="n">w</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wmin</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># wavelengths</span>
+            
+            <span class="c1"># check input data option</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;mean residue ellipticity&#39;</span><span class="p">,</span> <span class="s1">&#39;molar ellipticity&#39;</span><span class="p">,</span> <span class="s1">&#39;circular dichroism&#39;</span><span class="p">]:</span>
+                <span class="c1"># loop through all data for single plots</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filenames</span><span class="p">):</span>
+                    
+                    <span class="c1"># get data type to be plotted</span>
+                    <span class="n">d</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">y_label</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_datatype</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">combine</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;T&#39;</span><span class="p">:</span>  <span class="c1"># color</span>
+                        <span class="n">col</span> <span class="o">=</span> <span class="s1">&#39;r&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">col</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span>
+                    
+                    <span class="k">if</span> <span class="n">ylim</span><span class="p">:</span>
+                        <span class="n">y_min</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># * 1000 because axis are usually shown as 10^3</span>
+                        <span class="n">y_max</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    
+                    <span class="c1"># plot single plots</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_single</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">y_label</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">f</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">)</span>
+                    <span class="c1"># plot mixed plots</span>
+                    <span class="k">if</span> <span class="n">combine</span> <span class="o">==</span> <span class="s1">&#39;solvent&#39;</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_plot_double</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">y_label</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">f</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">combine</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_all</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">ylim</span><span class="p">)</span>
+            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR</span><span class="se">\n</span><span class="s2">Wrong data option given!</span><span class="se">\n</span><span class="s2">Available:&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[&#39;mean residue ellipticity&#39;, &#39;molar ellipticity&#39;, &#39;circular dichroism&#39;]&quot;</span><span class="p">)</span>
+        
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>  <span class="c1"># if data arrays are empty, no data was calculated</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR</span><span class="se">\n</span><span class="s2">Specified data array empty, call the calculate functions first!&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;e.g. self.calc_molar_ellipticity()&quot;</span><span class="p">)</span>
+        
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR</span><span class="se">\n</span><span class="s2">Solvent pairs not even / missing.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Check if all measurements were performed in both TFE and water&quot;</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="CD.dichroweb"><a class="viewcode-back" href="../../modlamp.html#modlamp.wetlab.CD.dichroweb">[docs]</a>    <span class="k">def</span> <span class="nf">dichroweb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;mean residue ellipticity&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to save the calculated CD data into DichroWeb readable format (semi-colon separated). The produced</span>
+<span class="sd">        files can then directly be uploaded to the `DichroWeb &lt;http://dichroweb.cryst.bbk.ac.uk&gt;`_ analysis tool.</span>
+<span class="sd">        </span>
+<span class="sd">        :param data: {str} which data should be plotted (``mean residue ellipticity``, ``molar ellipticity`` or</span>
+<span class="sd">            ``circular dichroism``)</span>
+<span class="sd">        :return: .csv data files saved to the directory containing the read files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check if output folder exists already, else create one</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;Dichro&#39;</span><span class="p">)):</span>
+            <span class="n">makedirs</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;Dichro&#39;</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;mean residue ellipticity&#39;</span><span class="p">,</span> <span class="s1">&#39;molar ellipticity&#39;</span><span class="p">,</span> <span class="s1">&#39;circular dichroism&#39;</span><span class="p">]:</span>
+            <span class="c1"># loop through all data for single plots</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filenames</span><span class="p">):</span>
+                <span class="c1"># get data type to be plotted</span>
+                <span class="n">d</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_datatype</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wmin</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># wavelengths</span>
+                <span class="n">dichro</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nb">zip</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">d</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">)</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="n">splitext</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+                <span class="n">dichro</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;Dichro&#39;</span><span class="p">,</span> <span class="n">fname</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;;&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="CD.helicity"><a class="viewcode-back" href="../../modlamp.html#modlamp.wetlab.CD.helicity">[docs]</a>    <span class="k">def</span> <span class="nf">helicity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">24.</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mf">3.5</span><span class="p">,</span> <span class="n">induction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to calculate the percentage of helicity out of the mean residue ellipticity data.</span>
+<span class="sd">        The calculation is based on the fromula by Fairlie and co-workers:</span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">            [\Theta]_{222\infty} = (-44000 * 250 * T) * (1 - k / N)</span>
+<span class="sd">        </span>
+<span class="sd">        The helicity is then calculated as the ratio of</span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">            ([\Theta]_{222} / [\Theta]_{222\infty}) * 100 \%</span>
+<span class="sd">        </span>
+<span class="sd">        :Reference: `Shepherd, N. E., Hoang, H. N., Abbenante, G. &amp; Fairlie, D. P. J. Am. Chem. Soc. 127, 2974–2983</span>
+<span class="sd">            (2005). &lt;https://dx.doi.org/10.1021/ja0456003&gt;`_</span>
+<span class="sd">        :param temperature: {float} experiment temperature in °C</span>
+<span class="sd">        :param k: {float, 2.4 - 4.5} finite length correction factor. Can be adapted to the helicity of a known peptide.</span>
+<span class="sd">        :param induction: {bool} wether the helical induction upon changing from one solvent to another should be</span>
+<span class="sd">            calculated.</span>
+<span class="sd">        :param filename: {str} if given, helicity data is saved to the file &quot;filename&quot;.csv</span>
+<span class="sd">        :return: approximate helicity for every sequence in the attribute :py:attr:`helicity_values`.</span>
+<span class="sd">        :Example:</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; cd.calc_meanres_ellipticity()</span>
+<span class="sd">        &gt;&gt;&gt; cd.helicity(temperature=24., k=3.492185008, induction=True)</span>
+<span class="sd">        &gt;&gt;&gt; cd.helicity_values</span>
+<span class="sd">                    Name    Solvent   Helicity  Induction</span>
+<span class="sd">            0  Aurein2.2d2       T    100.0     3.823</span>
+<span class="sd">            1  Aurein2.2d2       W    26.16     0.000</span>
+<span class="sd">            2       Klak14       T    76.38     3.048</span>
+<span class="sd">            3       Klak14       W    25.06     0.000</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meanres_ellipticity</span>
+        <span class="k">if</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">hel</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+                <span class="n">indx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">v</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">222.</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># get index of wavelength 222 nm</span>
+                <span class="n">hel_100</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">44000.</span> <span class="o">+</span> <span class="mf">250.</span> <span class="o">*</span> <span class="n">temperature</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequences</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span>  <span class="c1"># inf hel 222</span>
+                <span class="n">hel</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">v</span><span class="p">[</span><span class="n">indx</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">hel_100</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="p">,</span> <span class="n">hel</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;Solvent&#39;</span><span class="p">,</span>
+                                                                                                      <span class="s1">&#39;Helicity&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">induction</span><span class="p">:</span>
+                <span class="n">induct</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span> <span class="ow">and</span> \
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Solvent&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span>
+                                    <span class="s1">&#39;Solvent&#39;</span><span class="p">]:</span>
+                            <span class="n">induct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Helicity&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="s1">&#39;Helicity&#39;</span><span class="p">]),</span>
+                                                <span class="mi">3</span><span class="p">))</span>  <span class="c1"># if following entry is same molecule</span>
+                            <span class="c1"># but not same solvent, calculate the helical induction and round to .3f</span>
+                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># else just append 0</span>
+                            <span class="n">induct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+                
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>  <span class="c1"># at the end of the DataFrame, an index error will be raised because of i+1</span>
+                    <span class="n">induct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="p">[</span><span class="s1">&#39;Induction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">induct</span>
+            
+            <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">helicity_values</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR</span><span class="se">\n</span><span class="s2">meanres_ellipticity data array empty, call the calculate function first:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;calc_meanres_ellipticity()&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/modlab.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">modlAMP v3.3.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016 - 2017 ETH Zurich, Switzerland; Alex Müller, Gisela Gabernet, Gisbert Schneider..
+      Last updated on Sep 27esc, 2017.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+    </div>
+  </body>
+</html>
