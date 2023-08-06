@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+"""
+Synchronize tags and filenames
+
+Usage:
+    usiq [options] show <FILE>
+    usiq [options] tag <FILE> ...
+    usiq [options] rename <FILE> ...
+    usiq [options] export <FILE> ...
+
+
+Usiq uses action arguments to control its behaviour. Valid actions are
+specifically:
+    show: Show the tags of a particular filename
+    tag: Set tags on one or more files. Tags can be set through options, can be
+        parsed from the filename or can be imported from a yaml file.
+    rename: Rename on or more files according to their tags. This requires that
+        you specify a filename pattern that specifies how tags are used to
+        build the respective filename.
+    export: Export the current tags of one or more files to a yaml file. This
+        can be useful if the tags should be modified and read in again.
+
+
+Options:
+    -d, --dry
+        don't actually modify anything
+    -p <PATTERN>, --pattern=<PATTERN>
+        filename pattern used to parse tags from filenames. Exmaple: "<title>"
+        will be specify filenames that only consist of a song title followed by
+        an extension (e.g. "Yellow Submarine.mp3", "Yellow Submarine.flac", ...
+        will all be parsed as songs with the title "Yellow Submarine") nothing
+        is assumed about other tags.
+    -o <FILE>, --output=<FILE>
+        write output to yaml file <FILE> (only with export action)
+        [default: tags.yaml]
+    -i <FILE>, --import=<FILE>
+        import tags from yaml file
+
+Tag related:
+    -t <TITLE>, --title=<TITLE>
+    -a <ARTIST>, --artist=<ARTIST>
+    -l <ALBUM>, --album=<ALBUM>
+    -A <ALBUMARTIST>, --albumartist=<ALBUMARTIST>
+    -b <BPM>, --bpm=<BPM>
+    -k <KEY>, --key=<KEY>
+    -g <GENRE>, --genre=<GENRE>
+    -y <YEAR>, --year=<YEAR>
+"""
+import sys
+from docopt import docopt
+from logbook import StreamHandler
+
+from usiq import cli
+
+# TODO: Examples in docstring
+# TODO: usiqrc
+# TODO: allow - for import and export
+# TODO: Fortmat options for tags (e.g. title, lower, upper)
+# TODO: do not use empty tags when renaming
+# TODO: support singleton pattern to not clear album name
+
+
+if __name__ == '__main__':
+    StreamHandler(sys.stdout).push_application()
+    args = docopt(__doc__)
+
+    fnames = args.pop('<FILE>')
+    if args['show']:
+        cli.show(fnames.pop(0))
+    elif args['tag']:
+        cli.tag(fnames, args)
+    elif args['rename']:
+        cli.rename(fnames, args)
+    elif args['export']:
+        cli.export(fnames, args)
