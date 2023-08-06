@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+{% load contacts_extras campaigns_extras %}
+
+{% block title %}
+    Campagne - {{ campaign.name }}
+{% endblock %}
+
+{% block content %}
+    {% with campaign|can_launch_campaign as launchable %}
+        <div class="row bg-title">
+            <!-- .page title -->
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                {% if editable %}
+                    <a href="{% url 'campaigns:edit' campaign.id %}" title="Editer la campagne">
+                        <h4 class="page-title">
+                            {{ campaign.name }}
+                            <i class="icon-pencil" style="margin-left: .5em"></i>
+                        </h4>
+                    </a>
+                {% else %}
+                    <h4 class="page-title">
+                        {{ campaign.name }}
+                        <i class="text-info fa ion-load-c fa-spin"
+                           data-icon="&#xe00b;" style="margin-left: .5em;"></i>
+                    </h4>
+                {% endif %}
+            </div>
+            <!-- /.page title -->
+            <!-- .breadcrumb -->
+            <div class="col-lg-6 col-sm-6 col-md-6 col-xs-12">
+                <ol class="breadcrumb">
+                    <li><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li><a href="{% url 'campaigns:index' %}">Campagnes</a></li>
+                    <li class="active">
+                        {{ campaign.name | slice:":25" }}{% if campaign.name|length >= 25 %}... {% endif %}
+                    </li>
+                </ol>
+            </div>
+            <!-- /.breadcrumb -->
+        </div>
+        <!-- .row -->
+        <div class="row">
+            <div class="col-md-12">
+
+                {% include 'core/partials/flash_messages.html' %}
+                <div class="white-box">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <h4>Lancement : {{ campaign.start_date|date:"d-m-Y H:i" }}</h4>
+                        </div>
+                        <div class="col-lg-4">
+                            {% if launchable %}
+                                <a href="{% url 'campaigns:notify_campaign' campaign.id %}" class="btn btn-success pull-right">
+                                    <span class="btn-label">
+                                        <i class="icon-paper-plane"></i>
+                                    </span>
+                                    Notifier les contacts
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row row-in" style="margin-top: 3em">
+                        <div class="col-lg-3 col-sm-6 row-in-br">
+                            <a href="{% url 'campaigns:notifications' campaign.id %}">
+                                <div class="col-in row">
+                                    <div class="col-md-6 col-sm-6 col-xs-6">
+                                        <i data-icon="E" class="icon-rocket text-inversed"></i>
+                                        <h5 class="text-muted vb">Notifications</h5></div>
+                                    <div class="col-md-6 col-sm-6 col-xs-6">
+                                        <h3 class="counter text-right m-t-15 text-inversed">{{ total_notifications }}</h3>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-sm-6 row-in-br  b-r-none">
+                            <a href="{% url 'campaigns:notifications' campaign.id %}?status=SENT">
+                                <div class="col-in row">
+                                    <div class="col-md-6 col-sm-6 col-xs-6"><i class="icon-paper-plane text-success"
+                                                                               data-icon="&#xe01b;"></i>
+                                        <h5 class="text-muted vb">Envoyé(s)</h5></div>
+                                    <div class="col-md-6 col-sm-6 col-xs-6">
+                                        <h3 class="counter text-right m-t-15 text-success">{{ campaign.sent }}</h3>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-sm-6 row-in-br">
+                            <a href="{% url 'campaigns:notifications' campaign.id %}?status=FAILED">
+                                <div class="col-in row">
+                                    <div class="col-md-6 col-sm-6 col-xs-6"><i class="icon-close text-danger"
+                                                                               data-icon="&#xe016;"></i>
+                                        <h5 class="text-muted vb">&Eacute;choué(s)</h5></div>
+                                    <div class="col-md-6 col-sm-6 col-xs-6">
+                                        <h3 class="counter text-right m-t-15 text-danger">{{ campaign.failed }}</h3>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-sm-6">
+                            <a href="{% url 'campaigns:notifications' campaign.id %}?status=PROGRESS">
+                                <div class="col-in row">
+                                    <div class="col-md-6 col-sm-6 col-xs-6">
+                                        <i class="text-info fa ion-load-c fa-spin"
+                                           data-icon="&#xe00b;"></i>
+                                        <h5 class="text-muted vb">En cours</h5></div>
+                                    <div class="col-md-6 col-sm-6 col-xs-6">
+                                        <h3 class="counter text-right m-t-15 text-info">{{ campaign.in_progress }}</h3>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 4em">
+                        <div class="col-lg-6">
+                            <h3>
+                                Message
+                            </h3>
+                            <hr>
+                            <p class="lead">
+                                {{ campaign.message }}
+                            </p>
+                        </div>
+                        <div class="col-lg-6">
+                            <h3>
+                                Groupe de contacts :
+                                {% with campaign.contacts_group as contacts_group %}
+                                    {% if contacts_group %}
+                                        <a href="{% url 'contacts-groups:edit' contacts_group.id %}">
+                                            {{ contacts_group }}
+                                            <i class="icon-pencil" style="margin-left: .5em"></i>
+                                        </a>
+                                    {% else %}
+                                        Tous les contacts
+                                    {% endif %}
+                                {% endwith %}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endwith %}
+
+{% endblock %}

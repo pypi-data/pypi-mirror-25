@@ -1,0 +1,176 @@
+{% extends 'core/base.html' %}
+{% load contacts_extras campaigns_extras %}
+
+{% block title %}
+    Notifications - Campagne - {{ campaign.name }}
+{% endblock %}
+
+{% block content %}
+    {% with campaign|can_launch_campaign as launchable %}
+        <div class="row bg-title">
+            <!-- .page title -->
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                <h4 class="page-title">
+                    {{ campaign.name }} - Notifications
+                </h4>
+            </div>
+            <!-- /.page title -->
+            <!-- .breadcrumb -->
+            <div class="col-lg-6 col-sm-6 col-md-6 col-xs-12">
+                <ol class="breadcrumb">
+                    <li><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li><a href="{% url 'campaigns:index' %}">Campagnes</a></li>
+                    <li>
+                        <a href="{% url 'campaigns:show' campaign.id %}">
+                            {{ campaign.name | slice:":25" }}{% if campaign.name|length >= 25 %}... {% endif %}
+                        </a>
+                    </li>
+                    <li class="active">
+                        Notifications
+                    </li>
+                </ol>
+            </div>
+            <!-- /.breadcrumb -->
+        </div>
+        <!-- .row -->
+
+        {% if launchable %}
+            <div class="row">
+                <div class="offset-8 col-lg-4" style="margin-bottom: 2em">
+                    <a href="{% url 'campaigns:notify_campaign' campaign.id %}" class="btn btn-success pull-right">
+                        <span class="btn-label">
+                            <i class="icon-paper-plane"></i>
+                        </span>
+                        Notifier les contacts
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="sttabs tabs-style-iconbox">
+                    <nav>
+                        <div class="sttabs tabs-style-iconbox">
+                            <nav>
+                                <ul>
+                                    <li {% if not status %}class="tab-current"{% endif %}>
+                                        {% if not status %}
+                                            <a class="sticon icon-rocket text-white" data-icon="E">
+                                                <span>Toutes</span>
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'campaigns:notifications' campaign.id %}"
+                                               class="sticon icon-rocket text-inversed" data-icon="E">
+                                                <span>Toutes</span>
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                    <li {% if status == "SENT" %}class="tab-current"{% endif %}>
+                                        {% if status == "SENT" %}
+                                            <a class="sticon icon-paper-plane text-white" data-icon="&#xe016;">
+                                                <span>Envoyé(s)</span>
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'campaigns:notifications' campaign.id %}?status=SENT"
+                                               class="sticon icon-paper-plane text-success" data-icon="&#xe01b;">
+                                                <span>Envoyé(s)</span>
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                    <li {% if status == "FAILED" %}class="tab-current"{% endif %}>
+                                        {% if status == "FAILED" %}
+                                            <a class="sticon icon-close text-white" data-icon="&#xe016;">
+                                                <span>&Eacute;choué(s)</span>
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'campaigns:notifications' campaign.id %}?status=FAILED"
+                                               class="sticon icon-close text-danger" data-icon="&#xe016;">
+                                                <span>&Eacute;choué(s)</span>
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                    <li {% if status == "PROGRESS" %}class="tab-current"{% endif %}>
+                                        {% if status == "PROGRESS" %}
+                                            <a class="sticon fa ion-load-c text-white"
+                                               data-icon="&#xe00b;">
+                                                <span>En cours</span>
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'campaigns:notifications' campaign.id %}?status=PROGRESS"
+                                               class="sticon fa ion-load-c text-info" data-icon="&#xe00b;">
+                                                <span>En cours</span>
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </nav>
+                </div>
+                <div class="white-box">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="thead-default">
+                            <tr>
+                                <th>Nom</th>
+                                <th>Numéro</th>
+                                <th>Statut</th>
+                                <th>Date d'envoi</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                            {% for n in notifications %}
+                                <tr>
+                                    <td>{{ n.contact }}</td>
+                                    <td>
+                                        <span class="label label-success label-rounded">{{ n.contact.phone_number | format_number }}</span>
+                                    </td>
+                                    <td>
+
+                                        {% if n.status == -1 %}
+                                            <i title="Failed"
+                                               class="sent__status text-danger icon-close fa-lg help force-text-left"></i>
+                                        {% elif n.status == 1 %}
+                                            <i title="Sent"
+                                               class="sent__status text-success force-text-left is-success fa icon-check fa-lg"></i>
+                                        {% else %}
+                                            <i title="Processing..."
+                                               class=" text-info sent__status fa ion-load-c fa-spin help force-text-left"></i>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if n.status == 1 %}
+                                            {{ n.send_date | date:'d-m-Y h:i:s' }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if launchable %}
+                                            {% if n.sendable or not n.is_sent %}
+                                                <a href="{% url 'campaigns:core_notify' campaign.id n.id %}">
+                                                    <i class="icon-paper-plane fa-lg"></i>
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if is_paginated %}
+                        <div class="d-flex flex-md-row justify-content-end bd-highlight mb-3">
+                            <div class="p-2">
+                                {% include 'core/partials/pagination.html' %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endwith %}
+
+{% endblock %}

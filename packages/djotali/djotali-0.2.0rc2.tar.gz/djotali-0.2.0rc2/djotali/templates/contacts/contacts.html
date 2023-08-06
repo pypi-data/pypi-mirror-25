@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% load contacts_extras %}
+
+{% block content %}
+
+    <div class="row bg-title">
+        <!-- .page title -->
+        <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12">
+            <h4 class="page-title">
+                {% block title %}
+                {% endblock %}
+            </h4>
+        </div>
+        <!-- /.page title -->
+        <!-- .breadcrumb -->
+        <div class="col-lg-9 col-sm-8 col-md-8 col-xs-12">
+            <ol class="breadcrumb">
+                <li><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                {% block breadcrumb %}
+                {% endblock %}
+            </ol>
+        </div>
+        <!-- /.breadcrumb -->
+    </div>
+    <!-- .row -->
+    <div class="row">
+        <div class="col-md-12 col-lg-offset-0">
+
+            {% block list_header %}
+            {% endblock %}
+            <div class="white-box">
+                <div class="d-flex flex-md-row justify-content-end bd-highlight mb-3">
+                    <div class="mr-auto p-2 bd-highlight">
+                        {% include 'contacts/_search_form.html' %}
+                    </div>
+
+                    <div class="p-2">
+                        <a href="{% url 'contacts:new' %}" class="btn btn-success waves-effect waves-light pull-right">
+                            <span class="btn-label">
+                                <i class="fa fa-plus"></i>
+                            </span>
+                            Cr&eacute;er un contact
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row m-t-20">
+                    <div class="col-lg-12">
+                        {% include "contacts/_contacts_table.html" %}
+                    </div>
+                </div>
+                {% if is_paginated %}
+                    <div class="d-flex flex-md-row justify-content-end bd-highlight mb-3">
+                        <div class="p-2">
+                            {% include 'core/partials/pagination.html' %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+{% endblock content %}
+
+{% block scripts %}
+    {{ block.super }}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.10.1/jquery.mark.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.10.1/jquery.mark.min.js" charset="UTF-8"></script>
+
+
+    {% with filter=request.GET.filter %}
+        {% if filter %}
+            <script>
+                $('.table tbody tr td').mark("{{ filter }}", {
+                    exclude: ['h1'],
+                });
+            </script>
+        {% endif %}
+    {% endwith %}
+
+{% endblock %}

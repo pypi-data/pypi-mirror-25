@@ -1,0 +1,48 @@
+{% load contacts_extras %}
+
+<div class="table-responsive">
+    <table class="table color-table info-table">
+        <thead class="thead-default">
+        <tr>
+            <th>Prénom</th>
+            <th>Nom</th>
+            <th>Téléphone</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for contact in contacts %}
+            <tr>
+                <td>{{ contact.first_name }}</td>
+                <td>{{ contact.last_name }}</td>
+                <td>
+                    <span class="label label-info">{{ contact.phone_number | format_number }}</span>
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <a class="btn btn-default btn-outline waves-effect"
+                           href="{% url 'contacts:edit' contact.id %}?success_url={{ request.path }}" title="Editer le contact">
+                            <i class="icon-pencil"></i>
+                        </a>
+                        {% if not avoid_deleting_contact %}
+                            {% with filter=request.GET.filter %}
+                                {% if filter %}
+                                    <a class="btn btn-default btn-outline waves-effect"
+                                       href="{% url 'contacts:delete' contact.id %}?filter={{ filter }}&success_url={{ request.path }}"
+                                       title="Supprimer le contact">
+                                {% else %}
+                                    <a class="btn btn-default btn-outline waves-effect"
+                                       href="{% url 'contacts:delete' contact.id %}?success_url={{ request.path }}"
+                                       title="Supprimer le contact">
+                                {% endif %}
+                            {% endwith %}
+                            <i class="icon-trash text-danger"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

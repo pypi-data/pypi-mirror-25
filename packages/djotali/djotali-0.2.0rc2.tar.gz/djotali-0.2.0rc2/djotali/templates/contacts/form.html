@@ -1,0 +1,49 @@
+{% extends 'core/form.html' %}
+{% load static %}
+
+{% block page-title %}{% endblock %}
+{% block breadcrumbs %}
+    <li><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+    <li><a href="{% url 'contacts:index' %}">Contacts</a></li>
+    {% block rel-breadcrumbs %}
+    {% endblock %}
+{% endblock %}
+{% block form-block %} onsubmit="return validateContact()"{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/libphonenumber-js/0.4.15/libphonenumber-js.min.js"
+            async></script>
+    <script type="text/javascript">
+        function validateContact() {
+            var phoneNumberInput = document.getElementById('id_phone_number');
+            var phoneNumberStr = phoneNumberInput.value;
+            var isValid = libphonenumber.isValidNumber(phoneNumberStr);
+            var inputGroup = phoneNumberInput.parentNode;
+            if (!isValid) {
+                inputGroup.classList.add('has-error');
+                var inputErrorElement = document.getElementById('id_phone_number_error');
+                if (inputErrorElement) {
+                    inputErrorElement.remove();
+                }
+                inputGroup.appendChild(createDiv('id_phone_number_error',
+                                                 'Le numéro entré est erroné', ['help-block', 'with-errors']));
+            } else {
+                inputGroup.classList.remove('has-error');
+                document.getElementById('id_phone_number_error').remove();
+            }
+            return isValid;
+        }
+
+        function createDiv(id, text, classes) {
+            var div = document.createElement('div');
+            div.id = id;
+            classes.forEach(function addClass(className) {
+                div.className += className + ' ';
+            });
+            div.innerText = text;
+            return div;
+        }
+
+        document.getElementById('contact-form').onsubmit = validateContact;
+    </script>
+{% endblock %}
