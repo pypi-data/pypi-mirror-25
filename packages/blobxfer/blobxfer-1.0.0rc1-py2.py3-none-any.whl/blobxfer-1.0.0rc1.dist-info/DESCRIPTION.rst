@@ -1,0 +1,101 @@
+|Build Status| |Build status| |Coverage Status| |PyPI| |PyPI| |Docker
+Pulls| |Image Layers|
+
+blobxfer
+========
+
+``blobxfer`` is an advanced data movement tool and library for Azure
+Storage Blob and Files. With ``blobxfer`` you can copy your files into
+or out of Azure Storage with the CLI or integrate the ``blobxfer`` data
+movement library into your own Python scripts.
+
+Major Features
+--------------
+
+-  Command-line interface (CLI) providing data movement capability to
+   and from Azure Blob and File Storage
+-  Standalone library for integration with scripts or other Python
+   packages
+-  High-performance design with asynchronous transfers and disk I/O
+-  YAML configuration driven execution support
+-  Resume support
+-  Vectored IO support
+
+   -  ``stripe`` mode allows striping a single file across multiple
+      blobs (even to multiple storage accounts) to break through single
+      blob or fileshare throughput limits
+   -  ``replica`` mode allows replication of a file across multiple
+      destinations including to multiple storage accounts
+
+-  Synchronous copy with cross-mode replication support (including
+   block-level copies for Block blobs)
+-  Client-side encryption support
+-  Support all Azure Blob types and Azure Files for both upload and
+   download
+-  Advanced skip options for rsync-like operations
+-  Store/restore POSIX filemode and uid/gid
+-  Support reading/pipe from ``stdin`` including to page blob
+   destinations
+-  Support reading from blob snapshots for downloading and synchronous
+   copy
+-  Configurable one-shot block upload support
+-  Configurable chunk size for both upload and download
+-  Automatic block size selection for block blob uploading
+-  Automatic uploading of VHD/VHDX files as page blobs
+-  Include and exclude filtering support
+-  Rsync-like delete support
+-  No clobber support in either direction
+-  Automatic content type tagging
+-  File logging support
+
+Installation
+------------
+
+There are three ways to install ``blobxfer``:
+
+-  ``blobxfer`` Python package from
+   `PyPI <https://pypi.python.org/pypi/blobxfer>`__
+-  Pre-built binaries available under
+   `Releases <https://github.com/Azure/blobxfer/releases>`__
+-  Docker images are available for both Linux and Windows platforms on
+   `Docker Hub <https://hub.docker.com/r/alfpark/blobxfer/>`__
+
+Please refer to the `installation
+guide <http://blobxfer.readthedocs.io/en/latest/01-installation/>`__ for
+more information on how to install ``blobxfer``.
+
+Documentation
+-------------
+
+Please refer to the ```blobxfer``
+documentation <http://blobxfer.readthedocs.io/>`__ for more details and
+usage information.
+
+Change Log
+----------
+
+Please see the `Change
+Log <http://blobxfer.readthedocs.io/en/latest/CHANGELOG/>`__ for project
+history.
+
+--------------
+
+Please see this project's `Code of Conduct <CODE_OF_CONDUCT.md>`__ and
+`Contributing <CONTRIBUTING.md>`__ guidelines.
+
+.. |Build Status| image:: https://travis-ci.org/Azure/blobxfer.svg?branch=master
+   :target: https://travis-ci.org/Azure/blobxfer
+.. |Build status| image:: https://ci.appveyor.com/api/projects/status/qgth9p7jlessgp5i/branch/master?svg=true
+   :target: https://ci.appveyor.com/project/alfpark/blobxfer
+.. |Coverage Status| image:: https://coveralls.io/repos/github/Azure/blobxfer/badge.svg?branch=master
+   :target: https://coveralls.io/github/Azure/blobxfer?branch=master
+.. |PyPI| image:: https://img.shields.io/pypi/v/blobxfer.svg
+   :target: https://pypi.python.org/pypi/blobxfer
+.. |PyPI| image:: https://img.shields.io/pypi/pyversions/blobxfer.svg
+   :target: https://pypi.python.org/pypi/blobxfer
+.. |Docker Pulls| image:: https://img.shields.io/docker/pulls/alfpark/blobxfer.svg
+   :target: https://hub.docker.com/r/alfpark/blobxfer
+.. |Image Layers| image:: https://images.microbadger.com/badges/image/alfpark/blobxfer:latest.svg
+   :target: http://microbadger.com/images/alfpark/blobxfer
+
+
