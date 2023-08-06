@@ -1,0 +1,77 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="spirit.plone.theming">
+
+  <!-- Include package dependencies. -->
+  <!-- ============================= -->
+  <include package="plone.app.controlpanel" />
+
+
+  <!-- Browser Resources. -->
+  <!-- ================== -->
+  <browser:resourceDirectory
+      directory="static"
+      layer="..interfaces.ISpiritPloneThemingLayer"
+      name="spirit.plone.theming"
+      />
+
+
+  <!-- Diazo Snippet Viewlet. -->
+  <!-- ====================== -->
+  <browser:viewlet
+      class=".viewlets.DiazoSnippetViewlet"
+      for="*"
+      layer="..interfaces.ISpiritPloneThemingLayer"
+      manager="plone.app.layout.viewlets.interfaces.IPortalTop"
+      name="spirit.plone.theming.diazo_snippets"
+      permission="zope2.View"
+      template="templates/diazo_snippets.pt"
+      />
+
+
+  <!-- The customized logo for Plone 4. -->
+  <!-- =============================== -->
+  <configure zcml:condition="not-have plone-5">
+    <browser:viewlet
+        class=".viewlets.LogoViewlet"
+        layer="..interfaces.ISpiritPloneThemingLayer"
+        manager="plone.app.layout.viewlets.interfaces.IPortalHeader"
+        name="plone.logo"
+        permission="zope2.View"
+        />
+  </configure>
+
+
+  <!-- Controlpanel View. -->
+  <!-- ================== -->
+  <browser:page
+      class=".controlpanel.PloneThemeSettingsControlPanel"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      layer="..interfaces.ISpiritPloneThemingLayer"
+      name="plone-theming-settings"
+      permission="plone.app.controlpanel.Themes"
+      />
+
+
+  <!-- Show the uploaded logo. -->
+  <browser:page
+      class=".logo.Logo"
+      for="*"
+      layer="..interfaces.ISpiritPloneThemingLayer"
+      name="site-logo-plone4"
+      permission="zope.Public"
+      />
+
+  <!-- Show the uploaded favicon. -->
+  <browser:page
+      class=".favicon.Favicon"
+      for="*"
+      layer="..interfaces.ISpiritPloneThemingLayer"
+      name="site-favicon"
+      permission="zope.Public"
+      />
+
+</configure>
