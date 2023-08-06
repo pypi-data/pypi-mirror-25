@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ block.super }} - Withdraw Submission
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+{% endblock %}
+
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        Are you sure  ?
+		<br/>
+        <small>Your submission will not be considered in grading.</small>
+    </h1>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Course</th>
+            <th>Assignment</th>
+            <th>Submitted</th>
+            <th>Original Submitter</th>
+            <th>Authors</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ submission.assignment.course }}</td>
+            <td>{{ submission.assignment }}</td>
+            <td>{{ submission.created }}</td>
+            <td>{{ submission.submitter.get_full_name }}</td>
+            <td>{{ submission.authors.all|join:"<br/>" }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<form action="." method="post" enctype="multipart/form-data">
+{% csrf_token %}
+<input type="hidden" name="confirm"/>
+<button type="submit" href="/withdraw/{{submission.pk}}" class="btn btn-danger"><i class="icon-white icon-trash"></i> Yes, withdraw it.</button>
+</form>
+
+{% endblock %}

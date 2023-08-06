@@ -1,0 +1,71 @@
+{% extends "base_admin.html" %}
+{% load projecttags %}
+{% load bootstrap %}
+
+{% block scripts %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}DataTables/datatables.min.css"/>
+<script type="text/javascript" src="{{STATIC_URL}}DataTables/datatables.min.js"></script>
+{% endblock %}
+
+{% block docready %}
+{{ block.super }}
+var table=$('#gradings').DataTable( {
+	paging: false,
+    buttons: [{extend: 'excel', text: 'Download Excel file'},
+              {extend: 'csv', text: 'Download CSV file'}]
+});
+table.buttons().container().prependTo( $('div.col-sm-12', table.table().container() ) );
+{% endblock %}
+
+{% setting "MAIN_URL" as main_url %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li><a href="{{ main_url }}/teacher/">Home</a></li>
+    <li><a href="{{ main_url }}/teacher/opensubmit/">Backend</a></li>
+    <li>Grading Table</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Grading Table - {{ course }}</h1>
+</div>
+
+<table id="gradings" class="table table-bordered table-condensed table-hover">
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>Last Name</th>
+			<th>First Name</th>
+			<th>Student ID</th>
+			{% for assignment in assignments %}
+				<th>{{ assignment.title }}</th>
+			{% endfor %}
+			<th>Passed assignments</th>
+			<th>Sum of gradings</th>
+		</tr>
+	</thread>
+	<tbody>
+	{% for row in resulttable %}
+		<tr>
+			<td>{{ forloop.counter }}</td>
+			{% for col in row %}
+				{% if col.means_passed %}
+				<td class="success" nowrap>
+				{% elif col.means_failed %}
+				<td class="danger" nowrap>
+				{% else %}
+				<td nowrap>
+				{% endif %}
+				{{ col }}
+				</td>
+			{% endfor %}
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>
+
+{% endblock %}
