@@ -1,0 +1,126 @@
+---
+# A nice name to identify the instance
+{% if domain %}
+{% if subdomain %}
+{% set cluster_name = subdomain + "." + domain %}
+{% else %}
+{% set cluster_name = context.environment.name + "-" + context.stage.lower() + "-" + context.layer.name + "." + domain %}
+{% endif %}
+{% else %}
+{% set cluster_name = context.environment.name + "-" + context.stage.lower() + "-" + context.layer.name %}
+{% endif %}
+resources:
+    RedshiftIamRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument: 
+                Version: "2012-10-17"
+                Statement:
+                  -
+                    Effect: "Allow"
+                    Principal: 
+                      Service: 
+                        - "redshift.amazonaws.com"
+                    Action: 
+                      - "sts:AssumeRole"
+            Path: "/"
+            {% if iam_role_policies %}
+            Policies:
+                {% for policy in iam_role_policies %}
+                - {{ policy }}
+                {% endfor %}
+            {% endif %}
+
+    {% if decrypt_arn %}
+    DbPasswordDecrypt:
+        Type: "Custom::KMSDecrypt"
+        Properties:
+            ServiceToken: "{{decrypt_arn}}"
+            Ciphertext: "{{master_user_password}}"
+    {% endif %}
+    ClusterSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: Security group for Redshift cluster {{cluster_name}}
+            VpcId: {{vpc_id or vpc}}
+            Tags:
+                - Key: Name
+                  Value: "{{context.environment.name}}-{{context.stage.lower()}}-{{context.layer.name.lower()}}-sg"
+            SecurityGroupIngress:
+                {% for sg in sg_whitelist %}
+                - IpProtocol: tcp
+                  FromPort: 5439
+                  ToPort: 5439
+                  SourceSecurityGroupId: {{sg}}
+                {% endfor %}
+                {% for ip in ip_whitelist %}
+                - IpProtocol: tcp
+                  FromPort: 5439
+                  ToPort: 5439
+                  CidrIp: {{ip}}
+                {% endfor %}
+
+    ClusterSubnetGroup:
+        Type: "AWS::Redshift::ClusterSubnetGroup"
+        Properties:
+          Description: "{{context.environment.name}}-{{context.stage}}"
+          SubnetIds:
+            - {{subnet_id}}
+
+    RedshiftCluster:
+        Type: "AWS::Redshift::Cluster"
+        Properties:
+            AllowVersionUpgrade: yes
+            IamRoles:
+                - "Fn::GetAtt":
+                    - RedshiftIamRole
+                    - Arn
+            AutomatedSnapshotRetentionPeriod: {{automated_snapshot_retention_period}}
+            {% if availability_zone %}
+            AvailabilityZone:
+                "Fn::Join":
+                    - ""
+                    - [{Ref: "AWS::Region"}, "{{availability_zone}}"]
+            {% endif %}
+            ClusterSecurityGroups: {{cluster_security_groups}}
+            ClusterSubnetGroupName: {Ref: ClusterSubnetGroup}
+            {% if number_of_nodes > 1 %}
+            ClusterType: multi-node
+            {% else %}
+            ClusterType: single-node
+            {% endif %}
+            DBName: {{db_name}}
+            MasterUsername: {{master_username}}
+            {% if decrypt_arn %}
+            MasterUserPassword:
+                Fn::Sub: ${DbPasswordDecrypt.Plaintext}
+            {% else %}
+            MasterUserPassword: {{master_user_password}}
+            {% endif %}
+            NodeType: {{node_type}}
+            {% if number_of_nodes > 1 %}
+            NumberOfNodes: {{number_of_nodes}}
+            {% endif %}
+            VpcSecurityGroupIds:
+                - Ref: ClusterSecurityGroup
+                {% for grp in vpc_security_group_ids %}
+                - {{grp}}
+                {% endfor %}
+
+    {% if domain %}
+    ClusterDnsRecord:
+        Type: "AWS::Route53::RecordSet"
+        Properties:
+            {% if hosted_zone_id %}
+            HostedZoneId: {{hosted_zone_id}}
+            {% else %}
+            HostedZoneName: {{domain}}.
+            {% endif %}
+            Name: "{{cluster_name}}"
+            Type: CNAME
+            TTL: 900
+            ResourceRecords:
+                - "Fn::GetAtt":
+                    - RedshiftCluster
+                    - "Endpoint.Address"
+    {% endif %}
