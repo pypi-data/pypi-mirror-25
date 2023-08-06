@@ -1,0 +1,103 @@
+================
+NHL Logo Scraper
+================
+
+.. image:: https://badge.fury.io/py/nhl-logo-scraper.svg
+    :target: https://badge.fury.io/py/nhl-logo-scraper
+
+.. image:: https://codecov.io/gh/blindman/nhl-logo-scraper/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/blindman/nhl-logo-scraper
+
+.. image:: https://travis-ci.org/blindman/nhl-logo-scraper.svg?branch=master
+    :target: https://travis-ci.org/blindman/nhl-logo-scraper
+
+*Scrapes logos for all NHL teams, leagues, and networks*
+
+Contents
+========
+
+.. contents::
+
+
+Usage
+=====
+
+First clone the project.
+
+::
+
+    $ git clone https://github.com/blindman/nhl-logo-scraper.git
+
+Once you've cloned the project, run the following commands to get the utility working in your terminal.
+
+::
+
+    $ pip install .
+    $ nhlscraper --help
+
+Scrape
+
+::
+
+    $ nhlscraper scrape [--output=DIR] [--format EXTENSIONS] [--archive]
+
+--output=DIR            The directory to dump all of the files [default: ./output]
+
+--format EXTENSIONS     Image output formats (svg and/or png) [default: svg]
+
+--archive               Archive any previous logos that were downloaded [default: True]
+
+Clean
+
+::
+
+    $ nhlscraper clean [--dir=DIR] [--category CATEGORIES] [--full]
+
+--dir=DIR               The directory that the files live in [default: ./output]
+
+--category CATEGORIES   Categories to remove all files (league, network, team)
+
+--full                  Clean all files created by this tool (includes archives)
+
+Other
+
+::
+
+    $ nhlscraper -h | --help
+
+::
+
+    $ nhlscraper --version
+
+
+Contributing
+============
+
+Assuming you've cloned the project and created a virtualenv, run the following command to work with the code.
+
+    $ virtualenv --python python3 venv
+    $ source venv/bin/activate
+    $ pip install -e .[test]
+
+To test the code, run the following command.
+
+    $ python setup.py test
+
+Notes
+=====
+
+This is a fork of my old `imageDownloader`__ repository which did the same thing but as a bash script and for the previous version of nhl.com
+
+__ https://github.com/blindman/imageDownloader
+
+You may have noticed that `nhl.com`__ is requested and parsed to find ::code`nhl-logos.css` instead of retrieving the css file directly. This is because (I believe) the path to that file could potentially change. The current path is ::code::`.../builds/.../f0683b50089da6c16c1df297a9a74ce08e79b94b_1507226889/.../nhl-logos.css` and since the big chunk in the middle looks like a unique identifier I am going to assume it will change. I am looking to implement some sort of caching so it doesn't make a request every time.
+
+__ https://www.nhl.com/
+
+
+License
+=======
+
+MIT © [Jon Heller](https://github.com/blindman)
+
+
