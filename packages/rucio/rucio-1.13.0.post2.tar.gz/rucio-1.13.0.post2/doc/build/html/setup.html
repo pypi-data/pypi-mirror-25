@@ -1,0 +1,358 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Setting up a Rucio development environment &mdash; Rucio 0.3.8 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Rucio 0.3.8 documentation" href="index.html" />
+    <link rel="next" title="Developing Rucio" href="developing.html" />
+    <link rel="prev" title="Development Guidelines" href="development_guidelines.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developing.html" title="Developing Rucio"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="development_guidelines.html" title="Development Guidelines"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 0.3.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="setting-up-a-rucio-development-environment">
+<h1>Setting up a Rucio development environment<a class="headerlink" href="#setting-up-a-rucio-development-environment" title="Permalink to this headline">¶</a></h1>
+<p>This document describes getting the source from Rucio git repository for development purposes.</p>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>This document assumes you have the following tools available on your system:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://git-scm.com/">git</a></li>
+<li><a class="reference external" href="http://www.python.org/">Python</a> 2.6 or 2.7</li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/setuptools">setuptools</a>/<a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a>/<a class="reference external" href="http://www.virtualenv.org/">virtualenv</a> or <a class="reference external" href="http://curl.haxx.se/">curl</a></li>
+</ul>
+</div>
+<div class="section" id="getting-the-latest-code">
+<h2>Getting the latest code<a class="headerlink" href="#getting-the-latest-code" title="Permalink to this headline">¶</a></h2>
+<p>Make a clone of the code from our git repository:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone https://&lt;gerrit_username&gt;@voatlasrucio-gerrit.cern.ch/rucio
+</pre></div>
+</div>
+</div>
+<div class="section" id="configuring-git">
+<h2>Configuring git<a class="headerlink" href="#configuring-git" title="Permalink to this headline">¶</a></h2>
+<p>Make sure that you get the following pre-commit hooks for Git: commit-msg and pre-commit.</p>
+<p>They can be installed by executing the script tools/configure_git.sh:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd rucio
+$ ./tools/configure_git.sh
+</pre></div>
+</div>
+<p>Or manually with:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd rucio
+$ cp tools/commit-msg .git/hooks/commit-msg
+$ chmod +x .git/hooks/commit-msg
+</pre></div>
+</div>
+<p>Now, copy the pep8 verification commit hook:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cp tools/pre-commit .git/hooks/pre-commit
+$ chmod +x .git/hooks/pre-commit
+</pre></div>
+</div>
+<p>You should keep it enabled all the time, but if you want to disable it temporarily, then just remove the executable rights:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ chmod -x .git/hooks/pre-commit
+</pre></div>
+</div>
+<p>and afterwards enable it again:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ chmod +x .git/hooks/pre-commit
+</pre></div>
+</div>
+<p>When that is complete, you are ready to play.</p>
+<p>Optionally, you can also subscribe to the notes of the code review:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git config --add remote.origin.fetch refs/notes/review:refs/notes/review
+</pre></div>
+</div>
+<p>You can then add the code review notes to your local git log by adding this parameter:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git log --show-notes=review
+</pre></div>
+</div>
+</div>
+<div class="section" id="installing-dependencies">
+<h2>Installing dependencies<a class="headerlink" href="#installing-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Rucio maintains three lists of dependencies:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">tools</span><span class="o">/</span><span class="n">pip</span><span class="o">-</span><span class="n">requires</span>
+<span class="n">tools</span><span class="o">/</span><span class="n">pip</span><span class="o">-</span><span class="n">requires</span><span class="o">-</span><span class="n">client</span>
+<span class="n">tools</span><span class="o">/</span><span class="n">pip</span><span class="o">-</span><span class="n">requires</span><span class="o">-</span><span class="n">test</span>
+</pre></div>
+</div>
+<p>The first is the list of dependencies needed for running rucio,
+the second list includes dependencies used for the rucio python clients and CLIs and
+the third list is for active development and testing of rucio itself.</p>
+<p>These depdendencies can be installed from <a class="reference external" href="http://pypi.python.org/">PyPi</a> using the python tool <a class="reference external" href="http://pypi.python.org/pypi/pip">pip</a> or by using
+the tools/install_venv.py script as described in the next section.</p>
+<p>However, your system <em>may</em> need additional dependencies that <cite>pip</cite> (and by
+extension, PyPi) cannot satisfy. These dependencies should be installed
+prior to using <cite>pip</cite>, and the installation method may vary depending on
+your platform.</p>
+</div>
+<div class="section" id="pypi-packages-and-virtualenv">
+<h2>PyPi Packages and VirtualEnv<a class="headerlink" href="#pypi-packages-and-virtualenv" title="Permalink to this headline">¶</a></h2>
+<p>We recommend establishing a virtualenv to run rucio within. Virtualenv limits the python environment
+to just what you&#8217;re installing as dependencies, useful to keep a clean environment for working on
+rucio. The tools directory in rucio has a script already created to make this very simple:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python tools/install_venv.py
+</pre></div>
+</div>
+<p>This will create a local virtual environment in the directory <code class="docutils literal"><span class="pre">.venv</span></code>.</p>
+<p>If you need to develop only the clients and have a default configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python tools/install_venv.py --atlas-clients
+</pre></div>
+</div>
+<p>Once created, you can activate this virtualenv for your current shell using:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ source .venv/bin/activate
+</pre></div>
+</div>
+<p>The virtual environment can be disabled using the command:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ deactivate
+</pre></div>
+</div>
+<p>You can also use <code class="docutils literal"><span class="pre">tools\with_venv.sh</span></code> to prefix commands so that they run
+within the virtual environment. For more information on virtual environments,
+see <a class="reference external" href="http://www.virtualenv.org/">virtualenv</a>.</p>
+<p>Lastly you have to create a symbolic link from the virtual environments python directory to the rucio source directory:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd .venv/lib/python2.7/site-packages/
+$ ln PATH_TO_INSTALL_DIRECTORY/lib/rucio/ rucio -s
+</pre></div>
+</div>
+</div>
+<div class="section" id="verifying-rucio-is-set-up">
+<h2>Verifying Rucio is set up<a class="headerlink" href="#verifying-rucio-is-set-up" title="Permalink to this headline">¶</a></h2>
+<p>Once set up, either directly or within a virtualenv, you should be able to invoke python and import
+the libraries. If you&#8217;re using a virtualenv, don&#8217;t forget to activate it:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ source .venv/bin/activate
+$ python
+</pre></div>
+</div>
+<p>You should then be able to <cite>import rucio</cite> from your Python shell
+without issue:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">rucio</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="registering-and-using-the-package-index">
+<h2>Registering and using the Package Index<a class="headerlink" href="#registering-and-using-the-package-index" title="Permalink to this headline">¶</a></h2>
+<p>The pip server is running on <a class="reference external" href="http://voatlasrucio-pip.cern.ch/">http://voatlasrucio-pip.cern.ch/</a>.</p>
+<p>To upload files you need to create a <code class="file docutils literal"><span class="pre">~/.pypirc</span></code> with:</p>
+<div class="highlight-python"><div class="highlight"><pre>[distutils]
+index-servers = voatlasrucio-pip
+
+[atlas-pip]
+username: &lt;username&gt;
+password: &lt;password&gt;
+repository: https://voatlasrucio-pip.cern.ch/
+</pre></div>
+</div>
+<ul>
+<li><p class="first"><em>username</em>, which is the registered username on the PyPI server.</p>
+</li>
+<li><dl class="first docutils">
+<dt><em>password</em>, that will be used to authenticate. If omitted the user</dt>
+<dd><p class="first last">will be prompt to type it when needed.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Upload a package with:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python setup.py register -r voatlasrucio-pip sdist upload -r voatlasrucio-pip
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python setup.py register -r https://voatlasrucio-pip.cern.ch/ sdist upload -r https://voatlasrucio-pip.cern.ch/
+</pre></div>
+</div>
+<p>To install packages:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install rucio -i https://voatlasrucio-pip.cern.ch/simple
+</pre></div>
+</div>
+<p>it will ask for the password and login.</p>
+<p>To avoid this, you need to create a <code class="file docutils literal"><span class="pre">~/.pip/pip.conf</span></code> with:</p>
+<div class="highlight-python"><div class="highlight"><pre>[install]
+index-url = https://&lt;username&gt;:&lt;password&gt;@voatlasrucio-pip.cern.ch/simple
+extra-index-url = http://pypi.python.org/simple
+</pre></div>
+</div>
+<ul>
+<li><p class="first"><em>username</em>, which is the registered username on the PyPI server.</p>
+</li>
+<li><dl class="first docutils">
+<dt><em>password</em>, that will be used to authenticate. If omitted the user</dt>
+<dd><p class="first last">will be prompt to type it when needed.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="configuring-rucio">
+<h2>Configuring Rucio<a class="headerlink" href="#configuring-rucio" title="Permalink to this headline">¶</a></h2>
+<p>When starting up Rucio, you can specify the configuration file(rucio.cfg) to
+use with the RUCIO_HOME environment variable:  <code class="docutils literal"><span class="pre">$RUCIO_HOME/etc/rucio.cfg</span></code></p>
+<p>If you do <strong>not</strong> specify a configuration file, Rucio will look in the <code class="docutils literal"><span class="pre">/opt/rucio/etc/</span></code>
+directory for a configuration file.</p>
+<p>A sample configuration file distributed with Rucio is in the etc directory.
+It can be copied locally and configured:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir -p /opt/rucio/
+$ cp etc/rucio.cfg.template /opt/rucio/etc/rucio.cfg
+$ edit  /opt/rucio/etc/rucio.cfg
+</pre></div>
+</div>
+<p>You should then be able to test the rucio commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rucio ping
+</pre></div>
+</div>
+</div>
+<div class="section" id="generating-documentation">
+<h2>Generating documentation<a class="headerlink" href="#generating-documentation" title="Permalink to this headline">¶</a></h2>
+<p>Build the Sphinx documentation with:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python setup.py build_sphinx
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Setting up a Rucio development environment</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#getting-the-latest-code">Getting the latest code</a></li>
+<li><a class="reference internal" href="#configuring-git">Configuring git</a></li>
+<li><a class="reference internal" href="#installing-dependencies">Installing dependencies</a></li>
+<li><a class="reference internal" href="#pypi-packages-and-virtualenv">PyPi Packages and VirtualEnv</a></li>
+<li><a class="reference internal" href="#verifying-rucio-is-set-up">Verifying Rucio is set up</a></li>
+<li><a class="reference internal" href="#registering-and-using-the-package-index">Registering and using the Package Index</a></li>
+<li><a class="reference internal" href="#configuring-rucio">Configuring Rucio</a></li>
+<li><a class="reference internal" href="#generating-documentation">Generating documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="development_guidelines.html"
+                        title="previous chapter">Development Guidelines</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="developing.html"
+                        title="next chapter">Developing Rucio</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/setup.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developing.html" title="Developing Rucio"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="development_guidelines.html" title="Development Guidelines"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Rucio 0.3.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>

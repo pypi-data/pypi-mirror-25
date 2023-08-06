@@ -1,0 +1,222 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>rucio.api.identity &#8212; Rucio 1.12.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.12.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+ 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32728665-1']);
+  _gaq.push(['_trackPageview']);
+</script>
+
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for rucio.api.identity</h1><div class="highlight"><pre>
+<span class="c"># Copyright European Organization for Nuclear Research (CERN)</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># You may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Authors:</span>
+<span class="c"># - Vincent Garonne, &lt;vincent.garonne@cern.ch&gt;, 2012</span>
+<span class="c"># - Mario Lassnig, &lt;mario.lassnig@cern.ch&gt;, 2012</span>
+<span class="c"># - Tomas Kouba, &lt;tomas.kouba@cern.ch&gt;, 2014</span>
+<span class="c"># - Thomas Beermann, &lt;thomas.beermann@cern.ch&gt;, 2014</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Interface for identity abstraction layer</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">rucio.api</span> <span class="k">import</span> <span class="n">permission</span>
+<span class="kn">from</span> <span class="nn">rucio.common</span> <span class="k">import</span> <span class="n">exception</span>
+<span class="kn">from</span> <span class="nn">rucio.core</span> <span class="k">import</span> <span class="n">identity</span>
+<span class="kn">from</span> <span class="nn">rucio.db.sqla.constants</span> <span class="k">import</span> <span class="n">IdentityType</span>
+
+
+<div class="viewcode-block" id="add_identity"><a class="viewcode-back" href="../../../identity.html#rucio.api.identity.add_identity">[docs]</a><span class="k">def</span> <span class="nf">add_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">id_type</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a user identity.</span>
+
+<span class="sd">    :param identity_key: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">    :param id_type: The type of the authentication (x509, gss, userpass)</span>
+<span class="sd">    :param email: The Email address associated with the identity.</span>
+<span class="sd">    :param password: If type==userpass, this sets the password.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">identity</span><span class="o">.</span><span class="n">add_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">IdentityType</span><span class="o">.</span><span class="n">from_sym</span><span class="p">(</span><span class="n">id_type</span><span class="p">),</span> <span class="n">email</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="del_identity"><a class="viewcode-back" href="../../../identity.html#rucio.api.identity.del_identity">[docs]</a><span class="k">def</span> <span class="nf">del_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">id_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deletes a user identity.</span>
+
+<span class="sd">    :param identity_key: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">    :param id_type: The type of the authentication (x509, gss, userpass).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">identity</span><span class="o">.</span><span class="n">del_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">IdentityType</span><span class="o">.</span><span class="n">from_sym</span><span class="p">(</span><span class="n">id_type</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="add_account_identity"><a class="viewcode-back" href="../../../identity.html#rucio.api.identity.add_account_identity">[docs]</a><span class="k">def</span> <span class="nf">add_account_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">id_type</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">issuer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds a membership association between identity and account.</span>
+
+<span class="sd">    :param identity_key: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">    :param id_type: The type of the authentication (x509, gss, userpass).</span>
+<span class="sd">    :param account: The account name.</span>
+<span class="sd">    :param email: The Email address associated with the identity.</span>
+<span class="sd">    :param issuer: The issuer account.</span>
+<span class="sd">    :param default: If True, the account should be used by default with the provided identity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;identity&#39;</span><span class="p">:</span> <span class="n">identity_key</span><span class="p">,</span> <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="n">id_type</span><span class="p">,</span> <span class="s">&#39;account&#39;</span><span class="p">:</span> <span class="n">account</span><span class="p">}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">permission</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">issuer</span><span class="o">=</span><span class="n">issuer</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;add_account_identity&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">exception</span><span class="o">.</span><span class="n">AccessDenied</span><span class="p">(</span><span class="s">&#39;Account %s can not add account identity&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">issuer</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">identity</span><span class="o">.</span><span class="n">add_account_identity</span><span class="p">(</span><span class="n">identity</span><span class="o">=</span><span class="n">identity_key</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">IdentityType</span><span class="o">.</span><span class="n">from_sym</span><span class="p">(</span><span class="n">id_type</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="n">account</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="del_account_identity"><a class="viewcode-back" href="../../../identity.html#rucio.api.identity.del_account_identity">[docs]</a><span class="k">def</span> <span class="nf">del_account_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">id_type</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Removes a membership association between identity and account.</span>
+
+<span class="sd">    :param identity_key: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">    :param id_type: The type of the authentication (x509, gss, userpass).</span>
+<span class="sd">    :param account: The account name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">identity</span><span class="o">.</span><span class="n">del_account_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">IdentityType</span><span class="o">.</span><span class="n">from_sym</span><span class="p">(</span><span class="n">id_type</span><span class="p">),</span> <span class="n">account</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="list_identities"><a class="viewcode-back" href="../../../identity.html#rucio.api.identity.list_identities">[docs]</a><span class="k">def</span> <span class="nf">list_identities</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of all enabled identities.</span>
+
+<span class="sd">    returns: A list of all enabled identities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">identity</span><span class="o">.</span><span class="n">list_identities</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_default_account"><a class="viewcode-back" href="../../../identity.html#rucio.api.identity.get_default_account">[docs]</a><span class="k">def</span> <span class="nf">get_default_account</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">id_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the default account for this identity.</span>
+
+<span class="sd">    :param identity_key: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">    :param id_type: The type of the authentication (x509, gss, userpass).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">identity</span><span class="o">.</span><span class="n">get_default_account</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">IdentityType</span><span class="o">.</span><span class="n">from_sym</span><span class="p">(</span><span class="n">id_type</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="list_accounts_for_identity"><a class="viewcode-back" href="../../../identity.html#rucio.api.identity.list_accounts_for_identity">[docs]</a><span class="k">def</span> <span class="nf">list_accounts_for_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">id_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of all accounts for an identity.</span>
+
+<span class="sd">    :param identity: The identity key name. For example x509 DN, or a username.</span>
+<span class="sd">    :param id_type: The type of the authentication (x509, gss, userpass).</span>
+
+<span class="sd">    returns: A list of all accounts for the identity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">identity</span><span class="o">.</span><span class="n">list_accounts_for_identity</span><span class="p">(</span><span class="n">identity_key</span><span class="p">,</span> <span class="n">IdentityType</span><span class="o">.</span><span class="n">from_sym</span><span class="p">(</span><span class="n">id_type</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div>
+   <img src="../../../_static/rucio_logo.png" alt="Rucio logo" />
+</div>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Rucio 1.12.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, CERN.
+    </div>
+<div class="footer">
+<script type="text/javascript">
+  (function() {
+    var ga = document.createElement('script');
+    ga.src = ('https:' == document.location.protocol ?
+              'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    ga.setAttribute('async', 'true');
+    document.documentElement.firstChild.appendChild(ga);
+  })();
+</script>
+</div>
+
+  </body>
+</html>
