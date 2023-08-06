@@ -1,0 +1,97 @@
+Metadata-Version: 2.0
+Name: django-sgapi
+Version: 1.0.0
+Summary: A Django email backend for the SendGrid API
+Home-page: https://github.com/jtstio/django-sgapi
+Author: Jay Hale
+Author-email: jay@jtst.io
+License: MIT
+Description-Content-Type: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Topic :: Communications :: Email
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: sendgrid (<4,>=3.5)
+
+django-sgapi
+============
+
+A Django email backend for the SendGrid API
+
+Installation
+------------
+
+Install the backend from PyPI:
+
+.. code:: bash
+
+    pip install django-sgapi
+
+Add the following to your project's **settings.py**:
+
+.. code:: python
+
+    EMAIL_BACKEND = "sgbackend.SendGridBackend"
+    SENDGRID_API_KEY = "Your SendGrid API Key"
+
+**Done!**
+
+Example
+-------
+
+.. code:: python
+
+
+    from django.core.mail import send_mail
+    from django.core.mail import EmailMultiAlternatives
+
+    send_mail("Your Subject", "This is a simple text email body.",
+      "Yamil Asusta <hello@yamilasusta.com>", ["yamil@sendgrid.com"])
+
+    # or
+    mail = EmailMultiAlternatives(
+      subject="Your Subject",
+      body="This is a simple text email body.",
+      from_email="Yamil Asusta <hello@yamilasusta.com>",
+      to=["yamil@sendgrid.com"],
+      headers={"Reply-To": "support@sendgrid.com"}
+    )
+    # Add template
+    mail.template_id = 'YOUR TEMPLATE ID FROM SENDGRID ADMIN'
+
+    # Replace substitutions in sendgrid template
+    mail.substitutions = {'%username%': 'elbuo8'}
+
+    # Attach file
+    with open('somefilename.pdf', 'rb') as file:
+        mail.attachments = [
+            ('somefilename.pdf', file.read(), 'application/pdf')
+        ]
+
+    mail.attach_alternative(
+        "<p>This is a simple HTML email body</p>", "text/html"
+    )
+
+    mail.send()
+
+
+License
+-------
+MIT
+
+
+Enjoy :)
+
