@@ -1,0 +1,504 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <!-- Google Tag Manager - JD-20170831 --> 
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-MP366CC');</script>
+    <!-- End Google Tag Manager -->
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta property="description" content="Efficient topic modelling of text semantics in Python." />
+    <meta property="og:title" content="gensim: topic modelling for humans" />
+    <meta property="og:description" content="Efficient topic modelling in Python" />
+
+    
+      <title>gensim: corpora.sharded_corpus – Corpus stored in separate files</title>
+
+    
+  <link rel="stylesheet" href="../_static/css/style.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/jquery.qtip.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/anythingslider.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+
+  </head>
+
+  <body>
+    <!-- Google Tag Manager (noscript) - JD-20170831 -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MP366CC"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="topwrap">
+      
+      <div id="top1">
+        <div id="left1">
+          <h1 class="h1gensim">
+            <img src="../_static/images/logo-gensim_compact.png" alt="gensim logo" title="Gensim - topic modelling for humans" />
+          </h1>
+        </div>
+
+        <div id="middleright">
+          <div id="middle1">
+            <div id="gensim"><a href="../index.html"><img src="../_static/images/gensim_compact.png" alt="gensim" title="Gensim home" /></a></div>
+            <div id="tagline"><img src="../_static/images/tagline_compact.png" alt="gensim tagline" /></div>
+          </div>
+          <div id="right1">
+            <div class="consulting-banner">
+              <h3><a href="http://rare-technologies.com/">Get Expert Help</a></h3>
+              <p>• machine learning, NLP, data mining</p>
+              <p>• custom SW design, development, optimizations</p>
+              <p>• corporate trainings &amp; IT consulting</p>
+            </div>
+          </div>
+        </div>
+      </div>
+     
+
+      
+      <div id="menu">
+        <div id="indentation1">
+          <ul class="menubuttons">
+            <li class="menubutton"><a href="../index.html">Home</a></li>
+            <li class="menubutton"><a href="../tutorial.html">Tutorials</a></li>
+            <li class="menubutton"><a href="../install.html">Install</a></li>
+            <li class="menubutton"><a href="../support.html">Support</a></li>
+            <li class="menubutton"><a href="../apiref.html">API</a></li>
+            <li class="menubutton"><a href="../about.html">About</a></li>
+          </ul>
+        </div>
+      </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+
+    
+  <script type="text/javascript">
+  var DOCUMENTATION_OPTIONS = {
+    URL_ROOT: '../',
+    VERSION: '2.3.0',
+    COLLAPSE_INDEX: false,
+    FILE_SUFFIX: '.html',
+    HAS_SOURCE: true
+  };
+  </script>
+    <script type="text/javascript" src="../_static/js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.qtip.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-migrate-1.1.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.anythingslider.min.js"></script>
+
+    
+    <div class="document">
+      
+        <div id="thinbanner">
+          <div id="bodythinbanner">
+            <span class="h2gensim">corpora.sharded_corpus – Corpus stored in separate files</span>
+          </div>
+        </div>
+        <div class="obsah">
+          <div class="obsahwrapper">
+            
+  <div class="section" id="module-gensim.corpora.sharded_corpus">
+<span id="corpora-sharded-corpus-corpus-stored-in-separate-files"></span><h1><code class="xref py py-mod docutils literal"><span class="pre">corpora.sharded_corpus</span></code> – Corpus stored in separate files<a class="headerlink" href="#module-gensim.corpora.sharded_corpus" title="Permalink to this headline">¶</a></h1>
+<p>This module implements a corpus class that stores its data in separate files called
+“shards”. This is a compromise between speed (keeping the whole dataset
+in memory) and memory footprint (keeping the data on disk and reading from it
+on demand).</p>
+<p>The corpus is intended for situations where you need to use your data
+as numpy arrays for some iterative processing (like training something
+using SGD, which usually involves heavy matrix multiplication).</p>
+<dl class="class">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus">
+<em class="property">class </em><code class="descclassname">gensim.corpora.sharded_corpus.</code><code class="descname">ShardedCorpus</code><span class="sig-paren">(</span><em>output_prefix</em>, <em>corpus</em>, <em>dim=None</em>, <em>shardsize=4096</em>, <em>overwrite=False</em>, <em>sparse_serialization=False</em>, <em>sparse_retrieval=False</em>, <em>gensim=False</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="indexedcorpus.html#gensim.corpora.indexedcorpus.IndexedCorpus" title="gensim.corpora.indexedcorpus.IndexedCorpus"><code class="xref py py-class docutils literal"><span class="pre">gensim.corpora.indexedcorpus.IndexedCorpus</span></code></a></p>
+<p>This corpus is designed for situations where you need to train a model
+on matrices, with a large number of iterations. (It should be faster than
+gensim’s other IndexedCorpus implementations for this use case; check the
+<cite>benchmark_datasets.py</cite> script. It should also serialize faster.)</p>
+<p>The corpus stores its data in separate files called
+“shards”. This is a compromise between speed (keeping the whole dataset
+in memory) and memory footprint (keeping the data on disk and reading from
+it on demand). Persistence is done using the standard gensim load/save methods.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The dataset is <strong>read-only</strong>, there is - as opposed to gensim’s Similarity
+class, which works similarly - no way of adding documents to the dataset
+(for now).</p>
+</div>
+<p>You can use ShardedCorpus to serialize your data just like any other gensim
+corpus that implements serialization. However, because the data is saved
+as numpy 2-dimensional ndarrays (or scipy sparse matrices), you need to
+supply the dimension of your data to the corpus. (The dimension of word
+frequency vectors will typically be the size of the vocabulary, etc.)</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">corpus</span> <span class="o">=</span> <span class="n">gensim</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">mock_data</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output_prefix</span> <span class="o">=</span> <span class="s1">&#39;mydata.shdat&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ShardedCorpus</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">,</span> <span class="n">corpus</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <cite>output_prefix</cite> tells the ShardedCorpus where to put the data.
+Shards are saved as <cite>output_prefix.0</cite>, <cite>output_prefix.1</cite>, etc.
+All shards must be of the same size. The shards can be re-sized (which
+is essentially a re-serialization into new-size shards), but note that
+this operation will temporarily take twice as much disk space, because
+the old shards are not deleted until the new shards are safely in place.</p>
+<p>After serializing the data, the corpus will then save itself to the file
+<cite>output_prefix</cite>.</p>
+<p>On further initialization with the same <cite>output_prefix</cite>, the corpus
+will load the already built dataset unless the <cite>overwrite</cite> option is
+given. (A new object is “cloned” from the one saved to <cite>output_prefix</cite>
+previously.)</p>
+<p>To retrieve data, you can load the corpus and use it like a list:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sh_corpus</span> <span class="o">=</span> <span class="n">ShardedCorpus</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batch</span> <span class="o">=</span> <span class="n">sh_corpus</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">150</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>This will retrieve a numpy 2-dimensional array of 50 rows and 1000
+columns (1000 was the dimension of the data we supplied to the corpus).
+To retrieve gensim-style sparse vectors, set the <cite>gensim</cite> property:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sh_corpus</span><span class="o">.</span><span class="n">gensim</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batch</span> <span class="o">=</span> <span class="n">sh_corpus</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">150</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The batch now will be a generator of gensim vectors.</p>
+<p>Since the corpus needs the data serialized in order to be able to operate,
+it will serialize data right away on initialization. Instead of calling
+<cite>ShardedCorpus.serialize()</cite>, you can just initialize and use the corpus
+right away:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">corpus</span> <span class="o">=</span> <span class="n">ShardedCorpus</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">,</span> <span class="n">corpus</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batch</span> <span class="o">=</span> <span class="n">corpus</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">150</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>ShardedCorpus also supports working with scipy sparse matrices, both
+during retrieval and during serialization. If you want to serialize your
+data as sparse matrices, set the <cite>sparse_serialization</cite> flag. For
+retrieving your data as sparse matrices, use the <cite>sparse_retrieval</cite>
+flag. (You can also retrieve densely serialized data as sparse matrices,
+for the sake of completeness, and vice versa.) By default, the corpus
+will retrieve numpy ndarrays even if it was serialized into sparse
+matrices.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sparse_prefix</span> <span class="o">=</span> <span class="s1">&#39;mydata.sparse.shdat&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ShardedCorpus</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">sparse_prefix</span><span class="p">,</span> <span class="n">corpus</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">sparse_serialization</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparse_corpus</span> <span class="o">=</span> <span class="n">ShardedCorpus</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sparse_prefix</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batch</span> <span class="o">=</span> <span class="n">sparse_corpus</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">150</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<span class="go">&lt;type &#39;numpy.ndarray&#39;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sparse_corpus</span><span class="o">.</span><span class="n">sparse_retrieval</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batch</span> <span class="o">=</span> <span class="n">sparse_corpus</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">150</span><span class="p">]</span>
+<span class="go">&lt;class &#39;scipy.sparse.csr.csr_matrix&#39;&gt;</span>
+</pre></div>
+</div>
+<p>While you <em>can</em> touch the <cite>sparse_retrieval</cite> attribute during the life
+of a ShardedCorpus object, you should definitely not touch `
+<cite>sharded_serialization</cite>! Changing the attribute will not miraculously
+re-serialize the data in the requested format.</p>
+<p>The CSR format is used for sparse data throughout.</p>
+<p>Internally, to retrieve data, the dataset keeps track of which shard is
+currently open and on a <cite>__getitem__</cite> request, either returns an item from
+the current shard, or opens a new one. The shard size is constant, except
+for the last shard.</p>
+<p>Initializes the dataset. If <cite>output_prefix</cite> is not found,
+builds the shards.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>output_prefix</strong> (<em>str</em>) – <p>The absolute path to the file from which shard
+filenames should be derived. The individual shards will be saved
+as <cite>output_prefix.0</cite>, <cite>output_prefix.1</cite>, etc.</p>
+<p>The <cite>output_prefix</cite> path then works as the filename to which
+the ShardedCorpus object itself will be automatically saved.
+Normally, gensim corpora do not do this, but ShardedCorpus needs
+to remember several serialization settings: namely the shard
+size and whether it was serialized in dense or sparse format. By
+saving automatically, any new ShardedCorpus with the same
+<cite>output_prefix</cite> will be able to find the information about the
+data serialized with the given prefix.</p>
+<p>If you want to <em>overwrite</em> your data serialized with some output
+prefix, set the <cite>overwrite</cite> flag to True.</p>
+<p>Of course, you can save your corpus separately as well using
+the <cite>save()</cite> method.</p>
+</li>
+<li><strong>corpus</strong> (<a class="reference internal" href="../interfaces.html#gensim.interfaces.CorpusABC" title="gensim.interfaces.CorpusABC"><em>gensim.interfaces.CorpusABC</em></a>) – The source corpus from which to build the dataset.</li>
+<li><strong>dim</strong> (<em>int</em>) – Specify beforehand what the dimension of a dataset item
+should be. This is useful when initializing from a corpus that
+doesn’t advertise its dimension, or when it does and you want to
+check that the corpus matches the expected dimension. <strong>If `dim`
+is left unused and `corpus` does not provide its dimension in
+an expected manner, initialization will fail.</strong></li>
+<li><strong>shardsize</strong> (<em>int</em>) – How many data points should be in one shard. More
+data per shard means less shard reloading but higher memory usage
+and vice versa.</li>
+<li><strong>overwrite</strong> (<em>bool</em>) – If set, will build dataset from given corpus even
+if <cite>output_prefix</cite> already exists.</li>
+<li><strong>sparse_serialization</strong> (<em>bool</em>) – <p>If set, will save the data in a sparse
+form (as csr matrices). This is to speed up retrieval when you
+know you will be using sparse matrices.</p>
+<p>..note:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">This</span> <span class="nb">property</span> <span class="o">**</span><span class="n">should</span> <span class="ow">not</span> <span class="n">change</span><span class="o">**</span> <span class="n">during</span> <span class="n">the</span> <span class="n">lifetime</span> <span class="n">of</span>
+<span class="n">the</span> <span class="n">dataset</span><span class="o">.</span> <span class="p">(</span><span class="n">If</span> <span class="n">you</span> <span class="n">find</span> <span class="n">out</span> <span class="n">you</span> <span class="n">need</span> <span class="n">to</span> <span class="n">change</span> <span class="kn">from</span> <span class="nn">a</span> <span class="n">sparse</span>
+<span class="n">to</span> <span class="n">a</span> <span class="n">dense</span> <span class="n">representation</span><span class="p">,</span> <span class="n">the</span> <span class="n">best</span> <span class="n">practice</span> <span class="ow">is</span> <span class="n">to</span> <span class="n">create</span>
+<span class="n">another</span> <span class="n">ShardedCorpus</span> <span class="nb">object</span><span class="o">.</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><strong>sparse_retrieval</strong> (<em>bool</em>) – <p>If set, will retrieve data as sparse vectors
+(numpy csr matrices). If unset, will return ndarrays.</p>
+<p>Note that retrieval speed for this option depends on how the dataset
+was serialized. If <cite>sparse_serialization</cite> was set, then setting
+<cite>sparse_retrieval</cite> will be faster. However, if the two settings
+do not correspond, the conversion on the fly will slow the dataset
+down.</p>
+</li>
+<li><strong>gensim</strong> (<em>bool</em>) – If set, will convert the output to gensim
+sparse vectors (list of tuples (id, value)) to make it behave like
+any other gensim corpus. This <strong>will</strong> slow the dataset down.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.get_by_offset">
+<code class="descname">get_by_offset</code><span class="sig-paren">(</span><em>offset</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.get_by_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>As opposed to getitem, this one only accepts ints as offsets.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.in_current">
+<code class="descname">in_current</code><span class="sig-paren">(</span><em>offset</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.in_current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine whether the given offset falls within the current shard.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.in_next">
+<code class="descname">in_next</code><span class="sig-paren">(</span><em>offset</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.in_next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine whether the given offset falls within the next shard.
+This is a very small speedup: typically, we will be iterating through
+the data forward. Could save considerable time with a very large number
+of smaller shards.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.init_by_clone">
+<code class="descname">init_by_clone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.init_by_clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize by copying over attributes of another ShardedCorpus
+instance saved to the output_prefix given at __init__().</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.init_shards">
+<code class="descname">init_shards</code><span class="sig-paren">(</span><em>output_prefix</em>, <em>corpus</em>, <em>shardsize=4096</em>, <em>dtype=&lt;type 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.init_shards" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize shards from the corpus.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.load">
+<em class="property">classmethod </em><code class="descname">load</code><span class="sig-paren">(</span><em>fname</em>, <em>mmap=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load itself in clean state. <cite>mmap</cite> has no effect here.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.load_shard">
+<code class="descname">load_shard</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.load_shard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load (unpickle) the n-th shard as the “live” part of the dataset
+into the Dataset object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset to no shard at all. Used for saving.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.resize_shards">
+<code class="descname">resize_shards</code><span class="sig-paren">(</span><em>shardsize</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.resize_shards" title="Permalink to this definition">¶</a></dt>
+<dd><p>Re-process the dataset to new shard size. This may take pretty long.
+Also, note that you need some space on disk for this one (we’re
+assuming there is enough disk space for double the size of the dataset
+and that there is enough memory for old + new shardsize).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>shardsize</strong> (<em>int</em>) – The new shard size.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save itself (the wrapper) in clean state (after calling <cite>reset()</cite>)
+to the output_prefix file. If you wish to save to a different file,
+use the <cite>fname</cite> argument as the first positional arg.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.save_corpus">
+<em class="property">static </em><code class="descname">save_corpus</code><span class="sig-paren">(</span><em>fname</em>, <em>corpus</em>, <em>id2word=None</em>, <em>progress_cnt=1000</em>, <em>metadata=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.save_corpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implement a serialization interface. Do not call directly;
+use the <cite>serialize</cite> method instead.</p>
+<p>Note that you might need some ShardedCorpus init parameters, most
+likely the dimension (<cite>dim</cite>). Again, pass these as <cite>kwargs</cite> to the
+<cite>serialize</cite> method.</p>
+<p>All this thing does is initialize a ShardedCorpus from a corpus
+with the <cite>output_prefix</cite> argument set to the <cite>fname</cite> parameter
+of this method. The initialization of a ShardedCorpus takes care of
+serializing the data (in dense form) to shards.</p>
+<p>Ignore the parameters id2word, progress_cnt and metadata. They
+currently do nothing and are here only to provide a compatible
+method signature with superclass.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.save_shard">
+<code class="descname">save_shard</code><span class="sig-paren">(</span><em>shard</em>, <em>n=None</em>, <em>filename=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.save_shard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pickle the given shard. If <cite>n</cite> is not given, will consider the shard
+a new one.</p>
+<p>If <cite>filename</cite> is given, will use that file name instead of generating
+one.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.serialize">
+<em class="property">classmethod </em><code class="descname">serialize</code><span class="sig-paren">(</span><em>serializer</em>, <em>fname</em>, <em>corpus</em>, <em>id2word=None</em>, <em>index_fname=None</em>, <em>progress_cnt=None</em>, <em>labels=None</em>, <em>metadata=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through the document stream <cite>corpus</cite>, saving the documents
+as a ShardedCorpus to <cite>fname</cite>.</p>
+<p>Use this method instead of calling <cite>save_corpus</cite> directly.
+You may need to supply some kwargs that are used upon dataset creation
+(namely: <cite>dim</cite>, unless the dataset can infer the dimension from the
+given corpus).</p>
+<p>Ignore the parameters id2word, index_fname, progress_cnt, labels
+and metadata. They currently do nothing and are here only to
+provide a compatible method signature with superclass.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.sharded_corpus.ShardedCorpus.shard_by_offset">
+<code class="descname">shard_by_offset</code><span class="sig-paren">(</span><em>offset</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.sharded_corpus.ShardedCorpus.shard_by_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine which shard the given offset belongs to. If the offset
+is greater than the number of available documents, raises a
+<cite>ValueError</cite>.</p>
+<p>Assumes that all shards have the same size.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+    
+
+    
+    <div id="footer">
+      <div id="footerwrapper">
+        <div id="footerleft">
+          <img src="../_static/images/logo-gensim.png" class="smallerlogo" alt="smaller gensim logo" />
+          <a href="../index.html"><img src="../_static/images/gensim-footer.png" alt="gensim footer image" title="Gensim home" /></a>
+
+          <div class="copyright">
+            &copy; Copyright 2009-now, <a href="mailto:radimrehurek@seznam.cz" style="color:white"> Radim Řehůřek</a>
+            <br />
+              Last updated on Sep 10, 2017.
+          </div>
+        </div>
+
+        <div id="footermiddleright">
+          <div id="footermiddle">
+            <ul class="navigation">
+              <li><a href="../index.html">
+                Home
+              </a></li>
+              <li>|</li>
+              <li><a href="../tutorial.html">
+                Tutorials
+              </a></li>
+              <li>|</li>
+              <li><a href="../install.html">
+                Install
+              </a></li>
+              <li>|</li>
+              <li><a href="../support.html">
+                Support
+              </a></li>
+              <li>|</li>
+              <li><a href="../apiref.html">
+                API
+              </a></li>
+              <li>|</li>
+              <li><a href="../about.html">
+                About
+              </a></li>
+            </ul>
+
+            <div class="tweetodsazeni">
+              <div class="tweet">
+                <a href="https://twitter.com/radimrehurek" target="_blank" style="color: white">Tweet @RadimRehurek</a>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="footerright">
+            <div class="footernadpis">
+              Support:
+            </div>
+            <div class="googlegroupsodsazeni">
+              <a href="https://groups.google.com/group/gensim" class="googlegroups">
+                Stay informed via gensim mailing list:
+              </a>
+
+              <form action="http://groups.google.com/group/gensim/boxsubscribe">
+                <input type="text" name="email" placeholder="your@email.com" size="28" />
+                <input type="submit" name="sub" value="Subscribe" />
+              </form>
+
+            </div>
+
+            <div class="addthis_toolbox addthis_default_style addthis_32x32_style"
+                addthis:title="#gensim"
+                addthis:description="Efficient Topic Modelling in Python"
+                style="margin:20px 0 0 0">
+              <a class="addthis_button_preferred_1"></a>
+              <a class="addthis_button_preferred_2"></a>
+              <a class="addthis_button_preferred_3"></a>
+              <a class="addthis_button_preferred_4"></a>
+              <a class="addthis_button_compact"></a>
+              <a class="addthis_counter addthis_bubble_style"></a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    
+
+    <script type="text/javascript">
+      (function() {
+      var at = document.createElement('script'); at.type = 'text/javascript'; at.async = true;
+      at.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 's7.addthis.com/js/250/addthis_widget.js#pubid=ra-4d738b9b1d31ccbd';
+      var sat = document.getElementsByTagName('script')[0]; sat.parentNode.insertBefore(at, sat);
+      })();
+    </script>
+
+  </body>
+</html>

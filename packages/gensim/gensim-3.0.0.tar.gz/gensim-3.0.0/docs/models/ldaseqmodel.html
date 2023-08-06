@@ -1,0 +1,633 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <!-- Google Tag Manager - JD-20170831 --> 
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-MP366CC');</script>
+    <!-- End Google Tag Manager -->
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta property="description" content="Efficient topic modelling of text semantics in Python." />
+    <meta property="og:title" content="gensim: topic modelling for humans" />
+    <meta property="og:description" content="Efficient topic modelling in Python" />
+
+    
+      <title>gensim: models.ldaseqmodel – Dynamic Topic Modeling in Python</title>
+
+    
+  <link rel="stylesheet" href="../_static/css/style.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/jquery.qtip.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/anythingslider.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+
+  </head>
+
+  <body>
+    <!-- Google Tag Manager (noscript) - JD-20170831 -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MP366CC"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="topwrap">
+      
+      <div id="top1">
+        <div id="left1">
+          <h1 class="h1gensim">
+            <img src="../_static/images/logo-gensim_compact.png" alt="gensim logo" title="Gensim - topic modelling for humans" />
+          </h1>
+        </div>
+
+        <div id="middleright">
+          <div id="middle1">
+            <div id="gensim"><a href="../index.html"><img src="../_static/images/gensim_compact.png" alt="gensim" title="Gensim home" /></a></div>
+            <div id="tagline"><img src="../_static/images/tagline_compact.png" alt="gensim tagline" /></div>
+          </div>
+          <div id="right1">
+            <div class="consulting-banner">
+              <h3><a href="http://rare-technologies.com/">Get Expert Help</a></h3>
+              <p>• machine learning, NLP, data mining</p>
+              <p>• custom SW design, development, optimizations</p>
+              <p>• corporate trainings &amp; IT consulting</p>
+            </div>
+          </div>
+        </div>
+      </div>
+     
+
+      
+      <div id="menu">
+        <div id="indentation1">
+          <ul class="menubuttons">
+            <li class="menubutton"><a href="../index.html">Home</a></li>
+            <li class="menubutton"><a href="../tutorial.html">Tutorials</a></li>
+            <li class="menubutton"><a href="../install.html">Install</a></li>
+            <li class="menubutton"><a href="../support.html">Support</a></li>
+            <li class="menubutton"><a href="../apiref.html">API</a></li>
+            <li class="menubutton"><a href="../about.html">About</a></li>
+          </ul>
+        </div>
+      </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+
+    
+  <script type="text/javascript">
+  var DOCUMENTATION_OPTIONS = {
+    URL_ROOT: '../',
+    VERSION: '2.3.0',
+    COLLAPSE_INDEX: false,
+    FILE_SUFFIX: '.html',
+    HAS_SOURCE: true
+  };
+  </script>
+    <script type="text/javascript" src="../_static/js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.qtip.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-migrate-1.1.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.anythingslider.min.js"></script>
+
+    
+    <div class="document">
+      
+        <div id="thinbanner">
+          <div id="bodythinbanner">
+            <span class="h2gensim">models.ldaseqmodel – Dynamic Topic Modeling in Python</span>
+          </div>
+        </div>
+        <div class="obsah">
+          <div class="obsahwrapper">
+            
+  <div class="section" id="module-gensim.models.ldaseqmodel">
+<span id="models-ldaseqmodel-dynamic-topic-modeling-in-python"></span><h1><code class="xref py py-mod docutils literal"><span class="pre">models.ldaseqmodel</span></code> – Dynamic Topic Modeling in Python<a class="headerlink" href="#module-gensim.models.ldaseqmodel" title="Permalink to this headline">¶</a></h1>
+<p>Inspired by the Blei’s original DTM code and paper.
+Original DTM C/C++ code: <a class="reference external" href="https://github.com/blei-lab/dtm">https://github.com/blei-lab/dtm</a>
+DTM Paper: <a class="reference external" href="https://www.cs.princeton.edu/~blei/papers/BleiLafferty2006a.pdf">https://www.cs.princeton.edu/~blei/papers/BleiLafferty2006a.pdf</a></p>
+<p>TODO:
+The next steps to take this forward would be:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Include DIM mode. Most of the infrastructure for this is in place.</li>
+<li>See if LdaPost can be replaced by LdaModel completely without breaking anything.</li>
+<li><dl class="first docutils">
+<dt>Heavy lifting going on in the sslm class - efforts can be made to cythonise mathematical methods.</dt>
+<dd><ul class="first last">
+<li>in particular, update_obs and the optimization takes a lot time.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li>Try and make it distributed, especially around the E and M step.</li>
+<li>Remove all C/C++ coding style/syntax.</li>
+</ol>
+</div></blockquote>
+<dl class="class">
+<dt id="gensim.models.ldaseqmodel.LdaPost">
+<em class="property">class </em><code class="descclassname">gensim.models.ldaseqmodel.</code><code class="descname">LdaPost</code><span class="sig-paren">(</span><em>doc=None</em>, <em>lda=None</em>, <em>max_doc_len=None</em>, <em>num_topics=None</em>, <em>gamma=None</em>, <em>lhood=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../utils.html#gensim.utils.SaveLoad" title="gensim.utils.SaveLoad"><code class="xref py py-class docutils literal"><span class="pre">gensim.utils.SaveLoad</span></code></a></p>
+<p>Posterior values associated with each set of documents.
+TODO: use <strong>Hoffman, Blei, Bach: Online Learning for Latent Dirichlet Allocation, NIPS 2010.</strong>
+to update phi, gamma. End game would be to somehow replace LdaPost entirely with LdaModel.</p>
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.compute_lda_lhood">
+<code class="descname">compute_lda_lhood</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.compute_lda_lhood" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the likelihood bound</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.fit_lda_post">
+<code class="descname">fit_lda_post</code><span class="sig-paren">(</span><em>doc_number</em>, <em>time</em>, <em>ldaseq</em>, <em>LDA_INFERENCE_CONVERGED=1e-08</em>, <em>lda_inference_max_iter=25</em>, <em>g=None</em>, <em>g3_matrix=None</em>, <em>g4_matrix=None</em>, <em>g5_matrix=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.fit_lda_post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Posterior inference for lda.
+g, g3, g4 and g5 are matrices used in Document Influence Model and not used currently.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.init_lda_post">
+<code class="descname">init_lda_post</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.init_lda_post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize variational posterior, does not return anything.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em>, <em>mmap=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a previously saved object from file (also see <cite>save</cite>).</p>
+<p>If the object was saved with large arrays stored separately, you can load
+these arrays via mmap (shared memory) using <cite>mmap=’r’</cite>. Default: don’t use
+mmap, load large arrays as normal objects.</p>
+<p>If the file being loaded is compressed (either ‘.gz’ or ‘.bz2’), then
+<cite>mmap=None</cite> must be set.  Load will raise an <cite>IOError</cite> if this condition
+is encountered.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>fname_or_handle</em>, <em>separately=None</em>, <em>sep_limit=10485760</em>, <em>ignore=frozenset([])</em>, <em>pickle_protocol=2</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the object to file (also see <cite>load</cite>).</p>
+<p><cite>fname_or_handle</cite> is either a string specifying the file name to
+save to, or an open file-like object which can be written to. If
+the object is a file handle, no special array handling will be
+performed; all attributes will be saved to the same file.</p>
+<p>If <cite>separately</cite> is None, automatically detect large
+numpy/scipy.sparse arrays in the object being stored, and store
+them into separate files. This avoids pickle memory errors and
+allows mmap’ing large arrays back on load efficiently.</p>
+<p>You can also set <cite>separately</cite> manually, in which case it must be
+a list of attribute names to be stored in separate files. The
+automatic check is not performed in this case.</p>
+<p><cite>ignore</cite> is a set of attribute names to <em>not</em> serialize (file
+handles, caches etc). On subsequent load() these attributes will
+be set to None.</p>
+<p><cite>pickle_protocol</cite> defaults to 2 so the pickled object can be imported
+in both Python 2 and 3.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.update_gamma">
+<code class="descname">update_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.update_gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>update variational dirichlet parameters as described in the original Blei LDA paper:
+gamma = alpha + sum(phi), over every topic for every word.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.update_lda_seq_ss">
+<code class="descname">update_lda_seq_ss</code><span class="sig-paren">(</span><em>time</em>, <em>doc</em>, <em>topic_suffstats</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.update_lda_seq_ss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update lda sequence sufficient statistics from an lda posterior.
+This is very similar to the update_gamma method and uses the same formula.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaPost.update_phi">
+<code class="descname">update_phi</code><span class="sig-paren">(</span><em>doc_number</em>, <em>time</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaPost.update_phi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update variational multinomial parameters, based on a document and a time-slice.
+This is done based on the original Blei-LDA paper, where:
+log_phi := beta * exp(Ψ(gamma)), over every topic for every word.</p>
+<p>TODO: incorporate lee-sueng trick used in <strong>Lee, Seung: Algorithms for non-negative matrix factorization, NIPS 2001</strong>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel">
+<em class="property">class </em><code class="descclassname">gensim.models.ldaseqmodel.</code><code class="descname">LdaSeqModel</code><span class="sig-paren">(</span><em>corpus=None</em>, <em>time_slice=None</em>, <em>id2word=None</em>, <em>alphas=0.01</em>, <em>num_topics=10</em>, <em>initialize='gensim'</em>, <em>sstats=None</em>, <em>lda_model=None</em>, <em>obs_variance=0.5</em>, <em>chain_variance=0.005</em>, <em>passes=10</em>, <em>random_state=None</em>, <em>lda_inference_max_iter=25</em>, <em>em_min_iter=6</em>, <em>em_max_iter=20</em>, <em>chunksize=100</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../utils.html#gensim.utils.SaveLoad" title="gensim.utils.SaveLoad"><code class="xref py py-class docutils literal"><span class="pre">gensim.utils.SaveLoad</span></code></a></p>
+<p>The constructor estimates Dynamic Topic Model parameters based
+on a training corpus.
+If we have 30 documents, with 5 in the first time-slice, 10 in the second, and 15 in the third, we would
+set up our model like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ldaseq</span> <span class="o">=</span> <span class="n">LdaSeqModel</span><span class="p">(</span><span class="n">corpus</span><span class="o">=</span><span class="n">corpus</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">],</span> <span class="n">num_topics</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Model persistency is achieved through inheriting utils.SaveLoad.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ldaseq</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;ldaseq&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>saves the model to disk.</p>
+<p><cite>corpus</cite> is any iterable gensim corpus</p>
+<p><cite>time_slice</cite> as described above is a list which contains the number of documents in each time-slice</p>
+<p><cite>id2word</cite> is a mapping from word ids (integers) to words (strings). It is used to determine the vocabulary size and printing topics.</p>
+<p><cite>alphas</cite>  is a prior of your choice and should be a double or float value. default is 0.01</p>
+<p><cite>num_topics</cite> is the number of requested latent topics to be extracted from the training corpus.</p>
+<p><cite>initalize</cite> allows the user to decide how he wants to initialise the DTM model. Default is through gensim LDA.
+You can use your own sstats of an LDA model previously trained as well by specifying ‘own’ and passing a np matrix through sstats.
+If you wish to just pass a previously used LDA model, pass it through <cite>lda_model</cite>
+Shape of sstats is (vocab_len, num_topics)</p>
+<p><cite>chain_variance</cite> is a constant which dictates how the beta values evolve - it is a gaussian parameter defined in the
+beta distribution.</p>
+<p><cite>passes</cite> is the number of passes of the initial LdaModel.</p>
+<p><cite>random_state</cite> can be a np.random.RandomState object or the seed for one, for the LdaModel.</p>
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.doc_topics">
+<code class="descname">doc_topics</code><span class="sig-paren">(</span><em>doc_number</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.doc_topics" title="Permalink to this definition">¶</a></dt>
+<dd><p>On passing the LdaSeqModel trained ldaseq object, the doc_number of your document in the corpus,
+it returns the doc-topic probabilities of that document.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.dtm_coherence">
+<code class="descname">dtm_coherence</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.dtm_coherence" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns all topics of a particular time-slice without probabilitiy values for it to be used
+for either “u_mass” or “c_v” coherence.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.dtm_vis">
+<code class="descname">dtm_vis</code><span class="sig-paren">(</span><em>time</em>, <em>corpus</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.dtm_vis" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns term_frequency, vocab, doc_lengths, topic-term distributions and doc_topic distributions, specified by pyLDAvis format.
+all of these are needed to visualise topics for DTM for a particular time-slice via pyLDAvis.
+input parameter is the year to do the visualisation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.fit_lda_seq">
+<code class="descname">fit_lda_seq</code><span class="sig-paren">(</span><em>corpus</em>, <em>lda_inference_max_iter</em>, <em>em_min_iter</em>, <em>em_max_iter</em>, <em>chunksize</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.fit_lda_seq" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>fit an lda sequence model:</dt>
+<dd><dl class="first docutils">
+<dt>for each time period:</dt>
+<dd><p class="first">set up lda model with E[log p(w|z)] and lpha</p>
+<dl class="last docutils">
+<dt>for each document:</dt>
+<dd>perform posterior inference
+update sufficient statistics/likelihood</dd>
+</dl>
+</dd>
+</dl>
+<p class="last">maximize topics</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.fit_lda_seq_topics">
+<code class="descname">fit_lda_seq_topics</code><span class="sig-paren">(</span><em>topic_suffstats</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.fit_lda_seq_topics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit lda sequence topic wise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.inferDTMseq">
+<code class="descname">inferDTMseq</code><span class="sig-paren">(</span><em>corpus</em>, <em>topic_suffstats</em>, <em>gammas</em>, <em>lhoods</em>, <em>lda</em>, <em>ldapost</em>, <em>iter_</em>, <em>bound</em>, <em>lda_inference_max_iter</em>, <em>chunksize</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.inferDTMseq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the likelihood of a sequential corpus under an LDA seq model, and return the likelihood bound.
+Need to pass the LdaSeq model, corpus, sufficient stats, gammas and lhoods matrices previously created,
+and LdaModel and LdaPost class objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.init_ldaseq_ss">
+<code class="descname">init_ldaseq_ss</code><span class="sig-paren">(</span><em>topic_chain_variance</em>, <em>topic_obs_variance</em>, <em>alpha</em>, <em>init_suffstats</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.init_ldaseq_ss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to initialize State Space Language Model, topic wise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.lda_seq_infer">
+<code class="descname">lda_seq_infer</code><span class="sig-paren">(</span><em>corpus</em>, <em>topic_suffstats</em>, <em>gammas</em>, <em>lhoods</em>, <em>iter_</em>, <em>lda_inference_max_iter</em>, <em>chunksize</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.lda_seq_infer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inference or E- Step.
+This is used to set up the gensim LdaModel to be used for each time-slice.
+It also allows for Document Influence Model code to be written in.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em>, <em>mmap=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a previously saved object from file (also see <cite>save</cite>).</p>
+<p>If the object was saved with large arrays stored separately, you can load
+these arrays via mmap (shared memory) using <cite>mmap=’r’</cite>. Default: don’t use
+mmap, load large arrays as normal objects.</p>
+<p>If the file being loaded is compressed (either ‘.gz’ or ‘.bz2’), then
+<cite>mmap=None</cite> must be set.  Load will raise an <cite>IOError</cite> if this condition
+is encountered.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.make_lda_seq_slice">
+<code class="descname">make_lda_seq_slice</code><span class="sig-paren">(</span><em>lda</em>, <em>time</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.make_lda_seq_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>set up the LDA model topic-word values with that of ldaseq.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.print_topic">
+<code class="descname">print_topic</code><span class="sig-paren">(</span><em>topic</em>, <em>time=0</em>, <em>top_terms=20</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.print_topic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Topic is the topic number
+Time is for a particular time_slice
+top_terms is the number of terms to display</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.print_topic_times">
+<code class="descname">print_topic_times</code><span class="sig-paren">(</span><em>topic</em>, <em>top_terms=20</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.print_topic_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints one topic showing each time-slice.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.print_topics">
+<code class="descname">print_topics</code><span class="sig-paren">(</span><em>time=0</em>, <em>top_terms=20</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.print_topics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints all topics in a particular time-slice.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.LdaSeqModel.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>fname_or_handle</em>, <em>separately=None</em>, <em>sep_limit=10485760</em>, <em>ignore=frozenset([])</em>, <em>pickle_protocol=2</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.LdaSeqModel.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the object to file (also see <cite>load</cite>).</p>
+<p><cite>fname_or_handle</cite> is either a string specifying the file name to
+save to, or an open file-like object which can be written to. If
+the object is a file handle, no special array handling will be
+performed; all attributes will be saved to the same file.</p>
+<p>If <cite>separately</cite> is None, automatically detect large
+numpy/scipy.sparse arrays in the object being stored, and store
+them into separate files. This avoids pickle memory errors and
+allows mmap’ing large arrays back on load efficiently.</p>
+<p>You can also set <cite>separately</cite> manually, in which case it must be
+a list of attribute names to be stored in separate files. The
+automatic check is not performed in this case.</p>
+<p><cite>ignore</cite> is a set of attribute names to <em>not</em> serialize (file
+handles, caches etc). On subsequent load() these attributes will
+be set to None.</p>
+<p><cite>pickle_protocol</cite> defaults to 2 so the pickled object can be imported
+in both Python 2 and 3.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="gensim.models.ldaseqmodel.df_obs">
+<code class="descclassname">gensim.models.ldaseqmodel.</code><code class="descname">df_obs</code><span class="sig-paren">(</span><em>x</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.df_obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derivative of function which optimises obs.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="gensim.models.ldaseqmodel.f_obs">
+<code class="descclassname">gensim.models.ldaseqmodel.</code><code class="descname">f_obs</code><span class="sig-paren">(</span><em>x</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.f_obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function which we are optimising for minimizing obs.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="gensim.models.ldaseqmodel.sslm">
+<em class="property">class </em><code class="descclassname">gensim.models.ldaseqmodel.</code><code class="descname">sslm</code><span class="sig-paren">(</span><em>vocab_len=None</em>, <em>num_time_slices=None</em>, <em>num_topics=None</em>, <em>obs_variance=0.5</em>, <em>chain_variance=0.005</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../utils.html#gensim.utils.SaveLoad" title="gensim.utils.SaveLoad"><code class="xref py py-class docutils literal"><span class="pre">gensim.utils.SaveLoad</span></code></a></p>
+<p>The sslm class is the State Space Language Model for DTM and contains the following information:
+<cite>obs</cite> values contain the doc - topic ratios
+<cite>e_log_prob</cite> contains topic - word ratios
+<cite>mean</cite>, <cite>fwd_mean</cite> contains the mean values to be used for inference for each word for a time_slice
+<cite>variance</cite>, <cite>fwd_variance</cite> contains the variance values to be used for inference for each word in a time_slice
+<cite>fwd_mean</cite>, <cite>fwd_variance</cite> are the forward posterior values.
+<cite>zeta</cite> is an extra variational parameter with a value for each time-slice</p>
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.compute_bound">
+<code class="descname">compute_bound</code><span class="sig-paren">(</span><em>sstats</em>, <em>totals</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.compute_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute log probability bound.
+Forumula is as described in appendix of DTM by Blei. (formula no. 5)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.compute_expected_log_prob">
+<code class="descname">compute_expected_log_prob</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.compute_expected_log_prob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the expected log probability given values of m.
+The appendix describes the Expectation of log-probabilities in equation 5 of the DTM paper;
+The below implementation is the result of solving the equation and is as implemented in the original Blei DTM code.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.compute_mean_deriv">
+<code class="descname">compute_mean_deriv</code><span class="sig-paren">(</span><em>word</em>, <em>time</em>, <em>deriv</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.compute_mean_deriv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used in helping find the optimum function.
+computes derivative of E[eta_{t,w}]/d obs_{s,w} for t = 1:T.
+put the result in deriv, allocated T+1 vector</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.compute_obs_deriv">
+<code class="descname">compute_obs_deriv</code><span class="sig-paren">(</span><em>word</em>, <em>word_counts</em>, <em>totals</em>, <em>mean_deriv_mtx</em>, <em>deriv</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.compute_obs_deriv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derivation of obs which is used in derivative function [df_obs] while optimizing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.compute_post_mean">
+<code class="descname">compute_post_mean</code><span class="sig-paren">(</span><em>word</em>, <em>chain_variance</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.compute_post_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Based on the Variational Kalman Filtering approach for Approximate Inference [<a class="reference external" href="https://www.cs.princeton.edu/~blei/papers/BleiLafferty2006a.pdf">https://www.cs.princeton.edu/~blei/papers/BleiLafferty2006a.pdf</a>]
+This function accepts the word to compute mean for, along with the associated sslm class object, and returns mean and fwd_mean
+Essentially a forward-backward to compute E[eta_{t,w}] for t = 1:T.</p>
+<p>Fwd_Mean(t) ≡  E(beta_{t,w} | beta_ˆ 1:t )
+= (obs_variance / fwd_variance[t - 1] + chain_variance + obs_variance ) * fwd_mean[t - 1] + (1 - (obs_variance / fwd_variance[t - 1] + chain_variance + obs_variance)) * beta</p>
+<p>Mean(t) ≡ E(beta_{t,w} | beta_ˆ 1:T )
+= fwd_mean[t - 1] + (obs_variance / fwd_variance[t - 1] + obs_variance) + (1 - obs_variance / fwd_variance[t - 1] + obs_variance)) * mean[t]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.compute_post_variance">
+<code class="descname">compute_post_variance</code><span class="sig-paren">(</span><em>word</em>, <em>chain_variance</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.compute_post_variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Based on the Variational Kalman Filtering approach for Approximate Inference [<a class="reference external" href="https://www.cs.princeton.edu/~blei/papers/BleiLafferty2006a.pdf">https://www.cs.princeton.edu/~blei/papers/BleiLafferty2006a.pdf</a>]
+This function accepts the word to compute variance for, along with the associated sslm class object, and returns variance and fwd_variance
+Computes Var[eta_{t,w}] for t = 1:T</p>
+<p>:math:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">fwd</span>\<span class="n">_variance</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> \<span class="n">equiv</span> <span class="n">E</span><span class="p">((</span><span class="n">beta_</span><span class="p">{</span><span class="n">t</span><span class="p">,</span><span class="n">w</span><span class="p">}</span><span class="o">-</span><span class="n">mean_</span><span class="p">{</span><span class="n">t</span><span class="p">,</span><span class="n">w</span><span class="p">})</span><span class="o">^</span><span class="mi">2</span> <span class="o">|</span><span class="n">beta_</span><span class="p">{</span><span class="n">t</span><span class="p">}</span>\ <span class="k">for</span>\ <span class="mi">1</span><span class="p">:</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">obs</span>\<span class="n">_variance</span> <span class="o">/</span> <span class="n">fwd</span>\<span class="n">_variance</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">chain</span>\<span class="n">_variance</span> <span class="o">+</span> <span class="n">obs</span>\<span class="n">_variance</span> <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">fwd</span>\<span class="n">_variance</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">obs</span>\<span class="n">_variance</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>:math:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">variance</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> \<span class="n">equiv</span> <span class="n">E</span><span class="p">((</span><span class="n">beta_</span><span class="p">{</span><span class="n">t</span><span class="p">,</span><span class="n">w</span><span class="p">}</span><span class="o">-</span><span class="n">mean</span>\<span class="n">_cap_</span><span class="p">{</span><span class="n">t</span><span class="p">,</span><span class="n">w</span><span class="p">})</span><span class="o">^</span><span class="mi">2</span> <span class="o">|</span><span class="n">beta</span>\<span class="n">_cap_</span><span class="p">{</span><span class="n">t</span><span class="p">}</span>\ <span class="k">for</span>\ <span class="mi">1</span><span class="p">:</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">fwd</span>\<span class="n">_variance</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">fwd</span>\<span class="n">_variance</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">fwd</span>\<span class="n">_variance</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">obs</span>\<span class="n">_variance</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">variance</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">fwd</span>\<span class="n">_variance</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">obs</span>\<span class="n">_variance</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.fit_sslm">
+<code class="descname">fit_sslm</code><span class="sig-paren">(</span><em>sstats</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.fit_sslm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits variational distribution.
+This is essentially the m-step.
+Accepts the sstats for a particular topic for input and maximizes values for that topic.
+Updates the values in the update_obs() and compute_expected_log_prob methods.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em>, <em>mmap=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a previously saved object from file (also see <cite>save</cite>).</p>
+<p>If the object was saved with large arrays stored separately, you can load
+these arrays via mmap (shared memory) using <cite>mmap=’r’</cite>. Default: don’t use
+mmap, load large arrays as normal objects.</p>
+<p>If the file being loaded is compressed (either ‘.gz’ or ‘.bz2’), then
+<cite>mmap=None</cite> must be set.  Load will raise an <cite>IOError</cite> if this condition
+is encountered.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>fname_or_handle</em>, <em>separately=None</em>, <em>sep_limit=10485760</em>, <em>ignore=frozenset([])</em>, <em>pickle_protocol=2</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the object to file (also see <cite>load</cite>).</p>
+<p><cite>fname_or_handle</cite> is either a string specifying the file name to
+save to, or an open file-like object which can be written to. If
+the object is a file handle, no special array handling will be
+performed; all attributes will be saved to the same file.</p>
+<p>If <cite>separately</cite> is None, automatically detect large
+numpy/scipy.sparse arrays in the object being stored, and store
+them into separate files. This avoids pickle memory errors and
+allows mmap’ing large arrays back on load efficiently.</p>
+<p>You can also set <cite>separately</cite> manually, in which case it must be
+a list of attribute names to be stored in separate files. The
+automatic check is not performed in this case.</p>
+<p><cite>ignore</cite> is a set of attribute names to <em>not</em> serialize (file
+handles, caches etc). On subsequent load() these attributes will
+be set to None.</p>
+<p><cite>pickle_protocol</cite> defaults to 2 so the pickled object can be imported
+in both Python 2 and 3.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.sslm_counts_init">
+<code class="descname">sslm_counts_init</code><span class="sig-paren">(</span><em>obs_variance</em>, <em>chain_variance</em>, <em>sstats</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.sslm_counts_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize State Space Language Model with LDA sufficient statistics.
+Called for each topic-chain and initializes intial mean, variance and Topic-Word probabilities for the first time-slice.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.update_obs">
+<code class="descname">update_obs</code><span class="sig-paren">(</span><em>sstats</em>, <em>totals</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.update_obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to perform optimization of obs. Parameters are suff_stats set up in the fit_sslm method.</p>
+<p>TODO:
+This is by far the slowest function in the whole algorithm.
+Replacing or improving the performance of this would greatly speed things up.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.ldaseqmodel.sslm.update_zeta">
+<code class="descname">update_zeta</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.ldaseqmodel.sslm.update_zeta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the Zeta Variational Parameter.
+Zeta is described in the appendix and is equal to sum (exp(mean[word] + Variance[word] / 2)), over every time-slice.
+It is the value of variational parameter zeta which maximizes the lower bound.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+    
+
+    
+    <div id="footer">
+      <div id="footerwrapper">
+        <div id="footerleft">
+          <img src="../_static/images/logo-gensim.png" class="smallerlogo" alt="smaller gensim logo" />
+          <a href="../index.html"><img src="../_static/images/gensim-footer.png" alt="gensim footer image" title="Gensim home" /></a>
+
+          <div class="copyright">
+            &copy; Copyright 2009-now, <a href="mailto:radimrehurek@seznam.cz" style="color:white"> Radim Řehůřek</a>
+            <br />
+              Last updated on Sep 10, 2017.
+          </div>
+        </div>
+
+        <div id="footermiddleright">
+          <div id="footermiddle">
+            <ul class="navigation">
+              <li><a href="../index.html">
+                Home
+              </a></li>
+              <li>|</li>
+              <li><a href="../tutorial.html">
+                Tutorials
+              </a></li>
+              <li>|</li>
+              <li><a href="../install.html">
+                Install
+              </a></li>
+              <li>|</li>
+              <li><a href="../support.html">
+                Support
+              </a></li>
+              <li>|</li>
+              <li><a href="../apiref.html">
+                API
+              </a></li>
+              <li>|</li>
+              <li><a href="../about.html">
+                About
+              </a></li>
+            </ul>
+
+            <div class="tweetodsazeni">
+              <div class="tweet">
+                <a href="https://twitter.com/radimrehurek" target="_blank" style="color: white">Tweet @RadimRehurek</a>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="footerright">
+            <div class="footernadpis">
+              Support:
+            </div>
+            <div class="googlegroupsodsazeni">
+              <a href="https://groups.google.com/group/gensim" class="googlegroups">
+                Stay informed via gensim mailing list:
+              </a>
+
+              <form action="http://groups.google.com/group/gensim/boxsubscribe">
+                <input type="text" name="email" placeholder="your@email.com" size="28" />
+                <input type="submit" name="sub" value="Subscribe" />
+              </form>
+
+            </div>
+
+            <div class="addthis_toolbox addthis_default_style addthis_32x32_style"
+                addthis:title="#gensim"
+                addthis:description="Efficient Topic Modelling in Python"
+                style="margin:20px 0 0 0">
+              <a class="addthis_button_preferred_1"></a>
+              <a class="addthis_button_preferred_2"></a>
+              <a class="addthis_button_preferred_3"></a>
+              <a class="addthis_button_preferred_4"></a>
+              <a class="addthis_button_compact"></a>
+              <a class="addthis_counter addthis_bubble_style"></a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    
+
+    <script type="text/javascript">
+      (function() {
+      var at = document.createElement('script'); at.type = 'text/javascript'; at.async = true;
+      at.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 's7.addthis.com/js/250/addthis_widget.js#pubid=ra-4d738b9b1d31ccbd';
+      var sat = document.getElementsByTagName('script')[0]; sat.parentNode.insertBefore(at, sat);
+      })();
+    </script>
+
+  </body>
+</html>

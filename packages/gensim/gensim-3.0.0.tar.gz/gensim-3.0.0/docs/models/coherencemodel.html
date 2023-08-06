@@ -1,0 +1,413 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <!-- Google Tag Manager - JD-20170831 --> 
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-MP366CC');</script>
+    <!-- End Google Tag Manager -->
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta property="description" content="Efficient topic modelling of text semantics in Python." />
+    <meta property="og:title" content="gensim: topic modelling for humans" />
+    <meta property="og:description" content="Efficient topic modelling in Python" />
+
+    
+      <title>gensim: models.coherencemodel – Topic coherence pipeline</title>
+
+    
+  <link rel="stylesheet" href="../_static/css/style.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/jquery.qtip.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/anythingslider.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+
+  </head>
+
+  <body>
+    <!-- Google Tag Manager (noscript) - JD-20170831 -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MP366CC"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="topwrap">
+      
+      <div id="top1">
+        <div id="left1">
+          <h1 class="h1gensim">
+            <img src="../_static/images/logo-gensim_compact.png" alt="gensim logo" title="Gensim - topic modelling for humans" />
+          </h1>
+        </div>
+
+        <div id="middleright">
+          <div id="middle1">
+            <div id="gensim"><a href="../index.html"><img src="../_static/images/gensim_compact.png" alt="gensim" title="Gensim home" /></a></div>
+            <div id="tagline"><img src="../_static/images/tagline_compact.png" alt="gensim tagline" /></div>
+          </div>
+          <div id="right1">
+            <div class="consulting-banner">
+              <h3><a href="http://rare-technologies.com/">Get Expert Help</a></h3>
+              <p>• machine learning, NLP, data mining</p>
+              <p>• custom SW design, development, optimizations</p>
+              <p>• corporate trainings &amp; IT consulting</p>
+            </div>
+          </div>
+        </div>
+      </div>
+     
+
+      
+      <div id="menu">
+        <div id="indentation1">
+          <ul class="menubuttons">
+            <li class="menubutton"><a href="../index.html">Home</a></li>
+            <li class="menubutton"><a href="../tutorial.html">Tutorials</a></li>
+            <li class="menubutton"><a href="../install.html">Install</a></li>
+            <li class="menubutton"><a href="../support.html">Support</a></li>
+            <li class="menubutton"><a href="../apiref.html">API</a></li>
+            <li class="menubutton"><a href="../about.html">About</a></li>
+          </ul>
+        </div>
+      </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+
+    
+  <script type="text/javascript">
+  var DOCUMENTATION_OPTIONS = {
+    URL_ROOT: '../',
+    VERSION: '2.3.0',
+    COLLAPSE_INDEX: false,
+    FILE_SUFFIX: '.html',
+    HAS_SOURCE: true
+  };
+  </script>
+    <script type="text/javascript" src="../_static/js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.qtip.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-migrate-1.1.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.anythingslider.min.js"></script>
+
+    
+    <div class="document">
+      
+        <div id="thinbanner">
+          <div id="bodythinbanner">
+            <span class="h2gensim">models.coherencemodel – Topic coherence pipeline</span>
+          </div>
+        </div>
+        <div class="obsah">
+          <div class="obsahwrapper">
+            
+  <div class="section" id="module-gensim.models.coherencemodel">
+<span id="models-coherencemodel-topic-coherence-pipeline"></span><h1><code class="xref py py-mod docutils literal"><span class="pre">models.coherencemodel</span></code> – Topic coherence pipeline<a class="headerlink" href="#module-gensim.models.coherencemodel" title="Permalink to this headline">¶</a></h1>
+<p>Module for calculating topic coherence in python. This is the implementation of
+the four stage topic coherence pipeline from the paper <a class="footnote-reference" href="#id2" id="id1">[1]</a>.
+The four stage pipeline is basically:</p>
+<blockquote>
+<div>Segmentation -&gt; Probability Estimation -&gt; Confirmation Measure -&gt; Aggregation.</div></blockquote>
+<p>Implementation of this pipeline allows for the user to in essence “make” a
+coherence measure of his/her choice by choosing a method in each of the pipelines.</p>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Michael Roeder, Andreas Both and Alexander Hinneburg. Exploring the space of topic
+coherence measures. <a class="reference external" href="http://svn.aksw.org/papers/2015/WSDM_Topic_Evaluation/public.pdf">http://svn.aksw.org/papers/2015/WSDM_Topic_Evaluation/public.pdf</a>.</td></tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="gensim.models.coherencemodel.CoherenceModel">
+<em class="property">class </em><code class="descclassname">gensim.models.coherencemodel.</code><code class="descname">CoherenceModel</code><span class="sig-paren">(</span><em>model=None</em>, <em>topics=None</em>, <em>texts=None</em>, <em>corpus=None</em>, <em>dictionary=None</em>, <em>window_size=None</em>, <em>coherence='c_v'</em>, <em>topn=10</em>, <em>processes=-1</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../interfaces.html#gensim.interfaces.TransformationABC" title="gensim.interfaces.TransformationABC"><code class="xref py py-class docutils literal"><span class="pre">gensim.interfaces.TransformationABC</span></code></a></p>
+<p>Objects of this class allow for building and maintaining a model for topic coherence.</p>
+<p>The main methods are:</p>
+<ol class="arabic simple">
+<li>constructor, which initializes the four stage pipeline by accepting a coherence measure,</li>
+<li>the <code class="docutils literal"><span class="pre">get_coherence()</span></code> method, which returns the topic coherence.</li>
+</ol>
+<p>Pipeline phases can also be executed individually. Methods for doing this are:</p>
+<ol class="arabic simple">
+<li><cite>segment_topics()</cite>, which performs segmentation of the given topics into their comparison sets.</li>
+<li><dl class="first docutils">
+<dt><cite>estimate_probabilities()</cite>, which accumulates word occurrence stats from the given corpus or texts.</dt>
+<dd>The output of this is also cached on the <cite>CoherenceModel</cite>, so calling this method can be used as
+a precomputation step for the next phase.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>get_coherence_per_topic()</cite>, which uses the segmented topics and estimated probabilities to compute</dt>
+<dd>the coherence of each topic. This output can be used to rank topics in order of most coherent to
+least. Such a ranking is useful if the intended use case of a topic model is document exploration
+by a human. It is also useful for filtering out incoherent topics (keep top-n from ranked list).</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>aggregate_measures(topic_coherences)</cite>, which uses the pipeline’s aggregation method to compute</dt>
+<dd>the overall coherence from the topic coherences.</dd>
+</dl>
+</li>
+</ol>
+<p>One way of using this feature is through providing a trained topic model. A dictionary has to be explicitly
+provided if the model does not contain a dictionary already:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cm</span> <span class="o">=</span> <span class="n">CoherenceModel</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">tm</span><span class="p">,</span> <span class="n">corpus</span><span class="o">=</span><span class="n">corpus</span><span class="p">,</span> <span class="n">coherence</span><span class="o">=</span><span class="s1">&#39;u_mass&#39;</span><span class="p">)</span>  <span class="c1"># tm is the trained topic model</span>
+<span class="n">cm</span><span class="o">.</span><span class="n">get_coherence</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Another way of using this feature is through providing tokenized topics such as:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">topics</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;human&#39;</span><span class="p">,</span> <span class="s1">&#39;computer&#39;</span><span class="p">,</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;interface&#39;</span><span class="p">],</span>
+          <span class="p">[</span><span class="s1">&#39;graph&#39;</span><span class="p">,</span> <span class="s1">&#39;minors&#39;</span><span class="p">,</span> <span class="s1">&#39;trees&#39;</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">]]</span>
+<span class="n">cm</span> <span class="o">=</span> <span class="n">CoherenceModel</span><span class="p">(</span><span class="n">topics</span><span class="o">=</span><span class="n">topics</span><span class="p">,</span> <span class="n">corpus</span><span class="o">=</span><span class="n">corpus</span><span class="p">,</span> <span class="n">dictionary</span><span class="o">=</span><span class="n">dictionary</span><span class="p">,</span> <span class="n">coherence</span><span class="o">=</span><span class="s1">&#39;u_mass&#39;</span><span class="p">)</span> <span class="c1"># note that a dictionary has to be provided.</span>
+<span class="n">cm</span><span class="o">.</span><span class="n">get_coherence</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Model persistency is achieved via its load/save methods.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> – Pre-trained topic model. Should be provided if topics is not provided.
+Currently supports LdaModel, LdaMallet wrapper and LdaVowpalWabbit wrapper. Use ‘topics’
+parameter to plug in an as yet unsupported model.</li>
+<li><strong>topics</strong> – <p>List of tokenized topics. If this is preferred over model, dictionary should be provided.
+eg:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">topics</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;human&#39;</span><span class="p">,</span> <span class="s1">&#39;machine&#39;</span><span class="p">,</span> <span class="s1">&#39;computer&#39;</span><span class="p">,</span> <span class="s1">&#39;interface&#39;</span><span class="p">],</span>
+           <span class="p">[</span><span class="s1">&#39;graph&#39;</span><span class="p">,</span> <span class="s1">&#39;trees&#39;</span><span class="p">,</span> <span class="s1">&#39;binary&#39;</span><span class="p">,</span> <span class="s1">&#39;widths&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+</li>
+<li><strong>texts</strong> – <p>Tokenized texts. Needed for coherence models that use sliding window based probability estimator,
+eg:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">texts</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;human&#39;</span><span class="p">,</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">],</span>
+         <span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">],</span>
+         <span class="p">[</span><span class="s1">&#39;trees&#39;</span><span class="p">],</span>
+         <span class="p">[</span><span class="s1">&#39;graph&#39;</span><span class="p">,</span> <span class="s1">&#39;trees&#39;</span><span class="p">],</span>
+         <span class="p">[</span><span class="s1">&#39;graph&#39;</span><span class="p">,</span> <span class="s1">&#39;minors&#39;</span><span class="p">,</span> <span class="s1">&#39;trees&#39;</span><span class="p">],</span>
+         <span class="p">[</span><span class="s1">&#39;graph&#39;</span><span class="p">,</span> <span class="s1">&#39;minors&#39;</span><span class="p">,</span> <span class="s1">&#39;survey&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+</li>
+<li><strong>corpus</strong> – Gensim document corpus.</li>
+<li><strong>dictionary</strong> – Gensim dictionary mapping of id word to create corpus. If model.id2word is present,
+this is not needed. If both are provided, dictionary will be used.</li>
+<li><strong>window_size</strong> – <p>Is the size of the window to be used for coherence measures using boolean sliding window as their
+probability estimator. For ‘u_mass’ this doesn’t matter.
+If left ‘None’ the default window sizes are used which are:</p>
+<blockquote>
+<div>’c_v’ : 110
+‘c_uci’ : 10
+‘c_npmi’ : 10</div></blockquote>
+</li>
+<li><strong>coherence</strong> – Coherence measure to be used. Supported values are:
+‘u_mass’
+‘c_v’
+‘c_uci’ also popularly known as c_pmi
+‘c_npmi’
+For ‘u_mass’ corpus should be provided. If texts is provided, it will be converted
+to corpus using the dictionary. For ‘c_v’, ‘c_uci’ and ‘c_npmi’ texts should be provided.
+Corpus is not needed.</li>
+<li><strong>topn</strong> – Integer corresponding to the number of top words to be extracted from each topic.</li>
+<li><strong>processes</strong> – number of processes to use for probability estimation phase; any value less than 1 will be
+interpreted to mean num_cpus - 1; default is -1.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="gensim.models.coherencemodel.CoherenceModel.aggregate_measures">
+<code class="descname">aggregate_measures</code><span class="sig-paren">(</span><em>topic_coherences</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.aggregate_measures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregate the individual topic coherence measures using
+the pipeline’s aggregation function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.coherencemodel.CoherenceModel.estimate_probabilities">
+<code class="descname">estimate_probabilities</code><span class="sig-paren">(</span><em>segmented_topics=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.estimate_probabilities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accumulate word occurrences and co-occurrences from texts or corpus using
+the optimal method for the chosen coherence metric. This operation may take
+quite some time for the sliding window based coherence methods.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.coherencemodel.CoherenceModel.get_coherence">
+<code class="descname">get_coherence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.get_coherence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return coherence value based on pipeline parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.coherencemodel.CoherenceModel.get_coherence_per_topic">
+<code class="descname">get_coherence_per_topic</code><span class="sig-paren">(</span><em>segmented_topics=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.get_coherence_per_topic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return list of coherence values for each topic based on pipeline parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.coherencemodel.CoherenceModel.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em>, <em>mmap=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a previously saved object from file (also see <cite>save</cite>).</p>
+<p>If the object was saved with large arrays stored separately, you can load
+these arrays via mmap (shared memory) using <cite>mmap=’r’</cite>. Default: don’t use
+mmap, load large arrays as normal objects.</p>
+<p>If the file being loaded is compressed (either ‘.gz’ or ‘.bz2’), then
+<cite>mmap=None</cite> must be set.  Load will raise an <cite>IOError</cite> if this condition
+is encountered.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gensim.models.coherencemodel.CoherenceModel.measure">
+<code class="descname">measure</code><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.measure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="gensim.models.coherencemodel.CoherenceModel.model">
+<code class="descname">model</code><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.coherencemodel.CoherenceModel.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>fname_or_handle</em>, <em>separately=None</em>, <em>sep_limit=10485760</em>, <em>ignore=frozenset([])</em>, <em>pickle_protocol=2</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the object to file (also see <cite>load</cite>).</p>
+<p><cite>fname_or_handle</cite> is either a string specifying the file name to
+save to, or an open file-like object which can be written to. If
+the object is a file handle, no special array handling will be
+performed; all attributes will be saved to the same file.</p>
+<p>If <cite>separately</cite> is None, automatically detect large
+numpy/scipy.sparse arrays in the object being stored, and store
+them into separate files. This avoids pickle memory errors and
+allows mmap’ing large arrays back on load efficiently.</p>
+<p>You can also set <cite>separately</cite> manually, in which case it must be
+a list of attribute names to be stored in separate files. The
+automatic check is not performed in this case.</p>
+<p><cite>ignore</cite> is a set of attribute names to <em>not</em> serialize (file
+handles, caches etc). On subsequent load() these attributes will
+be set to None.</p>
+<p><cite>pickle_protocol</cite> defaults to 2 so the pickled object can be imported
+in both Python 2 and 3.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.models.coherencemodel.CoherenceModel.segment_topics">
+<code class="descname">segment_topics</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.segment_topics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="gensim.models.coherencemodel.CoherenceModel.topics">
+<code class="descname">topics</code><a class="headerlink" href="#gensim.models.coherencemodel.CoherenceModel.topics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+    
+
+    
+    <div id="footer">
+      <div id="footerwrapper">
+        <div id="footerleft">
+          <img src="../_static/images/logo-gensim.png" class="smallerlogo" alt="smaller gensim logo" />
+          <a href="../index.html"><img src="../_static/images/gensim-footer.png" alt="gensim footer image" title="Gensim home" /></a>
+
+          <div class="copyright">
+            &copy; Copyright 2009-now, <a href="mailto:radimrehurek@seznam.cz" style="color:white"> Radim Řehůřek</a>
+            <br />
+              Last updated on Sep 10, 2017.
+          </div>
+        </div>
+
+        <div id="footermiddleright">
+          <div id="footermiddle">
+            <ul class="navigation">
+              <li><a href="../index.html">
+                Home
+              </a></li>
+              <li>|</li>
+              <li><a href="../tutorial.html">
+                Tutorials
+              </a></li>
+              <li>|</li>
+              <li><a href="../install.html">
+                Install
+              </a></li>
+              <li>|</li>
+              <li><a href="../support.html">
+                Support
+              </a></li>
+              <li>|</li>
+              <li><a href="../apiref.html">
+                API
+              </a></li>
+              <li>|</li>
+              <li><a href="../about.html">
+                About
+              </a></li>
+            </ul>
+
+            <div class="tweetodsazeni">
+              <div class="tweet">
+                <a href="https://twitter.com/radimrehurek" target="_blank" style="color: white">Tweet @RadimRehurek</a>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="footerright">
+            <div class="footernadpis">
+              Support:
+            </div>
+            <div class="googlegroupsodsazeni">
+              <a href="https://groups.google.com/group/gensim" class="googlegroups">
+                Stay informed via gensim mailing list:
+              </a>
+
+              <form action="http://groups.google.com/group/gensim/boxsubscribe">
+                <input type="text" name="email" placeholder="your@email.com" size="28" />
+                <input type="submit" name="sub" value="Subscribe" />
+              </form>
+
+            </div>
+
+            <div class="addthis_toolbox addthis_default_style addthis_32x32_style"
+                addthis:title="#gensim"
+                addthis:description="Efficient Topic Modelling in Python"
+                style="margin:20px 0 0 0">
+              <a class="addthis_button_preferred_1"></a>
+              <a class="addthis_button_preferred_2"></a>
+              <a class="addthis_button_preferred_3"></a>
+              <a class="addthis_button_preferred_4"></a>
+              <a class="addthis_button_compact"></a>
+              <a class="addthis_counter addthis_bubble_style"></a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    
+
+    <script type="text/javascript">
+      (function() {
+      var at = document.createElement('script'); at.type = 'text/javascript'; at.async = true;
+      at.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 's7.addthis.com/js/250/addthis_widget.js#pubid=ra-4d738b9b1d31ccbd';
+      var sat = document.getElementsByTagName('script')[0]; sat.parentNode.insertBefore(at, sat);
+      })();
+    </script>
+
+  </body>
+</html>

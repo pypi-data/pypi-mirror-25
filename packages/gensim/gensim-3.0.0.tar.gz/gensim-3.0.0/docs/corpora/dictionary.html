@@ -1,0 +1,434 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <!-- Google Tag Manager - JD-20170831 --> 
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-MP366CC');</script>
+    <!-- End Google Tag Manager -->
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta property="description" content="Efficient topic modelling of text semantics in Python." />
+    <meta property="og:title" content="gensim: topic modelling for humans" />
+    <meta property="og:description" content="Efficient topic modelling in Python" />
+
+    
+      <title>gensim: corpora.dictionary – Construct word&lt;-&gt;id mappings</title>
+
+    
+  <link rel="stylesheet" href="../_static/css/style.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/jquery.qtip.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/css/anythingslider.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+
+  </head>
+
+  <body>
+    <!-- Google Tag Manager (noscript) - JD-20170831 -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MP366CC"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="topwrap">
+      
+      <div id="top1">
+        <div id="left1">
+          <h1 class="h1gensim">
+            <img src="../_static/images/logo-gensim_compact.png" alt="gensim logo" title="Gensim - topic modelling for humans" />
+          </h1>
+        </div>
+
+        <div id="middleright">
+          <div id="middle1">
+            <div id="gensim"><a href="../index.html"><img src="../_static/images/gensim_compact.png" alt="gensim" title="Gensim home" /></a></div>
+            <div id="tagline"><img src="../_static/images/tagline_compact.png" alt="gensim tagline" /></div>
+          </div>
+          <div id="right1">
+            <div class="consulting-banner">
+              <h3><a href="http://rare-technologies.com/">Get Expert Help</a></h3>
+              <p>• machine learning, NLP, data mining</p>
+              <p>• custom SW design, development, optimizations</p>
+              <p>• corporate trainings &amp; IT consulting</p>
+            </div>
+          </div>
+        </div>
+      </div>
+     
+
+      
+      <div id="menu">
+        <div id="indentation1">
+          <ul class="menubuttons">
+            <li class="menubutton"><a href="../index.html">Home</a></li>
+            <li class="menubutton"><a href="../tutorial.html">Tutorials</a></li>
+            <li class="menubutton"><a href="../install.html">Install</a></li>
+            <li class="menubutton"><a href="../support.html">Support</a></li>
+            <li class="menubutton"><a href="../apiref.html">API</a></li>
+            <li class="menubutton"><a href="../about.html">About</a></li>
+          </ul>
+        </div>
+      </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+
+    
+  <script type="text/javascript">
+  var DOCUMENTATION_OPTIONS = {
+    URL_ROOT: '../',
+    VERSION: '2.3.0',
+    COLLAPSE_INDEX: false,
+    FILE_SUFFIX: '.html',
+    HAS_SOURCE: true
+  };
+  </script>
+    <script type="text/javascript" src="../_static/js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.qtip.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-migrate-1.1.1.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery.anythingslider.min.js"></script>
+
+    
+    <div class="document">
+      
+        <div id="thinbanner">
+          <div id="bodythinbanner">
+            <span class="h2gensim">corpora.dictionary – Construct word&lt;-&gt;id mappings</span>
+          </div>
+        </div>
+        <div class="obsah">
+          <div class="obsahwrapper">
+            
+  <div class="section" id="module-gensim.corpora.dictionary">
+<span id="corpora-dictionary-construct-word-id-mappings"></span><h1><code class="xref py py-mod docutils literal"><span class="pre">corpora.dictionary</span></code> – Construct word&lt;-&gt;id mappings<a class="headerlink" href="#module-gensim.corpora.dictionary" title="Permalink to this headline">¶</a></h1>
+<p>This module implements the concept of Dictionary – a mapping between words and
+their integer ids.</p>
+<p>Dictionaries can be created from a corpus and can later be pruned according to
+document frequency (removing (un)common words via the <a class="reference internal" href="#gensim.corpora.dictionary.Dictionary.filter_extremes" title="gensim.corpora.dictionary.Dictionary.filter_extremes"><code class="xref py py-func docutils literal"><span class="pre">Dictionary.filter_extremes()</span></code></a> method),
+save/loaded from disk (via <a class="reference internal" href="#gensim.corpora.dictionary.Dictionary.save" title="gensim.corpora.dictionary.Dictionary.save"><code class="xref py py-func docutils literal"><span class="pre">Dictionary.save()</span></code></a> and <a class="reference internal" href="#gensim.corpora.dictionary.Dictionary.load" title="gensim.corpora.dictionary.Dictionary.load"><code class="xref py py-func docutils literal"><span class="pre">Dictionary.load()</span></code></a> methods), merged
+with other dictionary (<a class="reference internal" href="#gensim.corpora.dictionary.Dictionary.merge_with" title="gensim.corpora.dictionary.Dictionary.merge_with"><code class="xref py py-func docutils literal"><span class="pre">Dictionary.merge_with()</span></code></a>) etc.</p>
+<dl class="class">
+<dt id="gensim.corpora.dictionary.Dictionary">
+<em class="property">class </em><code class="descclassname">gensim.corpora.dictionary.</code><code class="descname">Dictionary</code><span class="sig-paren">(</span><em>documents=None</em>, <em>prune_at=2000000</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../utils.html#gensim.utils.SaveLoad" title="gensim.utils.SaveLoad"><code class="xref py py-class docutils literal"><span class="pre">gensim.utils.SaveLoad</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">_abcoll.Mapping</span></code></p>
+<p>Dictionary encapsulates the mapping between normalized words and their integer ids.</p>
+<p>The main function is <cite>doc2bow</cite>, which converts a collection of words to its
+bag-of-words representation: a list of (word_id, word_frequency) 2-tuples.</p>
+<p>If <cite>documents</cite> are given, use them to initialize Dictionary (see <cite>add_documents()</cite>).</p>
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.add_documents">
+<code class="descname">add_documents</code><span class="sig-paren">(</span><em>documents</em>, <em>prune_at=2000000</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.add_documents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update dictionary from a collection of documents. Each document is a list
+of tokens = <strong>tokenized and normalized</strong> strings (either utf8 or unicode).</p>
+<p>This is a convenience wrapper for calling <cite>doc2bow</cite> on each document
+with <cite>allow_update=True</cite>, which also prunes infrequent words, keeping the
+total number of unique words &lt;= <cite>prune_at</cite>. This is to save memory on very
+large inputs. To disable this pruning, set <cite>prune_at=None</cite>.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">Dictionary</span><span class="p">([</span><span class="s2">&quot;máma mele maso&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span> <span class="s2">&quot;ema má máma&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">()]))</span>
+<span class="go">Dictionary(5 unique tokens)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.compactify">
+<code class="descname">compactify</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.compactify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign new word ids to all words.</p>
+<p>This is done to make the ids more compact, e.g. after some tokens have
+been removed via <a class="reference internal" href="#gensim.corpora.dictionary.Dictionary.filter_tokens" title="gensim.corpora.dictionary.Dictionary.filter_tokens"><code class="xref py py-func docutils literal"><span class="pre">filter_tokens()</span></code></a> and there are gaps in the id series.
+Calling this method will remove the gaps.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.doc2bow">
+<code class="descname">doc2bow</code><span class="sig-paren">(</span><em>document</em>, <em>allow_update=False</em>, <em>return_missing=False</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.doc2bow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <cite>document</cite> (a list of words) into the bag-of-words format = list
+of <cite>(token_id, token_count)</cite> 2-tuples. Each word is assumed to be a
+<strong>tokenized and normalized</strong> string (either unicode or utf8-encoded). No further preprocessing
+is done on the words in <cite>document</cite>; apply tokenization, stemming etc. before
+calling this method.</p>
+<p>If <cite>allow_update</cite> is set, then also update dictionary in the process: create
+ids for new words. At the same time, update document frequencies – for
+each word appearing in this document, increase its document frequency (<cite>self.dfs</cite>)
+by one.</p>
+<p>If <cite>allow_update</cite> is <strong>not</strong> set, this function is <cite>const</cite>, aka read-only.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.filter_extremes">
+<code class="descname">filter_extremes</code><span class="sig-paren">(</span><em>no_below=5</em>, <em>no_above=0.5</em>, <em>keep_n=100000</em>, <em>keep_tokens=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.filter_extremes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter out tokens that appear in</p>
+<ol class="arabic simple">
+<li>less than <cite>no_below</cite> documents (absolute number) or</li>
+<li>more than <cite>no_above</cite> documents (fraction of total corpus size, <em>not</em>
+absolute number).</li>
+<li>if tokens are given in keep_tokens (list of strings), they will be kept regardless of
+the <cite>no_below</cite> and <cite>no_above</cite> settings</li>
+<li>after (1), (2) and (3), keep only the first <cite>keep_n</cite> most frequent tokens (or
+keep all if <cite>None</cite>).</li>
+</ol>
+<p>After the pruning, shrink resulting gaps in word ids.</p>
+<p><strong>Note</strong>: Due to the gap shrinking, the same word may have a different
+word id before and after the call to this function!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.filter_n_most_frequent">
+<code class="descname">filter_n_most_frequent</code><span class="sig-paren">(</span><em>remove_n</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.filter_n_most_frequent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter out the ‘remove_n’ most frequent tokens that appear in the documents.</p>
+<p>After the pruning, shrink resulting gaps in word ids.</p>
+<p><strong>Note</strong>: Due to the gap shrinking, the same word may have a different
+word id before and after the call to this function!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.filter_tokens">
+<code class="descname">filter_tokens</code><span class="sig-paren">(</span><em>bad_ids=None</em>, <em>good_ids=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.filter_tokens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the selected <cite>bad_ids</cite> tokens from all dictionary mappings, or, keep
+selected <cite>good_ids</cite> in the mapping and remove the rest.</p>
+<p><cite>bad_ids</cite> and <cite>good_ids</cite> are collections of word ids to be removed.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="gensim.corpora.dictionary.Dictionary.from_corpus">
+<em class="property">static </em><code class="descname">from_corpus</code><span class="sig-paren">(</span><em>corpus</em>, <em>id2word=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.from_corpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Dictionary from an existing corpus. This can be useful if you only
+have a term-document BOW matrix (represented by <cite>corpus</cite>), but not the
+original text corpus.</p>
+<p>This will scan the term-document count matrix for all word ids that
+appear in it, then construct and return Dictionary which maps each
+<cite>word_id -&gt; id2word[word_id]</cite>.</p>
+<p><cite>id2word</cite> is an optional dictionary that maps the <cite>word_id</cite> to a token. In
+case <cite>id2word</cite> isn’t specified the mapping <cite>id2word[word_id] = str(word_id)</cite>
+will be used.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="gensim.corpora.dictionary.Dictionary.from_documents">
+<em class="property">static </em><code class="descname">from_documents</code><span class="sig-paren">(</span><em>documents</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.from_documents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>k</em><span class="optional">[</span>, <em>d</em><span class="optional">]</span><span class="sig-paren">)</span> &#x2192; D[k] if k in D, else d.  d defaults to None.<a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.items">
+<code class="descname">items</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; list of D's (key, value) pairs, as 2-tuples<a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.iteritems">
+<code class="descname">iteritems</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; an iterator over the (key, value) items of D<a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.iteritems" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.iterkeys">
+<code class="descname">iterkeys</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; an iterator over the keys of D<a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.iterkeys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.itervalues">
+<code class="descname">itervalues</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; an iterator over the values of D<a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.itervalues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.keys">
+<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all token ids.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em>, <em>mmap=None</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a previously saved object from file (also see <cite>save</cite>).</p>
+<p>If the object was saved with large arrays stored separately, you can load
+these arrays via mmap (shared memory) using <cite>mmap=’r’</cite>. Default: don’t use
+mmap, load large arrays as normal objects.</p>
+<p>If the file being loaded is compressed (either ‘.gz’ or ‘.bz2’), then
+<cite>mmap=None</cite> must be set.  Load will raise an <cite>IOError</cite> if this condition
+is encountered.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="gensim.corpora.dictionary.Dictionary.load_from_text">
+<em class="property">static </em><code class="descname">load_from_text</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.load_from_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a previously stored Dictionary from a text file.
+Mirror function to <cite>save_as_text</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.merge_with">
+<code class="descname">merge_with</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.merge_with" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge another dictionary into this dictionary, mapping same tokens to the
+same ids and new tokens to new ids. The purpose is to merge two corpora
+created using two different dictionaries, one from <cite>self</cite> and one from <cite>other</cite>.</p>
+<p><cite>other</cite> can be any id=&gt;word mapping (a dict, a Dictionary object, …).</p>
+<p>Return a transformation object which, when accessed as <cite>result[doc_from_other_corpus]</cite>,
+will convert documents from a corpus built using the <cite>other</cite> dictionary
+into a document using the new, merged dictionary (see <a class="reference internal" href="../interfaces.html#gensim.interfaces.TransformationABC" title="gensim.interfaces.TransformationABC"><code class="xref py py-class docutils literal"><span class="pre">gensim.interfaces.TransformationABC</span></code></a>).</p>
+<p>Example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dict1</span> <span class="o">=</span> <span class="n">Dictionary</span><span class="p">(</span><span class="n">some_documents</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict2</span> <span class="o">=</span> <span class="n">Dictionary</span><span class="p">(</span><span class="n">other_documents</span><span class="p">)</span>  <span class="c1"># ids not compatible with dict1!</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict2_to_dict1</span> <span class="o">=</span> <span class="n">dict1</span><span class="o">.</span><span class="n">merge_with</span><span class="p">(</span><span class="n">dict2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># now we can merge corpora from the two incompatible dictionaries into one</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">merged_corpus</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">some_corpus_from_dict1</span><span class="p">,</span> <span class="n">dict2_to_dict1</span><span class="p">[</span><span class="n">some_corpus_from_dict2</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>fname_or_handle</em>, <em>separately=None</em>, <em>sep_limit=10485760</em>, <em>ignore=frozenset([])</em>, <em>pickle_protocol=2</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the object to file (also see <cite>load</cite>).</p>
+<p><cite>fname_or_handle</cite> is either a string specifying the file name to
+save to, or an open file-like object which can be written to. If
+the object is a file handle, no special array handling will be
+performed; all attributes will be saved to the same file.</p>
+<p>If <cite>separately</cite> is None, automatically detect large
+numpy/scipy.sparse arrays in the object being stored, and store
+them into separate files. This avoids pickle memory errors and
+allows mmap’ing large arrays back on load efficiently.</p>
+<p>You can also set <cite>separately</cite> manually, in which case it must be
+a list of attribute names to be stored in separate files. The
+automatic check is not performed in this case.</p>
+<p><cite>ignore</cite> is a set of attribute names to <em>not</em> serialize (file
+handles, caches etc). On subsequent load() these attributes will
+be set to None.</p>
+<p><cite>pickle_protocol</cite> defaults to 2 so the pickled object can be imported
+in both Python 2 and 3.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.save_as_text">
+<code class="descname">save_as_text</code><span class="sig-paren">(</span><em>fname</em>, <em>sort_by_word=True</em><span class="sig-paren">)</span><a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.save_as_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save this Dictionary to a text file, in format:
+<cite>num_docs</cite>
+<cite>id[TAB]word_utf8[TAB]document frequency[NEWLINE]</cite>. Sorted by word,
+or by decreasing word frequency.</p>
+<p>Note: text format should be use for corpus inspection. Use <cite>save</cite>/<cite>load</cite>
+to store in binary format (pickle) for improved performance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gensim.corpora.dictionary.Dictionary.values">
+<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; list of D's values<a class="headerlink" href="#gensim.corpora.dictionary.Dictionary.values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      
+
+      <div class="clearer"></div>
+    </div>
+    
+
+    
+    <div id="footer">
+      <div id="footerwrapper">
+        <div id="footerleft">
+          <img src="../_static/images/logo-gensim.png" class="smallerlogo" alt="smaller gensim logo" />
+          <a href="../index.html"><img src="../_static/images/gensim-footer.png" alt="gensim footer image" title="Gensim home" /></a>
+
+          <div class="copyright">
+            &copy; Copyright 2009-now, <a href="mailto:radimrehurek@seznam.cz" style="color:white"> Radim Řehůřek</a>
+            <br />
+              Last updated on Sep 10, 2017.
+          </div>
+        </div>
+
+        <div id="footermiddleright">
+          <div id="footermiddle">
+            <ul class="navigation">
+              <li><a href="../index.html">
+                Home
+              </a></li>
+              <li>|</li>
+              <li><a href="../tutorial.html">
+                Tutorials
+              </a></li>
+              <li>|</li>
+              <li><a href="../install.html">
+                Install
+              </a></li>
+              <li>|</li>
+              <li><a href="../support.html">
+                Support
+              </a></li>
+              <li>|</li>
+              <li><a href="../apiref.html">
+                API
+              </a></li>
+              <li>|</li>
+              <li><a href="../about.html">
+                About
+              </a></li>
+            </ul>
+
+            <div class="tweetodsazeni">
+              <div class="tweet">
+                <a href="https://twitter.com/radimrehurek" target="_blank" style="color: white">Tweet @RadimRehurek</a>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="footerright">
+            <div class="footernadpis">
+              Support:
+            </div>
+            <div class="googlegroupsodsazeni">
+              <a href="https://groups.google.com/group/gensim" class="googlegroups">
+                Stay informed via gensim mailing list:
+              </a>
+
+              <form action="http://groups.google.com/group/gensim/boxsubscribe">
+                <input type="text" name="email" placeholder="your@email.com" size="28" />
+                <input type="submit" name="sub" value="Subscribe" />
+              </form>
+
+            </div>
+
+            <div class="addthis_toolbox addthis_default_style addthis_32x32_style"
+                addthis:title="#gensim"
+                addthis:description="Efficient Topic Modelling in Python"
+                style="margin:20px 0 0 0">
+              <a class="addthis_button_preferred_1"></a>
+              <a class="addthis_button_preferred_2"></a>
+              <a class="addthis_button_preferred_3"></a>
+              <a class="addthis_button_preferred_4"></a>
+              <a class="addthis_button_compact"></a>
+              <a class="addthis_counter addthis_bubble_style"></a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    
+
+    <script type="text/javascript">
+      (function() {
+      var at = document.createElement('script'); at.type = 'text/javascript'; at.async = true;
+      at.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 's7.addthis.com/js/250/addthis_widget.js#pubid=ra-4d738b9b1d31ccbd';
+      var sat = document.getElementsByTagName('script')[0]; sat.parentNode.insertBefore(at, sat);
+      })();
+    </script>
+
+  </body>
+</html>
