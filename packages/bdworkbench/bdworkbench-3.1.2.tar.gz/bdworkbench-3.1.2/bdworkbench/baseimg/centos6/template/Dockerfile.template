@@ -1,0 +1,70 @@
+################################################################################
+#                                                                              #
+# Base container image for creating custom application containers for BlueData #
+# EPIC platform.                                                               #
+#                                                                              #
+################################################################################
+
+@@@@BASE_IMAGE_HEADER@@@@yum install -y which nc wget curl tar rsync openssh-clients openssh-server \
+            java-1.7.0-openjdk sudo python dhclient mlocate httpd fping unzip  \
+            yum-utils passwd rsyslog cronie sssd sssd-ldap sssd-krb5 sssd-client\
+            pam_ldap pam_krb5 nss-pam-ldapd pam passwd pam_passwdqc audit      \
+            audit-libs python-setuptools python-argparse python-sssdconfig     \
+            authconfig openldap-clients openldap-devel python-ldap krb5-libs   \
+            krb5-devel krb5-workstation libsmbclient libsmbclient-devel   &&   \
+    yum update -y --exclude=kernel*  && yum clean all &&                       \
+    @@@@BASE_IMAGE_FOOTER@@@@ &&                                               \
+    rm -rf /tmp/* /var/tmp/* /var/cache/yum/*
+
+ADD deps/* /var/tmp/deps/
+RUN cd /var/tmp/deps/elementtree-1.2-20040618; python setup.py install &&      \
+    cd /var/tmp/deps/meld3-1.0.2; python setup.py install &&                   \
+    cd /var/tmp/deps/supervisor-3.3.1; python setup.py install &&              \
+    rm -rf /var/tmp/deps
+
+## Generate a random password for root user for better security.
+RUN passwd -l root
+
+## Create a bluedata system user
+RUN useradd -r -m -s /bin/bash bluedata; mkdir /home/bluedata/.ssh;            \
+      chmod go-rx /home/bluedata/.ssh; chown -R bluedata:bluedata /home/bluedata
+RUN echo $'Defaults:bluedata !requiretty\n\nbluedata ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/bluedata
+
+## Don't require tty for any sudo commands.
+RUN sed -i  's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers
+
+## Query DNSserver before refering to local files for name resolution.
+RUN sed -i s/"files dns"/"dns files"/ /etc/nsswitch.conf
+
+# RHEL is missing /sbin in the path. But, its okay to redefine for CentOS too.
+ENV PATH $PATH:/sbin
+
+## Limits configuration.
+ADD ./limits-90-nproc.conf /etc/security/limits.d/90-nproc.conf
+
+## Configure rsyslogd - don't grab kernel logs inside the container.
+RUN sed -i '/^\$ModLoad imklog/d' /etc/rsyslog.conf
+
+## Crond failes at startup trying to set loginuid so, make it optional.
+RUN sed -i '/pam_loginuid.so/c session    optional   pam_loginuid.so'  /etc/pam.d/crond
+
+## Remove any nologin files if they exist otherwise, non-root users can't login
+RUN rm -f /etc/nologin /var/run/nologin
+
+## Configuring SSH server.
+RUN ssh-keygen -P '' -t rsa -f /etc/ssh/ssh_host_rsa_key
+RUN ssh-keygen -P '' -t dsa -f /etc/ssh/ssh_host_dsa_key
+RUN sed -i '/pam_loginuid.so/c session    optional     pam_loginuid.so'  /etc/pam.d/sshd
+RUN sed -i '/^#PermitRootLogin yes$/d; $a PermitRootLogin no' /etc/ssh/sshd_config
+
+ENV JAVA_HOME /usr/lib/jvm/java-1.7.0-openjdk.x86_64
+ENV TERM xterm-256color
+
+RUN mkdir -p /etc/bluedata
+ADD base_img_version /etc/bluedata/base_img_version
+RUN chown -R bluedata:bluedata /etc/bluedata
+
+## Configure supervisord
+ADD supervisord.conf /etc/
+## Start default services (sshd, rsyslog etc.) at container bootup.
+ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
