@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puppetboard</title>
+    {% if config.OFFLINE_MODE %}
+    <style>
+      @font-face {
+        font-family: 'Open Sans';
+        font-style: normal;
+        font-weight: 400;
+        src: local('Open Sans'), local('OpenSans'), url({{ url_for('static', filename='fonts/Open_Sans.woff') }}) format('woff');
+      }
+    </style>
+    <link href='{{ url_for('static', filename='jquery-datatables-1.10.13/dataTables.semanticui.min.css') }}' rel='stylesheet' type='text/css'>
+    <link href="{{ url_for('offline_static', filename='Semantic-UI-2.1.8/semantic.min.css') }}" rel="stylesheet" />
+    {% else %}
+    <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css' />
+    <link href="{{ url_for('static', filename='Semantic-UI-2.1.8/semantic.min.css') }}" rel="stylesheet" />
+    <link href='//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/css/dataTables.semanticui.min.css' rel='stylesheet' type='text/css'>
+    {% endif %}
+    <link href="{{ url_for('static', filename='css/puppetboard.css') }}" rel="stylesheet" />
+
+    {% if config.OFFLINE_MODE %}
+      <script src="{{ url_for('static', filename='jquery-2.1.1/jquery.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='jquery-datatables-1.10.13/jquery.dataTables.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='jquery-datatables-1.10.13/dataTables.semanticui.min.js') }}"></script>
+      {% if config.LOCALISE_TIMESTAMP %}
+      <script src="{{ url_for('static', filename='moment.js-2.7.0/moment.min.js') }}"></script>
+      {% endif %}
+    {% else %}
+      <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/js/jquery.dataTables.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/js/dataTables.semanticui.min.js"></script>
+      {% if config.LOCALISE_TIMESTAMP %}
+        <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment.min.js"></script>
+      {% endif %}
+    {% endif %}
+    {% if config.LOCALISE_TIMESTAMP %}
+      <script src="{{ url_for('static', filename='js/timestamps.js')}}"></script>
+    {% endif %}
+    <script src="{{ url_for('static', filename='Semantic-UI-2.1.8/semantic.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lists.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scroll.top.js') }}"></script>
+    <script src="{{url_for('static', filename='js/d3.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/c3.min.js')}}"></script>
+    <script src="{{url_for('static',
+                  filename='jquery-tablesort-v.0.0.7/jquery.tablesort.min.js')}}"></script>
+    {% block script %} {% endblock script %}
+    <script type="text/javascript">
+    {% block javascript %} {% endblock javascript %}
+      $(document).ready(function(){
+          $(".ui.dropdown").dropdown();
+          $.getScript('{{url_for('static', filename='js/lists.js')}}')
+          $.getScript('{{url_for('static', filename='js/tables.js')}}')
+          {% block onload_script %} {% endblock onload_script %}
+        })
+    </script>
+    {% block head %} {% endblock head %}
+  </head>
+
+  <body>
+    <div class="ui darkblue doubling stackable inverted large menu">
+      <div class="title item">
+        Puppetboard
+      </div>
+      {%- for endpoint, caption in [
+      ('index', 'Overview'),
+      ('nodes', 'Nodes'),
+      ('facts', 'Facts'),
+      ('reports', 'Reports'),
+      ('metrics', 'Metrics'),
+      ('inventory', 'Inventory'),
+      ('catalogs', 'Catalogs'),
+      ('radiator', 'Radiator'),
+      ('query', 'Query'),
+      ] %}
+      <a {% if endpoint == request.endpoint %} class="active item" {% else %} class="item" {% endif %}
+        href="{{ url_for(endpoint, env=current_env) }}">{{ caption }}</a>
+      {%- endfor %}
+      <div class="ui dropdown item">
+        {{current_env}}
+        <i class="dropdown icon"></i>
+        <div class="menu">
+            <a class="{% if '*' == current_env %}active {% endif %}item" href="{{url_for_field('env', '*')}}">All environments</a>
+          {% for env in envs %}
+            <a class="{% if env == current_env %}active {% endif %}item" href="{{url_for_field('env', env)}}">{{env}}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="item right"><a href="https://github.com/voxpupuli/puppetboard" target="_blank">{{version()}}</a></div>
+    </div>
+    <div class="ui grid padding-bottom">
+      <div class="one wide column"></div>
+      <div class="fourteen wide column">
+        {% block content %} {% endblock content %}
+      </div>
+      <div class="one wide column"></div>
+    </div>
+
+    <div id="scroll-btn-top">
+      <i class="large arrow up icon"></i>
+    </div>
+
+    <footer class="ui absolute fixed bottom">
+      <div>
+        Copyright &copy; 2013-{{ now('%Y') }} <a href="https://github.com/voxpupuli" target="_blank">Puppet Community</a>. <span style="float:right">Live from PuppetDB.</span>
+      </div>
+    </footer>
+  </body>
+</html>
