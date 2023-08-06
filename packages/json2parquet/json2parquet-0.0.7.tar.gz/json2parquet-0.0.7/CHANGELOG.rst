@@ -1,0 +1,34 @@
+Changelog
+---------
+
+0.0.7
+~~~~~~
+- Force converted Timestamps to max out at `pandas.Timestamp.max` if they exceed the resolution of `datetime[ns]`
+
+0.0.6
+~~~~~~
+- Add automatic downcasting for Python ``float`` to ``float32`` via pandas when schema specifies ``pa.float32()``
+
+0.0.5
+~~~~~~
+- Fix conversion of float types to be size specific
+
+0.0.4
+~~~~~~
+- Fix ingestion of timestamp data with ns resolution
+
+0.0.3
+~~~~~~
+- Add pandas dependency
+- Add proper ingestion of timestamp data using Pandas ``to_datetime``
+
+0.0.2
+~~~~~~
+- Fix formatting of README so it displays on PyPI
+
+0.0.1
+~~~~~~
+
+- Initial release
+- JSON/data writing support
+- Redshift Schema reading support
