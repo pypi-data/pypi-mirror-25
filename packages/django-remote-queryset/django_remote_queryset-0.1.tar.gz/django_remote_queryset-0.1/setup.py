@@ -1,0 +1,14 @@
+from setuptools import setup
+from setuptools import find_packages
+
+setup(
+    name='django_remote_queryset',
+    version='0.1',
+    scripts=[
+    ],
+    packages=find_packages(exclude=['contrib', 'docs', 'tests*', 'example_django_app']),
+    install_requires=[
+        'django',
+        'djangorestframework',
+    ]
+)
