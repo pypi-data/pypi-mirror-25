@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cppa:CPP xmlns:cppa="http://docs.oasis-open.org/ebcore/ns/cppa/v3.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://docs.oasis-open.org/ebxmlcppa/cppa-3.0 ../../../cppa3-xsd/cppa3.xsd">
+    <cppa:ProfileInfo>
+        <cppa:ProfileIdentifier>Acpp Super</cppa:ProfileIdentifier>
+        <cppa:ActivationDate>1998-01-01T00:00:00</cppa:ActivationDate>
+        <cppa:PhaseIn>P7D</cppa:PhaseIn>
+    </cppa:ProfileInfo>
+    <cppa:PartyInfo>
+        <cppa:PartyName xml:lang="en">Company A</cppa:PartyName>
+        <cppa:PartyId type="urn:oasis:tc:ebcore:partyid-type:ABN:0151">01234567891</cppa:PartyId>
+        
+        <cppa:Certificate id="a_signingcert" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+            <ds:KeyInfo>
+                <ds:KeyName>A cert</ds:KeyName>
+            </ds:KeyInfo>
+        </cppa:Certificate>
+    </cppa:PartyInfo>
+
+    <cppa:ServiceSpecification>
+        <cppa:PartyRole name="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/initiator"/>
+        <cppa:CounterPartyRole name="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/responder"/>
+        <cppa:ServiceBinding>
+            <cppa:Service>http://sbr.gov.au/service/Rollover/1.0</cppa:Service>
+            <cppa:ActionBinding id="a1" action="InitiateRolloverRequest" sendOrReceive="send"  >
+                <cppa:ChannelId>ch1</cppa:ChannelId>
+                <cppa:PayloadProfileId>pp</cppa:PayloadProfileId>
+            </cppa:ActionBinding>
+            <cppa:ActionBinding id="a3" action="RolloverTransactionRequest" sendOrReceive="send">
+                <cppa:ChannelId>ch1</cppa:ChannelId>
+                <cppa:PayloadProfileId>pp</cppa:PayloadProfileId>
+            </cppa:ActionBinding>
+        </cppa:ServiceBinding>
+    </cppa:ServiceSpecification>
+    
+    <cppa:ebMS3Channel id="ch1" transport="tr1" errorHandling="eh" >
+        <cppa:Description xml:lang="en">High end profile, outgoing using push and PKI</cppa:Description>
+        <cppa:ChannelProfile>http://sbr.gov.au/agreement/Highend/1.0/Push/PKI</cppa:ChannelProfile>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+        <cppa:WSSecurityBinding>
+            <cppa:WSSVersion>1.1</cppa:WSSVersion>
+            <cppa:Signature>
+                <cppa:SignatureAlgorithm>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</cppa:SignatureAlgorithm>
+                <cppa:DigestAlgorithm>http://www.w3.org/2001/04/xmlenc#sha256</cppa:DigestAlgorithm>
+                <cppa:SigningCertificateRef certId="a_signingcert"/>
+            </cppa:Signature>
+        </cppa:WSSecurityBinding>
+        <cppa:AS4ReceptionAwareness>
+            <cppa:DuplicateHandling>
+                <cppa:DuplicateElimination>true</cppa:DuplicateElimination>
+            </cppa:DuplicateHandling>
+            <cppa:RetryHandling>
+                <cppa:Retries>16</cppa:Retries>
+                <cppa:RetryInterval>PT1200S</cppa:RetryInterval>
+            </cppa:RetryHandling>
+        </cppa:AS4ReceptionAwareness>
+        <cppa:ReceiptHandling>
+            <cppa:ReceiptFormat>NonRepudiationInformation</cppa:ReceiptFormat>
+            <cppa:ReceiptChannelId>ch2</cppa:ReceiptChannelId>
+        </cppa:ReceiptHandling>
+        <cppa:Compression>
+            <cppa:CompressionAlgorithm>application/gzip</cppa:CompressionAlgorithm>
+        </cppa:Compression>
+    </cppa:ebMS3Channel>
+
+    <cppa:ebMS3Channel id="ch2" asResponse="true"  >
+        <cppa:Description xml:lang="en">Synchronous response channel for errors and receipts</cppa:Description>
+        <cppa:SOAPVersion>1.2</cppa:SOAPVersion>
+        <cppa:WSSecurityBinding>
+            <cppa:WSSVersion>1.1</cppa:WSSVersion>
+            <cppa:Signature>
+                <cppa:SignatureAlgorithm>http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</cppa:SignatureAlgorithm>
+                <cppa:DigestAlgorithm>http://www.w3.org/2001/04/xmlenc#sha256</cppa:DigestAlgorithm>
+            </cppa:Signature>
+        </cppa:WSSecurityBinding>
+    </cppa:ebMS3Channel>
+    
+    <cppa:ErrorHandling id="eh">
+        <cppa:DeliveryFailuresNotifyProducer>true</cppa:DeliveryFailuresNotifyProducer>
+        <cppa:ProcessErrorNotifyConsumer>true</cppa:ProcessErrorNotifyConsumer>
+        <cppa:ProcessErrorNotifyProducer>true</cppa:ProcessErrorNotifyProducer>
+        <cppa:ReceiverErrorsReportChannelId>ch2</cppa:ReceiverErrorsReportChannelId>
+    </cppa:ErrorHandling>
+
+    <cppa:HTTPTransport id="tr1">
+        <cppa:TransportLayerSecurity/>
+    </cppa:HTTPTransport>
+
+    <cppa:PayloadProfile id="pp">
+        <cppa:PayloadPart>
+            <cppa:PartName>businessdocument</cppa:PartName>
+            <cppa:MaxSize unit="G">1</cppa:MaxSize>
+        </cppa:PayloadPart>
+    </cppa:PayloadProfile>
+    
+
+</cppa:CPP>

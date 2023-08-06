@@ -1,0 +1,96 @@
+<cppa:CPP xmlns:cppa="http://docs.oasis-open.org/ebcore/ns/cppa/v3.0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"   
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://docs.oasis-open.org/ebxmlcppa/cppa-3.0 file:../../../cppa3-xsd/cppa3.xsd">
+  <cppa:ProfileInfo>
+    <cppa:ProfileIdentifier>EASEE-gas AS2 Profile for TSO 2</cppa:ProfileIdentifier>
+  </cppa:ProfileInfo>
+  <cppa:PartyInfo>
+    <cppa:PartyName xml:lang="en">TSO 2</cppa:PartyName>
+    <cppa:PartyId type="http://www.entsoe.eu/eic-codes/eic-party-codes-x">21X-EU-B-A0A0A-B</cppa:PartyId>
+    <cppa:PartyContact>
+      <cppa:ContactType>Technical Contact</cppa:ContactType>
+      <cppa:DirectTelephone>+3761234560</cppa:DirectTelephone>
+      <cppa:Email>edi@tso2.eu</cppa:Email>
+    </cppa:PartyContact>
+    <cppa:Certificate id="_SCNXER">
+      <ds:KeyInfo>
+        <ds:KeyName>Signing certificate for TSO 2</ds:KeyName>
+        <ds:X509Data>
+          <ds:X509Certificate>RGl0IGlzIGVlbiBjZXJ0aWZpY2FhdCBpbiBiYXNlIDY0IGNvZGVyaW5n</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </cppa:Certificate>
+    <cppa:Certificate id="_4UP74O">
+      <ds:KeyInfo>
+        <ds:KeyName>Encryption certificate for TSO 2</ds:KeyName>
+        <ds:X509Data>
+          <ds:X509Certificate>RGl0IGlzIGVlbiBhbmRlciBjZXJ0aWZpY2FhdCBpbiBiYXNlIDY0IGNvZGVyaW5n</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </cppa:Certificate>
+    <cppa:CertificateDefaults>
+      <cppa:SigningCertificateRef certId="_SCNXER"/>
+      <cppa:EncryptionCertificateRef certId="_4UP74O"/>
+    </cppa:CertificateDefaults>
+  </cppa:PartyInfo>
+  <cppa:ServiceSpecification>
+    <cppa:PartyRole name="*"/>
+    <cppa:CounterPartyRole name="*"/>
+    <cppa:ServiceBinding>
+      <cppa:Service type="http://edigas.org/service">*</cppa:Service>
+      <cppa:ActionBinding sendOrReceive="send" action="*" id="ab_1_2">
+        <cppa:ChannelId>b_ch_send</cppa:ChannelId>
+        <cppa:PayloadProfileId>edigas</cppa:PayloadProfileId>
+      </cppa:ActionBinding>
+      <cppa:ActionBinding sendOrReceive="receive" action="*" id="ab_1_4">
+        <cppa:ChannelId>b_ch_receive</cppa:ChannelId>
+        <cppa:PayloadProfileId>edigas</cppa:PayloadProfileId>
+      </cppa:ActionBinding>
+    </cppa:ServiceBinding>
+  </cppa:ServiceSpecification>
+ 
+  <cppa:AS2Channel id="b_ch_send" transport="tr_send">
+    <cppa:ChannelProfile>http://easee-gas.eu/AS2-Profile</cppa:ChannelProfile>
+    <cppa:Signature>
+      <cppa:SigningCertificateRef certId="_SCNXER"/>
+    </cppa:Signature>
+    <cppa:Encryption/>
+    <cppa:ErrorHandling>
+      <cppa:ReceiverErrorsReportChannelId>b_ch_send_signals</cppa:ReceiverErrorsReportChannelId>
+    </cppa:ErrorHandling>
+  </cppa:AS2Channel>
+
+  <cppa:AS2Channel id="b_ch_send_signals"  asResponse="true">
+    <cppa:ChannelProfile>http://easee-gas.eu/AS2-Profile/MDN</cppa:ChannelProfile>
+    <cppa:Signature/>
+  </cppa:AS2Channel>
+  
+  <cppa:AS2Channel id="b_ch_receive" transport="tr_receive" >
+    <cppa:ChannelProfile>http://easee-gas.eu/AS2-Profile</cppa:ChannelProfile>
+    <cppa:Signature />
+    <cppa:Encryption>
+      <cppa:EncryptionCertificateRef certId="_4UP74O"/>
+    </cppa:Encryption>
+  </cppa:AS2Channel>
+  
+  <cppa:HTTPTransport id="tr_send">
+    <cppa:ClientIPv4>1.2.3.4</cppa:ClientIPv4>
+  </cppa:HTTPTransport>
+  
+  <cppa:HTTPTransport id="tr_receive">
+    <cppa:Endpoint>https://tso1.eu/as2</cppa:Endpoint>   
+  </cppa:HTTPTransport>
+  
+  <cppa:PayloadProfile id="edigas">
+    <cppa:PayloadPart maxOccurs="1" minOccurs="1">
+      <cppa:PartName>businessdocument</cppa:PartName>
+      <cppa:MIMEContentType>application/xml</cppa:MIMEContentType>
+      <cppa:Property maxOccurs="1" minOccurs="1" name="EDIGASDocumentType"/>
+    </cppa:PayloadPart>
+  </cppa:PayloadProfile>
+    
+    <cppa:MIMEEnvelope id="entsog_package">
+        <cppa:SimpleMIMEPart PartName="businessdocument" />
+    </cppa:MIMEEnvelope>
+    
+</cppa:CPP>
