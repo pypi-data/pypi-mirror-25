@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load utils %}
+
+{% block header %}{% endblock %}
+{% block content %}
+<style>
+#id_epost, #id_postadr, #id_borteadr { width: 96% }
+#id_postnr, #id_fodt, #id_bortepostnr { width: 5em; }
+#id_mobnr { width: 8em; }
+.helptext { font-size: 0.8em; color: #666; }
+</style>
+<div style="max-width: 802px; margin: 0 auto; box-shadow: 0 0 50px -30px #000; padding: 40px; ">
+<h1>{{ object }} <span style="font-weight:normal">&ndash; medlemsoppdatering</span></h1>
+<form method=post action="">
+{% csrf_token %}
+    <table style="float:left; max-width:400px;">
+      <tr><td colspan=2><h2>Informasjon</h2>
+        {{ form }}
+        <tr><th>Lokallag:<td>{{ object.lokallag|default:"Ingen" }}<br> <span class=helptext>Kontakt oss for å byta</span>
+    </table>
+
+    <table style="float: left; max-width: 400px;">
+      <tr><td colspan=2><h2>Kontaktinnstillingar</h2>
+      <!--tr><td><label>post</label> <td>
+      <input type=checkbox value=nt checked>Norsk Tidend
+      <input type=checkbox value=mm checked>Motmæle
+      <input type=checkbox value=post checked>Vanleg post
+
+      <tr><td><label>epost</label> <td>
+      <input type=checkbox value=nyhendebrev checked>Nyhendebrev
+      <input type=checkbox value=admin checked>Administrativ
+      <input type=checkbox value=lokallag checked>Lokallag
+
+      <tr><td><label>telefon</label> <td>
+      <input type=checkbox value=sms checked>SMS
+      <input type=checkbox value=telefon checked>Ring-->
+
+      <tr><td><label>post</label> <td><select name=val_post id=val_post>
+      {% val_option object '' 'Ikkje Motmæle,Ikkje Norsk Tidend' %}
+        Motmæle, Norsk Tidend og post frå NMU
+      {% val_option object 'Ikkje Norsk Tidend' 'Ikkje Motmæle' %}
+        Motmæle og post frå NMU
+      {% val_option object 'Ikkje Motmæle' 'Ikkje Norsk Tidend' %}
+        Norsk Tidend og post frå NMU
+      {% val_option object 'Ikkje Motmæle,Ikkje Norsk Tidend' '' %}
+        Post frå NMU
+      </select>
+
+      <tr><td><label>telefon</label> <td><select name=val_tlf id=val_tlf>
+      {% val_option object '' 'Ikkje ring,Ikkje SMS' %}
+        Ring og SMS
+      {% val_option object 'Ikkje ring' 'Ikkje SMS' %}
+        Berre SMS
+      {% val_option object 'Ikkje SMS' 'Ikkje ring' %}
+        Berre ring
+      {% val_option object 'Ikkje ring,Ikkje SMS' '' %}
+        Ingen telefonbruk
+      </select>
+
+      {% comment %}
+      <tr><td><label>epost</label> <td><select name=val_epost id=val_epost>
+      {% val_option object '' 'Ikkje epost,Ikkje lokallagsepost' %}
+        Frå lokallag og NMU
+      {% val_option object 'Ikkje epost' 'Ikkje lokallagsepost' %}
+        Frå lokallag
+      {% val_option object 'Ikkje lokallagsepost' 'Ikkje epost' %}
+        Frå NMU
+      {% val_option object 'Ikkje epost,Ikkje lokallagsepost' '' %}
+        Ingen epost
+      {% endcomment %}
+      <tr><td><td>
+      <label><input type=checkbox name=val_nyhendebrev {% val_checked object 'Ikkje nyhendebrev' %} value='Ikkje nyhendebrev'>Ikkje motta nyhendebrev (eit par gongar i året)</label>
+
+    </table>
+    <div style="width:100%; clear:both; margin-bottom:20px;"></div>
+    <input type=submit value=Endra>
+</form>
+{% for r in object.lokallagsrolle.all %}
+<h2>{{ r }}</h2>
+<p>Sidan du har ei rolle i {{ r }}, so kan du sjå medlemslistene til {{ r }}.
+<p><a href='{{ r.listing }}?user_id={{ object.id }}&nykel={{ object.nykel }}'>Lokallagslister for {{ r }}</a>
+{% endfor %}
+</div>
+{% endblock %}

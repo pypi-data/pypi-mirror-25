@@ -1,0 +1,92 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n admin_static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+     <a href="../../">{% trans "Home" %}</a> &rsaquo;
+     <a href="../">{{ app_label|capfirst }}</a> &rsaquo;
+     <a href="./">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
+     {% trans "PDF-giro" %}
+</div>
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post">{% csrf_token %}
+
+    <fieldset class="module aligned">
+    <div class=form-row>
+      <div class=field-box>
+        <label for=title class=required>Tittel:</label> <input type=text name=title class=vTextField value="Medlemspengar for Norsk Målungdom">
+      </div>
+    </div>
+    <div class=form-row>
+      <div>
+        <label for=text class=required>Tekst</label> <textarea name=text class=vLargeTextField rows=15>&lt;font size=11>Gode {% templatetag openvariable %} medlem.fornamn {% templatetag closevariable %}. Ver snill og betal medlemspengar. Norsk Målungdom treng det.&lt;/font>
+
+
+
+&lt;font size=12>&lt;b>Registrert informasjon&lt;/b>&lt;/font>
+Epost: {% templatetag openvariable %} medlem.epost {% templatetag closevariable %}
+Telefon: {% templatetag openvariable %} medlem.mobnr {% templatetag closevariable %}
+Fødeår: {% templatetag openvariable %} medlem.fodt {% templatetag closevariable %}
+
+&lt;font size=8>Kontakt oss på &lt;i>skriv@nynorsk.no&lt;/i> for å oppdatera, melda flytting og so bortetter.&lt;/font>
+</textarea>
+        <p class=help>Du kan bruka variablar som t.d. <code>{% templatetag openvariable %} medlem.postnr {% templatetag closevariable %}</code> og <code>{% templatetag openvariable %} giro.belop {% templatetag closevariable %}</code>.
+      </div>
+    </div>
+    <div class=form-row>
+      <div class=field-box>
+        <label for=frist class=required>Betalingsfrist</label> <input type=text name=frist class=vTextField value="{{g_frist.isoformat}}">
+      </div>
+    </div>
+    <div class=form-row>
+      <div class=field-box>
+        <label for=pdf_type class=required>Utskriftstype</label>
+          <select name=pdf_type class=vTextField>
+            <option value=medlemskort>Giro m/ medlemskort</option>
+            <option value=giro>Giro</option>
+            <option value=faktura>Faktura</option>
+          </select>
+      </div>
+    </div>
+    <div class=form-row>
+      <div class=field-box>
+        <input type=checkbox name=merk-postlagt checked>
+           <label for=merk-postlagt>Markér som postlagt</label>
+        <p>Sett status til <code>Manuelt postlagt</code> for giroane som kjem med i PDF-en.
+      </div>
+    </div>
+    </fieldset>
+    {% if n_betalte or n_utmelde %}
+      <fieldset class="module aligned">
+        {% if n_utmelde %}
+        <div class=form-row>
+          <div class=field-box>
+            <input type=checkbox name=ink-utmeld> <label for=ink-utmeld>Inkluder utmelde</label>
+            <p>Det er <strong>{{ n_utmelde }} utmelde medlem</strong> i lista di.
+            <p class=help>Du bør eigentleg aldri sjå dette, for å senda giroar til utmelde medlem er ikkje særleg bra.
+          </div>
+        </div>
+        {% endif %}
+        {% if n_betalte %}
+        <div class=form-row>
+          <div class=field-box>
+            <input type=checkbox name=ink-betalt> <label for=ink-betalt>Inkluder allereie betalte</label>
+            <p>Det er <strong>{{ n_betalte }} giro{{ n_betalte|pluralize:"ar" }} som allereie er betalt{{ n_betalte|pluralize:"e" }}</strong> i lista di.
+          </div>
+        </div>
+        {% endif %}
+      </fieldset>
+    {% endif %}
+
+    {% for obj in queryset %}<input type=hidden name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}">{% endfor %}
+
+    <input type=hidden name=action value=pdf_giro>
+    <input type=hidden name=post value=yes>
+    <div class=submit-row>
+      <input type=submit value="Lag PDF-giroar" class=default>
+    </div>
+    </form>
+{% endblock %}
