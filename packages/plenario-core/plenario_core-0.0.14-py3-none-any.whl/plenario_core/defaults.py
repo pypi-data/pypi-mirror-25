@@ -1,0 +1,3 @@
+SRID = 4326
+
+TIMEZONE = 'UTC'
