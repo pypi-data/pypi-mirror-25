@@ -1,0 +1,1 @@
+c:\Python27\Scripts\pyinstaller.exe --onedir  --name=records --windowed E:\python\civilTools\applications\records\MainWindow.py
