@@ -1,0 +1,63 @@
+{% load i18n l10n staticfiles thumbnail pcart_core %}
+{% if cart.item_count > 0 %}
+<table class="cart-table">
+<tr>
+    <th>{% trans "Image" %}</th>
+    <th>{% trans "Title" %}</th>
+    <th>{% trans "Count" %}</th>
+    <th>{% trans "Price" %}</th>
+    <th>{% trans "Remove" %}</th>
+</tr>
+{% for item in cart.items %}
+<tr>
+    <td>
+    {% with image=item.product.images.first %}
+        <a href="{{item.object.get_absolute_url}}" target="_blank">
+    {% if image %}<img src="{% thumbnail image.image 100x100 %}" title="{{image}}">{% endif %}
+        </a>
+    {% endwith %}
+    </td>
+    <td>
+        <span><a href="{{item.object.get_absolute_url}}" target="_blank">{{item.object.title}}</a></span>
+    </td>
+    <td width="10">
+    <input type="number" step="1" min="0" name="item-quantity-{{item.id}}" value="{{item.quantity}}">
+    </td>
+    <td>
+        &times; {{item.price|money}} = {{item.line_price|money}}</td>
+    <td>
+        <input type="checkbox" name="item-remove-{{item.id}}">
+    </td>
+
+</tr>
+{% endfor %}
+<tr>
+    <td colspan="3"></td>
+    <td class="subtotal">
+        <h4>{% trans "Subtotal" %}: {{cart.total_price|money}}</h4>
+        {% with total_weight=cart.total_weight %}
+        {% if total_weight %}<h4>{% trans "Weight" %}: {{total_weight|weight}}</h4>{% endif %}
+        {% endwith %}
+    </td>
+    <td></td>
+</tr>
+</table>
+<style>
+table.cart-table td {
+    padding: 0 5px 0 5px;
+}
+table.cart-table td:first-child {
+    padding: 0 5px 0 0;
+}
+table.cart-table td:last-child {
+    padding: 0 0 0 5px;
+}
+table.cart-table td.subtotal {
+    border-top: 1px solid #000;
+}
+</style>
+{% endif %}
+<hr>
+<pre><code>
+{{cart.items}}
+</code></pre>

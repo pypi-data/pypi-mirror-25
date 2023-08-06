@@ -1,0 +1,61 @@
+{% load i18n l10n staticfiles thumbnail pcart_core %}
+<table class="order-table">
+<tr>
+    <th>{% trans "Image" %}</th>
+    <th>{% trans "Title" %}</th>
+    <th>{% trans "Count" %}</th>
+    <th>{% trans "Price" %}</th>
+    <th>{% trans "Remove" %}</th>
+</tr>
+{% for item in order.items %}
+<tr>
+    <td>
+    {% with image=item.product.images.first %}
+        <a href="{{item.object.get_absolute_url}}" target="_blank">
+    {% if image %}<img src="{% thumbnail image.image 100x100 %}" title="{{image}}">{% endif %}
+        </a>
+    {% endwith %}
+    </td>
+    <td>
+        <span><a href="{{item.object.get_absolute_url}}" target="_blank">{{item.object.title}}</a></span>
+    </td>
+    <td width="10">
+    <input type="number" step="1" min="0" name="item-quantity-{{item.id}}" value="{{item.quantity}}">
+    </td>
+    <td>
+        &times; {{item.price|money}} = {{item.line_price|money}}</td>
+    <td>
+        <input type="checkbox" name="item-remove-{{item.id}}">
+    </td>
+
+</tr>
+{% endfor %}
+<tr>
+    <td colspan="3"></td>
+    <td class="subtotal">
+        <h4>{% trans "Subtotal" %}: {{order.total_price|money}}</h4>
+        {% with total_weight=order.total_weight %}
+        {% if total_weight %}<h4>{% trans "Weight" %}: {{total_weight|weight}}</h4>{% endif %}
+        {% endwith %}
+    </td>
+    <td></td>
+</tr>
+</table>
+<style>
+table.order-table td {
+    padding: 0 5px 0 5px;
+}
+table.order-table td:first-child {
+    padding: 0 5px 0 0;
+}
+table.order-table td:last-child {
+    padding: 0 0 0 5px;
+}
+table.order-table td.subtotal {
+    border-top: 1px solid #000;
+}
+</style>
+<hr>
+<pre><code>
+{{order.items}}
+</code></pre>
