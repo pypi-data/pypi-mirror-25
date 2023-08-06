@@ -1,0 +1,2 @@
+def edenPrint():
+    print ('hello')
