@@ -1,0 +1,412 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "PETSC4PY" "1" "Oct 02, 2017" "3.8" "PETSc for Python"
+.SH NAME
+petsc4py \- PETSc for Python
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.INDENT 0.0
+.TP
+.B Author
+Lisandro Dalcin
+.TP
+.B Contact
+\fI\%dalcinl@gmail.com\fP
+.TP
+.B Web Site
+\fI\%https://bitbucket.org/petsc/petsc4py\fP
+.TP
+.B Date
+Oct 02, 2017
+.UNINDENT
+.SS Abstract
+.sp
+This document describes \fI\%petsc4py\fP, a \fI\%Python\fP port to the \fI\%PETSc\fP
+libraries.
+.sp
+\fI\%PETSc\fP (the Portable, Extensible Toolkit for Scientific
+Computation) is a suite of data structures and routines for the
+scalable (parallel) solution of scientific applications modeled by
+partial differential equations. It employs the \fI\%MPI\fP standard for
+all message\-passing communication.
+.sp
+This package provides an important subset of PETSc functionalities
+and uses \fI\%NumPy\fP to efficiently manage input and output of array data.
+.sp
+A \fIgood friend\fP of petsc4py is:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+\fI\%mpi4py\fP: Python bindings for \fI\%MPI\fP,
+the \fIMessage Passing Interface\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+Other projects depends on petsc4py:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+\fI\%slepc4py\fP: Python bindings for \fI\%SLEPc\fP,
+the \fIScalable Library for Eigenvalue Problem Computations\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH CONTENTS
+.SS Overview
+.sp
+\fI\%PETSc\fP is a suite of data structures and routines for the
+scalable (parallel) solution of scientific applications modeled by
+partial differential equations. It employs the \fI\%MPI\fP standard for all
+message\-passing communication.
+.sp
+PETSc is intended for use in large\-scale application projects
+[petsc\-efficient], and several ongoing computational science projects
+are built around the PETSc libraries. With strict attention to
+component interoperability, PETSc facilitates the integration of
+independently developed application modules, which often most
+naturally employ different coding styles and data structures.
+.sp
+PETSc is easy to use for beginners [petsc\-user\-ref]\&. Moreover, its
+careful design allows advanced users to have detailed control over the
+solution process. PETSc includes an expanding suite of parallel linear
+and nonlinear equation solvers that are easily used in application
+codes written in C, C++, and Fortran. PETSc provides many of the
+mechanisms needed within parallel application codes, such as simple
+parallel matrix and vector assembly routines that allow the overlap of
+communication and computation.
+.IP [petsc-user-ref] 5
+S. Balay, S. Abhyankar, M.F. Adams, J. Brown,
+P. Brune, K. Buschelman, L. Dalcin, V. Eijkhout, W.D. Gropp,
+D. Karpeyev, D. Kaushik, M.G. Knepley, L. Curfman McInnes, K. Rupp,
+B.F. Smith, S. Zampini, H. Zhang, and H. Zhang,
+\fIPETSc Users Manual\fP, ANL\-95/11 \- Revision 3.8, 2017.
+\fI\%http://www.mcs.anl.gov/petsc/petsc\-current/docs/manual.pdf\fP
+.IP [petsc-efficient] 5
+Satish Balay, Victor Eijkhout, William D. Gropp,
+Lois Curfman McInnes and Barry F. Smith. Efficient Management of
+Parallelism in Object Oriented Numerical Software Libraries. Modern
+Software Tools in Scientific Computing. E. Arge, A. M. Bruaset and
+H. P. Langtangen, editors. 163–202. Birkhauser Press. 1997.
+.SS Components
+.sp
+PETSc is designed with an object\-oriented style. Almost all
+user\-visible types are abstract interfaces with implementations that
+may be chosen at runtime. Those objects are managed through handles to
+opaque data structures which are created, accessed and destroyed by
+calling appropriate library routines.
+.sp
+PETSc consists of a variety of components. Each component manipulates
+a particular family of objects and the operations one would like to
+perform on these objects. These components provide the functionality
+required for many parallel solutions of PDEs.
+.INDENT 0.0
+.TP
+.B Vec
+Provides the vector operations required for setting up and
+solving large\-scale linear and nonlinear problems. Includes
+easy\-to\-use parallel scatter and gather operations, as well as
+special\-purpose code for handling ghost points for regular data
+structures.
+.TP
+.B Mat
+A large suite of data structures and code for the manipulation
+of parallel sparse matrices. Includes four different parallel
+matrix data structures, each appropriate for a different class
+of problems.
+.TP
+.B PC
+A collection of sequential and parallel preconditioners,
+including (sequential) ILU(k), LU, and (both sequential and
+parallel) block Jacobi, overlapping additive Schwarz methods
+and (through BlockSolve95) ILU(0) and ICC(0).
+.TP
+.B KSP
+Parallel implementations of many popular Krylov subspace
+iterative methods, including GMRES, CG, CGS, Bi\-CG\-Stab, two
+variants of TFQMR, CR, and LSQR. All are coded so that they are
+immediately usable with any preconditioners and any matrix data
+structures, including matrix\-free methods.
+.TP
+.B SNES
+Data\-structure\-neutral implementations of Newton\-like methods
+for nonlinear systems. Includes both line search and trust
+region techniques with a single interface. Employs by default
+the above data structures and linear solvers. Users can set
+custom monitoring routines, convergence criteria, etc.
+.TP
+.B TS
+Code for the time evolution of solutions of PDEs. In addition,
+provides pseudo\-transient continuation techniques for computing
+steady\-state solutions.
+.UNINDENT
+.SS Installation
+.SS Using \fBpip\fP or \fBeasy_install\fP
+.sp
+You can use \fBpip\fP to install \fBpetsc4py\fP and its
+dependencies (\fBmpi4py\fP is optional but highly recommended):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ pip install [\-\-user] numpy mpi4py
+$ pip install [\-\-user] petsc petsc4py
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Alternatively, you can use \fBeasy_install\fP (deprecated):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ easy_install petsc4py
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+If you already have a working PETSc installation, set environment
+variables \fBPETSC_DIR\fP and \fBPETSC_ARCH\fP to appropriate
+values and next use \fBpip\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ export PETSC_DIR=/path/to/petsc
+$ export PETSC_ARCH=arch\-linux2\-c\-opt
+$ pip install petsc4py
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Using \fBdistutils\fP
+.SS Requirements
+.sp
+You need to have the following software properly installed in order to
+build \fIPETSc for Python\fP:
+.INDENT 0.0
+.IP \(bu 2
+Any \fI\%MPI\fP implementation [1] (e.g., \fI\%MPICH\fP or \fI\%Open MPI\fP),
+built with shared libraries.
+.IP \(bu 2
+A matching version of \fI\%PETSc\fP built with shared libraries.
+.IP \(bu 2
+\fI\%NumPy\fP package.
+.UNINDENT
+.IP [1] 5
+Unless you have appropiatelly configured and built PETSc
+without MPI (configure option \fB\-\-with\-mpi=0\fP).
+.IP [2] 5
+You may need to use a parallelized version of the Python
+interpreter with some MPI\-1 implementations (e.g. MPICH1).
+.SS Downloading
+.sp
+The \fIPETSc for Python\fP package is available for download at the
+project website generously hosted by Bitbucket. You can use
+\fBcurl\fP or \fBwget\fP to get a release tarball.
+.INDENT 0.0
+.IP \(bu 2
+Using \fBcurl\fP:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ curl \-O https://bitbucket.org/petsc/petsc4py/petsc4py\-X.Y.Z.tar.gz
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+Using \fBwget\fP:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ wget https://bitbucket.org/petsc/petsc4py/petsc4py\-X.Y.Z.tar.gz
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Building
+.sp
+After unpacking the release tarball:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ tar \-zxf petsc4py\-X.Y.Z.tar.gz
+$ cd petsc4py\-X.Y.Z
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+the distribution is ready for building.
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+\fBMac OS X\fP users employing a Python distribution built
+with \fBuniversal binaries\fP may need to set the environment
+variables \fBMACOSX_DEPLOYMENT_TARGET\fP, \fBSDKROOT\fP,
+and \fBARCHFLAGS\fP to appropriate values. As an example,
+assume your Mac is running \fBSnow Leopard\fP on a \fB64\-bit Intel\fP
+processor and you want to override the hard\-wired cross\-development
+SDK in Python configuration, your environment should be modified
+like this:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ export MACOSX_DEPLOYMENT_TARGET=10.6
+$ export SDKROOT=/
+$ export ARCHFLAGS=\(aq\-arch x86_64\(aq
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+Some environment configuration is needed to inform the location of
+PETSc. You can set (using \fBsetenv\fP, \fBexport\fP or what
+applies to you shell or system) the environment variables
+\fBPETSC_DIR\fP, and \fBPETSC_ARCH\fP indicating where you
+have built/installed PETSc:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ export PETSC_DIR=/usr/local/petsc
+$ export PETSC_ARCH=arch\-linux2\-c\-opt
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Alternatively, you can edit the file \fBsetup.cfg\fP and provide the
+required information below the \fB[config]\fP section:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+[config]
+petsc_dir  = /usr/local/petsc
+petsc_arch = arch\-linux2\-c\-opt
+\&...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Finally, you can build the distribution by typing:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ python setup.py build
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Installing
+.sp
+After building, the distribution is ready for installation.
+.sp
+If you have root privileges (either by log\-in as the root user of by
+using \fBsudo\fP) and you want to install \fIPETSc for Python\fP in
+your system for all users, just do:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ python setup.py install
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The previous steps will install the \fBpetsc4py\fP package at standard
+location \fB\fIprefix\fP\fP\fB/lib/python\fP\fIX\fP\fB\&.\fP\fIY\fP\fB/site\-packages\fP\&.
+.sp
+If you do not have root privileges or you want to install \fIPETSc for
+Python\fP for your private use, just do:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ python setup.py install \-\-user
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Tutorial
+.sp
+XXX To be written … Any contribution welcome!
+.SS Citations
+.sp
+If PETSc for Python been significant to a project that leads to an
+academic publication, please acknowledge that fact by citing the
+project.
+.INDENT 0.0
+.IP \(bu 2
+L. Dalcin, P. Kler, R. Paz, and A. Cosimo,
+\fIParallel Distributed Computing using Python\fP,
+Advances in Water Resources, 34(9):1124\-1139, 2011.
+\fI\%http://dx.doi.org/10.1016/j.advwatres.2011.04.013\fP
+.IP \(bu 2
+S. Balay, S. Abhyankar, M.F. Adams, J. Brown, P. Brune, K. Buschelman,
+L. Dalcin, V. Eijkhout, W.D. Gropp, D. Karpeyev, D. Kaushik,
+M.G. Knepley, L. Curfman McInnes, K. Rupp, B.F. Smith, S. Zampini,
+H. Zhang, and H. Zhang,
+\fIPETSc Users Manual\fP, ANL\-95/11 \- Revision 3.8, 2017.
+\fI\%http://www.mcs.anl.gov/petsc/petsc\-current/docs/manual.pdf\fP
+.UNINDENT
+.SH AUTHOR
+Lisandro Dalcin
+.SH COPYRIGHT
+2017, Lisandro Dalcin
+.\" Generated by docutils manpage writer.
+.
