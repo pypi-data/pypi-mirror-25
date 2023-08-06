@@ -1,0 +1,67 @@
+{% extends "djmicrosip_facturacion\base.html" %}
+{% block title %}Facturar{% endblock %}
+
+<!-- CSS Code -->
+{% block style_css %}{% endblock %}
+
+<!-- JavaScript Code -->
+{% block js_code %}
+<script src="{{STATIC_URL}}djmicrosip_facturacion/js/facturacion.js"></script> 
+{% endblock %}
+
+{% block breadcrumb %}{{ block.super }} {% endblock %}
+{% block content %}
+<!--<h1 align="center"><strong>Facturación </strong><small>v1.0.0</small></h1>-->
+
+<div class="row" id="datos_docto">
+	<div class=" col-md-offset-5 col-md-2" align="center">
+	<label for=""></label> <h2><strong>{{cliente.nombre}}</strong></h2> <br/>
+	<input type="hidden" id="cliente_id" value="{{cliente.id}}" >
+{% if documento %}
+<table class="table table-bordered" align="center">
+	<tr>
+		<td><strong>Ticket:</strong></td>
+		<td>{{documento.folio}}</td>
+	</tr>
+	<tr>
+		<td><strong>Fecha:</strong></td>
+		<td>{{documento.fecha}}</td>
+	</tr>
+	<tr>
+		<td><strong>Hora:</strong></td>
+		<td>{{documento.hora}} </td>
+	</tr>
+	<tr>
+		<td><strong>Importe:</strong></td>
+		<td>{{total}}</td>
+	</tr>	  
+</table>
+<input type="hidden" id="ticket_id" value="{{documento.id}}">
+<label for="correo_destino"> Email: </label><input type="text" id="mail_destino" >
+<button id="btn_facturar" class="btn btn-success"><span class="glyphicon glyphicon-qrcode" aria-hidden="true"></span> Facturar</button>
+
+<a href="{{request.path}}"  class="btn btn-info"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Regresar</a><br/><br/>
+
+	
+
+
+{% else %}
+	<form action="" method="post" enctype="multipart/form-data">{%csrf_token%}
+		{{form.as_p}} <br/>
+		<button type="submit" class="btn">Buscar</button><br><br>
+	</form>
+		
+<a href="#" onclick="history.back();" class="btn btn-info"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Regresar</a><br/><br/>
+{% endif %}
+	</div>
+</div> 
+{% if documento %}
+<div class="row" id="pdf">
+	<div class="col-md-offset-2 col-md-8">
+		<iframe src=""  id="pdf_frame" width="100%" height="1700" style="display: none;" onafterprint="window.location.replace('/facturacion/')"></iframe>
+	</div>
+</div>
+{% endif %}
+
+
+{% endblock %}
