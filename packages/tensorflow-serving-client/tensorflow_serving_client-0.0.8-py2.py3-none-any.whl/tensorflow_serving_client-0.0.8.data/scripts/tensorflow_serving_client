@@ -1,0 +1,26 @@
+#!/home/travis/build/triagemd/tensorflow-serving-client/.venv/bin/python
+import argparse
+import json
+
+from tensorflow_serving_client import TensorflowServingClient
+from tensorflow_serving_client.utils import load_image, MODEL_SPECS
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--host', required=True, type=str, help='Hostname to query')
+    parser.add_argument('--port', required=True, type=int, help='Port to query')
+    parser.add_argument('--model_spec', required=True, type=str, help='Name of the model spec')
+    parser.add_argument('--image', required=True, type=str, help='Image to send (JPG format)')
+    args = parser.parse_args()
+
+    model_spec = MODEL_SPECS[args.model_spec]
+
+    client = TensorflowServingClient(args.host, args.port)
+    image_data = load_image(args.image,
+                            model_spec['target_size'],
+                            model_spec['preprocess_input'])
+    response = client.make_prediction(image_data, 'image')
+    predictions = response['class_probabilities'][0].tolist()
+
+    print(json.dumps(predictions, indent=4, sort_keys=True))
