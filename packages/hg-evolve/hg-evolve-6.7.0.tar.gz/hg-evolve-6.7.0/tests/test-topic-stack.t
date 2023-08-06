@@ -1,0 +1,793 @@
+  $ . "$TESTDIR/testlib/topic_setup.sh"
+
+Initial setup
+
+
+  $ cat << EOF >> $HGRCPATH
+  > [ui]
+  > logtemplate = {rev} {branch} \{{get(namespaces, "topics")}} {phase} {desc|firstline}\n
+  > [experimental]
+  > evolution=createmarkers,exchange,allowunstable
+  > EOF
+
+  $ hg init main
+  $ cd main
+  $ hg topic other
+  marked working directory as topic: other
+  $ echo aaa > aaa
+  $ hg add aaa
+  $ hg commit -m c_a
+  active topic 'other' grew its first changeset
+  $ echo aaa > bbb
+  $ hg add bbb
+  $ hg commit -m c_b
+  $ hg topic foo
+  $ echo aaa > ccc
+  $ hg add ccc
+  $ hg commit -m c_c
+  active topic 'foo' grew its first changeset
+  $ echo aaa > ddd
+  $ hg add ddd
+  $ hg commit -m c_d
+  $ echo aaa > eee
+  $ hg add eee
+  $ hg commit -m c_e
+  $ echo aaa > fff
+  $ hg add fff
+  $ hg commit -m c_f
+  $ hg log -G
+  @  5 default {foo} draft c_f
+  |
+  o  4 default {foo} draft c_e
+  |
+  o  3 default {foo} draft c_d
+  |
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {other} draft c_b
+  |
+  o  0 default {other} draft c_a
+  
+
+Check that topic without any parent does not crash --list
+---------------------------------------------------------
+
+  $ hg up other
+  switching to topic other
+  0 files updated, 0 files merged, 4 files removed, 0 files unresolved
+  $ hg topic --list
+  ### topic: other
+  ### target: default (branch)
+  t2@ c_b (current)
+  t1: c_a
+  $ hg phase --public 'topic("other")'
+  active topic 'other' is now empty
+
+After changing the phase of all the changesets in "other" to public, the topic should still be active, but is empty. We should be better at informating the user about it and displaying good data in this case.
+
+  $ hg topic
+     foo
+   * other
+  $ hg stack
+  ### topic: other
+  ### target: default (branch)
+  (stack is empty)
+  t0^ c_b (base)
+
+  $ hg up foo
+  switching to topic foo
+  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+Simple test
+-----------
+
+'hg stack' list all changeset in the topic
+
+  $ hg topic
+   * foo
+  $ hg stack
+  ### topic: foo
+  ### target: default (branch)
+  t4@ c_f (current)
+  t3: c_e
+  t2: c_d
+  t1: c_c
+  t0^ c_b (base)
+  $ hg stack -v
+  ### topic: foo
+  ### target: default (branch)
+  t4(6559e6d93aea)@ c_f (current)
+  t3(0f9ac936c87d): c_e
+  t2(e629654d7050): c_d
+  t1(8522f9e3fee9): c_c
+  t0(ea705abc4f51)^ c_b (base)
+  $ hg stack -Tjson | python -m json.tool
+  [
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_f",
+          "topic.stack.index": 4,
+          "topic.stack.state": [
+              "current"
+          ],
+          "topic.stack.state.symbol": "@"
+      },
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_e",
+          "topic.stack.index": 3,
+          "topic.stack.state": [
+              "clean"
+          ],
+          "topic.stack.state.symbol": ":"
+      },
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_d",
+          "topic.stack.index": 2,
+          "topic.stack.state": [
+              "clean"
+          ],
+          "topic.stack.state.symbol": ":"
+      },
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_c",
+          "topic.stack.index": 1,
+          "topic.stack.state": [
+              "clean"
+          ],
+          "topic.stack.state.symbol": ":"
+      },
+      {
+          "isentry": false,
+          "topic.stack.desc": "c_b",
+          "topic.stack.index": 0,
+          "topic.stack.state": [
+              "base"
+          ],
+          "topic.stack.state.symbol": "^"
+      }
+  ]
+  $ hg stack -v -Tjson | python -m json.tool
+  [
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_f",
+          "topic.stack.index": 4,
+          "topic.stack.shortnode": "6559e6d93aea",
+          "topic.stack.state": [
+              "current"
+          ],
+          "topic.stack.state.symbol": "@"
+      },
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_e",
+          "topic.stack.index": 3,
+          "topic.stack.shortnode": "0f9ac936c87d",
+          "topic.stack.state": [
+              "clean"
+          ],
+          "topic.stack.state.symbol": ":"
+      },
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_d",
+          "topic.stack.index": 2,
+          "topic.stack.shortnode": "e629654d7050",
+          "topic.stack.state": [
+              "clean"
+          ],
+          "topic.stack.state.symbol": ":"
+      },
+      {
+          "isentry": true,
+          "topic.stack.desc": "c_c",
+          "topic.stack.index": 1,
+          "topic.stack.shortnode": "8522f9e3fee9",
+          "topic.stack.state": [
+              "clean"
+          ],
+          "topic.stack.state.symbol": ":"
+      },
+      {
+          "isentry": false,
+          "topic.stack.desc": "c_b",
+          "topic.stack.index": 0,
+          "topic.stack.shortnode": "ea705abc4f51",
+          "topic.stack.state": [
+              "base"
+          ],
+          "topic.stack.state.symbol": "^"
+      }
+  ]
+
+check that topics and stack are available even if ui.strict=true
+
+  $ hg topics
+   * foo
+  $ hg stack
+  ### topic: foo
+  ### target: default (branch)
+  t4@ c_f (current)
+  t3: c_e
+  t2: c_d
+  t1: c_c
+  t0^ c_b (base)
+  $ hg topics --config ui.strict=true
+   * foo
+  $ hg stack --config ui.strict=true
+  ### topic: foo
+  ### target: default (branch)
+  t4@ c_f (current)
+  t3: c_e
+  t2: c_d
+  t1: c_c
+  t0^ c_b (base)
+
+error case, nothing to list
+
+  $ hg topic --clear
+  $ hg stack
+  ### target: default (branch)
+  (stack is empty)
+  b0^ c_f (base)
+
+Test "t#" reference
+-------------------
+
+
+  $ hg up t2
+  abort: cannot resolve "t2": no active topic
+  [255]
+  $ hg topic foo
+  marked working directory as topic: foo
+  $ hg up t42
+  abort: cannot resolve "t42": topic "foo" has only 4 changesets
+  [255]
+  $ hg up t2
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg summary
+  parent: 3:e629654d7050 
+   c_d
+  branch: default
+  commit: (clean)
+  update: (current)
+  phases: 4 draft
+  topic:  foo
+
+Case with some of the topic unstable
+------------------------------------
+
+  $ echo bbb > ddd
+  $ hg commit --amend
+  $ hg log -G
+  @  7 default {foo} draft c_d
+  |
+  | o  5 default {foo} draft c_f
+  | |
+  | o  4 default {foo} draft c_e
+  | |
+  | x  3 default {foo} draft c_d
+  |/
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+  $ hg topic --list
+  ### topic: foo
+  ### target: default (branch)
+  t4$ c_f (unstable)
+  t3$ c_e (unstable)
+  t2@ c_d (current)
+  t1: c_c
+  t0^ c_b (base)
+  $ hg up t3
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg topic --list
+  ### topic: foo
+  ### target: default (branch)
+  t4$ c_f (unstable)
+  t3$ c_e (current unstable)
+  t2: c_d
+  t1: c_c
+  t0^ c_b (base)
+  $ hg topic --list --color=debug
+  [topic.stack.summary.topic|### topic: [topic.active|foo]]
+  [topic.stack.summary.branches|### target: default (branch)]
+  [topic.stack.index topic.stack.index.unstable|t4][topic.stack.state topic.stack.state.unstable|$] [topic.stack.desc topic.stack.desc.unstable|c_f][topic.stack.state topic.stack.state.unstable| (unstable)]
+  [topic.stack.index topic.stack.index.current topic.stack.index.unstable|t3][topic.stack.state topic.stack.state.current topic.stack.state.unstable|$] [topic.stack.desc topic.stack.desc.current topic.stack.desc.unstable|c_e][topic.stack.state topic.stack.state.current topic.stack.state.unstable| (current unstable)]
+  [topic.stack.index topic.stack.index.clean|t2][topic.stack.state topic.stack.state.clean|:] [topic.stack.desc topic.stack.desc.clean|c_d]
+  [topic.stack.index topic.stack.index.clean|t1][topic.stack.state topic.stack.state.clean|:] [topic.stack.desc topic.stack.desc.clean|c_c]
+  [topic.stack.index topic.stack.index.base|t0][topic.stack.state topic.stack.state.base|^] [topic.stack.desc topic.stack.desc.base|c_b][topic.stack.state topic.stack.state.base| (base)]
+  $ hg up t2
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+Also test the revset:
+
+  $ hg log -r 'stack()'
+  2 default {foo} draft c_c
+  7 default {foo} draft c_d
+  4 default {foo} draft c_e
+  5 default {foo} draft c_f
+
+  $ hg log -r 'stack(foo)'
+  hg: parse error: stack() takes no argument, it works on current topic
+  [255]
+
+  $ hg log -r 'stack(foobar)'
+  hg: parse error: stack() takes no argument, it works on current topic
+  [255]
+
+Case with multiple heads on the topic
+-------------------------------------
+
+Make things linear again
+
+  $ hg rebase -s 'desc(c_e)' -d 'desc(c_d) - obsolete()'
+  rebasing 4:0f9ac936c87d "c_e"
+  rebasing 5:6559e6d93aea "c_f"
+  $ hg log -G
+  o  9 default {foo} draft c_f
+  |
+  o  8 default {foo} draft c_e
+  |
+  @  7 default {foo} draft c_d
+  |
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+
+
+Create the second branch
+
+  $ hg up 'desc(c_d)'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo aaa > ggg
+  $ hg add ggg
+  $ hg commit -m c_g
+  $ echo aaa > hhh
+  $ hg add hhh
+  $ hg commit -m c_h
+  $ hg log -G
+  @  11 default {foo} draft c_h
+  |
+  o  10 default {foo} draft c_g
+  |
+  | o  9 default {foo} draft c_f
+  | |
+  | o  8 default {foo} draft c_e
+  |/
+  o  7 default {foo} draft c_d
+  |
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+
+Test output
+
+  $ hg top -l
+  ### topic: foo (2 heads)
+  ### target: default (branch)
+  t6: c_f
+  t5: c_e
+  t2^ c_d (base)
+  t4@ c_h (current)
+  t3: c_g
+  t2: c_d
+  t1: c_c
+  t0^ c_b (base)
+
+Case with multiple heads on the topic with unstability involved
+---------------------------------------------------------------
+
+We amend the message to make sure the display base pick the right changeset
+
+  $ hg up 'desc(c_d)'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo ccc > ddd
+  $ hg commit --amend -m 'c_D' 
+  $ hg rebase -d . -s 'desc(c_g)'
+  rebasing 10:81264ae8a36a "c_g"
+  rebasing 11:fde5f5941642 "c_h"
+  $ hg log -G
+  o  15 default {foo} draft c_h
+  |
+  o  14 default {foo} draft c_g
+  |
+  @  13 default {foo} draft c_D
+  |
+  | o  9 default {foo} draft c_f
+  | |
+  | o  8 default {foo} draft c_e
+  | |
+  | x  7 default {foo} draft c_d
+  |/
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+
+  $ hg topic --list
+  ### topic: foo (2 heads)
+  ### target: default (branch)
+  t6$ c_f (unstable)
+  t5$ c_e (unstable)
+  t2^ c_D (base)
+  t4: c_h
+  t3: c_g
+  t2@ c_D (current)
+  t1: c_c
+  t0^ c_b (base)
+
+Trying to list non existing topic
+  $ hg stack thisdoesnotexist
+  abort: cannot resolve "thisdoesnotexist": no such topic found
+  [255]
+  $ hg topic --list thisdoesnotexist
+  abort: cannot resolve "thisdoesnotexist": no such topic found
+  [255]
+
+Complex cases where commits with same topic are not consecutive but are linear
+==============================================================================
+
+  $ hg log --graph
+  o  15 default {foo} draft c_h
+  |
+  o  14 default {foo} draft c_g
+  |
+  @  13 default {foo} draft c_D
+  |
+  | o  9 default {foo} draft c_f
+  | |
+  | o  8 default {foo} draft c_e
+  | |
+  | x  7 default {foo} draft c_d
+  |/
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+Converting into a linear chain
+  $ hg rebase -s 'desc("c_e") - obsolete()' -d 'desc("c_h") - obsolete()'
+  rebasing 8:215bc359096a "c_e"
+  rebasing 9:ec9267b3f33f "c_f"
+
+  $ hg log -G
+  o  17 default {foo} draft c_f
+  |
+  o  16 default {foo} draft c_e
+  |
+  o  15 default {foo} draft c_h
+  |
+  o  14 default {foo} draft c_g
+  |
+  @  13 default {foo} draft c_D
+  |
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+Changing topics on some commits in between
+  $ hg topic foobar -r 'desc(c_e) + desc(c_D)'
+  switching to topic foobar
+  changed topic on 2 changes
+  $ hg log -G
+  @  19 default {foobar} draft c_D
+  |
+  | o  18 default {foobar} draft c_e
+  | |
+  | | o  17 default {foo} draft c_f
+  | | |
+  | | x  16 default {foo} draft c_e
+  | |/
+  | o  15 default {foo} draft c_h
+  | |
+  | o  14 default {foo} draft c_g
+  | |
+  | x  13 default {foo} draft c_D
+  |/
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+  $ hg rebase -s 'desc("c_f") - obsolete()' -d 'desc("c_e") - obsolete()'
+  rebasing 17:77082e55de88 "c_f"
+  switching to topic foo
+  switching to topic foobar
+  $ hg rebase -s 'desc("c_g") - obsolete()' -d 'desc("c_D") - obsolete()'
+  rebasing 14:0c3e8aed985d "c_g"
+  switching to topic foo
+  rebasing 15:b9e4f3709bc5 "c_h"
+  rebasing 18:4bc813530301 "c_e"
+  switching to topic foobar
+  rebasing 20:4406ea4be852 "c_f" (tip)
+  switching to topic foo
+  switching to topic foobar
+  $ hg up
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg log --graph
+  o  24 default {foo} draft c_f
+  |
+  @  23 default {foobar} draft c_e
+  |
+  o  22 default {foo} draft c_h
+  |
+  o  21 default {foo} draft c_g
+  |
+  o  19 default {foobar} draft c_D
+  |
+  o  2 default {foo} draft c_c
+  |
+  o  1 default {} public c_b
+  |
+  o  0 default {} public c_a
+  
+XXX: The following should show single heads
+XXX: The behind count is weird, because the topic are interleaved.
+
+  $ hg stack
+  ### topic: foobar
+  ### target: default (branch), 3 behind
+  t2@ c_e (current)
+    ^ c_h
+  t1: c_D
+  t0^ c_c (base)
+
+  $ hg stack foo
+  ### topic: foo
+  ### target: default (branch), ambigious rebase destination - topic 'foo' has 3 heads
+  t4: c_f
+    ^ c_e
+  t3: c_h
+  t2: c_g
+    ^ c_D
+  t1: c_c
+  t0^ c_b (base)
+
+case involving a merge
+----------------------
+
+  $ cd ..
+  $ hg init stack-gap-merge
+  $ cd stack-gap-merge
+
+  $ echo aaa > aaa
+  $ hg commit -Am 'c_A'
+  adding aaa
+  $ hg topic red
+  marked working directory as topic: red
+  $ echo bbb > bbb
+  $ hg commit -Am 'c_B'
+  adding bbb
+  active topic 'red' grew its first changeset
+  $ echo ccc > ccc
+  $ hg commit -Am 'c_C'
+  adding ccc
+  $ hg topic blue
+  $ echo ddd > ddd
+  $ hg commit -Am 'c_D'
+  adding ddd
+  active topic 'blue' grew its first changeset
+  $ hg up 'desc("c_B")'
+  switching to topic red
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo eee > eee
+  $ hg commit -Am 'c_E'
+  adding eee
+  $ echo fff > fff
+  $ hg commit -Am 'c_F'
+  adding fff
+  $ hg topic blue
+  $ echo ggg > ggg
+  $ hg commit -Am 'c_G'
+  adding ggg
+  $ hg up 'desc("c_D")'
+  2 files updated, 0 files merged, 3 files removed, 0 files unresolved
+  $ hg topic red
+  $ hg merge 'desc("c_G")'
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg commit -Am 'c_H'
+  $ hg topic blue
+  $ echo iii > iii
+  $ hg ci -Am 'c_I'
+  adding iii
+
+  $ hg log -G
+  @  8 default {blue} draft c_I
+  |
+  o    7 default {red} draft c_H
+  |\
+  | o  6 default {blue} draft c_G
+  | |
+  | o  5 default {red} draft c_F
+  | |
+  | o  4 default {red} draft c_E
+  | |
+  o |  3 default {blue} draft c_D
+  | |
+  o |  2 default {red} draft c_C
+  |/
+  o  1 default {red} draft c_B
+  |
+  o  0 default {} draft c_A
+  
+
+  $ hg stack red
+  ### topic: red
+  ### target: default (branch), 6 behind
+  t5: c_H
+    ^ c_G
+    ^ c_D
+  t4: c_C
+  t1^ c_B (base)
+  t3: c_F
+  t2: c_E
+  t1: c_B
+  t0^ c_A (base)
+  $ hg stack blue
+  ### topic: blue
+  ### target: default (branch), ambigious rebase destination - topic 'blue' has 3 heads
+  t3@ c_I (current)
+    ^ c_H
+  t2: c_D
+    ^ c_C
+  t1: c_G
+  t0^ c_F (base)
+
+Even with some obsolete and orphan changesets
+
+(the ordering of each branch of "blue" change because their hash change. we
+should stabilize this eventuelly)
+
+  $ hg up 'desc("c_B")'
+  switching to topic red
+  0 files updated, 0 files merged, 6 files removed, 0 files unresolved
+  $ hg commit --amend --user test2
+  $ hg up 'desc("c_C")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg commit --amend --user test2
+  $ hg up 'desc("c_D")'
+  switching to topic blue
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg commit --amend --user test2
+
+  $ hg log -G --rev 'sort(all(), "topo")'
+  @  11 default {blue} draft c_D
+  |
+  | o  8 default {blue} draft c_I
+  | |
+  | o    7 default {red} draft c_H
+  | |\
+  | | o  6 default {blue} draft c_G
+  | | |
+  | | o  5 default {red} draft c_F
+  | | |
+  | | o  4 default {red} draft c_E
+  | | |
+  | x |  3 default {blue} draft c_D
+  |/ /
+  x /  2 default {red} draft c_C
+  |/
+  | o  10 default {red} draft c_C
+  |/
+  x  1 default {red} draft c_B
+  |
+  | o  9 default {red} draft c_B
+  |/
+  o  0 default {} draft c_A
+  
+
+  $ hg stack red
+  ### topic: red
+  ### target: default (branch), ambigious rebase destination - topic 'red' has 3 heads
+  t5$ c_H (unstable)
+    ^ c_G
+    ^ c_D
+  t4$ c_C (unstable)
+  t1^ c_B (base)
+  t3$ c_F (unstable)
+  t2$ c_E (unstable)
+  t1: c_B
+  t0^ c_A (base)
+  $ hg stack blue
+  ### topic: blue
+  ### target: default (branch), ambigious rebase destination - topic 'blue' has 3 heads
+  t3$ c_I (unstable)
+    ^ c_H
+  t2$ c_G (unstable)
+    ^ c_F
+  t1$ c_D (current unstable)
+  t0^ c_C (base)
+
+more obsolescence
+
+  $ hg up 'max(desc("c_H"))'
+  switching to topic red
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg commit --amend --user test3
+  $ hg up 'max(desc("c_G"))'
+  switching to topic blue
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg commit --amend --user test3
+  $ hg up 'max(desc("c_B"))'
+  switching to topic red
+  0 files updated, 0 files merged, 3 files removed, 0 files unresolved
+  $ hg commit --amend --user test3
+  $ hg up 'max(desc("c_C"))'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg commit --amend --user test3
+  $ hg up 'max(desc("c_D"))'
+  switching to topic blue
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg commit --amend --user test3
+
+  $ hg log -G --rev 'sort(all(), "topo")'
+  @  16 default {blue} draft c_D
+  |
+  | o  13 default {blue} draft c_G
+  | |
+  | | o    12 default {red} draft c_H
+  | | |\
+  | | | | o  8 default {blue} draft c_I
+  | | | | |
+  | | +---x  7 default {red} draft c_H
+  | | | |/
+  | +---x  6 default {blue} draft c_G
+  | | |
+  | o |  5 default {red} draft c_F
+  | | |
+  | o |  4 default {red} draft c_E
+  | | |
+  +---x  3 default {blue} draft c_D
+  | |
+  x |  2 default {red} draft c_C
+  |/
+  | o  15 default {red} draft c_C
+  |/
+  x  1 default {red} draft c_B
+  |
+  | o  14 default {red} draft c_B
+  |/
+  o  0 default {} draft c_A
+  
+
+  $ hg stack red
+  ### topic: red
+  ### target: default (branch), ambigious rebase destination - topic 'red' has 3 heads
+  t5$ c_H (unstable)
+    ^ c_G
+    ^ c_D
+  t4$ c_F (unstable)
+  t3$ c_E (unstable)
+  t1^ c_B (base)
+  t2$ c_C (unstable)
+  t1: c_B
+  t0^ c_A (base)
+  $ hg stack blue
+  ### topic: blue
+  ### target: default (branch), ambigious rebase destination - topic 'blue' has 3 heads
+  t3$ c_I (unstable)
+    ^ c_H
+  t2$ c_G (unstable)
+    ^ c_F
+  t1$ c_D (current unstable)
+  t0^ c_C (base)
