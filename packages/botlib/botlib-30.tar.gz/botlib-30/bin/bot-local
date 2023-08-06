@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+#
+# BOTLIB Framework to program bots
+#
+# botlib/bot.py
+#
+# Copyright 2017 B.H.J Thate
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is 
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in 
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
+# THE SOFTWARE.
+#
+# Bart Thate
+# Heerhugowaard
+# The Netherlands
+
+""" install botlib locally. """
+
+import os
+import importlib
+import sys
+import warnings
+
+warnings.simplefilter("ignore", UserWarning)
+
+importlib.invalidate_caches()
+
+sys.path.insert(0, os.getcwd() + os.sep + "eggs")
+
+try:
+    import setuptools
+    from setuptools.command.easy_install import main
+    import pkg_resources
+except ImportError as ex:
+    print("setuptools is needed to use bot-local: %s" % str(ex))
+    os._exit(1)
+
+for line in os.popen("python3 setup.py sdist").readlines():
+    print(line.strip())
+
+fns = os.listdir("dist")
+name = ""
+highest = 0
+for fn in fns:
+    f = fn.split(".")[0]
+    nr = int(f.split("-")[-1])
+    if nr > highest:
+        highest = nr
+        name = fn
+
+runstring = '--always-copy --user -U -l dist/%s' % name
+main(runstring.split())
