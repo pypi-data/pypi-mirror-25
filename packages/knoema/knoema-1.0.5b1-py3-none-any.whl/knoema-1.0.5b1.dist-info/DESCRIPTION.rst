@@ -1,0 +1,245 @@
+========================================
+Official Python package for Knoema's API
+========================================
+
+This is the official documentation for Knoema's Python Package. The package can be used for obtaining data from the datasets from the site knoema.com and uploading data to datasets. This package is compatible with Python v3.x+.
+
+************
+Installation
+************
+
+The installation process varies depending on your python version and system used. However, in most cases, the following should work::
+
+        pip install knoema 
+
+Alternatively, on some systems, python3 may use a different pip executable and may need to be installed via an alternate pip command. For example::
+
+        pip3 install knoema
+
+*************
+Configuration
+*************
+By default the package allows you to work only with public datasets from the site knoema.com.
+
+If you want work with private datasets, you need to use the next code::
+
+    import knoema
+    apicfg = knoema.ApiConfig()
+    apicfg.host = 'knoema.com'
+    apicfg.app_id = "some_app_id"
+    apicfg.app_secret = "some_app_secret"
+
+You can get parameters app_id and app_secret after registering on the site knoema.com, in the section "My profile - Apps - create new" (or use existing applications).
+
+Also, you can use other hosts supported by knoema.
+
+*******************************
+Retrieving series from datasets
+*******************************
+There are one method for retrieving series from datasets in Python: the **get** method. The method works with knoema datasets.
+
+The following quick call can be used to retrieve a timeserie from dataset::
+
+   import knoema
+   data_frame = knoema.get('IMFWEO2017Apr', country='914', subject='ngdp')
+
+where:
+
+* 'IMFWEO2017Apr' this is a public dataset, that available for all users by reference https://knoema.com/IMFWEO2017Apr.
+* country and subject are dimensions names
+* '914' is id of country *Albania*
+* 'ngdp' is id of subject *Gross domestic product, current prices (U.S. dollars)*
+
+This example finds all data points for the dataset IMFWEO2017Apr with selection by country = *Albania* and subject =  *Gross domestic product, current prices (U.S. dollars)* and stores this series in a pandas dataframe. You can then view the dataframe with operations *data_frame.head()* or *print(date_frame)*
+
+Please note that you need to identify all dimensions of the dataset, and for each dimension to indicate the selection. Otherwise, the method returns an error.
+
+For multiple selection you can use the next examples::
+
+    import knoema
+    data_frame = knoema.get('IMFWEO2017Apr', country='914;512;111', subject='lp;ngdp')
+
+or::
+
+    import knoema
+    data_frame = knoema.get('IMFWEO2017Apr', country=['914','512','111'], subject=['lp','ngdp'])
+
+
+For case when the dimensions of dataset that have multi word names use the next example::
+
+    import knoema
+    data_frame = knoema.get('FDI_FLOW_CTRY', **{'Reporting country': 'AUS',
+                                                    'Partner country/territory': 'w0',
+                                                    'Measurement principle': 'DI',
+                                                    'Type of FDI': 'T_FA_F',
+                                                    'Type of entity': 'ALL',
+                                                    'Accounting entry': 'NET',
+                                                    'Level of counterpart': 'IMC',
+                                                    'Currency': 'USD'})
+
+In addition to the required using of the selections for dimensions, you can additionally specify the period and frequencies in the parameters. For more details, see the example below::
+
+    import knoema
+    data_frame = knoema.get('IMFWEO2017Apr', country='914;512;111', subject='lp;ngdp', frequency='A', timerange='2007-2017')
+
+******************************************************
+Retrieving series from datasets including metadata
+******************************************************
+By default the function knoema.get returns the one dataframe with data. If you want also get information about metadata(attributes, unit, scale, mnemonics), include the additional parameter in your function, like this::
+
+     import knoema
+     data, metadata = knoema.get('IMFWEO2017Apr', True, country=['914','512'], subject='lp')
+
+The function, in this case, returns two dataframes - one with data, second with metadata.    
+
+******************
+Uploading Dataset
+******************
+In order to update the dataset, you must have the access rights to do this. For this, you need to specify the appropriate parameters app_id and app_secret. See section *Configuration*.
+
+if you have access rights and file for uploading, use the next code::
+
+    knoema.upload(file_path, dataset=None, public=False)
+
+where:
+
+* file_path - the string variable which provides path to the file which will be uploaded to the dataset,
+* dataset - the string variable which provides id of the dataset that is going to be updated from the file. If dataset is None then new dataset will be created  based on the file,
+* public - the boolean variable which makes dataset public if public flag is true. Default value is false.
+
+The function returns dataset id if upload is succesfull and raise an exception otherwise.
+
+
+******************
+Verifying Dataset
+******************
+In order to verify the dataset, you must have the access rights to do this. Please check if you are allowed to verify dataset with your Portal administrator and specify the appropriate parameters app_id and app_secret. See section *Configuration*.
+
+if you have access rights, use the next code::
+
+    knoema.verify('dataset_id', 'publication_date', 'source', 'refernce_url')
+
+where:
+
+* 'dataset_id' - the string variable which should provide id of the dataset that is going to be verified
+* 'publication_date' - the datetime variable which should provide the date when dataset has been published
+* 'source' - the string variable which should provide the source for the dataset (e.g. IMF)
+* 'refernce_url' - the string variable which should provide URL to the source or a site from where the dataset has been downloaded
+
+
+******************
+Deleting Dataset
+******************
+In order to delete the dataset, you must have the access rights to do this. For this, you need to specify the appropriate parameters app_id and app_secret. See section *Configuration*.
+
+if you have access rights, use the next code::
+
+    knoema.delete('dataset_id')
+
+where:
+
+* 'dataset_id' - the string variable which should provide id of the dataset that is going to be deleted
+
+*******************************************************
+Possible errors in Knoema package and how to avoid them
+*******************************************************
+1. "ValueError: Dataset id is not specified"
+
+This error appears when you use None instead dataset's Id.
+Example::
+
+    knoema.get(None)
+
+2. "ValueError:  Dimensions members are not specified"
+
+This error appears when you don't set selection.
+Examples::
+
+    knoema.get('IMFWEO2017Apr')
+    knoema.get('IMFWEO2017Apr',123)
+    knoema.get('IMFWEO2017Apr',"string")
+    knoema.get('IMFWEO2017Apr',True)
+    knoema.get('IMFWEO2017Apr',**{})
+
+3. "ValueError: Dimension with id or name some_name_of_dimension is not found"
+
+This error appears when you use name that doesn't correspond to any existing dimensions' names or ids.
+Examples::
+
+    knoema.get('IMFWEO2017Apr', dimension_not_exist='914', subject='lp')
+    knoema.get('IMFWEO2017Apr', **{'dimension not exist':'914', 'subject':'lp'})
+
+4."ValueError:  The following dimension(s) are not set: list of dimensions name"
+
+This error appears when you don't set some dimensions.
+Examples::
+
+    knoema.get('IMFWEO2017Apr', subject='lp')
+    knoema.get('IMFWEO2017Apr', **{'country':'914'})
+
+5. "ValueError: Selection for dimension dimension_name is empty"
+
+This error appears when you use empty selection for dimension or all specified elements don't exist.
+Examples::
+
+    knoema.get('IMFWEO2017Apr', country ='', subject='lp')
+    knoema.get('IMFWEO2017Apr', **{'country':'914', 'subject':'nonexistent_element1; nonexistent_element2'})
+
+6. "ValueError: Requested dataset doesn't exist or you don't have access to it"
+
+This error appears when you use dataset that doesn't exist or you don't have access rights to it.
+Example::
+
+    knoema.get('IMFWEO2017Apr1', **{'country':'914', 'subject':'lp;ngdp'})
+
+This dataset doesn't exist. If your dataset exist, and you have access to it, check that you set api_config with app_id and app_secret.
+
+7. "ValueError: "Underlying data is very large. Can't create visualization"
+
+This error appears when you use a big selection. Try to decrease the selection.
+
+8. "The specified host incorect_host doesn't exist"
+
+This error appears when you use host that doesn't exist.
+Example::
+
+    apicfg = knoema.ApiConfig()
+    apicfg.host = 'knoema_incorect.com'
+    data_frame = knoema.get('IMFWEO2017Apr', country='914', subject='ngdp')
+
+9. "HTTPError:  HTTP Error 400: Bad Request"
+
+This error appears when you try to delete dataset that doesn't exist or you don't have access rights to it.
+Example::
+
+    knoema.delete('nonexistent_dataset')
+
+If you have access to it, check that you set api_config with app_id and app_secret.
+
+10. "HTTPError: HTTP Error 403: The number of requests for /api/meta/dataset/datasetId/dimension/dimensionId exceeds 50"
+
+This error appears when you use public user (api_config without app_id and app_secret parameters set) and reached the limit of requests.
+You can avoid this error, using api_config with app_id and app_secret.
+
+11. "HTTPError: HTTP Error 403: The number of requests for /api/meta/dataset/datasetId/dimension/dimensionId exceeds 500"
+
+This error appears when you use api_config with app_id and app_secret parameters set, and reached the limit of requests.
+You can avoid this error, using other parameters app_id and app_secret.
+
+12. "HTTPError: HTTP Error 403: invalid REST authentication credentials"
+
+This error appears when you try to use api_config with app_id and app_secret, but they are incorrect. 
+You can avoid this error, using other parameters app_id and app_secret.
+
+13. "AttributeError: 'str' object has no attribute 'strftime'"
+
+This error appears when you use string data instead datetime.
+Example::
+
+    knoema.verify('IMFWEO2017Apr','2017-5-7','IMF','http://knoema.com')
+
+You can avoid this error using datetime instead string date.
+Example::
+
+    knoema.verify('IMFWEO2017Apr',datetime(2017,5,7),'IMF','http://knoema.com')  
+
