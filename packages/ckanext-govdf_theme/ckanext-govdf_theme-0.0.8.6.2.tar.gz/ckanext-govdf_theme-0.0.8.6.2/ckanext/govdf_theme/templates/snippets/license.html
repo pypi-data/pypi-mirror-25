@@ -1,0 +1,100 @@
+{% ckan_extends %}
+
+{#% block info %}
+<div class="panel panel-secondary panel-menu-servico">
+  {% if has_context_title %}
+    <div class="panel-heading">
+    {{ _('Fontes de dados') }}
+    </div>
+  {% endif %}   
+  {% block inner %}
+    <div class="panel-body">
+      {% block heading %}
+        <h3 class="titulo" href="#">
+          {{ organization.title or organization.name }}
+          {% if organization.state == 'deleted' %}
+            [{{ _('Deleted') }}]
+          {% endif %}
+        </h3>
+      {% endblock %}  
+      {% block description %}
+        {% if organization.description %}
+          <p class="text">
+            {{ h.markdown_extract(organization.description, 200) }}
+            {% link_for _('read more'), controller='organization', action='about', id=organization.name %}
+          </p>
+        {% else %}
+          <p class="empty">{{ _('There is no description for this organization') }}</p>
+        {% endif %}
+      {% endblock %}
+    </div>
+  {% endblock %}    
+</div>
+{% endblock %#}
+
+{#% block license %}
+  {% if text_only %}
+    {% if pkg_dict.license_id %}
+      {{ license_string(pkg_dict) }}
+    {% else %}
+      {{ _('No License Provided') }}
+    {% endif %}
+  {% else %}
+    {% if pkg_dict.license_id %}
+      {% block license_wrapper %}
+        <section class="module module-narrow module-shallow license">
+          {% block license_title %}
+            <h2 class="module-heading">
+              <i class="icon-medium icon-lock"></i> 
+              {{ _('License') }}
+            </h2>
+          {% endblock %}
+          {% block license_content %}
+            <p class="module-content">
+              {% block license_content_inner %}
+                {{ license_string(pkg_dict) }}
+                {% if pkg_dict.isopen %}
+                  <a href="http://opendefinition.org/okd/" title="{{ _('This dataset satisfies the Open Definition.') }}">
+                      <img class="open-data" src="{{ h.url_for_static('/base/images/od_80x15_blue.png') }}" alt="[Open Data]" />
+                  </a>
+                {% endif %}
+              {% endblock %}
+            </p>
+          {% endblock %}
+        </section>
+      {% endblock %}
+    {% endif %}
+  {% endif %}
+{% endblock %#}
+
+{% block license %}
+  {% if text_only %}
+    {% if pkg_dict.license_id %}
+      {{ license_string(pkg_dict) }}
+    {% else %}
+      {{ _('No License Provided') }}
+    {% endif %}
+  {% else %}
+    {% if pkg_dict.license_id %}
+      {% block license_wrapper %}
+        <div class="panel panel-secondary panel-menu-servico">
+          {% block license_title %}
+            <div class="panel-heading">
+              {{ _('License') }}
+            </div>
+          {% endblock %}  
+          {% block license_content %}
+          <div class="panel-body">
+            <p class="text">
+              {% block license_content_inner %}
+                {{ license_string(pkg_dict) }}
+              {% endblock %}
+            </p>
+          </div>
+            
+          {% endblock %}   
+        </div>
+      {% endblock %}
+    {% endif %}
+  {% endif %}
+{% endblock %}

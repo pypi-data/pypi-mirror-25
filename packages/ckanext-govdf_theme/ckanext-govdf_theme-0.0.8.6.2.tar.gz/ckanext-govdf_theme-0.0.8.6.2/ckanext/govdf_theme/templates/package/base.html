@@ -1,0 +1,31 @@
+{% ckan_extends %}
+
+{% block breadcrumb_content %}
+  {% if pkg %}
+    {% set dataset = pkg.title or pkg.name %}
+    {% if pkg.organization %}
+      {% set organization = pkg.organization.title or pkg.organization.name %}
+
+      <span property="itemListElement" typeof="ListItem" class="active">
+        {% link_for _('Organizations'), controller='organization', action='index' %}
+      </span> &gt;
+      <span property="itemListElement" typeof="ListItem" class="active">
+        {% link_for organization|truncate(30), controller='organization', action='read', id=pkg.organization.name %}
+      </span> &gt;
+    {% else %}
+      <span property="itemListElement" typeof="ListItem" class="active">
+        {% link_for _('Datasets'), controller='package', action='search' %}
+      </span> &gt;
+    {% endif %}
+      <span property="itemListElement" typeof="ListItem" class="active" {{ self.breadcrumb_content_selected() }}>
+        {% link_for dataset|truncate(30), controller='package', action='read', id=pkg.name %}
+      </span>
+  {% else %}
+      <span property="itemListElement" typeof="ListItem" class="active" {{ self.breadcrumb_content_selected() }}>
+        {% link_for _('Datasets'), controller='package', action='search' %}
+      </span> &gt;
+      <span property="itemListElement" typeof="ListItem" class="active" {{ self.breadcrumb_content_selected() }}>
+        <a href="">{{ _('Create Dataset') }}</a>
+      </span>
+  {% endif %}
+{% endblock %}
