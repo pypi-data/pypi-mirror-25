@@ -1,0 +1,295 @@
+{% extends "layout.html" %}
+{% from 'macros.html' import download, panellist, infopopup, nsatable, nsascatter %}
+
+<!-- Galaxy CSS Sources -->
+{% block csshead %}
+    <link rel='preconnect stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/ol3/3.14.2/ol.min.css'>
+{% endblock csshead %}
+<!-- Galaxy JS Sources-->
+{% block jshead %}
+    <script rel='preconnect' src="//cdnjs.cloudflare.com/ajax/libs/dygraph/1.1.1/dygraph-combined.js"></script>
+    <script rel='preconnect' src="//cdnjs.cloudflare.com/ajax/libs/ol3/3.14.2/ol.min.js"></script>
+    <script rel='preconnect' src="https://code.highcharts.com/highcharts.js"></script>
+    <script rel='preconnect' src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://cdn.rawgit.com/highcharts/draggable-legend/9c154d4c/draggable-legend.js"></script>
+    <script rel='preconnect' src="https://code.highcharts.com/modules/heatmap.js"></script>
+    <script rel='preconnect' src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script rel='preconnect' src="https://highcharts.github.io/pattern-fill/pattern-fill-v2.js"></script>
+    <script rel='preconnect' src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.6.0/math.min.js"></script>
+
+{% endblock jshead %}
+
+<!-- Single Galaxy Page -->
+{% block body %}
+
+<div class='singlegalaxy' id ='{{cube.plateifu}}'>
+
+<div class='well' id='metadata'>
+    <div class='row'>
+        <div class='col-md-12 galinfo'>
+            {% if not cube %}
+                <h3 class='alert alert-danger'>{{error}}</h3>
+            {% else %}
+                <!-- Galaxy Meta Data -->
+                {# Galaxy Meta Data #}
+                <div class='row'>
+                    <div class='col-md-3'>
+                        <h4>Plate-IFU: {{cube.plateifu}} <small>{{cube._drpver}}</small></h4>
+                        <h4>Manga-ID: {{cube.mangaid}}</h4>
+                        <h5>IAU Name: {{cube.nsa.iauname}}</h5>
+                        <table class='table table-condensed table-bordered table-striped marvin-metatable' id='galaxymeta'>
+                            <tbody>
+                                <tr><th>OBJ RA, Dec</th><td>{{cubehdr.objra}}</td><td>{{cubehdr.objdec}}</td></tr>
+                                {% if not cubehdr.ifura|allclose(cubehdr.objra) %}<tr><th>IFU RA, Dec</th><td>{{cubehdr.ifura}}</td><td>{{cubehdr.ifudec}}</td></tr>{% endif %}
+                                <tr><th>IFU Glon, Glat</th><td>{{cubehdr.ifuglon}}</td><td>{{cubehdr.ifuglat}}</td></tr>
+                                <tr><th>SN2 Blue, Red</th><td align='center'>{{cubehdr.bluesn2|float|round(2)}}</td><td align='center'>{{cubehdr.redsn2|float|round(2)}}</td></tr>
+                                <tr><th>Date Observed</th><td colspan='2' align='center'>{{cubehdr['DATE-OBS']}}</td></tr>
+                                <tr><th>DAP Output</th><td colspan='2' align='center'><a target='_blank' data-toggle="tooltip" title="{{daplink|default('None')}}" href='{{daplink|default("#")}}'>DAP URL</a></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Cube Quality Flags -->
+                    {# Cube Quality Flags #}
+                    <div class='col-md-2 flagalert'>
+                        {% set qualstatus = (quality|qaclass)[0] %}
+                        {% set qualmsg = (quality|qaclass)[1] %}
+                          <div class="panel panel-{{qualstatus}}" id='panel_qualityflag'>
+                              <div class="panel-heading">
+                                  <h3 class="panel-title">Cube Quality: {{qualmsg}}</h3>
+                              </div>
+                              <div class='panel-body'>
+                                Bit: {{quality[1]}} <a tabindex='0' role="button" class='btn btn-{{qualstatus}} btn-xs flagpopover qualpopovers pull-right' id='qualitypopover' data-trigger='hover' data-toggle="popover" title="Quality Flags">Flags</a>
+                              </div>
+                          </div>
+                          <div class='btn-group-vertical'>
+                          {{download('#galaxydownload', links)}}
+                          <a href='http://skyserver.sdss.org/public/en/tools/chart/navi.aspx?ra={{cubehdr.objra}}&dec={{cubehdr.objdec}}&opt=GS&scale=0.2' class='btn btn-warning' id='gotocas' target='_blank'><i class="fa fa-external-link fa-fw" aria-hidden="true"></i> Go to SkyServer</a>
+                          </div>
+                    </div>
+                    <!-- MaNGA Target Flags -->
+                    {# MaNGA Target Flags #}
+                    <div class='col-md-2 flagalert'>
+                          <div class="panel panel-info" id='panel_targetflag'>
+                              <div class="panel-heading">
+                                  <h3 class="panel-title">MaNGA Target</h3>
+                              </div>
+                              <div class='panel-body'>
+                                {% for bit in mngtarget.bits %}
+                                <div class='row'>
+                                  {% set targname = mngtarget.names[loop.index0]|lower %}
+                                  <div class='col-md-12'>
+                                  {{targname|targtype}} Bit: {{bit}} <a tabindex='0' role="button" class='btn btn-info btn-xs flagpopover targpopovers pull-right' id='targpopover_{{targname}}' data-trigger='hover' data-toggle="popover" title="Target Flags">Flags</a>
+                                  </div>
+                                </div>
+                                  {{panellist('Target Flags', mngtarget.labels[loop.index0], targname)}}
+                                {% endfor %}
+                              </div>
+                          </div>
+
+                          <div class='btn-group-vertical'>
+                          {#<button class='btn btn-primary btn-danger' id='toggleinteract' type='button' data-toggle='button' aria-pressed="false" autocomplete='off' data-complete-text='<i class="fa fa-check fa-fw" aria-hidden="true"></i>Map/SpecView On'><i class="fa fa-close fa-fw" aria-hidden="true"></i>Map/SpecView Off</button>#}
+
+                          <div class='input-group' id='toggle-grp'>
+                          <input type="checkbox" id='toggleinteract' aria-pressed="false" data-toggle="toggle" data-on="Map/SpecView On" data-off="Map/SpecView Off" data-onstyle="success" data-offstyle="danger" data-width="170">
+                          <span class="input-group-addon info" style="display: none;" id="toggle-load"><i class='fa fa-circle-o-notch fa-spin fa-fw'></i>Loading...</span>
+                          </div>
+                          </div>
+                    </div>
+                    <div class='col-md-5'>
+                          <div class='infopop' id='marvincube'>
+                          {{infopopup('Use this cube in Python', 'Marvin Cube - start iPython', cubestr, 'marvincube', 'info')}}
+                          </div>
+                          <div class='infopop' id='marvinspaxel'>
+                          {{infopopup('Use the spectrum in Python', 'Marvin Spaxel - start iPython', spaxelstr, 'marvinspaxel', 'warning')}}
+                          </div>
+                    </div>
+                    {{panellist('Quality Flags', quality[2], 'drp3quality')}}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div> {# end metadata div #}
+
+<!-- Interactive Map and Spectrum View -->
+{# Map and Spectrum View #}
+{% if cube %}
+                <!-- Tabs -->
+                {# Tabs #}
+  <ul class="nav nav-pills" role="tablist">
+    <li role="presentation" class="active"><a href="#specview" aria-controls="home" role="tab" data-toggle="tab">MapSpec View</a></li>
+    <li role="presentation"><a id='nsadisp' href="#nsatab" aria-controls="nsadisp" role="tab" data-toggle="tab">Galaxy Properties</a></li>
+  </ul>
+
+<div class='tab-content'>
+<!-- SpecMap View Tab-->
+{# SpecMap View Tab #}
+<div class='well tab-pane active' id='specview' role='tabpanel'>
+    <div class='row'>
+        <div class='col-md-12 galinfo'>
+                <!-- static galaxy image -->
+                {# Initial Static Image Display #}
+                <div class='row' id='staticdiv'>
+                    <div class='col-md-3'>
+                        <img class='img-responsive' id='staticimage' src="{{image}}" alt="{{cube.plateifu}} Galaxy Image">
+                    </div>
+                    {#{{nsatable()}}#}
+                </div>
+
+                <!-- dynamic image and spaxel -->
+                {# Dynamic Interaction #}
+                <div id='dynamicdiv' style='display:none;'>
+                    <div class='row' id='image-spec'>
+                        <div class='col-md-4'>
+                            <!-- <div id='imagediv' class='map' style='width:100%; height:400px;'></div> -->
+                            <div id='imagediv' style='width:100%; height:400px;'></div>
+                        </div>
+                        <div class='col-md-8'>
+                            <div id='graphdiv' style="width:100%;"></div>
+                            <div class='row'>
+                                <div class='col-md-5 col-md-offset-1'>
+                                    {% if error %}
+                                    <p class='alert alert-danger' id='specmsg_error'><strong>{{error}}</strong></p>
+                                    {% else %}
+                                    <p class='alert alert-danger' id='specmsg' style="display:none;"><strong>{{specmsg}}</strong></p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- dap dynamic maps -->
+                    <div id='dapmaps'>
+                        <div class='row'>
+                            <form class="form-inline" id='dapmapform' method='POST' role='form' action="#">
+                              <div class="form-group col-md-6 col-md-offset-2">
+                                <label for='setdefaults' class='control-label'>DAP Maps:</label>
+                                <div class="input-group">
+                                    <select class="selectpicker" id='dapmapchoices' multiple data-selected-text-format="count" data-live-search="true" data-max-options="6">
+                                        {% for dapmap in dapmaps %}
+                                        <option>{{dapmap}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <select class="selectpicker show-tick" id='dapbtchoices'>
+                                        {% for bt in dapbintemps %}
+                                            {% if bt == session.bintemp %}
+                                            <option selected >{{bt}}</option>
+                                            {% else %}
+                                            <option>{{bt}}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="button" id='dapmapsbut' class="btn btn-warning" data-loading-text="<i class='fa fa-circle-o-notch fa-spin fa-fw'></i>Loading...">Get Maps</button>
+                                <button type="button" id='resetmapsbut' class="btn btn-info">Reset Selection</button>
+                              </div>
+                                <div class='col-md-2'>
+                                      <div class='infopop' id='marvinmaps'>
+                                      {{infopopup('Use maps in Python', 'Marvin Maps - start iPython', mapstr, 'marvinmaps', 'success', 'left')}}
+                                      </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class='row'>
+                            <div class='col-md-3 col-md-offset-3'>
+                                <p class='alert alert-danger' id='mapmsg' style="display:none;"><strong>{{mapmsg}}</strong></p>
+                            </div>
+                        </div>
+
+
+                        {# loop over all maps #}
+                        <div class='row' id='mapsdiv'>
+                            {#{% if maps %}
+                            {% for map in maps %}
+                            <div class='col-md-4'>
+                                <div id='mapdiv{{loop.index}}' class='map'></div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class='col-md-5 col-md-offset-2'><p class='alert alert-danger' id='mapalert'>{{mapmsg}}</p></div>
+                            {% endif %}#}
+
+                            {# this is for forcing the 6 map divs to load blank #}
+                            {% for i in range(6) %}
+                            <div class='col-md-4'>
+                                <div id='mapdiv{{loop.index}}' class='map'></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div> {# end specmap view tab #}
+
+<!-- NSA Display Tab-->
+{# NSA Display Tab #}
+<div class='well tab-pane' role='tabpanel' id='nsatab'>
+{% if hasnsa %}
+  <!-- NSA error message -->
+  {# NSA error message #}
+  <div class='row'>
+    <p class='alert alert-danger' id='nsamsg' style="display:none;"><strong>{{nsamsg}}</strong></p>
+  </div>
+  <!-- Main NSA area -->
+  {# Main NSA display #}
+  <div class='row'>
+    <!-- NSA table -->
+    {{nsatable(nsadict, nsacols, nsaplotcols)}}
+    <!-- NSA tabs -->
+    <div class='col-md-1'>
+      <ul class="nav nav-pills nav-stacked" role="tablist">
+        <li role="presentation" class="active"><a href="#nsaplot" aria-controls="nsaplot" role="tab" data-toggle="tab">Scatter Plot</a></li>
+        <li role="presentation"><a href="#nsabox" aria-controls="nsabox" role="tab" data-toggle="tab">Box and Whisker</a></li>
+      </ul>
+    </div>
+    <!-- NSA plots -->
+    <div class='col-md-8' id='nsacontent'>
+      <div class='tab-content'>
+        <!-- NSA scatter plots -->
+        <div class='tab-pane active' id='nsaplot' role='tabpanel'>
+          {#{% for index in nsachoices.keys() %}
+            {{nsascatter(nsadict, index)}}
+          {% endfor %}#}
+          {{nsascatter(nsadict, 1)}}
+        </div>
+        <!-- NSA box and whisker plots -->
+        <div class='tab-pane' id='nsabox' role='tabpanel'>
+          <div class='row'>
+            <div class='col-md-12'>
+              <div id='d3tooltip'></div>
+              <div id='nsad3box'></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> {# end main NSA #}
+{% else %}
+  <div class='row'>
+    <div class='col-md-10'>
+      <h3 class='alert alert-danger'>This galaxy has no NSA information available in the MaNGA db.</h3>
+    </div>
+  </div>
+{% endif %}
+</div>
+
+</div> {# end tab-content div #}
+{% endif %}
+
+</div> {# end of singlegalaxydiv #}
+
+{% endblock body %}
+
+<!-- JS Code -->
+{% block code %}
+<script type='application/javascript'>
+    var galaxy = {};
+    $(function() {
+        var toggleon = {{toggleon|tojson}};
+        m.galaxy = new Galaxy(undefined, toggleon);
+        m.galaxy.print();
+        m.galaxy.hasNSA({{hasnsa|tojson}});
+    });
+</script>
+{% endblock code %}
+
