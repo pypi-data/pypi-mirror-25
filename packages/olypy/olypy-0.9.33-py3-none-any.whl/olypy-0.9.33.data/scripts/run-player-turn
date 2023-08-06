@@ -1,0 +1,51 @@
+#!/home/lindahl/.pyenv/versions/3.6.1/bin/python
+
+'''
+Run a simulation of player orders.
+
+Expects:
+- lib.NNN.tar.gz, the output of build-player-lib
+- spool.NNN, a directory containing orders
+- an executable for the Olympia C code plus helper scripts
+'''
+
+import os
+import sys
+import platform
+import subprocess
+
+from olypy.oid import to_oid
+
+turn = sys.argv[1]
+
+if turn == 'valgrind':
+    valgrind = 'valgrind '
+    turn = sys.argv[2]
+else:
+    valgrind = ''
+
+turn = int(turn) - 1
+
+subprocess.run('rm -rf lib'.split(), check=True)
+subprocess.run('tar xf lib.{}.tar.gz'.format(turn).split(), check=True)
+subprocess.run('cp -p spool.{}/m.* lib/spool'.format(turn), shell=True, check=True)
+subprocess.run('rm -f lib/spool/m*~', shell=True, check=True)
+
+libc_ver = platform.libc_ver()
+if not valgrind and libc_ver[0] == 'glibc':
+    os.environ['SEGFAULT_SIGNALS'] = 'all'
+    os.environ['LD_PRELOAD'] = 'libSegFault.so'
+
+subprocess.run((valgrind+'./olympia -E').split(), check=True)
+subprocess.run((valgrind+'./olympia -rS').split(), check=True)
+
+# iterate over all possible turn outputs in lib/save/NNN, and generate reports
+turn += 1
+names = os.listdir(os.path.join('lib', 'save', str(turn)))
+for n in names:
+    fullname = os.path.join('lib', 'save', str(turn), n)
+    print('considering processing', fullname)
+    if n.isdigit() and (int(n) > 50000 or n == '100'):
+        subprocess.run('./g2rep {} > {}.{}'.format(fullname, to_oid(n), str(turn)), shell=True, check=True)
+
+subprocess.run('tar cjf lib-next.{}.tar.gz lib'.format(turn).split(), check=True)

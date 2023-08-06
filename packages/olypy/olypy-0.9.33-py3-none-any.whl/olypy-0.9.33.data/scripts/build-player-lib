@@ -1,0 +1,84 @@
+#!/home/lindahl/.pyenv/versions/3.6.1/bin/python
+
+'''
+Given a set of turn reports, build a game database.
+'''
+
+import os
+import re
+import subprocess
+import argparse
+
+import olypy.turnparser as turnparser
+import olypy.oio as oio
+import olypy.dbck as dbck
+
+parser = argparse.ArgumentParser(description='build an olypia lib using old player turn results')
+parser.add_argument('--last-turn', type=int, default=0)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('turns', nargs='+', help='list of possible turn files')
+
+args = parser.parse_args()
+
+turn_files = {}
+
+os.makedirs('lib/fact', exist_ok=False)
+os.makedirs('lib/spool', exist_ok=False)
+os.makedirs('lib/orders', exist_ok=False)
+
+for f in args.turns:
+    if f.endswith('.zip') or f.endswith('.gz'):
+        continue
+    m = re.search('(\d{2,})', f)
+    if not m:
+        continue
+    t = m.groups(1)[0]
+    if args.last_turn and int(t) > args.last_turn:
+        continue
+    tf = turn_files.get(t, [])
+    tf.append(f)
+    turn_files[t] = tf
+
+sorted_turns = sorted(list(turn_files.keys()))
+last_turn = sorted_turns[-1]
+print('Last turn is:', last_turn)
+data = {}
+
+turnparser.create_garrison_player(data)
+turnparser.create_independent_player(data)
+turnparser.create_400s(data)
+
+for t in sorted_turns:
+    if t == last_turn:
+        everything = True
+    else:
+        everything = False
+
+    for f in turn_files[t]:
+        contents = ''
+        with open(os.path.expanduser(f), 'r') as fd:
+            try:
+                for line in fd:
+                    contents += line.expandtabs()
+            except UnicodeDecodeError:
+                raise UnicodeDecodeError('Unicode decode error reading file '+f)
+        if turnparser.looks_like_a_turn(contents, t):
+            if args.verbose:
+                print('\nprocessing', f, '\n')
+            turnparser.parse_turn(contents, data, everything=everything)
+        else:
+            if args.verbose:
+                print('skipped {} because it did not look like a turn'.format(f))
+
+    turnparser.finish_turn(data)
+
+turnparser.finish(data, last_turn)
+
+problems = dbck.check_db(data)
+print('Database check found {} problems'.format(problems))
+
+oio.write_lib(data, 'lib')
+turnparser.final_fixups('lib')
+
+tar = 'tar cjf lib.{}.tar.gz lib'.format(last_turn).split()
+subprocess.run(tar, check=True)
