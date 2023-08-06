@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+import sys, os, re, string
+import urllib2, urllib
+import click
+import json
+import time
+
+try:
+    import modelpai
+except:
+    sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+    import modelpai
+try:
+    from modelpai.osscmd import *
+except:
+    sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+    from modelpai.osscmd import *
+
+def output_version(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo("Version: %s" % modelpai.__version__)
+    ctx.exit()
+
+def print_welcome(user):
+    print "Hi, %s. welcome to use modelpai...\n"%user
+
+@click.command()
+@click.option('-v', '--version', is_flag=True, is_eager=True, callback=output_version, expose_value=False)
+@click.option('--operation', default="all", help='default is all;\nall: train and deploy model;\ntrain: train model;\ndeploy: deploy model;\nclean:clean the lock status of your model')
+@click.option('--session_bundle', default="00000000", help="default is 00000000;\nwhen operation=train or operation=all, it's optional to assign SessionBundle name;\nwhen operation=deploy you should assign the SessionBundle's local directory, /home/model/00000010 for example")
+@click.option('--project_name', default="dbos_dev", help='default is dbos_dev, your can set to dbos_dev or dbos if mode=online or online_test if mode=test;\nthe odps project name')
+@click.option('--algo_name', default="tensorflow", help='default is tensorflow;\nthe algorithm name, for emample: tensorflow (tensorflow of version 1.0.0) and tensorflow012 (tensorflow of version 0.12.0)')
+@click.option('--source_dir', default=".", help='the path of source code, if operation=train or operation=all you should assign this parameter')
+@click.option('--entry_file', default=".", help='the file name contain the main method, if operation=train or operation=all you should assign this parameter')
+#@click.option('--num_steps', default=1, help='the number of train iterations, default is 1, and decide the name of SessionBundle')
+@click.option('--user', default="", help='user name, default is your system username, because model_name is unique, you can\'t commit a model name which others already used')
+@click.option('--instance_num', default="1", help='instance number for online serving')
+@click.option('--cpu', default="1", help='default 1, cpu core on every instance for online serving')
+
+#@click.option('--query_url', default="http://30.5.51.80:7001/job/run", help='server http address')
+@click.option('--query_url', default="http://11.162.146.198:7001", help='server http address')
+@click.option('--mode', default="online", help='test or online, default is online')
+@click.option('--jump_oss', default="0", help='dont upload model to oss')
+
+
+@click.argument('model_name')
+
+def cli(model_name,operation,session_bundle,project_name,algo_name,source_dir,entry_file,user,query_url,instance_num,cpu,mode,jump_oss):
+    #check the parameters
+    s = os.popen("cd ~;pwd").read()
+    user_name=s.strip().split("/")[-1]
+    #print user_name
+    if user == "":
+        user = user_name
+
+    print_welcome(user)
+    if operation not in ["all","train","deploy","clean"]:
+        print "error  --  unsupport operation:%s, only support all, train, deploy, clean now!"%operation
+        sys.exit(-1)
+    #if algo_name not in ["tensorflow","tensorflow012"]:
+    #    print "error  --  unsupport algo_name:%s, only support tensorflow and tensorflow012 now!"%algo_name
+    #    sys.exit(-1)
+    #print data
+    headers = {'Content-Type': 'application/json'}
+    #create model
+    create_data={"name":model_name,"pyContent":source_dir,"description":"","projectName":project_name,"userId":user,"algName":algo_name}
+    req = urllib2.Request("%s/create"%query_url, json.dumps(create_data,ensure_ascii=False), headers)
+    resp = urllib2.urlopen(req)
+    rs = resp.read()
+    rj = json.loads(rs)
+    if rj.get("result","fail") == "fail":
+        print "submiting error  --  %s"%rj.get("msg","fail to create model")
+        return
+    #prepare the send data
+    entry_file = entry_file.split("/")[-1]
+    num_steps=1
+    oss_dir = "oss://ailabsalgomodels/%s/source_code_%s"%(project_name,model_name)
+    data = {"modelName":model_name, "operation" : operation,"sessionBundle":session_bundle,\
+            "projectName":project_name,"algoName":algo_name,"sourceDir":oss_dir,"entryFile":entry_file,\
+            "numSteps":num_steps,"user":user,"cpu":"%s00"%cpu,"instanceNum":instance_num,"mode":mode}
+    ##
+    if operation == "train" or operation == "all":
+        if not os.path.exists(source_dir):
+            print "error: source_dir \"%s\" not exist"%source_dir
+            sys.exit(-1)
+        #entry_file_path = "%s/%s"%(source_dir,entry_file)
+        entry_file_path = entry_file
+        if (not os.path.isfile(entry_file_path)) and (not os.path.isfile("%s/%s"%(source_dir,entry_file))):
+            print "error: entry_file \"%s\" not exsit"%(entry_file_path)
+            sys.exit(-1)
+        print "uploading source code : %s"% source_dir
+        
+        oss_source = "oss://ailabsalgomodels/%s/source_code_%s"%(project_name,model_name)
+        osscmd(["deleteallobject",oss_source])
+        osscmd(["uploadfromdir",source_dir,oss_source])
+        #osscmd(["gs"])
+    elif operation == "deploy":
+        if not os.path.exists(session_bundle):
+            print "error: SessionBundle \"%s\" not exsit"%(session_bundle)
+            sys.exit(-1)
+        if jump_oss == "0":
+            print "uploading SessionBundle ..."
+            oss_model = "oss://ailabsalgomodels/%s/model_%s/00000000"%(project_name,model_name)
+            osscmd(["deleteallobject",oss_model])
+            osscmd(["uploadfromdir",session_bundle,oss_model])
+        else:
+            print "set no uploading SessionBundle ..."
+
+    elif operation == "clean":
+        req = urllib2.Request("%s/clean"%query_url, json.dumps(data,ensure_ascii=False), headers)
+        resp = urllib2.urlopen(req)
+        rs = resp.read()
+        rj = json.loads(rs)
+        if rj.get("result","fail") == "fail":
+            print "fail to clean model  --  %s"%rj.get("msg","fail")
+        else:
+            print "success to clean model"
+        sys.exit(-1)
+ 
+
+    req = urllib2.Request("%s/job/run"%query_url, json.dumps(data,ensure_ascii=False), headers)
+    resp = urllib2.urlopen(req)
+
+    rs = resp.read()
+    rj = json.loads(rs)
+    if rj.get("result","fail") == "fail":
+        print "fail to run model  --  %s"%rj.get("msg","fail")
+        return
+    key = rj.get("key","")
+    print "success to get job key:",key
+    
+    while True:
+        req = urllib2.Request("%s/job/log"%query_url, json.dumps({"key":key},ensure_ascii=False), headers)
+        resp = urllib2.urlopen(req)
+        rs = resp.read()
+        if rs != "":
+            print rs
+        if rs.find("modelpai finish") >= 0:
+            break
+        time.sleep(1)
+
+if __name__ == "__main__":
+    cli()
+
