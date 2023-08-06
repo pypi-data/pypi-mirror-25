@@ -1,0 +1,84 @@
+
+=========
+fawrapper
+=========
+
+A python wrapper for the `FieldAware API`_.
+
+.. _FieldAware API: https://api.fieldaware.net/doc/
+
+
+requires a FIELDAWARE_TOKEN environment variable
+
+
+Installation
+------------
+
+Fawrapper is currently supported on python 3.6
+
+.. code-block:: bash
+
+   pip install git+https://github.com/j-kirch/fawrapper
+
+Quickstart
+----------
+
+Assuming you already have at token provided by Fieldaware, you can create
+an intance of the FieldawareAPIClient like so:
+
+.. code-block:: python
+
+  from fawrapper import FieldawareAPIClient
+
+  # If you have set the environment variable ``FIELDAWARE_TOKEN``
+  api = FieldawareAPIClient()
+
+  # Or you can include the token
+  api = FieldawareAPIClient(api_key="your_token")
+
+With the api instance you can interact with Fieldaware:
+
+.. code-block:: python
+
+  # List all users
+  users_list = api.users.list()
+  for user in users_list:
+    print('First Name: ', user.first_name, 'UUID: ', user.uuid)
+
+  # List all jobs
+  jobs_list = api.jobs.list()
+  for job in jobs_list:
+    print('Job Number: ', job.id, 'UUID: ', job.uuid)
+
+  # Get a user with uuid
+  user = api.users.get('user_uuid')
+
+  # Get a job with uuid
+  job = api.jobs.get('job_uuid')
+
+  # With the Job and a User instance, you can update the api by setting the
+  # attribute to the user
+  job.job_lead = user
+
+
+Documentation
+-------------
+
+TODO
+
+Contribution
+------------
+
+If you find an API method that is not supported yet, feel free to create a
+Github issue.
+
+You are more than welcome to submit a pull request for bug fixes or additional
+features.
+
+Thank you!
+
+License
+-------
+`MIT License`_
+
+.. _MIT License: http://opensource.org/license/mit-license.php
