@@ -1,0 +1,131 @@
+2017.02.21
+* Refactor to call benchmarking analysis? Change benchmarking directory to analysis?
+*
+
+
+
+
+2017.01.31
+* partition-bams should
+   - have option to take just first part of qname, allowing us to compare perfect and corrupted FASTQ
+   - save the incomplete reads information in a text file - shouldn't happen
+   - have option to turn of sort index (so we can do this externally)
+   - convert p_diff to using a sperate external file
+   - parallelize!
+
+
+partition-bams running snapshot
+
+
+
+Dictionary usage and time usage snapshot
+
+Running on three BAMs of size 120 GB each (100x WG)
+DEBUG:mitty.benchmarking.partition_bams:
+
+Read 291100000 templates (2362593 incomplete reads) in 15374.149021625519s (18934.38125196615 t/s)
+Read 291200000 templates (2362669 incomplete reads) in 15379.355039834976s (18934.47405601507 t/s)
+Read 291300000 templates (2362753 incomplete reads) in 15384.621853113174s (18934.491973948232 t/s)
+Read 291400000 templates (2362807 incomplete reads) in 15389.815004825592s (18934.6005074544 t/s)
+Read 291500000 templates (2362860 incomplete reads) in 15394.995683908463s (18934.724308152214 t/s)
+Read 291600000 templates (2362901 incomplete reads) in 15400.196233987808s (18934.823593769983 t/s)
+Read 291700000 templates (2362973 incomplete reads) in 15405.837252616882s (18934.38144366032 t/s)
+Read 291800000 templates (2364112 incomplete reads) in 15411.396637439728s (18934.039909862204 t/s)
+Read 291900000 templates (2364201 incomplete reads) in 15416.701522111893s (18934.011181401755 t/s)
+Read 292000000 templates (2364262 incomplete reads) in 15421.950898647308s (18934.05062167666 t/s)
+
+Read 436200000 templates (2600080 incomplete reads) in 23083.770076274872s (18896.39333430718 t/s)  (Using 7.8 GB)
+
+Read 480300000 templates (2658444 incomplete reads) in 25427.171937465668s (18889.24179933286 t/s)
+
+Read 497800000 templates (2701851 incomplete reads) in 26353.656823396683s (18889.219144648454 t/s) (Using 7.8 GB)
+
+
+
+2016.12.20
+* God aligner should have option to write out regular CIGAR rather than extended CIGAR
+
+
+2016.12.14
+* [DONE] Refactor ploidy checker into separate function
+
+
+2016.11.28
+* Create fully manual VCF and read models that allow us to create specific variants and allow us to take reads from
+  particular locations
+
+
+2016.11.22
+* Need to update tests for qname parsing etc.
+
+2016.11.08
+* read-generation
+   - [DONE] fix qname issue (side car file)
+   - [DONE] MD tag for all reads (empty for perfect reads, meaningful for corrupted reads)
+   - cythonize read-corrupter?
+
+
+2016.11.08
+* docs - create diagram of read generation algorithm
+
+2016.11.06
+Genome generation - sampling sim
+* Start with a VCF sampler that will create VCFs from a pop VCF based on MAF
+   - allow user to pass a pop tag so diff pops can be sampled (ask for VCF to be in same format as 1000G VCF)
+
+Wrapping
+* Put pipes to read corrupt back? This will probably make the overall process faster
+
+
+2016.11.02
+----------
+* GC-bias:
+  Empirical:
+    - split reference into 100kb chunks and compute GC content vs coverage metrics
+    - do same analysis, but on FASTQ and GC content of reads - how does this differ?
+* VCF ploidy
+  - Currently to get correct ploidy there has to be at least one entry (incl. dummy entry) within the region
+    grabbed, else Mitty will interpret as diploid
+    - We should sniff the first entry of each chrom, regardless of region to infer ploidy, then we proceed
+
+
+
+2016.10.28
+----------
+* Iosif's request(s). Can possibly be solved by having a filter program that checks 'wrong' alignments
+  and filters out based on some rules - basically, if the read POS and CIGAR don't match, but the alignment
+  itself is a match, chuck filter this out.
+
+
+
+
+2016.10.17
+----------
+
+* [DONE] Implement read corruption model (applied as a UNIX filter - can work on a streaming unzipped FASTQ)
+  - use pysam to read FASTQ
+* [DONE] BAM diff tool required by Maria - use bamutils diff.
+* Analysis tools
+  - [DONE] god aligner
+  - [DONE] MQ plot (MQ vs d_err heat)
+    - where to store alignment analyses?
+    - No explicit place this is stored - always read the BAM, analyze qname and produce the plot.
+  - [DONE] Indel plot (INDEL vs d_err heat)
+  - Goran's use cases (Read his doc)
+
+
+* [DONE] Add a test case with D > 2
+
+Bug hunt
+--------
+
+10:164,309-164,396
+
+[DONE] NA12878.filtered - At 164353 there is a 4bp deletion but we set the CIGAR to 3D only
+
+CTTAA -> C
+
+
+Notable bugs
+There can be more deletions than insertions -> the length of the consensus seq can be less than orig
+reference, I wasn't considering this and had a bug

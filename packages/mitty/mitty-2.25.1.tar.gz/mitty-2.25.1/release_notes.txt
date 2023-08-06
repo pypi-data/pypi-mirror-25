@@ -1,0 +1,243 @@
+Release Notes
+=============
+2.25.1
+- bugfix: bam2illumina discards read with tlen = 0
+  Also discards reads with tlen < 0.95 read len, which allows us to have some reads with tlen = rlen
+  in the simulation (which tests some edge cases in the aligner) but not too many,
+  which screws up our stats.
+- bugfix: god-aligner now writes out tlen
+  Does so matching the SAM spec.
+- enhancement: new model illuminaHiSeq-FCA.pkl added
+- bugfix: god-aligner now sets .mate_is_reverse too
+
+2.25.0
+- enhancement: flat coverage option added to read generation model
+  Flat coverage implemented for Illumina model. Example of usage included
+
+2.24.0
+- enhancement: Composable BAM analysis using cytoolz and pandas
+
+2.23.0
+- enhancement: Program now prints out version during run
+
+2.22.0
+- enhancement: placeholder figure for automated workflows
+  For automated workflows we sometimes have real (not simulated) data. For such workflows we simply
+  plot a placeholder figure to include in reports by passing a dummy long qname with the magic word
+  'deadbeef' in it
+
+2.21.0
+- enhancement: bam-to-truth tool implemented
+
+2.20.0
+- workaround: for qname bug in htslib
+- bugfix: for hidden bug in qname parsing
+  - The qname now ends in a "*" instead of a "|"
+  - This is a breaking change as it changes the qname format, but
+  - it fixes an edge case (bug) that surprisingly we never ran into: In the old style qname
+    we checked for truncation (and hence when we should look in the overflow file) by checking
+    if the last character was not a '|'. It is possible for a truncated qname to end in a '|'
+    so there was a potential bug there. This is fixed by having an explicit, distinct termination
+    character '*'
+  - Having an explicit termination character means we do not need to know the truncation length
+    We just have to check for the '*' character.
+  - A tool is provided that will convert FASTQs and BAMs from the old to the new format
+  - The qname is now restricted to 240 chars by default and this works around the HTSLIB bug
+
+- enhancement: subset-bam now saves paired reads
+- enhancement: qname-stats tool
+- bugfix: long qname file loading fix
+- enhancement: vcf-complexity tool added
+
+2.19.4
+- bugfix: alignment analysis plotting now properly handles simulations with no variants
+
+2.19.3
+- bugfix: Fix to alignement scoring. Affects data with soft-clips and insertions
+- bugfix: subset-bam: fixed v range to be inclusive
+- enhancement: read count heatmap added to alignment analysis
+- enhancement: read fate bar chart now has read count numbers
+
+2.19.2
+- Enhancement: god-aligner outputs V1 CIGARs by default, V2 CIGARs if requested
+
+2.19.1
+- workaround: pysam.index is finicky (on Linux). Adding option to god-aligner to skip indexing
+Used on the platform and on platforms where pysam.index is finicky
+
+2.19.0
+- Enhancement: subset-bam tool (formerly poor-alignments) now performs many
+functions related to extracting reads from a BAM based on d_err and variant size
+
+2.18.0
+- Enhancement: Added mean MQ heatmap over d_err and variant size
+
+2.17.0
+- Enhancement: un-paired read generation implemented
+- Enhancement: synthetic read model generator
+
+2.16.0
+- Enhancement: poor-alignments implemented
+
+2.15.2
+- Bugfix: alignment-analysis bin_size is now adjusted such that we get at least two bins given the variant size range
+
+2.15.1
+- Enhancement: `call-fate`. Simplified code (removing a bug), changed output format to single VCF
+
+2.15.0
+- Enhancement: `call-fate` implemented
+
+2.14.1
+- Bugfix: `filter-variants` should keep at least one 0/0 or 0 entry per contig. Fixes issue #4
+
+2.14.0
+- Enhancement: added copy sequence insertion model
+- docs: removed reference to `sampled-genome` which is not implemented yet
+- Enhancement: can now truncate reads to any length shorter than the original model
+
+2.13.1
+- Bugfix: xmv code processes unmapped reads at end of file, only considers primary alignments
+
+2.13.0
+- Enhancement: xmv code made faster
+- Bugfix: logic error in alignment scoring fixed. Only affected scoring of reads from inside insertions
+- Bugfix: simulate-variants no longer generates 0 length deletions (looking like Ref=A, Alt=A etc. in VCF)
+- Improvements to alignment analysis plots
+- Bugfix: Reads in long insertions now properly placed just after the anchoring reference base
+- Enhancement: Improved CLI for processing/replotting alignment metrics. The CLI is now split into two subcommands. You no longer have to pass in the BAM and qname side-car file when you just want to replot an existing alignment metrics data file.
+
+
+2.12.2
+
+- 'd_err_strict' option added to partition-bams
+
+2.12.1
+
+- Bugfix: fixed tag error in partition_bams code
+  Note: Partition BAMs is not parallelized and can only run serially through a BAM. For large BAMs (eg. > 50GB
+  one will usually run out of memory)
+
+2.12.0
+
+- Changed alignment error algorithm
+- Alignment analysis reports reinstated, now with further detail and break down by variant size
+- Added utility program to plot variant size distrib in a VCF file
+
+
+2.11.2
+
+- Bugfix: other IUPAC codes will no longer appear in reads
+
+
+2.11.0
+
+- Simple variant simulation implemented
+
+2.10.0
+
+- BAM partitioner implemented
+
+
+2.9.2
+
+- Bugfix: Forgot to commit benchmarking/__init__.py
+
+
+2.9.1
+
+- Fixed ploidy sniffing (was previously only looking at first variant in region)
+- Added sample empty VCF files for human male and female + instructions on how to
+  take reference reads
+
+2.9.0
+
+- Added check for illegal overlaps in variants in variant filtering
+- Fixed bug in filtering complex variants
+- Adding programs to process eval.vcf from VCF benchmarking pipeline
+
+
+2.8.7
+
+- god-aligner now writes RG tag to reads (required for GATK)
+- In read model description: Now plotting adjusted BQ, rather than simple average BQ
+
+2.8.4
+
+- Bugfix: PHRED (Base quality) score for perfect reads is now 40 ('I') to avoid confusing
+  GATK and other tools that think 60 (the old value) is erroneous.
+
+2.8.3
+
+- Bugfix: bracketed entries and breakends are now discarded from VCF file
+
+
+2.8.0 (Internal testing release)
+
+- qnames > 254 now handled (uses side car file)
+- md tag-like string used to describe read corruption for corrupted reads
+
+2.7.3 (Internal testing release)
+
+- t_len < r_len bug in Illumina model fixed
+- queue length explicitly set to avoid out of memory errors in Linux
+
+2.7.1 (Internal testing release)
+
+- Reads from N regions are discarded.
+  (Initially I thought to have this done via the bed file, but the reference is
+   peppered with stretches of 'N's and it's cumbersome for the user to craft such
+   a detailed BED file)
+
+2.7.0 (Internal testing release)
+
+- Added five empirical read models
+
+2.6.0 (Internal testing release)
+
+- MQ plots
+- D_err plots
+- New read model format
+- Tool to extract read model from BAM
+- Read corruption
+
+2.5.0 (Internal testing release)
+
+- Added god-aligner
+
+
+2.4.0 (Internal testing release)
+
+Algorithm changes
+-----------------
+
+- Read POS and CIGAR generation algorithm redesigned
+- Ploidy of genome now inferred from VCF file.
+  Simulation will properly handle XY chromosomes and polyploidy IF the VCF GT is properly set
+- Standard BED file is used to select regions
+  - BED file should avoid 'NNN' regions
+- Read generation order is much less serial
+
+Data changes
+------------
+
+- qname contains list of variant sizes carried by read
+  This makes variant based analyses of alignments easier
+- CIGAR for reads from inside long insertion properly handled
+- Name of sample included in read
+  - Can mix in viral contamination
+  - Can do tumor/normal mixes
+
+
+Program design changes
+----------------------
+
+- Written for Python 3
+- One entry command ('mitty')
+  This allows us convenient access to all mitty commands
+- Better support for UNIX paradigms such as pipes and process substitution
+- Better parallelization
+
+
+
+
