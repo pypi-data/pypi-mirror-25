@@ -1,0 +1,255 @@
+# The MIT License (MIT)
+#
+# Copyright (c) 2017 Thorsten Simons (sw@snomis.de)
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+[count]
+comment : No. of records, overall
+query : SELECT count(*) FROM logrecs
+freeze pane : A5
+
+[clientip]
+comment : No. of records per client IP address
+query : SELECT clientip, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY clientip
+freeze pane : C5
+
+[clientip_httpcode]
+comment : No. of records per http code per client IP address
+query : SELECT clientip, httpcode, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY clientip, httpcode
+freeze pane : D5
+
+[clientip_request_httpcode]
+comment : No. of records per http code per request per client IP address
+query : SELECT clientip, request, httpcode, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY clientip, request, httpcode
+freeze pane : E5
+
+[req]
+comment : No. of records per request
+query : SELECT request, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY request
+freeze pane : C5
+
+[req_httpcode]
+comment : No. of records per http code per request
+query : SELECT request, httpcode, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY request, httpcode
+freeze pane : C5
+
+[req_httpcode_node]
+comment : No. of records per node per http code per request
+query : SELECT request, httpcode, node, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY request, httpcode, node
+freeze pane : E5
+
+[node]
+comment : No. of records per node
+query : SELECT node, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY node
+freeze pane : C5
+
+[node_req]
+comment : No. of records per request per node
+query : SELECT node, request, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY node, request
+freeze pane : D5
+
+[node_req_httpcode]
+comment : No. of records per http code per request per node
+query : SELECT node, request, httpcode, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY node, request, httpcode
+freeze pane : E5
+
+[day]
+comment : No. of records per day
+query : SELECT printf("%%s/%%s", substr(timestampstr, 4, 3),
+                               substr(timestampstr, 1, 2)) AS day,
+               count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY day
+freeze pane : C5
+
+[day_req]
+comment : No. of records per request per day
+query : SELECT printf("%%s/%%s", substr(timestampstr, 4, 3),
+                               substr(timestampstr, 1, 2)) AS day,
+               request, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY day, request
+freeze pane : D5
+
+[day_hour]
+comment : No. of records per hour per day
+query : SELECT printf("%%s/%%s", substr(timestampstr, 4, 3),
+                               substr(timestampstr, 1, 2)) AS day,
+               printf("%%s", substr(timestampstr, 13, 2)) AS hour,
+               count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY day, hour
+freeze pane : D5
+
+[day_hour_req]
+comment : No. of records per request per hour per day
+query : SELECT printf("%%s/%%s", substr(timestampstr, 4, 3),
+                               substr(timestampstr, 1, 2)) AS day,
+               printf("%%s", substr(timestampstr, 13, 2)) AS hour,
+               request, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY day, hour, request
+freeze pane : E5
+
+[day_req_httpcode]
+comment : No. of records per http code per request per day
+query : SELECT printf("%%s/%%s", substr(timestampstr, 4, 3),
+                               substr(timestampstr, 1, 2)) AS day,
+               request, httpcode, count(*),
+        min(size), avg(size), max(size),
+        min(latency), avg(latency),
+        max(latency)
+        FROM logrecs GROUP BY day, request, httpcode
+freeze pane : E5
+
+[500_largest_size]
+comment : The records with the 500 largest requests sorted by size
+query : SELECT request, httpcode, node, latency, size,
+        tp(size,latency) as Bytes_sec, clientip, user,
+        timestamp, timestampstr, path, namespace
+        FROM logrecs ORDER BY size DESC LIMIT 500
+freeze pane : D5
+
+[500_largest_req_httpcode_node]
+comment : The records with the 500 largest requests by req, httpcode, node
+query : SELECT request, httpcode, node, latency, size,
+        tp(size,latency) as Bytes_sec, clientip, user,
+        timestamp, timestampstr, path, namespace
+        FROM (SELECT * FROM logrecs ORDER BY size DESC LIMIT 500)
+        ORDER BY request, httpcode, node
+freeze pane : D5
+
+[500_worst_latency]
+comment : The records with the 500 worst latencies
+query : SELECT request, httpcode, latency, size, tp(size,latency) as Bytes_sec,
+               clientip, user, timestamp, timestampstr, path, namespace
+            FROM (SELECT * FROM logrecs WHERE size > 0
+                      ORDER BY latency DESC LIMIT 500)
+            ORDER BY request, httpcode
+freeze pane : C5
+
+[percentile_req]
+comment : No. of records per request analysis, including percentiles for size and latency
+query : SELECT request, count(*),
+        min(size), avg(size), max(size),
+        percentile(size, 10) as 'pctl-10 (size)',
+        percentile(size, 20) as 'pctl-20 (size)',
+        percentile(size, 30) as 'pctl-30 (size)',
+        percentile(size, 40) as 'pctl-40 (size)',
+        percentile(size, 50) as 'pctl-50 (size)',
+        percentile(size, 60) as 'pctl-60 (size)',
+        percentile(size, 70) as 'pctl-70 (size)',
+        percentile(size, 80) as 'pctl-80 (size)',
+        percentile(size, 90) as 'pctl-90 (size)',
+        percentile(size, 95) as 'pctl-95 (size)',
+        percentile(size, 99) as 'pctl-99 (size)',
+        percentile(size, 99.9) as 'pctl-99.9 (size)',
+        min(latency), avg(latency),
+        max(latency),
+        percentile(latency, 10) as 'pctl-10 (latency)',
+        percentile(latency, 20) as 'pctl-20 (latency)',
+        percentile(latency, 30) as 'pctl-30 (latency)',
+        percentile(latency, 40) as 'pctl-40 (latency)',
+        percentile(latency, 50) as 'pctl-50 (latency)',
+        percentile(latency, 60) as 'pctl-60 (latency)',
+        percentile(latency, 70) as 'pctl-70 (latency)',
+        percentile(latency, 80) as 'pctl-80 (latency)',
+        percentile(latency, 90) as 'pctl-90 (latency)',
+        percentile(latency, 95) as 'pctl-95 (latency)',
+        percentile(latency, 99) as 'pctl-99 (latency)',
+        percentile(latency, 99.9) as 'pctl-99.9 (latency)'
+        FROM logrecs GROUP BY request
+freeze pane : C5
+
+[500_highest_throughput]
+comment : The 500 records with the highest throughput (Bytes/sec)
+query : SELECT request, httpcode, clientip, tp(size, latency) as Bytes_sec,
+               latency, size, user, timestamp, timestampstr, path, namespace
+             FROM logrecs
+             WHERE size > 0 and latency > 0
+             ORDER BY Bytes_sec DESC LIMIT 500;
+freeze pane : D5
+
+[percentile_throughput_128kb]
+comment : No. of records per request, with percentiles on throughput (Bytes/sec) for objects >= 128KB
+query : SELECT request, count(*),
+        min(tp(size, latency)) as 'min(B/sec)',
+        avg(tp(size, latency)) as 'avg(B/sec)',
+        max(tp(size, latency)) as 'max(B/sec)',
+        percentile(tp(size, latency), 10) as 'pctl-10 (B/sec)',
+        percentile(tp(size, latency), 20) as 'pctl-20 (B/sec)',
+        percentile(tp(size, latency), 30) as 'pctl-30 (B/sec)',
+        percentile(tp(size, latency), 40) as 'pctl-40 (B/sec)',
+        percentile(tp(size, latency), 50) as 'pctl-50 (B/sec)',
+        percentile(tp(size, latency), 60) as 'pctl-60 (B/sec)',
+        percentile(tp(size, latency), 70) as 'pctl-70 (B/sec)',
+        percentile(tp(size, latency), 80) as 'pctl-80 (B/sec)',
+        percentile(tp(size, latency), 90) as 'pctl-90 (B/sec)',
+        percentile(tp(size, latency), 95) as 'pctl-95 (B/sec)',
+        percentile(tp(size, latency), 99) as 'pctl-99 (B/sec)',
+        percentile(tp(size, latency), 99.9) as 'pctl-99.9 (B/sec)'
+        FROM logrecs where size >= 131072 GROUP BY request
+freeze pane : C5
+
