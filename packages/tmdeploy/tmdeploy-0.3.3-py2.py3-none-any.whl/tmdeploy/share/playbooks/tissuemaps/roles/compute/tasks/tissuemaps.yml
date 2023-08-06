@@ -1,0 +1,101 @@
+# TmDeploy - Automated setup and deployment of TissueMAPS in the cloud.
+# Copyright (C) 2016  Markus D. Herrmann, University of Zurich
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+---
+# NOTE: We install all TissueMAPS python packages into the home folder because
+# we export this folder on the cluster. This is convenient, because packages
+# can then be updated on the frontend only and these changes become immediatly
+# effective on all compute nodes.
+
+# This shouldn't be necessary, but some packages don't build correctly when
+# cython and numpy are not already installed.
+- name: Install cython and numpy packages
+  shell: PYTHONUSERBASE={{ tm_home }}/.local pip install {{ item }} --user --no-cache-dir
+  args:
+    chdir: "{{ tm_home }}"
+    executable: /bin/bash
+  with_items:
+    - cython==0.25.2
+    - numpy==1.12.1
+  tags:
+    - tissuemaps
+
+- name: Clone JtLibrary repository
+  git:
+    repo: "{{ tm_github_url }}/jtlibrary"
+    dest: "{{ tm_home }}/jtlibrary"
+    version: "{{ tm_version }}"
+    force: yes
+  tags:
+    - tissuemaps
+
+- name: Install jtlibrary package dependencies
+  shell: PYTHONUSERBASE={{ tm_home }}/.local pip install -r {{ tm_home }}/jtlibrary/requirements.txt --user --no-cache-dir
+  args:
+    chdir: "{{ tm_home }}/jtlibrary/"
+    executable: /bin/bash
+  tags:
+    - tissuemaps
+
+- name: Install jtlibrary package
+  shell: PYTHONUSERBASE={{ tm_home }}/.local pip install -e {{ tm_home }}/jtlibrary --user --no-cache-dir
+  args:
+    chdir: "{{ tm_home }}/jtlibrary/"
+    executable: /bin/bash
+  tags:
+    - tissuemaps
+
+- name: Clone TmLibrary repository
+  git:
+    repo: "{{ tm_github_url }}/tmlibrary"
+    dest: "{{ tm_home }}/tmlibrary"
+    version: "{{ tm_version }}"
+    force: yes
+  tags:
+    - tissuemaps
+
+- name: Install tmlibrary package dependencies
+  shell: PYTHONUSERBASE={{ tm_home }}/.local pip install -r {{ tm_home }}/tmlibrary/requirements.txt --user --no-cache-dir
+  args:
+    chdir: "{{ tm_home }}/tmlibrary/"
+    executable: /bin/bash
+  tags:
+    - tissuemaps
+
+- name: Install tmlibrary package
+  shell: PYTHONUSERBASE={{ tm_home }}/.local pip install -e {{ tm_home }}/tmlibrary --user --no-cache-dir
+  args:
+    chdir: "{{ tm_home }}/tmlibrary/"
+    executable: /bin/bash
+  tags:
+    - tissuemaps
+
+- name: Create directory for TissueMAPS related files
+  file:
+    path: "{{ tm_home }}/.tmaps"
+    state: directory
+  tags:
+    - tissuemaps
+
+- name: Set permissions for home folder
+  file:
+    path: "{{ tm_home }}"
+    state: directory
+    recurse: yes
+    owner: "{{ tm_user }}"
+    group: "{{ tm_group }}"
+    mode: 0700
+  tags:
+    - tissuemaps
