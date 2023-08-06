@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+# argument parsing
+import argparse
+
+def getargparser():
+    parser = argparse.ArgumentParser(description='Find the similarities between two short sentences using Word2Vec.')
+    parser.add_argument('--vecsize', default=100, type=int, help='Vector dimensions. (Default: 100)')
+    parser.add_argument('word2vec_modelpath', help='Path of the Word2Vec model')
+    return parser
+
+parser = getargparser()
+args = parser.parse_args()
+
+
+from scipy.spatial.distance import cosine
+
+from shorttext.metrics.embedfuzzy import jaccardscore_sents
+from shorttext.utils import tokenize, load_word2vec_model
+from shorttext.utils import shorttext_to_avgembedvec
+from shorttext.metrics.wasserstein import word_mover_distance
+from shorttext.metrics.dynprog import soft_jaccard_score
+
+
+if __name__ == '__main__':
+    wvmodel = load_word2vec_model(args.word2vec_modelpath) if args.word2vec_modelpath!=None else None
+    end = False
+    # preload tokenizer
+    tokenize('Mogu is cute.')
+    while not end:
+        sent1 = raw_input('sent1> ')
+        if len(sent1)==0:
+            end = True
+        else:
+            sent2 = raw_input('sent2> ')
+
+            # output results
+            print "Cosine Similarity = ", 1 - cosine(shorttext_to_avgembedvec(sent1, wvmodel, args.vecsize),
+                                                     shorttext_to_avgembedvec(sent2, wvmodel, args.vecsize))
+            print "Word-embedding Jaccard Score Similarity = ", jaccardscore_sents(sent1, sent2, wvmodel)
+            print "Word Mover's Distance = ", word_mover_distance(tokenize(sent1), tokenize(sent2), wvmodel)
+            print "Soft Jaccard Score (edit distance) = ", soft_jaccard_score(tokenize(sent1), tokenize(sent2))
+
