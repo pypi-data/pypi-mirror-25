@@ -1,0 +1,72 @@
+{
+  "service": {
+    "has": {
+      "DBInstance": {
+        "resource": {
+          "type": "DBInstance",
+          "identifiers": [
+            { "target": "Id", "source": "input" }
+          ]
+        }
+      }
+    },
+    "hasMany": {
+      "DBInstances": {
+        "request": { "operation": "DescribeDBInstances" },
+        "resource": {
+          "type": "DBInstance",
+          "identifiers": [
+            { "target": "Id", "source": "response", "path": "DBInstances[].DBInstanceIdentifier" }
+          ],
+          "path": "DBInstances[]"
+        }
+      }
+    }
+  },
+  "resources": {
+    "DBInstance": {
+      "identifiers": [{
+        "name": "Id",
+        "memberName": "DBInstanceIdentifier"
+      }],
+      "shape": "DBInstance",
+      "load": {
+        "request": {
+          "operation": "DescribeDBInstances",
+          "params": [{
+            "target": "DBInstanceIdentifier",
+            "source": "identifier",
+            "name": "Id"
+          }]
+        },
+        "path": "DBInstances[0]"
+      },
+      "hasMany": {
+        "Tags": {
+          "request": {
+            "params": [{
+              "target": "ResourceName",
+              "source": "arn"
+            }],
+            "operation": "ListTagsForResource"
+          },
+          "resource": {
+            "type": "Tag",
+            "identifiers": [{
+              "target": "Key",
+              "source": "response",
+              "path": "TagList[].Key"
+            }],
+            "path": "TagList[]"
+          }
+        }
+      }
+    },
+    "Tag": {
+      "shape": "Tag",
+      "identifiers": [{
+        "name": "Key"
+      }]
+    }
+  }
+}
