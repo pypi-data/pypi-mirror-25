@@ -1,0 +1,89 @@
+=============================
+Django Chaos
+=============================
+
+.. image:: https://badge.fury.io/py/django-chaos.svg
+    :target: https://badge.fury.io/py/django-chaos
+
+.. image:: https://travis-ci.org/george-silva/django-chaos.svg?branch=master
+    :target: https://travis-ci.org/george-silva/django-chaos
+
+.. image:: https://codecov.io/gh/george-silva/django-chaos/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/george-silva/django-chaos
+
+Chaos is a projeto that you can use to do project management
+
+Documentation
+-------------
+
+The full documentation is at https://django-chaos.readthedocs.io.
+
+Quickstart
+----------
+
+Install Django Chaos::
+
+    pip install django-chaos
+
+Add it to your `INSTALLED_APPS`:
+
+.. code-block:: python
+
+    INSTALLED_APPS = (
+        ...
+        'chaos.apps.ChaosConfig',
+        ...
+    )
+
+Add Django Chaos's URL patterns:
+
+.. code-block:: python
+
+    from chaos import urls as chaos_urls
+
+
+    urlpatterns = [
+        ...
+        url(r'^', include(chaos_urls)),
+        ...
+    ]
+
+Features
+--------
+
+* TODO
+
+Running Tests
+-------------
+
+Does the code actually work?
+
+::
+
+    source <YOURVIRTUALENV>/bin/activate
+    (myenv) $ pip install tox
+    (myenv) $ tox
+
+Credits
+-------
+
+Tools used in rendering this package:
+
+*  Cookiecutter_
+*  `cookiecutter-djangopackage`_
+
+.. _Cookiecutter: https://github.com/audreyr/cookiecutter
+.. _`cookiecutter-djangopackage`: https://github.com/pydanny/cookiecutter-djangopackage
+
+
+
+
+History
+-------
+
+0.1.0 (2017-10-09)
+++++++++++++++++++
+
+* First release on PyPI.
+
+
