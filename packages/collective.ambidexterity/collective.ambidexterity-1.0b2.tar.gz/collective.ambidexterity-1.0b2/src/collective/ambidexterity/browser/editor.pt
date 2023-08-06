@@ -1,0 +1,154 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+    lang="en"
+    metal:use-macro="context/prefs_main_template/macros/master"
+    i18n:domain="collective.ambidexterity">
+
+<head>
+
+  <metal:styleslot fill-slot="style_slot">
+<style>
+#content {
+    margin-bottom: 20px;
+}
+div.plone-btn-group {
+  margin: 0.25em 0;
+}
+div.plone-btn-group {
+  margin: 0.75em 0;
+}
+.btn-label {
+    font-weight: bold;
+    display: inline-block;
+    width: 7%;
+    text-align: right;
+}
+</style>
+  </metal:styleslot>
+
+  <metal:javascriptslot fill-slot="javascript_head_slot">
+
+    <script src="++resource++collective.ambidexterity/editor.js"
+      type="text/javascript"
+      charset="utf-8"
+      tal:attributes="src string:${portal_url}/++resource++collective.ambidexterity.editor.js"
+      ></script>
+    <script src="++plone++static/components/ace-builds/src/ace.js"
+      type="text/javascript"
+      charset="utf-8"
+      tal:attributes="src string:${portal_url}/++plone++static/components/ace-builds/src/ace.js"
+      ></script>
+
+  </metal:javascriptslot>
+
+</head>
+
+<body>
+
+<metal:main fill-slot="prefs_configlet_main">
+  <tal:main-macro metal:define-macro="main">
+
+    <div id="page-intro">
+
+      <h1 class="documentFirstHeading" i18n:translate="heading_edit">
+          Ambidexterity editor
+      </h1>
+
+      <p class="description" i18n:translate="description_edit">
+        Through-the-web editing of Dexterity content type views, defaults, validators and vocabularies.
+      </p>
+
+    </div>
+
+    <section tal:condition="not:view/audit_is_clean">
+      <h2>Ambidexterity: we have a problem</h2>
+
+      <p>
+        Ambidexterity requires that content-type definitions (FTIs) be consistent with script and template resources.
+        There are inconsistencies for this site:
+      </p>
+      <pre tal:content="view/audit_report" />
+
+      <p>
+        These inconsistencies need to be fixed before you may use the through-the-web Ambidexterity editor.
+        You may fix these by editing the FTIs (via portal_types) and/or Ambidexterity's resources (via portal_resources) or you may automatically resynchronize.
+      </p>
+
+      <p>
+        Automatic synchronization works by adding or deleting FTI references to Ambidexterity script/template resources.
+        Portal type definitions will be updated, but no script or template resources will be added or removed.
+      </p>
+
+      <form method="POST" action="@@ambidexterity_resynchronize">
+        <fieldset>
+          <legend>Auto synchronize?</legend>
+          <input tal:replace="structure context/@@authenticator/authenticator" />
+          <input type="submit" value="Do it" />
+        </fieldset>
+      </form>
+    </section>
+
+    <section tal:condition="view/audit_is_clean">
+
+      <form method="GET" action="@@ambidexterity-import" class="plone-btn-group pull-right">
+        <input class="plone-btn" type="submit" value="Import" />
+      </form>
+      <form method="POST" action="@@ambidexterity-export" id="export_form" class="plone-btn-group pull-right">
+        Content-type resources:
+        <input tal:replace="structure context/@@authenticator/authenticator" />
+        <input type="hidden" name="ctype" value="" />
+        <input class="plone-btn" type="submit" value="Export" disabled="disabled" />
+      </form>
+
+
+      <form id="available_actions">
+        <input tal:replace="structure context/@@authenticator/authenticator" />
+        <label for="content_types">Content types:</label> <select id="content_types" name="content_types" />
+        <label for="cfields">Fields:</label> <select id="cfields" name="cfields" />
+        <br />
+        <div class="plone-btn-group">
+          <span class="btn-label">View:</span>
+          <button class="plone-btn" type="button" id="add_view" style="display:none">Add view</button>
+          <button class="plone-btn" type="button" id="edit_view" style="display:none">Edit view</button>
+          <button class="plone-btn plone-btn-danger" type="button" id="remove_view" style="display:none">Remove view</button>
+        </div>
+        <div class="plone-btn-group">
+          <span class="btn-label" id="script_label">Scripts:</span>
+          <button class="plone-btn" type="button" id="add_default" style="display:none">Add default</button>
+          <button class="plone-btn" type="button" id="edit_default" style="display:none">Edit default</button>
+          <button class="plone-btn plone-btn-danger" type="button" id="remove_default">Remove default</button>
+          &#160; &#160;
+          <button class="plone-btn" type="button" id="add_validator" style="display:none">Add validator</button>
+          <button class="plone-btn" type="button" id="edit_validator" style="display:none">Edit validator</button>
+          <button class="plone-btn plone-btn-danger" type="button" id="remove_validator" style="display:none">Remove validator</button>
+          &#160; &#160;
+          <button class="plone-btn" type="button" id="add_vocabulary" style="display:none">Add vocabulary</button>
+          <button class="plone-btn" type="button" id="edit_vocabulary" style="display:none">Edit vocabulary</button>
+          <button class="plone-btn plone-btn-danger" type="button" id="remove_vocabulary" style="display:none">Remove vocabulary</button>
+        </div>
+      </form>
+
+      <form id="dataform" class="plone-btn-group pull-right" style="margin-top: 1em">
+        <!-- A place to save data we may need -->
+        <span id="edit-label" />
+        <input tal:replace="structure context/@@authenticator/authenticator" />
+        <input type="hidden" name="content_type" value="" />
+        <input type="hidden" name="field_name" value="" />
+        <input type="hidden" name="script" value="" />
+        <input class="plone-btn" type="submit" id="save_edits" value="Save changes" disabled="disabled" />
+        <input class="plone-btn plone-btn-danger" type="cancel" id="abandon_edits" value="Abandon changes" disabled="disabled" />
+      </form>
+
+      <div style="clear: both">
+          <div id="source_editor"/>
+      </div>
+    </section>
+
+
+  </tal:main-macro>
+</metal:main>
+</body>
+</html>
+
