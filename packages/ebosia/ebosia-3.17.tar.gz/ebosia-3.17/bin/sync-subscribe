@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+import logging
+
+import ebosia.sync
+
+
+def _on_message(*args):
+    print('got a message', *args)
+
+logging.basicConfig(level=logging.DEBUG)
+connection = ebosia.sync.connect('amqp://guest:guest@localhost')
+ebosia.sync.subscribe('#', _on_message)
+try:
+    while True:
+        ebosia.sync.drain()
+except KeyboardInterrupt:
+    pass
