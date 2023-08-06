@@ -1,0 +1,10 @@
+__title__ = 'guide_md'
+__description__ = 'Extension to lepture/mistune markdown parser in pure Python'
+__url__ = 'https://github.com/JohnPickerill/'          
+__version_info__ = ('0', '0', '7')
+__version__ = '.'.join(__version_info__)
+__author__ = 'John Pickerill'
+__author_email__ = 'john@curiouscrab.com'
+__maintainer__ = 'Land Registry'
+__license__ = 'BSD'
+__copyright__ = '(c) 2017 by John Pickerill'
