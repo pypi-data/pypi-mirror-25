@@ -1,0 +1,53 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:monkey="http://namespaces.plone.org/monkey"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="collective.themesitesetup">
+
+  <include package="plone.resource" />
+  <include package="plone.app.controlpanel" />
+  <include package="plone.app.theming" />
+
+  <utility
+      factory=".plugin.GenericSetupPlugin"
+      name="genericsetup"
+      />
+
+  <browser:page
+      name="export-site-setup"
+      for="plone.resource.interfaces.IWritableResourceDirectory"
+      layer="plone.app.theming.interfaces.IThemingLayer"
+      class=".browser.ExportFormView"
+      permission="plone.app.controlpanel.Themes"
+      />
+
+  <browser:page
+      name="import-site-setup"
+      for="plone.resource.interfaces.IResourceDirectory"
+      layer="plone.app.theming.interfaces.IThemingLayer"
+      class=".browser.ImportFormView"
+      permission="plone.app.controlpanel.Themes"
+      />
+
+  <monkey:patch
+      description="This adds plonei18njs support for zope.app.i18n catalogs"
+      class="zope.app.i18n.translationdomain.TranslationDomain"
+      ignoreOriginal="true"
+      original="_data"
+      preservedoc="false"
+      replacement=".utils._data"
+      zcml:condition="installed zope.app.i18n"
+      />
+
+  <monkey:patch
+      description="This adds plonei18njs support for zope.app.i18n catalogs"
+      class="zope.app.i18n.messagecatalog.MessageCatalog"
+      ignoreOriginal="true"
+      original="_catalog"
+      preservedoc="false"
+      replacement=".utils._catalog"
+      zcml:condition="installed zope.app.i18n"
+      />
+
+</configure>
