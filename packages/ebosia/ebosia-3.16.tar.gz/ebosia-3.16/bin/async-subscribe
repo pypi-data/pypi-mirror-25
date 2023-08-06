@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+import argparse
+import asyncio
+import logging
+
+import ebosia.async
+
+LOGGER = logging.getLogger('async-subscribe')
+
+@asyncio.coroutine
+def on_message(event):
+    print(event)
+
+@asyncio.coroutine
+def subscribe(uri):
+    @asyncio.coroutine
+    def on_eventbus_error(error):
+        LOGGER.warning("Attemping to reconnect to eventbus after %s", error)
+        yield from subscribe(uri)
+    LOGGER.info('Creating connection to eventbus')
+    connection = yield from ebosia.async.connect(uri, on_error=on_eventbus_error)
+    yield from ebosia.async.subscribe('#', on_message, connection=connection)
+
+@asyncio.coroutine
+def spin():
+    while True:
+        try:
+            yield from asyncio.sleep(0.1)
+        except KeyboardInterrupt:
+            LOGGER.info("Exiting")
+
+def _on_done(result):
+    if result.exception():
+        print(result.exception())
+
+def main():
+    logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.DEBUG)
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-u', '--connection-url', default='amqp://guest:guest@localhost', help='The connection string for RabbitMQ')
+    args = parser.parse_args()
+
+    loop = asyncio.get_event_loop()
+    coro = loop.create_task(subscribe(args.connection_url))
+    coro.add_done_callback(_on_done)
+    loop.run_until_complete(coro)
+    loop.run_until_complete(spin())
+
+if __name__ == '__main__':
+    main()

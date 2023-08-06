@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import logging
+import sys
+
+import ebosia.sync
+
+LOGGER = logging.getLogger('emitter')
+
+def _on_event(event):
+    LOGGER.info("Event: %s", event)
+
+def main():
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-t', '--topic', default='test.topic', help="The topic of the event to publish")
+    parser.add_argument('-c', '--content', default='{"hello":"world"}', help="a JSON string that will be sent as the content of the event")
+    parser.add_argument('-u', '--connection-url', default='amqp://guest:guest@localhost', help='The connection string for RabbitMQ')
+    args = parser.parse_args()
+
+    try:
+        content = json.loads(args.content)
+    except ValueError as e:
+        LOGGER.error("Cannot parse %s as JSON: %s", args.content, e)
+        return -1
+
+    ebosia.sync.connect(args.connection_url)
+    ebosia.sync.publish(args.topic, content)
+
+if __name__ == "__main__":
+    sys.exit(main())
