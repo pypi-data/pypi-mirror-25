@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<HTML>
+
+<HEAD>
+    <TITLE>{{ _(" ZTREE DEMO - Simple Data") }}</TITLE>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <!-- <link rel="stylesheet" href="../../../css/demo.css" type="text/css"> -->
+    <link rel="stylesheet" href="/static/assets/resources/role/css/metroStyle/metroStyle.css" type="text/css">
+    <script src="/static/assets/resources/role/js/jquery-2.1.1.min.js" type="text/javascript"></script>
+    <script src="/static/assets/resources/role/js/jquery.validate.min.js" type="text/javascript"></script>
+
+    <script type="text/javascript" src="/static/assets/resources/role/js/ztree/jquery.ztree.core.js"></script>
+    <script type="text/javascript" src="/static/assets/resources/role/js/ztree/jquery.ztree.excheck.js"></script>
+    <script type="text/javascript" src="/static/assets/resources/role/js/ztree/jquery.ztree.exedit.js"></script>
+    <SCRIPT type="text/javascript">
+        function doSubmit() {//回调函数，在编辑和保存动作时，供openDialog调用提交表单。
+            if (validateForm.form()) {
+                $("#inputForm").submit();
+                return true;
+            }
+
+            return false;
+        }
+
+        $(document).ready(function () {
+
+            $("#name").focus();
+            validateForm = $("#inputForm").validate({
+
+                submitHandler: function (form) {
+                    var ids = [], nodes = zTreeObj.getCheckedNodes(true);
+                    for (var i = 0; i < nodes.length; i++) {
+                        if (!nodes[i].isParent || nodes[i].type === 'portal_menu') {
+                            if (nodes[i].id) {
+                                ids.push({
+                                    'id': nodes[i].id,
+                                    'type': nodes[i].type,
+                                });
+                            }
+                        }
+                    }
+                    ids = JSON.stringify(ids);
+                    $("#menuIds").val(ids);
+                    form.submit();
+                },
+                errorContainer: "#messageBox",
+                errorPlacement: function (error, element) {
+                    $("#messageBox").text("输入有误，请先更正。");
+                    if (element.is(":checkbox") || element.is(":radio") || element.parent().is(".input-append")) {
+                        error.appendTo(element.parent().parent());
+                    } else {
+                        error.insertAfter(element);
+                    }
+                }
+            });
+
+            var setting = {
+                check: { enable: true, nocheckInherit: true, },
+                view: { selectedMulti: false, dblClickExpand: false},
+                data: { simpleData: { enable: true } }, callback: {
+                    beforeClick: function (id, node) {
+                        tree.checkNode(node, !node.checked, true, true);
+                        return false;
+                    },
+                    checked: "isChecked"
+                },
+                callback: {onClick: expand},
+            };
+            function expand(e,treeId, treeNode) {
+                var zTree = $.fn.zTree.getZTreeObj("treeDemo");
+                zTree.expandNode(treeNode);
+            }
+
+            zNodes = JSON.parse($('#node_data').attr('node-data'));
+            setting.check.chkboxType = { "Y": "ps", "N": "ps" };
+            var zTreeObj = $.fn.zTree.init($("#treeDemo"), setting, zNodes);
+            var nodes = zTreeObj.getCheckedNodes();
+            for (var i = 0, l = nodes.length; i < l; i++) {
+                zTreeObj.checkNode(nodes[i], true, true);
+            }
+
+        });
+    </SCRIPT>
+</HEAD>
+
+<BODY>
+    <form id="inputForm" class="form-horizontal" action="/hand/roles/grant/data/save" method="post">
+        <div class="content_wrap">
+            <div class="zTreeDemoBackground left">
+                <ul id="treeDemo" class="ztree"></ul>
+            </div>
+        </div>
+        <input id="menuIds" name="menuIds" type="hidden" />
+        <input id="roleId" name="roleId" type="hidden" value="{{ roleId }}" />
+    </form>
+    <div id="node_data" node-data="{{node}}">
+    </div>
+
+</BODY>
+
+</HTML>
