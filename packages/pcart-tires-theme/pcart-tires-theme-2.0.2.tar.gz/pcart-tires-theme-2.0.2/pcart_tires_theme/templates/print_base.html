@@ -1,0 +1,121 @@
+{% load i18n cms_tags menu_tags sekizai_tags staticfiles pcart_core theme_tags %}
+{% get_current_language as LANGUAGE_CODE %}
+{% get_template_name as template %}
+<!doctype html>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="{{LANGUAGE_CODE}}"> <![endif]-->
+<!--[if IE 7]><html class="no-js lt-ie9 lt-ie8" lang="{{LANGUAGE_CODE}}"> <![endif]-->
+<!--[if IE 8]><html class="no-js lt-ie9" lang="{{LANGUAGE_CODE}}"> <![endif]-->
+<!--[if IE 9 ]><html class="ie9 no-js"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+{% if settings.google_tag_manager_code %}
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','{{settings.google_tag_manager_code}}');</script>
+<!-- End Google Tag Manager -->
+{% endif %}
+<!-- META TAGS -->
+    <meta charset="utf-8">
+    <!--[if IE]>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <![endif]-->
+    {% capture as meta_description silent %}{% block meta_description %}{% endblock %}{% endcapture %}
+    {% capture as meta_keywords silent %}{% block meta_keywords %}{% endblock %}{% endcapture %}
+    {% capture as meta_author silent %}{% block meta_author %}{% endblock %}{% endcapture %}
+    {% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
+    {% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
+    {% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    {% block extra_meta %}{% endblock %}
+
+<!-- PAGE TITLE -->
+    <title>{% block title %}{% page_attribute "page_title" %} | {{site.name}}{% endblock %}</title>
+
+<!-- LINK TAGS -->
+    {% capture as canonical_url %}{% block canonical_url %}{% endblock %}{% endcapture %}
+    {% if canonical_url %}<link rel="canonical" href="{{canonical_url}}" />{% endif %}
+    {% with favicon=settings|get_element:"favicon.ico" %}
+    <link rel="shortcut icon" href="{% if favicon %}{% theme_url favicon %}{% else %}{% static 'assets/favicon.ico' %}{% endif %}" type="image/x-icon" />
+    {% endwith %}
+
+<!-- GOOGLE FONTS -->
+    {% if settings.base_font and 'google_fonts:' in settings.base_font %}
+        <link href="//fonts.googleapis.com/css?family={{ settings.base_font|replace:'google_fonts:'|replace:' ,+' }}:300,400,700,900" rel="stylesheet" type="text/css">
+    {% endif %}
+    {% if settings.heading_font and 'google_fonts:' in settings.heading_font and settings.heading_font != settings.base_font %}
+        <link href="//fonts.googleapis.com/css?family={{ settings.heading_font|replace:'google_fonts:'|replace:' ,+' }}:300,400,700,900" rel="stylesheet" type="text/css">
+    {% endif %}
+
+<!-- CSS -->
+    <link href="{% static 'assets/bootstrap.css' %}" rel="stylesheet" media="all">
+    <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+    {% render_block "css" %}
+    {% block extra_css %}{% endblock %}
+
+<!-- JS -->
+    {% include '_js_header.html' %}
+    {% block extra_js_header %}{% endblock %}
+
+<!-- SERVICE SCRIPTS -->
+    {% block content_for_header %}{% endblock %}
+</head>
+<body id="{{ page_title|slugify }}" class="template-{{ template|replace:'., '|truncatewords:1|slugify }}">
+{% if settings.google_tag_manager_code %}
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{settings.google_tag_manager_code}}" height="0" width="0" style="display:none;visibility:hidden;"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+{% endif %}
+{#{% cms_toolbar %}#}
+<div id="wrapper1">
+<div id="wrapper2">
+
+<!-- HEADER -->
+<header id="header">
+<div class="container">
+    <!-- LOGO -->
+    <div>
+        {% if settings.use_logo %}
+            <img src="{% theme_url settings|get_element:'logo.png' %}">
+        {% else %}
+            <strong>{{ site.name }}</strong>
+        {% endif %}
+        {% if settings.logo_slogan %}<p>{{ settings.logo_slogan }}</p>{% endif %}
+    </div>
+    <div><br>
+        {% static_placeholder "header_right" %}
+    </div>
+    <hr>
+</div>
+</header>
+
+<div id="main" role="main">
+    <div class="container">
+        {% block base_content %}
+        <div class="row">
+            <div class="main_content {% block main_content_classes %}col-sm-9 {% if settings.sidebar_toggle == 'sidebar_toggle_left' %}col-sm-push-3{% endif %}{% endblock %}">
+                {% block content %}{% endblock %}
+            </div>
+
+            {% block sidebar_container %}
+            <div class="sidebar col-sm-3 {% if settings.sidebar_toggle == 'sidebar_toggle_left' %}sidebar_left col-sm-pull-9{% else %}sidebar_right{% endif %}">
+                {% block sidebar %}{% endblock %}
+            </div>
+            {% endblock sidebar_container %}
+        </div>
+        {% endblock base_content %}
+    </div>
+</div>
+{% block extra_content %}{% endblock %}
+
+</div><!-- / #wrapper2 -->
+</div><!-- / #wrapper1 -->
+
+<!-- JS -->
+<script src="{% static 'js/pcart.js' %}"></script>
+{% render_block "js" %}
+{% block extra_js %}{% endblock %}
+</body>
+</html>

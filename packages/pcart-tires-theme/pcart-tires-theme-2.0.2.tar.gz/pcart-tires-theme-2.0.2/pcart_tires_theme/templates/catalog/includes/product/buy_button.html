@@ -1,0 +1,52 @@
+{% load i18n l10n pcart_catalog pcart_core %}
+<form action="{% add_to_cart_url %}" method="post" enctype="multipart/form-data"
+      class='form-horizontal' id="product-actions">
+    <input type="hidden" name="item-id" value="{{product.id}}">
+    <input type="hidden" name="next" value="{{product.get_absolute_url}}">
+    <input type="hidden" name="item-type" value="{{product.type}}">
+    <input type="hidden" name="price" value="{{product.price|unlocalize}}">
+    <input type="hidden" name="weight" value="{{product.weight|unlocalize}}">
+
+    <div class="options clearfix">
+        {% include "catalog/includes/product/price.html" %}
+        <div id="purchase">
+            <label for="quantity">{% trans "Qty" %}: </label>
+            <input min="1" type="number" id="quantity" name="quantity" value="{{ product.product_type.default_quantity_for_purchase }}" class="form-control input-small" />
+            {% if product.available %}
+            <button class="btn btn-cart"
+                    data-role="cart"
+                    data-product-id="{{ product.id }}"
+                    type="submit" id="add-to-cart">{% trans "Add to cart" %}</button>
+            {% else %}
+            <button class="btn btn-cart" id="add-to-cart" disabled>{{product.status}}</button>
+            {% endif %}
+        </div>
+    </div><!-- /.options -->
+</form>
+{% if product.available %}
+<div class="dropdown" style="margin-top: 5px;">
+  <button id="one-click-purchase" type="button"
+          class="btn btn-alt btn-xs"
+          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    {% trans "One click purchase" %}
+    <span class="caret"></span>
+  </button>
+  <div class="dropdown-menu" aria-labelledby="one-click-purchase">
+    <div id="one-click-form-wrapper" class="__action--ajax-load"
+         data-src="{% url 'pcart_data_collections:show_web_form' %}?view=one-click-purchase&title=one-click-purchase&target-id=one-click-form-wrapper&product_slug={{ product.slug }}"></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="product_extra_buttons">
+    <button class="btn btn-xs btn-alt"
+       data-role="compare"
+       data-product-id="{{ product.id }}"
+       onclick="PCART.ajax_send({'item-id':'{{product.id}}','item-type':'{{product.type}}','add-item':''}, {'action':'{% optional_url "pcart_comparison:comparison-add-product" %}','post-signal':'update-cart','success-notification':'<a href=\'{% optional_url "pcart_customers:customer-profile-section" "comparison" %}\'>{% trans "Product has been added to the comparison list." %}</a>'});"
+       ><i class="fa fa-balance-scale"></i> {% trans "Compare" %}</button>
+    <button class="btn btn-xs btn-alt"
+       data-role="wishlist"
+       data-product-id="{{ product.id }}"
+       onclick="PCART.ajax_send({'item-id':'{{product.id}}','item-type':'{{product.type}}','add-item':''}, {'action':'{% optional_url "pcart_wishlist:wishlist-add-product" %}','post-signal':'update-cart','success-notification':'<a href=\'{% optional_url 'pcart_customers:customer-profile-section' 'wishlist' %}\'>{% trans "Product has been added to the wish list." %}</a>'});"
+       ><i class="fa fa-heart"></i> {% trans "Add to wishlist" %}</button>
+</div>

@@ -1,0 +1,66 @@
+{% extends "print_base.html" %}
+{% load i18n thumbnail cms_tags pcart_core %}
+
+{% block title %}{% trans "Checkout" %} | {{ site.name }}{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block sidebar_wrapper %}{% endblock %}
+{% block main_content_classes %}col-sm-12{% endblock %}
+
+{% block content %}
+<td>
+{% if cart.item_count > 0 %}
+<form method="post">
+    <div>
+        {% if user.is_anonymous %}<p>{% trans "If you already have an account use this link for login:" %}
+            <a href="{% optional_url 'pcart_customers:login' %}?move-cart&next={{request.path}}">{% trans "Login" %}</a></p>{% endif %}
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='name,email,phone' %}
+        <hr>
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='shipping_method' %}
+        {% save checkout_form.initial|get_element:"shipping_method" as initial_shipping_method %}
+        <div id="shipping-form-container"
+             class="__action--ajax-load __action--ajax-load-for-event __action--subform-onchange-ajax-reload"
+             data-src-eval="'{% url "pcart_cart:shipping-form-noslug" %}'+$('#id_shipping_method').val()+'/'"
+             data-event="change" data-target="#id_shipping_method" data-subform-method="post"></div>
+        <hr>
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='payment_method' %}
+        <div id="payment-form-container"></div>
+        <hr>
+        {% include "forms/form_fields.html" with form=checkout_form show_fields='note,accept_toc' %}
+    </div>
+
+    <table class="table table-bordered">
+        {% for item in cart.items %}
+        <tr>
+            <td>
+            {% with image=item.product.images.first %}
+            {% if image %}<img src="{% thumbnail image.image 200x200 %}" title="{{image}}">{% endif %}
+            {% endwith %}
+            </td>
+            <td>
+                <strong>{{item.object.title}}</strong><br>
+                {{item.quantity}} &times; {{item.price|money}}
+            </td>
+            <td>
+                <strong>{{item.line_price|money}}</strong>
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="3" class="text-right">
+                <h4>{% trans "Subtotal" %}: {{cart.total_price|money}}</h4>
+            </td>
+        </tr>
+        {% if cart.total_weight > 0 %}
+        <tr>
+            <td colspan="3" class="text-right">
+                {% trans "Weight" %}: {{cart.total_weight|weight}}
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+</form>
+{% else %}
+    <h2>{% trans "It appears that your cart is currently empty!" %}</h2>
+{% endif %}
+</div>
+{% endblock %}

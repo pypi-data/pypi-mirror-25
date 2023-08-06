@@ -1,0 +1,67 @@
+{% load i18n pcart_core theme_tags cms_tags menu_tags thumbnail %}
+{% get_collections level=0 as collections0 %}
+<div id="megamenu">
+<div class="container">
+    <ul class="sf-menu megamenu_desktop visible-md visible-lg">
+        <li class="megamenu_item_1">
+            <a href="{{ settings.megamenu_link }}">{{ settings.megamenu_text }}</a>
+            {% if settings.megamenu_sub_toggle %}
+            <ul>
+                <li>
+                    <div class="submenu submenu_1">
+                        <div class="row">
+                            {% for collection in collections0 %}
+                                <div class="col-sm-3">
+                                    <h4><a href="{{collection.get_absolute_url}}">{{collection}}</a></h4>
+                                    <ul>
+                                        {% for sub_collection in collection.children.all|limit:7 %}
+                                            <li><a href="{{sub_collection.get_absolute_url}}">{{sub_collection.title|truncatechars:30}}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if settings.megamenu_show_full_link %}
+                        <a class="btn" href="{% optional_url 'pcart_collection:all-collections' %}">{% trans "Full catalog" %}</a>
+                        {% endif %}
+                    </div>
+                </li>
+            </ul>
+            {% endif %}
+        </li>
+        {% show_menu 0 100 100 100 "menu/mega_menu.html" %}
+    </ul>
+
+    <div class="megamenu_mobile visible-xs visible-sm">
+        <h2>{% page_attribute "page_title" %}<i></i></h2>
+        <ul class="level_1">
+            <li>
+                <a href="{{ settings.megamenu1_link }}">{{ settings.megamenu_text }}<i class="level_1_trigger"></i></a>
+                {% if settings.megamenu_sub_toggle %}
+                <ul class="level_2">
+                    {% for collection in collections0 %}
+                        <li>
+                            <a href="{{collection.get_absolute_url}}">{{collection}}<i class="level_2_trigger"></i></a>
+                            <ul class="level_3">
+                                {% for sub_collection in collection.children.all|limit:7 %}
+                                    <li><a href="{{sub_collection.get_absolute_url}}">{{sub_collection.title|truncatechars:30}}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% show_menu 0 1 1 1 %}
+        </ul>
+    </div>
+
+    <!-- HEADER SEARCH -->
+    <div class="header_search">
+        <form action="{% optional_url 'pcart_search:search' %}" method="get" class="search-form" role="search">
+            <input id="search-field" name="query" type="text" placeholder="{% trans "Search store..." %}" class="hint" />
+            <button id="search-submit" type="submit"><i class="fa fa-search"></i></button>
+        </form>
+    </div>
+</div>
+</div>

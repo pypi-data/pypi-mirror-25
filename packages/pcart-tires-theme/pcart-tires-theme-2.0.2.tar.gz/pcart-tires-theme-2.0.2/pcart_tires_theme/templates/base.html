@@ -1,0 +1,197 @@
+{% load i18n cms_tags menu_tags sekizai_tags staticfiles pcart_core theme_tags %}
+{% get_current_language as LANGUAGE_CODE %}
+{% get_template_name as template %}
+<!doctype html>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="{{LANGUAGE_CODE}}"> <![endif]-->
+<!--[if IE 7]><html class="no-js lt-ie9 lt-ie8" lang="{{LANGUAGE_CODE}}"> <![endif]-->
+<!--[if IE 8]><html class="no-js lt-ie9" lang="{{LANGUAGE_CODE}}"> <![endif]-->
+<!--[if IE 9 ]><html class="ie9 no-js"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->  
+<head>
+{% if settings.google_tag_manager_code %}
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','{{settings.google_tag_manager_code}}');</script>
+<!-- End Google Tag Manager -->
+{% endif %}
+<!-- META TAGS -->
+    <meta charset="utf-8">
+    <!--[if IE]>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <![endif]-->
+    {% capture as meta_description silent %}{% block meta_description %}{% endblock %}{% endcapture %}
+    {% capture as meta_keywords silent %}{% block meta_keywords %}{% endblock %}{% endcapture %}
+    {% capture as meta_author silent %}{% block meta_author %}{% endblock %}{% endcapture %}
+    {% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
+    {% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
+    {% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    {% block extra_meta %}{% endblock %}
+
+<!-- PAGE TITLE -->
+    <title>{% block title %}{% page_attribute "page_title" %} | {{site.name}}{% endblock %}</title>
+
+<!-- LINK TAGS -->
+    {% capture as canonical_url %}{% block canonical_url %}{% endblock %}{% endcapture %}
+    {% if canonical_url %}<link rel="canonical" href="{{canonical_url}}" />{% endif %}
+    {% with favicon=settings|get_element:"favicon.ico" %}
+    <link rel="shortcut icon" href="{% if favicon %}{% theme_url favicon %}{% else %}{% static 'assets/favicon.ico' %}{% endif %}" type="image/x-icon" />
+    {% endwith %}
+
+<!-- GOOGLE FONTS -->
+    {% if settings.base_font and 'google_fonts:' in settings.base_font %}
+        <link href="//fonts.googleapis.com/css?family={{ settings.base_font|replace:'google_fonts:'|replace:' ,+' }}:300,400,700,900" rel="stylesheet" type="text/css">
+    {% endif %}
+    {% if settings.heading_font and 'google_fonts:' in settings.heading_font and settings.heading_font != settings.base_font %}
+        <link href="//fonts.googleapis.com/css?family={{ settings.heading_font|replace:'google_fonts:'|replace:' ,+' }}:300,400,700,900" rel="stylesheet" type="text/css">
+    {% endif %}
+
+<!-- CSS -->
+    {{ 'bootstrap.css'|asset_url|stylesheet_tag }}
+    <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'vendor/nouislider/nouislider.min.css' %}" rel="stylesheet" type="text/css">
+    {{ 'assets.css'|templated_asset_url|stylesheet_tag }}
+    {{ 'style.css'|templated_asset_url|stylesheet_tag }}
+    {{ 'responsive.css'|templated_asset_url|stylesheet_tag }}
+    <!--[if IE 9]>
+    {{ 'ie9.css'|templated_asset_url|stylesheet_tag }}
+    <![endif]-->
+    {% render_block "css" %}
+    {% block extra_css %}{% endblock %}
+
+<!-- JS -->
+    {% include '_js_header.html' %}
+    {% block extra_js_header %}{% endblock %}
+
+<!-- SERVICE SCRIPTS -->
+    {% block content_for_header %}{% endblock %}
+</head>
+<body id="{{ page_title|slugify }}" class="template-{{ template|replace:'., '|truncatewords:1|slugify }}">
+{% if settings.google_tag_manager_code %}
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{settings.google_tag_manager_code}}" height="0" width="0" style="display:none;visibility:hidden;"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+{% endif %}
+<!--[if lt IE 9]>
+<div class="old_browsers"><a href="//windows.microsoft.com/en-us/internet-explorer/download-ie"><i class="fa fa-warning"></i>{% trans "You are using an outdated version of Internet Explorer. Upgrade today for a faster, safer browsing experience." %}</a></div>
+<![endif]-->
+{% cms_toolbar %}
+<div id="page_preloader"></div>
+{% if settings.cookies_policy_toggle %}
+    <!-- COOKIES POLICY NOTIFICATION -->
+    {% include 'snippets/widget-cookies.html' %}
+{% endif %}
+
+{% if settings.newsletter_popup_toggle %}
+    <!-- NEWSLETTER POPUP -->
+    {% include 'snippets/widget-newsletter-popup.html' %}
+{% endif %}
+
+<div id="wrapper1">
+<div id="wrapper2">
+
+<!-- HEADER -->
+<header id="header">
+<div class="container">
+    <!-- LOGO -->
+    <div class="logo_main logo_header">
+        <a href="/">
+            {% if settings.use_logo %}
+                <img src="{% theme_url settings|get_element:'logo.png' %}" alt="{{site.name}}">
+            {% else %}
+                <b>{{ site.name }}</b>
+            {% endif %}
+            <span>{{ settings.logo_slogan }}</span>
+        </a>
+    </div>
+
+    <div class="header_right">
+        {% static_placeholder "header_right" %}
+        <div class="header_panel">
+            <!-- USER MENU -->
+            {% include "customers/includes/customer_toolbar.html" %}
+
+            <div id="cart-block" class="cart_currency __action--ajax-load __action--ajax-load-for-signal"
+                data-src="{% optional_url 'pcart_cart:cart' %}?view=block" data-signal="update-cart">
+
+                {% comment %}
+                {% if settings.show_multiple_currencies %}
+                    <!-- CURRENCIES -->
+                    {% include 'snippets/widget-currencies-switcher.html' %}
+                {% endif %}
+                {% endcomment %}
+
+                <div class="header_currency" style="padding:0 15px;"></div>
+
+                <!-- HEADER CART -->
+                <div class="header_cart">
+                    <a href="{% url 'pcart_cart:cart' %}">
+                        <i class="fa fa-shopping-cart"></i><b>{% trans "Shopping cart" %}:</b>
+                        <span class="cart-total-items"><span class="count">0</span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</header>
+
+<!-- MEGAMENU -->
+{% include 'snippets/widget-megamenu.html' %}
+
+<!-- BREADCRUMBS -->
+{% block breadcrumb %}{% show_breadcrumb %}{% endblock %}
+
+{% block showcase %}{% endblock %}
+<div id="main" role="main">
+    <div class="container">
+        {% block base_content %}
+        <div class="row">
+            <div class="main_content {% block main_content_classes %}col-sm-9 {% if settings.sidebar_toggle == 'sidebar_toggle_left' %}col-sm-push-3{% endif %}{% endblock %}">
+                {% block content %}{% endblock %}
+            </div>
+
+            {% block sidebar_container %}
+            <div class="sidebar col-sm-3 {% if settings.sidebar_toggle == 'sidebar_toggle_left' %}sidebar_left col-sm-pull-9{% else %}sidebar_right{% endif %}">
+                {% block sidebar %}{% endblock %}
+            </div>
+            {% endblock sidebar_container %}
+        </div>
+        {% endblock base_content %}
+    </div>
+</div>
+{% block extra_content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer>
+    <div class="container">
+        {% static_placeholder "footer" %}
+    </div>
+
+    <div class="copyright">
+        <div class="container">
+            <p role="contentinfo">&copy; {% now "Y" %} {{ site.name }}. {% trans "All Rights Reserved." %} {% if settings.show_copyright %}{% trans "Developed by <a href='https://the7bits.com'>The7bits</a>." %}{% endif %} {{ powered_by_link }}.</p>
+        </div>
+    </div>
+</footer>
+
+</div><!-- / #wrapper2 -->
+</div><!-- / #wrapper1 -->
+
+<a id="back_top" title="{% trans "Back to top" %}" href="#"><i class="fa fa-angle-up"></i></a>
+
+<div class="cart_popup"></div>
+
+<!-- JS -->
+{% include '_js_footer.html' %}
+<script src="{% static 'vendor/nouislider/nouislider.min.js' %}"></script>
+<script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'js/pcart.js' %}"></script>
+<script src="{% static 'js/scripts.custom.js' %}"></script>
+{% render_block "js" %}
+{% block extra_js %}{% endblock %}
+</body>
+</html>
