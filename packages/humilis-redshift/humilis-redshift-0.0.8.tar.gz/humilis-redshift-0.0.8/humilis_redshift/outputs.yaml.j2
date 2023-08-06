@@ -1,0 +1,46 @@
+---
+outputs:
+    RedshiftIamRoleArn:
+        Description: The IAM role associate to the Redshift cluster
+        Value:
+            "Fn::GetAtt":
+                - RedshiftIamRole
+                - Arn
+
+    DbName:
+        Description: The name of the database
+        Value: {{db_name}}
+
+    MasterUsername:
+        Description: The master user name 
+        Value: {{master_username}}
+
+    MasterUserPassword:
+        Description: The KMS-encrypted base64-encoded master user password
+        Value: {{master_user_password}}
+ 
+    ClusterEndpointAddress:
+        Description: The address of the cluster endpoint.
+        Value:
+            "Fn::GetAtt":
+                - RedshiftCluster
+                - "Endpoint.Address"
+
+    ClusterEndpointPort:
+        Description: The port of the cluster endpoint.
+        Value:
+            "Fn::GetAtt":
+                - RedshiftCluster
+                - "Endpoint.Port"
+
+    {% if domain %}
+    DnsName:
+        Description:
+            The pretty DNS name of the cluster.
+        Value:
+            {% if subdomain %}
+            "{{subdomain}}.{{domain}}"
+            {% else %}
+            "{{context.environment.name}}-{{context.stage.lower()}}-{{context.layer.name}}.{{domain}}"
+            {% endif %}
+    {% endif %}
