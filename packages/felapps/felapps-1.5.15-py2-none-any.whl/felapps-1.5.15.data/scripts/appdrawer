@@ -1,0 +1,10 @@
+#!python
+# -*- coding: utf-8 -*-
+
+#
+# simple script to call appdrawer app
+# 2015-10-08
+#
+
+import felapps
+felapps.appdrawer.run(maximize=False, logon=False, debug=False, icon_set='short')
