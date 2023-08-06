@@ -1,0 +1,67 @@
+<html py:extends="master.xhtml" py:strip="True">
+<head py:block="head" py:strip="True">
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" py:if="False"/>
+    <title py:block="master_title">TGAppPermissions</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/_pluggable/tgapppermissions/css/style.css')}" />
+</head>
+
+<body py:block="body" py:strip="True">
+    <div class="row">
+        <div class="col-md-3 col-xs-12 col-md-offset-10">
+            <a href="${tg.url(mount_point)}" class="btn btn-primary"
+               py:if="h.tgapppermissions.predicates.has_permission('tgapppermissions-admin')">Permissions</a>
+        </div>
+    </div>
+    <div class="tgapppermissions-list">
+        <div class="row" style="overflow-wrap: break-word; margin-bottom: 10px">
+            <p class="pagelist">
+              ${tmpl_context.paginators.users.pager()}
+            </p>
+            <form method="GET" action="${tg.url(mount_point + '/users')}" class="form-inline">
+                <select name="search_by" id="search_by" class="form-control">
+                    <option id="user_name" value="user_name">User Name</option>
+                    <option id="display_name" value="display_name">Display Name</option>
+                    <option id="email_address" value="email_address">Email</option>
+                    <script py:if="search_by">
+                      document.getElementById("search_by")
+                        .namedItem("${search_by}").selected = true;
+                    </script>
+                </select>
+                <input name="search_value" class="form-control" style="width: auto" value="${search_value}"/>
+                <input type="submit" value="Search" class="btn btn-primary"/>
+            </form>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Display Name</th>
+                        <th>User Name</th>
+                        <th>Email</th>
+                        <th py:for="g in h.tgapppermissions.query_groups()">
+                          ${g[1]}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr py:for="u in users">
+                        <td>${u.display_name}</td>
+                        <td>${u.user_name}</td>
+                        <td>${u.email_address}</td>
+                        <td py:for="g in h.tgapppermissions.query_groups()">
+                          <form method="post" action="${h.plug_url('tgapppermissions', '/toggle_group')}">
+                            <input type="hidden" name="group" value="${g[0]}"/>
+                            <input type="hidden" name="user" value="${h.tgapppermissions.instance_primary_key(u)}"/>
+                            <button class="btn btn-danger"
+                                   py:if="g[0] in [h.tgapppermissions.instance_primary_key(gr) for gr in u.groups]"
+                                   onclick="return confirm('Are you sure?');">remove</button>
+                            <button class="btn btn-success"
+                                   py:if="g[0] not in [h.tgapppermissions.instance_primary_key(gr) for gr in u.groups]"
+                                    onclick="return confirm('Are you sure?');">assign</button>
+                          </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
