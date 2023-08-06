@@ -1,0 +1,190 @@
+<HTML>
+<HEAD>
+<TITLE>pyFltk - Python module for the FLTK GUI toolkit.</TITLE>
+<LINK REV="made" HREF="mailto:root@porky.redhat.com">
+</HEAD>
+
+<BODY>
+
+<P>
+<H1>pyFLTK - Python Module for the FLTK GUI Toolkit</H1>
+<P>
+<HR>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<UL>
+
+		<LI><A HREF="#What_s_in_this_document_">What's in this document?</A>
+		<LI><A HREF="#Using_pyFltk">Using pyFltk</A>
+		<LI><A HREF="#Using_callbacks">Using callbacks</A>
+		<LI><A HREF="#interactive">Interactive usage</A>
+	</UL>
+
+	<LI><A HREF="#EXAMPLES">EXAMPLES</A>
+	<LI><A HREF="#ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</A>
+	<LI><A HREF="#AUTHORS">AUTHORS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+pyFltk - Python module for the FLTK GUI toolkit.
+
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+FLTK
+
+<P>
+FLTK is a toolkit for creating GUI applications for UNIX/X11, MS
+Windows and Mac. This module allows you to write programs with this
+toolkit in Python without the fuss of C++. FLTK was created by Bill Spitzak and can be found
+on the web at <A HREF="http://www.fltk.org">http://www.fltk.org</A>.
+
+<P>
+<HR>
+<H2><A NAME="What_s_in_this_document_">What's in this document?</A></H2>
+<P>
+This document will not cover all the details on using the FLTK toolkit. For
+complete instructions on the FLTK API consult the manual that comes with
+the source code or see the latest manual on the FLTK website. This document
+will cover the differences in using pyFLTK and provide some examples.
+
+<P>
+<HR>
+<H2><A NAME="Using_pyFltk">Using pyFltk</A></H2>
+<P>
+The Python syntax for FLTK is very similar to using it in C++. To declare a
+new window, simply use:
+
+<P>
+<PRE>        window = Fl_Window( width, height, label)
+</PRE>
+<P> As FLTK takes posession of all the widgets that are created, the
+Python garbage collector will attempt to delete widgets that have
+already been deleted by FLTK, or vice-a-versa. To avoid this, 
+<CODE>thisown</CODE> is internally set to 0 for every created widget.
+If it is necessary to explicitly delete a window, then <CODE>thisown</CODE>
+has to be set to 1, prior to deleting.
+<P>
+All widgets are declared in a similar manner. After a new window or group
+is declared all widgets declared after it will be inserted into it until
+the <CODE>end()</CODE> member function is called. This is the same as using the C++ API, so
+consult the FLTK documentation for further info.
+
+<P>
+<HR>
+<H2><A NAME="Using_callbacks">Using callbacks</A></H2>
+<P>
+Callbacks do the work of your program. To get a widget to respond to events
+sent to it you must assign a callback function to it. This is done using
+the
+<CODE>callback(sub-name, data)</CODE> function:
+
+<P>
+<PRE>        
+        def button_cb(ptr, data):
+	    btn = castWidget2Button(ptr)
+            # do something
+
+	.
+        .
+        .
+        button = Fl_Button(10, 10, 40, 20, &quot;Button&quot;)
+        button.callback(button_cb, "I am a button")
+        .
+        .
+        .
+
+</PRE>
+<P>
+Note the cast in the callback function. This corresponds and indeed
+wraps a C++ dynamic cast and allows to access the actual type of the widget.
+In case that the proper type cast is not avaliable or that such a construct is deemed unpythonic, global identifiers should be used instead.
+
+<P>
+<HR>
+<H2><A NAME="interactive">Interactive usage</A></H2>
+<P>
+
+(Courtesy of Michiel de Hoon)<br>
+Interactive behavior is particularly useful for rapid development of
+GUIs, for beginning users of pyFltk, as well as for scientific
+visualization.<br>
+
+As an example, the following will work:<br>
+<PRE>
+        > python
+        >>> from fltk import *
+        >>> window = Fl_Window(300,300)
+        >>> window.end()
+        >>> window.show()
+        # Window pops up here
+        >>> window.label("My new title")
+        # Window label changes immediately
+        >>> window.color(FL_RED)
+        >>> window.redraw()
+        # Window color changes to red immediately
+</PRE>
+
+... and so on, all without calling Fl.run().
+
+
+<P>
+<HR>
+<H1><A NAME="EXAMPLES">EXAMPLES</A></H1>
+<P>
+Here's some quick example scripts to get you going, starting with the
+ubiquitous Hello World:
+
+<P>
+<PRE>        from fltk import *
+        import sys
+</PRE>
+<P>
+<PRE>        def btn_cb(ptr):
+            sys.exit(0)
+
+        window = Fl_Window(200, 90, &quot;hello.py&quot;)
+        button = Fl_Button(9, 20, 180, 50, &quot;Hello World&quot;)
+        button.callback(&quot;btn_cb&quot;)
+        window.end()
+        window.show()
+</PRE>
+<P>
+<PRE>        Fl.run() #starts the event loop
+</PRE>
+<P>
+<HR>
+<H1><A NAME="ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</A></H1>
+<P>
+<PRE>        Bill Spitzak &lt;spitzak@cinenet.net&gt; FLTK Author
+        Micheal Sweet &lt;mike@easysw.com&gt; FLTK Maintainer
+	Kevin Dahlhausen &lt;morse@harborcom.net&gt; Originator of pyFltk
+	Matt Kennedy &lt;mkennedy@odysseys.net&gt; Originator of Perl FLTK module
+</PRE>
+<P>
+<HR>
+<H1><A NAME="AUTHORS">AUTHORS</A></H1>
+<P>
+<PRE>        Andreas Held &lt;a.held@computer.org&gt; Python FLTK module
+</PRE>
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<PRE>        The FLTK Manual. Available at <A HREF="http://www.fltk.org">http://www.fltk.org</A>
+        pyFltk homepage at <A HREF="http://pyfltk.sourceforge.com">http://pyfltk.sourceforge.com</A>
+</PRE>
+</BODY>
+
+</HTML>

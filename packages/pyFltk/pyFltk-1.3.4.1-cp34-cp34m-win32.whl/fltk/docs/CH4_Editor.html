@@ -1,0 +1,784 @@
+<HTML>
+<BODY>
+
+<H1 ALIGN="RIGHT"><A NAME="editor">4 - Designing a Simple Text Editor</A></H1>
+
+<P>This chapter takes you through the design of a simple
+pyFLTK-based text editor.
+
+<H2>Determining the Goals of the Text Editor</H2>
+
+<P>Since this will be the first big project you'll be doing with pyFLTK,
+lets define what we want our text editor to do:
+
+<OL>
+
+	<LI>Provide a menubar/menus for all functions.</LI>
+	<LI>Edit a single text file, possibly with multiple views.</LI>
+	<LI>Load from a file.</LI>
+	<LI>Save to a file.</LI>
+	<LI>Cut/copy/delete/paste functions.</LI>
+	<LI>Search and replace functions.</LI>
+	<LI>Keep track of when the file has been changed.</LI>
+
+</OL>
+
+<!-- NEED 4in -->
+
+<H2>Designing the Main Window</H2>
+
+<P>Now that we've outlined the goals for our editor, we can begin with
+the design of our GUI. Obviously the first thing that we need is a
+window, which we'll place inside a class called <TT>EditorWindow</TT>:
+
+<UL><PRE>
+class EditorWindow(Fl_Double_Window):
+    search = ""
+    def __init__(self, w, h, label):
+        Fl_Double_Window.__init__(self, w, h, label)
+</PRE></UL>
+
+<H2>Variables</H2>
+
+<P>Our text editor will need some global variables to keep track of
+things:
+
+<UL><PRE>
+changed = False
+filename = ""
+title = ""
+textbuf = None
+editor = None
+</PRE></UL>
+
+<P>The <TT>textbuf</TT> variable is the text editor buffer for
+our window class described previously. We'll cover the other
+variables as we build the application.</P>
+
+<H2>Menubars and Menus</H2>
+
+<P>The first goal requires us to use a menubar and menus that
+define each function the editor needs to perform. The <A
+href="fltk.html#Fl_Menu_Item"><TT>Fl_Menu_Item</TT></A> structure is
+used to define the menus and items in a menubar:</P>
+
+<UL><PRE>
+menuitems = (( "&File",              0, 0, 0, FL_SUBMENU ),
+    ( "&New File",        0, new_cb ),
+    ( "&Open File...",    FL_CTRL + ord('o'), open_cb ),
+    ( "&Insert File...",  FL_CTRL + ord('i'), insert_cb, 0, FL_MENU_DIVIDER ),
+    ( "&Save File",       FL_CTRL + ord('s'), save_cb ),
+    ( "Save File &As...", FL_CTRL + FL_SHIFT + ord('s'), saveas_cb, 0, FL_MENU_DIVIDER ),
+    ( "New &View", FL_ALT + ord('v'), view_cb, 0 ),
+    ( "&Close View", FL_CTRL + ord('w'), close_cb, 0, FL_MENU_DIVIDER ),
+    ( "E&xit", FL_CTRL + ord('q'), quit_cb, 0 ),
+    ( None, 0 ),
+
+  ( "&Edit", 0, 0, 0, FL_SUBMENU ),
+    ( "Cu&t",        FL_CTRL + ord('x'), cut_cb ),
+    ( "&Copy",       FL_CTRL + ord('c'), copy_cb ),
+    ( "&Paste",      FL_CTRL + ord('v'), paste_cb ),
+    ( "&Delete",     0, delete_cb ),
+    ( None, 0 ),
+
+  ( "&Search", 0, 0, 0, FL_SUBMENU ),
+    ( "&Find...",       FL_CTRL + ord('f'), find_cb ),
+    ( "F&ind Again",    FL_CTRL + ord('g'), find2_cb ),
+    ( "&Replace...",    FL_CTRL + ord('r'), replace_cb ),
+    ( "Re&place Again", FL_CTRL + ord('t'), replace2_cb ),
+    ( None, 0 ),
+
+  ( None, 0 )
+)
+</PRE></UL>
+
+<P>Once we have the menus defined we can create the
+<TT>Fl_Menu_Bar</TT> widget and assign the menus to it with:</P>
+
+<UL><PRE>
+m = Fl_Menu_Bar(0, 0, 660, 30);
+m.copy(menuitems)
+</PRE></UL>
+
+<P>We'll define the callback functions later.
+
+<H2>Editing the Text</H2>
+
+<P>To keep things simple our text editor will use the
+<A HREF="fltk.html#Fl_Text_Editor"><TT>Fl_Text_Editor</TT></A>
+widget to edit the text:
+
+<UL><PRE>
+w.editor = Fl_Text_Editor(0, 30, 660, 370)
+w.editor.buffer(textbuf)
+</PRE></UL>
+
+<P>So that we can keep track of changes to the file, we also want to add
+a &quot;modify&quot; callback:</P>
+
+<UL><PRE>
+textbuf.add_modify_callback(changed_cb, w)
+textbuf.call_modify_callbacks()
+</PRE></UL>
+
+<P>Finally, we want to use a mono-spaced font like <TT>FL_COURIER</TT>:
+
+<UL><PRE>
+w.editor.textfont(FL_COURIER)
+</PRE></UL>
+
+<H2>The Replace Dialog</H2>
+
+<P>We can use the pyFLTK convenience functions for many of the
+editor's dialogs, however the replace dialog needs its own
+custom window.  To keep things simple we will have a
+&quot;find&quot; string, a &quot;replace&quot; string, and
+&quot;replace all&quot;, &quot;replace next&quot;, and
+&quot;cancel&quot; buttons.  The strings are just
+<TT>Fl_Input</TT> widgets, the &quot;replace all&quot; and
+&quot;cancel&quot; buttons are <TT>Fl_Button</TT> widgets, and
+the &quot;replace next &quot; button is a
+<TT>Fl_Return_Button</TT> widget:</P>
+
+<P ALIGN="CENTER"><IMG src="editor-replace.jpg" ALT="The search and replace dialog."><BR>
+<I>Figure 4-1: The search and replace dialog.</I></P>
+
+<UL><PRE>
+self.replace_dlg = Fl_Window(300, 105, "Replace")
+self.replace_find = Fl_Input(80, 10, 210, 25, "Find:")
+self.replace_with = Fl_Input(80, 40, 210, 25, "Replace:")
+self.replace_all = Fl_Button(10, 70, 90, 25, "Replace All")
+self.replace_next = Fl_Return_Button(105, 70, 120, 25, "Replace Next")
+self.replace_cancel = Fl_Button(230, 70, 60, 25, "Cancel")
+</PRE></UL>
+
+<H2>Callbacks</H2>
+
+<P>Now that we've defined the GUI components of our editor, we
+need to define our callback functions.</P>
+
+<H3>changed_cb()</H3>
+
+<P>This function will be called whenever the user changes any text in the
+<TT>editor</TT> widget:
+
+<UL><PRE>
+def changed_cb(i1, nInserted, nDeleted, i2, c1, editor):
+    global changed, loading
+    if (nInserted != 0 or nDeleted != 0) and loading == False:
+        changed = True
+    set_title(editor);
+    if loading:
+        editor.editor.show_insert_position()
+</PRE></UL>
+
+<P>The <TT>set_title()</TT> function is one that we will write to set
+the changed status on the current file.  We're doing it this way
+because we want to show the changed status in the window's
+title bar.
+
+<H3>copy_cb()</H3>
+
+<P>This callback function will call <A
+href="fltk.html#Fl_Text_Editor-kf_copy"><TT>kf_copy()</TT></A>
+to copy the currently selected text to the clipboard:</P>
+
+<UL><PRE>
+def copy_cb(widget):
+    global editor
+    Fl_Text_Editor.kf_copy(0, editor.editor)
+</PRE></UL>
+
+<H3>cut_cb()</H3>
+
+<P>This callback function will call <A
+href="fltk.html#Fl_Text_Editor-kf_cut"><TT>kf_cut()</TT></A>
+to cut the currently selected text to the clipboard:</P>
+
+<UL><PRE>
+def cut_cb(widget):
+    global editor
+    Fl_Text_Editor.kf_cut(0, editor.editor)
+</PRE></UL>
+
+<H3>delete_cb()</H3>
+
+<P>This callback function will call <A
+href="fltk.html#Fl_Text_Buffer-remove_selection"><TT>remove_selection()</TT></A>
+to delete the currently selected text to the clipboard:</P>
+
+<UL><PRE>
+def delete_cb(widget):
+    global textbuf
+    textbuf.remove_selection()
+</PRE></UL>
+
+<H3>find_cb()</H3>
+
+<P>This callback function asks for a search string using the <A
+href="fltk.html#-fl_input2"><TT>fl_input()</TT></A>
+convenience function and then calls the <TT>find2_cb()</TT>
+function to find the string:
+
+<UL><PRE>
+def find_cb(widget):
+    global editor
+    val = fl_input("Search String:", editor.search)
+    if val != None:
+        # User entered a string - go find it!
+        editor.search = val
+        find2_cb(widget)
+</PRE></UL>
+
+<H3>find2_cb()</H3>
+
+<P>This function will find the next occurrence of the search
+string. If the search string is blank then we want to pop up the
+search dialog:
+
+<UL><PRE>
+def find2_cb(widget):
+    global editor
+    if editor.search[0] == 0:
+        # Search string is blank; get a new one...
+        find_cb(widget, editor)
+        return
+
+    pos = editor.editor.insert_position();
+    (found, pos) = textbuf.search_forward(pos, editor.search);
+    if found!= 0:
+        # Found a match; select and update the position...
+        textbuf.select(pos, pos+len(editor.search))
+        editor.editor.insert_position(pos+len(editor.search))
+        editor.editor.show_insert_position()
+    else:
+        fl_alert("No occurrences of %s found!"%editor.search)
+</PRE></UL>
+
+<P>If the search string cannot be found we use the <A
+href="fltk.html#-fl_alert"><TT>fl_alert()</TT></A>
+convenience function to display a message to that effect.
+
+<H3>new_cb()</H3>
+<P>This callback function will clear the editor widget and current
+filename. It also calls the <TT>check_save()</TT> function to give the
+user the opportunity to save the current file first as needed:
+
+<UL><PRE>
+def new_cb(widget):
+    global filename, changed
+    if check_save() == 0:
+        return
+    filename = ""
+    textbuf.select(0, textbuf.length())
+    textbuf.remove_selection()
+    changed = False
+    textbuf.call_modify_callbacks()
+</PRE></UL>
+
+<H3>open_cb()</H3>
+
+<P>This callback function will ask the user for a filename and then load
+the specified file into the input widget and current filename. It also
+calls the <TT>check_save()</TT> function to give the user the
+opportunity to save the current file first as needed:
+
+<UL><PRE>
+def open_cb(widget):
+    global filename
+    if check_save() == 0:
+        return
+    newfile = fl_file_chooser("Open File?", "*", filename)
+    if newfile != None:
+        load_file(newfile, -1)
+</PRE></UL>
+
+<P>We call the <TT>load_file()</TT> function to actually load the file.
+
+<H3>paste_cb()</H3>
+
+<P>This callback function will call <A
+href="fltk.html#Fl_Text_Editor-kf_paste"><TT>kf_paste()</TT></A>
+to paste the clipboard at the current position:</P>
+
+<UL><PRE>
+def paste_cb(widget):
+    global editor
+    Fl_Text_Editor.kf_paste(0, editor.editor)
+</PRE></UL>
+
+<H3>quit_cb()</H3>
+
+<P>The quit callback will first see if the current file has been
+modified, and if so give the user a chance to save it. It then exits
+from the program:
+
+<UL><PRE>
+def quit_cb(widget, data):
+    global changed
+    if changed and check_save() == 0:
+        return
+    sys.exit(0)
+</PRE></UL>
+
+<H3>replace_cb()</H3>
+
+<P>The replace callback just shows the replace dialog:
+
+<UL><PRE>
+def replace_cb(widget):
+    global editor
+    editor.replace_dlg.show()
+</PRE></UL>
+
+<H3>replace2_cb()</H3>
+
+<P>This callback will replace the next occurence of the replacement
+string. If nothing has been entered for the replacement string, then
+the replace dialog is displayed instead:
+
+<UL><PRE>
+def replace2_cb(widget):
+    global editor
+    find = editor.replace_find.value()
+    replace = editor.replace_with.value()
+
+    if len(find) == 0:
+        editor.replace_dlg.show()
+        return
+
+    editor.replace_dlg.hide()
+
+    pos = editor.editor.insert_position()
+    (found, pos) = textbuf.search_forward(pos, find)
+
+    if found != 0:
+        # Found a match; update the position and replace text...
+        textbuf.select(pos, pos+len(find))
+        textbuf.remove_selection()
+        textbuf.insert(pos, replace)
+        textbuf.select(pos, pos+len(replace))
+        editor.editor.insert_position(pos+len(replace))
+        editor.editor.show_insert_position()
+    else:
+        fl_alert("No occurrences of %s found!"%find)
+</PRE></UL>
+
+<H3>replall_cb()</H3>
+
+<P>This callback will replace all occurences of the search
+string in the file:
+
+<UL><PRE>
+def replall_cb(widget):
+    global editor
+    find = editor.replace_find.value()
+    replace = editor.replace_with.value()
+
+    if len(find) == 0:
+        editor.replace_dlg.show()
+        return
+
+    editor.replace_dlg.hide()
+    editor.editor.insert_position(0)
+    times = 0
+
+    found = 1
+    while found != 0:
+        pos = editor.editor.insert_position()
+        (found, pos) = textbuf.search_forward(pos, find)
+        
+        if found != 0:
+            # Found a match; update the position and replace text...
+            textbuf.select(pos, pos+len(find))
+            textbuf.remove_selection()
+            textbuf.insert(pos, replace)
+            editor.editor.insert_position(pos+len(replace))
+            editor.editor.show_insert_position()
+            times += 1
+
+    if times > 0:
+        fl_message("Replaced %d occurrences."%times)
+    else:
+        fl_alert("No occurrences of %s found!"%find)
+</PRE></UL>
+
+<H3>replcan_cb()</H3>
+
+<P>This callback just hides the replace dialog:
+
+<UL><PRE>
+def replcan_cb(widget):
+    global editor
+    editor.replace_dlg.hide()
+</PRE></UL>
+
+<H3>save_cb()</H3>
+
+<P>This callback saves the current file.  If the current filename is
+blank it calls the &quot;save as&quot; callback:
+
+<UL><PRE>
+def save_cb(widget):
+    global filename
+    if len(filename) == 0:
+        # No filename - get one!
+        saveas_cb()
+        return
+    else:
+        save_file(filename)
+</PRE></UL>
+
+<P>The <TT>save_file()</TT> function saves the current file to the
+specified filename.
+
+<H3>saveas_cb()</H3>
+
+<P>This callback asks the user for a filename and saves the current file:
+
+<UL><PRE>
+def saveas_cb(widget, data):
+    global filename
+    newfile = fl_file_chooser("Save File As?", "*", filename)
+    if newfile != None:
+        save_file(newfile)
+</PRE></UL>
+
+<P>The <TT>save_file()</TT> function saves the current file to the
+specified filename.
+
+<H2>Other Functions</H2>
+
+<P>Now that we've defined the callback functions, we need our support
+functions to make it all work:
+
+<H3>check_save()</H3>
+
+<P>This function checks to see if the current file needs to be saved.  If
+so, it asks the user if they want to save it:
+
+<UL><PRE>
+def check_save():
+    global changed
+    if not changed:
+        return
+
+    r = fl_choice("The current file has not been saved.\n"
+                    "Would you like to save it now?",
+                    "Cancel", "Save", "Don't Save")
+
+    if r == 1:
+        save_cb()
+        return not changed
+
+    if r == 2:
+        return 1
+    else:
+        return 0
+}
+</PRE></UL>
+
+<H3>load_file()</H3>
+
+<P>This function loads the specified file into the <TT>textbuf</TT> class:
+
+<UL><PRE>
+loading = False
+def load_file(newfile, ipos):
+    global changed, loading, filename
+    loading = True
+    if ipos != -1:
+        insert = 1
+        changed = True
+    else:
+        insert = 0
+        changed = False
+    if insert == 0:
+        filename = ""
+        r = textbuf.loadfile(newfile)
+    else:
+        r = textbuf.insertfile(newfile, ipos)
+    if r != 0:
+        fl_alert("Error reading from file %s."%newfile)
+    else:
+        if insert == 0:
+            filename = newfile
+    loading = False
+    textbuf.call_modify_callbacks()
+</PRE></UL>
+
+<P>When loading the file we use the <A
+href="fltk.html#Fl_Text_Buffer-loadfile"><TT>loadfile()</TT></A>
+method to &quot;replace&quot; the text in the buffer, or the <A
+href="fltk.html#Fl_Text_Buffer-insertfile"><TT>insertfile()</TT></A>
+method to insert text in the buffer from the named file.
+
+<H3>save_file()</H3>
+
+<P>This function saves the current buffer to the specified file:
+
+<UL><PRE>
+def save_file(newfile):
+    global changed, filename
+    if textbuf.savefile(newfile) != 0:
+        fl_alert("Error writing to file %s."%newfile)
+    else:
+        filename = newfile
+    changed = False
+    textbuf.call_modify_callbacks()
+</PRE></UL>
+
+<H3>set_title()</H3>
+
+<P>This function checks the <TT>changed</TT> variable and updates the
+window label accordingly:
+<UL><PRE>
+def set_title(win):
+    global filename, title
+    if len(filename) == 0:
+        title = "Untitled"
+    else:
+        title = os.path.basename(filename)
+    if changed:
+        title = title+" (modified)"
+    win.label(title)
+</PRE></UL>
+
+<H2>The main code</H2>
+
+<P>Once we've created all of the support functions, the only thing left
+is to tie them all together. What remains is to create a new text buffer, create a
+new view (window) for the text, show the window, load the file on
+the command-line (if any), and then enter the FLTK event loop:
+
+<UL><PRE>
+textbuf = Fl_Text_Buffer()
+style_init()
+
+window = new_view()
+window.show(1, sys.argv)
+
+if len(sys.argv) > 1:
+    load_file(sys.argv[1], -1)
+
+Fl.run()
+</PRE></UL>
+
+<H2>Running the Editor</H2>
+
+<P>The complete source for our text editor can be found in the <TT>test/editor.py</TT> source file.  You can run the program as:
+
+<UL><PRE>
+python editor.py
+</PRE></UL>
+
+<P>Congratulations, you've just built your own text editor!</P>
+
+<H2>The Final Product</H2>
+
+The final editor window should look like the image in Figure 4-2.
+
+<P ALIGN="CENTER"><IMG src="editor.jpg" ALT="The completed editor window."><BR>
+<I>Figure 4-2: The completed editor window</I></P>
+
+<H2>Advanced Features</H2>
+
+<P>Now that we've implemented the basic functionality, it is
+time to show off some of the advanced features of the
+<CODE>Fl_Text_Editor</CODE> widget.
+
+<H3>Syntax Highlighting</H3>
+
+<P>The <CODE>Fl_Text_Editor</CODE> widget supports highlighting
+of text with different fonts, colors, and sizes. The
+implementation is based on the excellent <A
+HREF="http://www.nedit.org/">NEdit</A> text editor core, which
+uses a parallel "style" buffer which tracks the font, color, and
+size of the text that is drawn.
+
+<P>Styles are defined using Python arrays of the form:
+<CODE>Fl_Text_Display::Style_Table_Entry</CODE> structure
+defined in <CODE>&lt;FL/Fl_Text_Display.H></CODE>:
+
+<UL><PRE>
+[[color, font, size], ...]
+</PRE></UL>
+
+<P>The <CODE>color</CODE> member sets the color for the text,
+the <CODE>font</CODE> member sets the FLTK font index to use,
+and the <CODE>size</CODE> member sets the pixel size of the
+text. The <CODE>attr</CODE> member is currently not used.
+
+<P>For our text editor we'll define 7 styles for plain code,
+comments, keywords, and preprocessor directives:
+
+<UL><PRE>
+styletable = [ # Style table
+    [ FL_BLACK,      FL_COURIER,        14 ], # A - Plain
+    [ FL_DARK_GREEN, FL_COURIER_ITALIC, 14 ], # B - Line comments
+    [ FL_DARK_GREEN, FL_COURIER_ITALIC, 14 ], # C - Block comments
+    [ FL_BLUE,       FL_COURIER,        14 ], # D - Strings
+    [ FL_DARK_RED,   FL_COURIER,        14 ], # E - Directives
+    [ FL_DARK_RED,   FL_COURIER_BOLD,   14 ], # F - Types
+    [ FL_BLUE,       FL_COURIER_BOLD,   14 ]  # G - Keywords
+]
+</PRE></UL>
+
+<P>You'll notice that the comments show a letter next to each
+style - each style in the style buffer is referenced using a
+character starting with the letter 'A'.
+
+<P>You call the <CODE>highlight_data()</CODE> method to associate the
+style data and buffer with the text editor widget:
+
+<UL><PRE>
+w.editor.highlight_data(stylebuf, styletable,
+                              len(styletable),
+			      'A', style_unfinished_cb, None)
+</PRE></UL>
+
+<P>Finally, you need to add a callback to the main text buffer so
+that changes to the text buffer are mirrored in the style buffer:
+
+<UL><PRE>
+textbuf.add_modify_callback(style_update, w.editor)
+</PRE></UL>
+
+<P>The <CODE>style_update()</CODE> function, like the <CODE>change_cb()</CODE>
+function described earlier, is called whenever text is added or removed from
+the text buffer. It mirrors the changes in the style buffer and then updates
+the style data as necessary:
+
+<UL><PRE>
+#
+# 'style_update()' - Update the style buffer...
+#
+def style_update(pos, nInserted, nDeleted, nRestyled, deletedText, e):
+    global stylebuf, editor
+
+    if nInserted == 0 and nDeleted == 0:
+        stylebuf.unselect()
+    else:
+        if nInserted > 0:
+            style = 'A'*nInserted
+            stylebuf.replace(pos, pos+nDeleted, style)
+        else:
+            # Just delete characters in the style buffer...
+            stylebuf.remove(pos, pos+nDeleted)
+
+        # Select the area that was just updated to avoid unnecessary
+        # callbacks...
+        stylebuf.select(pos, pos + nInserted - nDeleted)
+        # Re-parse the changed region; we do this by parsing from the
+        # beginning of the previous line of the changed region to the end of
+        # the line of the changed region...  Then we check the last
+        # style character and keep updating if we have a multi-line
+        # comment character...
+        start = textbuf.line_start(pos)
+        end   = textbuf.line_end(pos + nInserted)
+        text  = textbuf.text_range(start, end)
+        style = stylebuf.text_range(start, end)
+
+        if start==end:
+            last = 0
+        else:
+            last  = style[end - start - 1]
+
+        style = style_parse(text, style, end - start)
+        stylebuf.replace(start, end, style)
+        editor.editor.redisplay_range(start, end)
+
+        if start == end or last != style[end - start - 1]:
+            # Either the user deleted some text, or the last character 
+            # on the line changed styles, so reparse the
+            # remainder of the buffer...
+            end   = textbuf.length()
+            text  = textbuf.text_range(start, end)
+            style = stylebuf.text_range(start, end)
+
+            style_parse(text, style, end - start)
+
+            stylebuf.replace(start, end, style)
+            editor.editor.redisplay_range(start, end)
+</PRE></UL>
+
+<P>The <CODE>style_parse()</CODE> function scans a copy of the
+text in the buffer and generates the necessary style characters
+for display. It assumes that parsing begins at the start of a line:
+
+<UL><PRE>
+//
+// 'style_parse()' - Parse text and produce style data.
+//
+#
+# 'style_parse()' - Parse text and produce style data.
+#
+def style_parse(text, style, length):
+    # Style letters:
+    #
+    # A - Plain
+    # B - Line comments
+    # C - Block comments
+    # D - Strings
+    # E - Directives
+    # F - Types
+    # G - Keywords
+    col = 0
+    new_style = ""
+    isComment = False
+    isString = False
+
+    pos = 0
+    last = False
+    while pos < length:
+        current = style[pos]
+        if isComment:
+            current = 'B'
+            if text[pos] == '\n':
+                isComment = False
+        elif isString:
+            current = 'D'
+            if text[pos] == '"' or text[pos] == "'":
+                isString = False
+        elif current in ['B', 'F', 'G']:
+            current = 'A'
+
+        if current == 'A':
+            # Check for directives, comments, strings, and keywords...
+            if text[pos] == '#':
+                current = 'B'
+                isComment = True
+            elif text[pos] == '"' or text[pos] == "'":
+                current = 'D'
+                isString = True
+            elif not last and text[pos].islower() or text[pos] == '_':
+                pos1 = pos
+                while pos1 < length:
+                    if text[pos1].islower() or text[pos1] == '_':
+                        pos1 += 1
+                    else:
+                        break
+                
+                kw = text[pos:pos1]
+                if iskeyword(kw):
+                    new_style = new_style+'F'*(pos1-pos)
+                    current = 'F'
+                    if pos1 >= length:
+                        pos1 -= 1
+                    pos = pos1
+                    last = True
+        
+        last = text[pos].isalnum() or text[pos] == '_' or text[pos] == '.'
+        if text[pos] == '\n':
+            col = 0
+            if current == 'B' or current == 'E':
+                current = 'A'
+        new_style = new_style+current
+        pos += 1
+
+    return  new_style
+</PRE></UL>
+
+
+</BODY>
+</HTML>

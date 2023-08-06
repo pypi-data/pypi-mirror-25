@@ -1,0 +1,249 @@
+<HTML>
+<BODY>
+
+<H1 ALIGN="RIGHT"><A NAME="basics">2 pyFLTK Basics</A></H1>
+
+<P>This chapter teaches you the basics of writing Python scripts
+that use pyFLTK.</P>
+
+<H2>Writing Your First pyFLTK Script</H2>
+
+<P>All scripts must import fltk: <TT>from fltk import *</TT>.
+Listing 1 shows a simple &quot;Hello,
+World!&quot; program that uses pyFLTK to display the window.</P>
+
+<UL>
+<P><I>Listing 1 - &quot;hello.py&quot;</I>
+<PRE>
+from fltk import *
+import sys
+
+window = Fl_Window(300,180)
+box = Fl_Box(20,40,260,100,&quot;Hello, World!&quot;)
+box.box(FL_UP_BOX)
+box.labelsize(36)
+box.labelfont(FL_BOLD+FL_ITALIC)
+box.labeltype(FL_SHADOW_LABEL)
+window.end()
+window.show(sys.argv)
+Fl.run()
+</PRE></UL>
+
+<!-- NEED 2in -->
+
+<P>After running python hello.py, the program first creates a
+window:</P>
+
+<UL><PRE>
+window = Fl_Window(300,180)
+</PRE></UL>
+
+<P>and a box with the &quot;Hello, World!&quot; string in it:</P>
+
+<UL><PRE>
+box = Fl_Box(20,40,260,100,&quot;Hello, World!&quot;)
+</PRE></UL>
+
+<P>Next, we set the type of box and the size, font, and style of the label:</P>
+
+<UL><PRE>
+box.box(FL_UP_BOX)
+box.labelsize(36)
+box.labelfont(FL_BOLD+FL_ITALIC)
+box.labeltype(FL_SHADOW_LABEL)
+</PRE></UL>
+
+<P>Finally, we show the window and enter the FLTK event loop:</P>
+
+<UL><PRE>
+window.end()
+window.show(sys.argv)
+Fl.run()
+</PRE></UL>
+
+<P>The resulting program will display the window in Figure 2-1.
+You can quit the  program by closing the window or pressing the
+<KBD>ESC</KBD>ape key.</P>
+
+<P ALIGN="CENTER"><IMG src="Hello.jpg" alt="Hello, World! Window"><BR>
+<I>Figure 2-1: The Hello, World! Window</I></P>
+
+<H3>Creating the Widgets</H3>
+
+<P>The widgets are created using a normal Python constructor.  For
+most widgets the arguments to the constructor are:</P>
+
+<UL><PRE>
+Fl_Widget(x, y, width, height, label)
+</PRE></UL>
+
+<P>The <TT>x</TT> and <TT>y</TT> parameters determine where the
+widget or window is placed on the screen. In pyFLTK the top left
+corner of the window or screen is the origin (i.e. x = 0, y =
+0) and the units are in pixels.</P>
+
+<P>The <TT>width</TT> and <TT>height</TT> parameters determine
+the size of the widget or window in pixels. The maximum widget
+size is typically governed by the underlying window system or
+hardware.</P>
+
+<P><tt>label</tt> is a character string to label
+the widget with or <tt>None</tt>. If not specified the label
+defaults to <tt>None</tt>. The label string must keep an external reference, because pyFLTK does not increase its reference count.</P>
+
+<H3>Get/Set Methods</H3>
+
+<P><tt>box.box(FL_UP_BOX)</tt> sets the type of box the
+Fl_Box draws, changing it from the default of
+<tt>FL_NO_BOX</tt>, which means  that no box is drawn. In our
+&quot;Hello, World!&quot; example we use <TT>FL_UP_BOX</TT>,
+which means that a raised button border will be drawn around
+the widget. You can learn more about boxtypes in
+<A href="CH3_Common.html#boxtypes">Chapter 3</A>.</P>
+
+<P>You could examine the boxtype in by doing
+<tt>box.box()</tt>. pyFLTK uses method name overloading to make
+short names for get/set methods. </P>
+
+<H3>Redrawing After Changing Attributes</H3>
+
+<P>Almost all of the set/get pairs are very fast, short
+functions and thus very efficient. However, <i>the "set" methods
+do not call <TT>redraw()</TT></i> - you have to call it
+yourself. This greatly reduces code size and execution time. The
+only common exceptions are <tt>value()</tt> which calls
+<TT>redraw()</TT> and <tt>label()</tt> which calls
+<TT>redraw_label()</TT> if necessary.</P>
+
+<H3>Labels</H3>
+
+<P>All widgets support labels.  In the case of window widgets,
+the label  is used for the label in the title bar. Our example
+program calls the <A href=fltk.html#Fl_Widget-labelfont>
+<TT>labelfont</TT></A>,
+<A href=fltk.html#Fl_Widget-labelsize><TT> labelsize</TT></A>,
+and <A href=fltk.html#Fl_Widget-labeltype><TT>labeltype</TT></A>
+methods.</P>
+
+<P>The <TT>labelfont</TT> method sets the typeface and style
+that is used for the label, which for this example we are using
+<TT>FL_BOLD</TT> and <TT>FL_ITALIC</TT>. You can also specify
+typefaces directly. </P> <P>The <TT>labelsize</TT> method sets
+the height of the font in pixels. </P> <P>The <TT>labeltype</TT>
+method sets the type of label. FLTK supports normal, embossed,
+and shadowed labels internally, and more types can be added as
+desired.</P>
+
+<P>A complete list of all label options can be found in
+<A href="CH3_Common.html#labels">Chapter 3</A>.</P>
+
+<H3>Showing the Window</H3>
+
+<P>The <TT>show()</TT> method shows the widget or window. For windows
+you can also provide the command-line arguments to allow users to
+customize the appearance, size, and position of your windows.</P>
+
+<H3>The Main Event Loop</H3>
+
+<P>All pyFLTK applications (and most GUI applications in general)
+are based on a simple event processing model. User actions such
+as mouse movement, button clicks, and keyboard activity generate
+events that are sent to an application. The application may then
+ignore the events or respond to the user, typically by redrawing
+a button in the "down" position, adding the text to an input
+field, and so forth.</P>
+
+<P>pyFLTK also supports idle, timer, and file pseudo-events that
+cause a function to be called when they occur. Idle functions
+are called when no user input is present and no timers or files
+need to be handled - in short, when the application is not doing
+anything. Idle callbacks are often used to update a 3D display
+or do other background processing.</P>
+
+<P>Timer functions are called after a specific amount of time
+has expired. They can be used to pop up a progress dialog after
+a certain amount of time or do other things that need to happen
+at more-or-less regular intervals. FLTK timers are not 100%
+accurate, so they should not be used to measure time intervals,
+for example.</P>
+
+<!-- P>File functions are called when data is ready to read or
+write, or when an error condition occurs on a file. They are
+most often used to monitor network connections (sockets) for
+data-driven displays.</P -->
+
+<P>PYFLTK applications must periodically check
+(<TT>Fl.check()</TT>) or wait (<TT>Fl.wait()</TT>) for events
+or use the <A href="fltk.html#Fl-run"><TT>Fl.run()</TT></A>
+method to enter a standard event processing loop. Calling
+<TT>Fl.run()</TT> is equivalent to the following code:</P>
+
+<UL><PRE>
+while Fl.wait() > 0:
+    pass
+</PRE></UL>
+
+<P><TT>Fl.run()</TT> does not return until all of the windows
+under FLTK control are closed by the user or your program.</P>
+
+<H2>Naming</H2>
+
+<P>All public symbols in FLTK start with the characters 'F' and 'L':</P>
+
+<UL>
+
+	<LI>Functions are either <TT>Fl.foo()</TT> or
+	<TT>fl_foo()</TT>.</LI>
+
+	<LI>Class and type names are capitalized:
+	<TT>Fl_Foo</TT>.</LI>
+
+	<LI><A href="fltk.html#enumerations">Constants and
+	enumerations</A> are uppercase: <TT>FL_FOO</TT>.</LI>
+
+</UL>
+
+<!-- NEED 5in -->
+
+<H2>Import</H2>
+
+<P>The proper way to import pyFLTK is:</P>
+
+<UL><PRE>
+import fltk
+</PRE></UL>
+or 
+<UL><PRE>
+from fltk import *
+</PRE></UL>
+
+<P>
+<H2><A NAME="interactive">Interactive usage</A></H2>
+<P>
+
+(Courtesy of Michiel de Hoon)<br>
+Interactive behavior is particularly useful for rapid development of
+GUIs, for beginning users of pyFltk, as well as for scientific
+visualization.<br>
+
+As an example, the following will work:<br>
+<PRE>
+        > python
+        >>> from fltk import *
+        >>> window = Fl_Window(300,300)
+        >>> window.end()
+        >>> window.show()
+        # Window pops up here
+        >>> window.label("My new title")
+        # Window label changes immediately
+        >>> window.color(FL_RED)
+        >>> window.redraw()
+        # Window color changes to red immediately
+</PRE>
+
+... and so on, all without calling Fl.run().
+
+
+
+</BODY>
+</HTML>

@@ -1,0 +1,59 @@
+<html>
+<head>
+<title>
+How to Add New Widgets to FLTK
+</title>
+</head>
+
+<body bgcolor="#CCCCCC">
+<H1>7 Steps to New Widgets in pyFLTK</H1>
+<hr>
+<p>
+Here's a little guide on adding new widgets to pyFLTK.  It shows the basic steps and conventions we've been using. 
+<ol>
+
+<li>
+Preferrably, place the widget - its header, source and Readme file - in the <i>contrib/</i> directory. This will allow for a simple inclusion in the build of pyFltk. For a larger distribution, you can keep it intact and adjust the include paths as well (see below).
+<p>
+</li>
+
+
+<li>
+Add support to <i>setup.py</i> for the new widget. If you placed your sources in the directory <i>contrib/</i>, then you can add the source files to the list <i>UserDefinedSources</i>, at the very top of <i>setup.py</i>, in the form <i>./contrib/UserWidget1.cpp</i>. If you placed the widget somewhere else, then you will also have to extend the include path by adding the new path to the list <i>UserIncludeDirs</i>.
+<p>
+</li>
+
+<li>
+Create the SWIG interface file(s).  I've been creating a <i>swig/xxxx.i</i> file for each header file for the widget. Import the files into the swig build by adding lines to the file <i>swig/UserDefinedWidgets.i</i>, of the form <i>%include UserWidget1.i</i>.
+<p>
+</li>
+
+<li>
+Address the ownership of your new widget! If your widget is derived from Fl_Widget, then you can add the following lines to your interface file:<BR>
+<i>%include macros.i</i><BR>
+<i>CHANGE_OWNERSHIP(UserWidget1)</i>
+<p>
+</li>
+
+<li>
+By default, all widgets are wrapped using the director feature of swig. If this is not desirable for your widget, you can disable it by placing the line <i>%feature (nodirector) UserWidget1;</i> somewhere before your code.
+<p>
+</li>
+
+<li>
+You can now build your distribution by first executing <i>python MakeSwig.py</i> in the directory <i>python/</i>, followd by <i>python setup.py build</i> in the root directory. Check for compilation errors! For MinGW on Windows, you should use <i>python setup.py build -cmingw32 install</i> instead.
+<p>
+</li>
+
+<li>
+Now create a test program in <i>test/</i> and test the widget.  
+<p>
+</li>
+
+
+</ol>
+
+
+</body>
+</html>
+
