@@ -1,0 +1,314 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Consuming Tasks &#8212; huey 1.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Consumer Events" href="events.html" />
+    <link rel="prev" title="Getting Started" href="getting-started.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="events.html" title="Consumer Events"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getting-started.html" title="Getting Started"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">huey 1.3.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="consuming-tasks">
+<span id="id1"></span><h1>Consuming Tasks<a class="headerlink" href="#consuming-tasks" title="Permalink to this headline">¶</a></h1>
+<p>To run the consumer, simply point it at the &#8220;import path&#8221; to your application&#8217;s
+<a class="reference internal" href="api.html#Huey" title="Huey"><code class="xref py py-class docutils literal"><span class="pre">Huey</span></code></a> instance.  For example, here is how I run it on my blog:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>huey_consumer.py blog.main.huey --logfile<span class="o">=</span>../logs/huey.log
+</pre></div>
+</div>
+<p>The concept of the &#8220;import path&#8221; has been the source of a few questions, but its
+actually quite simple.  It is simply the dotted-path you might use if you were
+to try and import the &#8220;huey&#8221; object in the interactive interpreter:</p>
+<div class="highlight-pycon"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">blog.main</span> <span class="kn">import</span> <span class="n">huey</span>
+</pre></div>
+</div>
+<p>You may run into trouble though when &#8220;blog&#8221; is not on your python-path. To
+work around this:</p>
+<ol class="arabic simple">
+<li>Manually specify your pythonpath: <code class="docutils literal"><span class="pre">PYTHONPATH=/some/dir/:$PYTHONPATH</span> <span class="pre">huey_consumer.py</span> <span class="pre">blog.main.huey</span></code>.</li>
+<li>Run <code class="docutils literal"><span class="pre">huey_consumer.py</span></code> from the directory your config module is in.  I use
+supervisord to manage my huey process, so I set the <code class="docutils literal"><span class="pre">directory</span></code> to the root
+of my site.</li>
+<li>Create a wrapper and hack <code class="docutils literal"><span class="pre">sys.path</span></code>.</li>
+</ol>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If you plan to use <a class="reference external" href="http://supervisord.org/">supervisord</a> to manage your consumer process, be sure that you are running the consumer directly and without any intermediary shell scripts. Shell script wrappers interfere with supervisor&#8217;s ability to terminate and restart the consumer Python process. For discussion see <a class="reference external" href="https://github.com/coleifer/huey/issues/88">GitHub issue 88</a>.</p>
+</div>
+<div class="section" id="options-for-the-consumer">
+<span id="consumer-options"></span><h2>Options for the consumer<a class="headerlink" href="#options-for-the-consumer" title="Permalink to this headline">¶</a></h2>
+<p>The following table lists the options available for the consumer as well as
+their default values.</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">-l</span></code>, <code class="docutils literal"><span class="pre">--logfile</span></code></dt>
+<dd><p class="first">Path to file used for logging.  When a file is specified, by default Huey
+the logfile will grow indefinitely, so you may wish to configure a tool
+like <code class="docutils literal"><span class="pre">logrotate</span></code>.</p>
+<p>Alternatively, you can attach your own handler to <code class="docutils literal"><span class="pre">huey.consumer</span></code>.</p>
+<p class="last">The default loglevel is <code class="docutils literal"><span class="pre">INFO</span></code>.</p>
+</dd>
+<dt><code class="docutils literal"><span class="pre">-v</span></code>, <code class="docutils literal"><span class="pre">--verbose</span></code></dt>
+<dd><p class="first">Verbose logging (loglevel=DEBUG). If no logfile is specified and
+verbose is set, then the consumer will log to the console.</p>
+<p class="last"><strong>Note:</strong> due to conflicts, when using Django this option is renamed to
+use <code class="docutils literal"><span class="pre">-V</span></code>, <code class="docutils literal"><span class="pre">--huey-verbose</span></code>.</p>
+</dd>
+<dt><code class="docutils literal"><span class="pre">-q</span></code>, <code class="docutils literal"><span class="pre">--quiet</span></code></dt>
+<dd>Minimal logging, only errors and their tracebacks will be logged.</dd>
+<dt><code class="docutils literal"><span class="pre">-w</span></code>, <code class="docutils literal"><span class="pre">--workers</span></code></dt>
+<dd>Number of worker threads/processes/greenlets, the default is <code class="docutils literal"><span class="pre">1</span></code> but
+some applications may want to increase this number for greater throughput.
+Even if you have a small workload, you will typically want to increase this
+number to at least 2 just in case one worker gets tied up on a slow task.
+If you have a CPU-intensive workload, you may want to increase the number
+of workers to the number of CPU cores (or 2x CPU cores). Lastly, if you are
+using the <code class="docutils literal"><span class="pre">greenlet</span></code> worker type, you can easily run tens or hundreds of
+workers as they are extremely lightweight.</dd>
+<dt><code class="docutils literal"><span class="pre">-k</span></code>, <code class="docutils literal"><span class="pre">--worker-type</span></code></dt>
+<dd><p class="first">Choose the worker type, <code class="docutils literal"><span class="pre">thread</span></code>, <code class="docutils literal"><span class="pre">process</span></code> or <code class="docutils literal"><span class="pre">greenlet</span></code>. The default
+is <code class="docutils literal"><span class="pre">thread</span></code>.</p>
+<p>Depending on your workload, one worker type may perform better than the
+others:</p>
+<ul class="last simple">
+<li>CPU heavy loads: use &#8220;process&#8221;. Python&#8217;s global interpreter lock prevents
+multiple threads from running simultaneously, so to leverage multiple CPU
+cores (and reduce thread contention) run each worker as a separate
+process.</li>
+<li>IO heavy loads: use &#8220;greenlet&#8221;. For example, tasks that crawl websites or
+which spend a lot of time waiting to read/write to a socket, will get a
+huge boost from using the greenlet worker model. Because greenlets are so
+cheap in terms of memory, you can easily run tens or hundreds of them.</li>
+<li>Anything else: use &#8220;thread&#8221;. You get the benefits of pre-emptive
+multi-tasking without the overhead of multiple processes. A safe choice
+and the default.</li>
+</ul>
+</dd>
+<dt><code class="docutils literal"><span class="pre">-n</span></code>, <code class="docutils literal"><span class="pre">--no-periodic</span></code></dt>
+<dd>Indicate that this consumer process should <em>not</em> enqueue periodic tasks.
+If you do not plan on using the periodic task feature, feel free to use
+this option to save a few CPU cycles.</dd>
+<dt><code class="docutils literal"><span class="pre">-d</span></code>, <code class="docutils literal"><span class="pre">--delay</span></code></dt>
+<dd>When using a &#8220;polling&#8221;-type queue backend, the amount of time to wait
+between polling the backend.  Default is 0.1 seconds. For example, when the
+consumer starts up it will begin polling every 0.1 seconds. If no tasks are
+found in the queue, it will multiply the current delay (0.1) by the backoff
+parameter. When a task is received, the polling interval will reset back to
+this value.</dd>
+<dt><code class="docutils literal"><span class="pre">-m</span></code>, <code class="docutils literal"><span class="pre">--max-delay</span></code></dt>
+<dd>The maximum amount of time to wait between polling, if using weighted
+backoff.  Default is 10 seconds. If your huey consumer doesn&#8217;t see a lot of
+action, you can increase this number to reduce CPU usage and Redis traffic.</dd>
+<dt><code class="docutils literal"><span class="pre">-b</span></code>, <code class="docutils literal"><span class="pre">--backoff</span></code></dt>
+<dd><p class="first">The amount to back-off when polling for results.  Must be greater than
+one.  Default is 1.15. This parameter controls the rate at which the
+interval increases after successive attempts return no tasks. Here is how
+the defaults, 0.1 initial and 1.15 backoff, look:</p>
+<img alt="http://media.charlesleifer.com/blog/photos/p1472257818.22.png" class="last" src="http://media.charlesleifer.com/blog/photos/p1472257818.22.png" />
+</dd>
+<dt><code class="docutils literal"><span class="pre">-c</span></code>, <code class="docutils literal"><span class="pre">--health-check-interval</span></code></dt>
+<dd>This parameter specifies how often huey should check on the status of the
+workers, restarting any that died for some reason. I personally run a dozen
+or so huey consumers at any given time and have never encountered an issue
+with the workers, but I suppose anything&#8217;s possible and better safe than
+sorry.</dd>
+<dt><code class="docutils literal"><span class="pre">-C</span></code>, <code class="docutils literal"><span class="pre">--disable-health-check</span></code></dt>
+<dd>This option <strong>disables</strong> the worker health checks. Until version 1.3.0,
+huey had no concept of a &#8220;worker health check&#8221; because in my experience the
+workers simply always stayed up and responsive. But if you are using huey
+for critical tasks, you may want the insurance of having additional
+monitoring to make sure your workers stay up and running. At any rate, I
+feel comfortable saying that it&#8217;s perfectly fine to use this option and
+disable worker health checks.</dd>
+<dt><code class="docutils literal"><span class="pre">-s</span></code>, <code class="docutils literal"><span class="pre">--scheduler-interval</span></code></dt>
+<dd>The frequency with which the scheduler should run. By default this will run
+every second, but you can increase the interval to as much as 60 seconds.</dd>
+<dt><code class="docutils literal"><span class="pre">-u</span></code>, <code class="docutils literal"><span class="pre">--utc</span></code></dt>
+<dd>Indicates that the consumer should use UTC time for all tasks, crontabs
+and scheduling.  Default is True, so it is not actually necessary to use
+this option.</dd>
+<dt><code class="docutils literal"><span class="pre">--localtime</span></code></dt>
+<dd>Indicates that the consumer should use localtime for all tasks. The default
+behavior is to use UTC everywhere.</dd>
+</dl>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<p>Running the consumer with 8 threads, a logfile for errors only, and a very
+short polling interval:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>huey_consumer.py my.app.huey -l /var/log/app.huey.log -w <span class="m">8</span> -b <span class="m">1</span>.05 -m <span class="m">1</span>.0
+</pre></div>
+</div>
+<p>Running single-threaded with periodict task support disabled. Additionally,
+logging records are written to stdout.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>huey_consumer.py my.app.huey -v -n
+</pre></div>
+</div>
+<p>Using multi-processing to run 4 worker processes.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>huey_consumer.py my.app.huey -w <span class="m">4</span> -k process
+</pre></div>
+</div>
+<p>Using greenlets to run 100 workers, with no health checking and a scheduler
+granularity of 60 seconds.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>huey_consumer.py my.app.huey -w <span class="m">100</span> -k greenlet -C -s <span class="m">60</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="consumer-internals">
+<h2>Consumer Internals<a class="headerlink" href="#consumer-internals" title="Permalink to this headline">¶</a></h2>
+<p>This section will attempt to explain what happens when you call a
+<code class="docutils literal"><span class="pre">task</span></code>-decorated function in your application. To do this, we will go into
+the implementation of the consumer. The <a class="reference external" href="https://github.com/coleifer/huey/blob/master/huey/consumer.py">code for the consumer</a>
+itself is actually quite short (couple hundred lines), and I encourage you to
+check it out.</p>
+<p>The consumer is composed of three components: a master process, the scheduler,
+and the worker(s). Depending on the worker type chosen, the scheduler and
+workers will be run in their threads, processes or greenlets.</p>
+<p>These three components coordinate the receipt, scheduling, and execution of
+your tasks, respectively.</p>
+<ol class="arabic simple">
+<li>You call a function &#8211; huey has decorated it, which triggers a message being
+put into the queue (Redis by default). At this point your application
+returns immediately, returning a <a class="reference internal" href="api.html#TaskResultWrapper" title="TaskResultWrapper"><code class="xref py py-class docutils literal"><span class="pre">TaskResultWrapper</span></code></a> object.</li>
+<li>In the consumer process, the worker(s) will be listening for new messages
+and one of the workers will receive your message indicating which task to
+run, when to run it, and with what parameters.</li>
+<li>The worker looks at the message and checks to see if it can be run (i.e.,
+was this message &#8220;revoked&#8221;? Is it scheduled to actually run later?).  If it
+is revoked, the message is thrown out. If it is scheduled to run later, it
+gets added to the schedule. Otherwise, it is executed.</li>
+<li>The worker thread executes the task. If the task finishes, any results are
+published to the result store (provided you have not disabled the result
+store). If the task fails, the consumer checks to see if the task can be
+retried. Then, if the task is to be retried, the consumer checks to see if
+the task is configured to wait a number of seconds before retrying.
+Depending on the configuration, huey will either re-enqueue the task for
+execution, or tell the scheduler when to re-enqueue it based on the delay.</li>
+</ol>
+<p>While all the above is going on with the Worker(s), the Scheduler is looking at
+its schedule to see if any tasks are ready to be executed.  If a task is ready
+to run, it is enqueued and will be processed by the next available worker.</p>
+<p>If you are using the Periodic Task feature (cron), then every minute, the
+scheduler will check through the various periodic tasks to see if any should
+be run. If so, these tasks are enqueued.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">When the consumer is shut-down cleanly (SIGTERM), any workers still
+involved in the execution of a task will be interrupted mid-task.</p>
+</div>
+</div>
+<div class="section" id="events">
+<h2>Events<a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h2>
+<p>As the consumer processes tasks, it can be configured to emit events. For
+information on consumer-sent events, check out the <a class="reference internal" href="events.html#events"><span class="std std-ref">Consumer Events</span></a> documentation.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Consuming Tasks</a><ul>
+<li><a class="reference internal" href="#options-for-the-consumer">Options for the consumer</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#consumer-internals">Consumer Internals</a></li>
+<li><a class="reference internal" href="#events">Events</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getting-started.html"
+                        title="previous chapter">Getting Started</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="events.html"
+                        title="next chapter">Consumer Events</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/consumer.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="events.html" title="Consumer Events"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getting-started.html" title="Getting Started"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">huey 1.3.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013, charles leifer.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.5.
+    </div>
+  </body>
+</html>

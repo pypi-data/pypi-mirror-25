@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Consumer Events &#8212; huey 1.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Understanding how tasks are imported" href="imports.html" />
+    <link rel="prev" title="Consuming Tasks" href="consumer.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="imports.html" title="Understanding how tasks are imported"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="consumer.html" title="Consuming Tasks"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">huey 1.3.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="consumer-events">
+<span id="events"></span><h1>Consumer Events<a class="headerlink" href="#consumer-events" title="Permalink to this headline">¶</a></h1>
+<p>If you specify a <code class="xref py py-class docutils literal"><span class="pre">RedisEventEmitter</span></code> when setting up your <a class="reference internal" href="api.html#Huey" title="Huey"><code class="xref py py-class docutils literal"><span class="pre">Huey</span></code></a> instance (or if you choose to use <code class="xref py py-class docutils literal"><span class="pre">RedisHuey</span></code>), the consumer will publish real-time events about the status of various tasks.  You can subscribe to these events in your own application.</p>
+<p>When an event is emitted, the following information is always provided:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">status</span></code>: a String indicating what type of event this is.</li>
+<li><code class="docutils literal"><span class="pre">id</span></code>: the UUID of the task.</li>
+<li><code class="docutils literal"><span class="pre">task</span></code>: a user-friendly name indicating what type of task this is.</li>
+<li><code class="docutils literal"><span class="pre">retries</span></code>: how many retries the task has remaining.</li>
+<li><code class="docutils literal"><span class="pre">retry_delay</span></code>: how long to sleep before retrying the task in event of failure.</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal"><span class="pre">execute_time</span></code>: A unix timestamp indicating when the task is scheduled to</dt>
+<dd>execute (this may be <code class="docutils literal"><span class="pre">None</span></code>).</dd>
+</dl>
+</li>
+</ul>
+<p>If an error occurred, then the following data is also provided:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">error</span></code>: A boolean value indicating if there was an error.</li>
+<li><code class="docutils literal"><span class="pre">traceback</span></code>: A string traceback of the error, if one occurred.</li>
+</ul>
+<p>When an event includes other keys, those will be noted below.</p>
+<p>The following events are emitted by the consumer. I&#8217;ve listed the event name, and in parentheses the process that emits the event and any non-standard metadata it includes.</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">EVENT_CHECKING_PERIODIC</span></code> (Scheduler, <code class="docutils literal"><span class="pre">timestamp</span></code>): emitted every minute when the scheduler checks for periodic tasks to execute.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_FINISHED</span></code> (Worker, <code class="docutils literal"><span class="pre">duration</span></code>): emitted when a task executes successfully and cleanly returns.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_RETRYING</span></code> (Worker): emitted after a task failure, when the task will be retried.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_REVOKED</span></code> (Worker, <code class="docutils literal"><span class="pre">timestamp</span></code>): emitted when a task is pulled from the queue but is not executed due to having been revoked.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_SCHEDULED</span></code> (Worker): emitted when a task specifies a delay or ETA and is not yet ready to run. This can also occur when a task is being retried and specifies a retry delay. The task is added to the schedule for later execution.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_SCHEDULING_PERIODIC</span></code> (Schedule, <code class="docutils literal"><span class="pre">timestamp</span></code>): emitted when a periodic task is scheduled for execution.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_STARTED</span></code> (Worker, <code class="docutils literal"><span class="pre">timestamp</span></code>): emitted when a worker begins executing a task.</li>
+</ul>
+<p>Error events:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">EVENT_ERROR_DEQUEUEING</span></code> (Worker): emitted if an error occurs reading from the backend queue.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_ERROR_ENQUEUEING</span></code> (Schedule, Worker): emitted if an error occurs enqueueing a task for execution. This can occur when the scheduler attempts to enqueue a task that had been delayed, or when a worker attempts to retry a task after an error.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_ERROR_INTERNAL</span></code> (Worker): emitted if an unspecified error occurs. An example might be the Redis server being offline.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_ERROR_SCHEDULING</span></code> (Worker): emitted when an exception occurs enqueueing a task.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_ERROR_STORING_RESULT</span></code> (Worker, <code class="docutils literal"><span class="pre">duration</span></code>): emitted when an exception occurs attempting to store the result of a task. In this case the task ran to completion, but the result could not be stored.</li>
+<li><code class="docutils literal"><span class="pre">EVENT_ERROR_TASK</span></code> (Worker, <code class="docutils literal"><span class="pre">duration</span></code>): emitted when an unspecified error occurs in the user&#8217;s task code.</li>
+</ul>
+<div class="section" id="listening-to-events">
+<h2>Listening to events<a class="headerlink" href="#listening-to-events" title="Permalink to this headline">¶</a></h2>
+<p>The easiest way to listen for events is by iterating over the <code class="docutils literal"><span class="pre">huey.storage</span></code> object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">huey.consumer</span> <span class="kn">import</span> <span class="n">EVENT_FINISHED</span>
+
+<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">huey</span><span class="o">.</span><span class="n">storage</span><span class="p">:</span>
+    <span class="c1"># Do something with the result of the task.</span>
+    <span class="k">if</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">EVENT_FINISHED</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">huey</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+        <span class="n">process_result</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also achieve the same result with a simple loop like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">pubsub</span> <span class="o">=</span> <span class="n">huey</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">listener</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">pubsub</span><span class="o">.</span><span class="n">listen</span><span class="p">():</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>  <span class="c1"># Actual event data is stored in &#39;data&#39; key.</span>
+    <span class="c1"># Do something with `event` object.</span>
+    <span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="ordering-of-events">
+<h2>Ordering of events<a class="headerlink" href="#ordering-of-events" title="Permalink to this headline">¶</a></h2>
+<p>For the execution of a simple task, the events emitted would be:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">EVENT_STARTED</span></code></li>
+<li><code class="docutils literal"><span class="pre">EVENT_FINISHED</span></code></li>
+</ul>
+<p>If a task was scheduled to be executed in the future, the events would be:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">EVENT_SCHEDULED</span></code></li>
+<li><code class="docutils literal"><span class="pre">EVENT_STARTED</span></code></li>
+<li><code class="docutils literal"><span class="pre">EVENT_FINISHED</span></code></li>
+</ul>
+<p>If an error occurs and the task is configured to be retried, the events would be:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">EVENT_STARTED</span></code></li>
+<li><code class="docutils literal"><span class="pre">EVENT_ERROR_TASK</span></code> (includes traceback)</li>
+<li><code class="docutils literal"><span class="pre">EVENT_RETRYING</span></code></li>
+<li><code class="docutils literal"><span class="pre">EVENT_SCHEDULED</span></code> (if there is a retry delay, it will go onto the schedule)</li>
+<li><code class="docutils literal"><span class="pre">EVENT_STARTED</span></code></li>
+<li><code class="docutils literal"><span class="pre">EVENT_FINISHED</span></code> if task succeeds, otherwise go back to <code class="docutils literal"><span class="pre">EVENT_ERROR_TASK</span></code>.</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Consumer Events</a><ul>
+<li><a class="reference internal" href="#listening-to-events">Listening to events</a></li>
+<li><a class="reference internal" href="#ordering-of-events">Ordering of events</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="consumer.html"
+                        title="previous chapter">Consuming Tasks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="imports.html"
+                        title="next chapter">Understanding how tasks are imported</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/events.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="imports.html" title="Understanding how tasks are imported"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="consumer.html" title="Consuming Tasks"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">huey 1.3.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013, charles leifer.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.5.
+    </div>
+  </body>
+</html>
