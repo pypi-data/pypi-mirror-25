@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Connecting &#8212; pyatv 0.3.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Controlling a device" href="controlling.html" />
+    <link rel="prev" title="Pairing with a device" href="pairing.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="connecting">
+<span id="aiohttp-connecting"></span><h1>Connecting<a class="headerlink" href="#connecting" title="Permalink to this headline">¶</a></h1>
+<p>When connecting to a device, the IP-address (or hostname) and its login id,
+e.g. HSGID, is required. These details can be specified manually or be
+automatically discovered if home sharing is enabled.</p>
+<div class="section" id="custom-aiohttp-session">
+<h2>Custom aiohttp session<a class="headerlink" href="#custom-aiohttp-session" title="Permalink to this headline">¶</a></h2>
+<p>If you are integrating pyatv in an application that already has a
+<code class="docutils literal"><span class="pre">ClientSession</span></code>, then you might want to re-use that session. You can just
+pass it as an optional parameter when connecting:</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">other_session</span> <span class="o">=</span> <span class="o">...</span> <span class="c1"># Some session</span>
+<span class="n">atv</span> <span class="o">=</span> <span class="n">pyatv</span><span class="o">.</span><span class="n">connect_to_apple_tv</span><span class="p">(</span><span class="n">atv</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">other_session</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If no session is given, a default <code class="docutils literal"><span class="pre">ClientSession</span></code> will be created for you.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When you logout from a device by calling (yield from) <code class="docutils literal"><span class="pre">atv.logout()</span></code>,
+the session will be closed. So, if you share the session with other
+instances, you might not want to do that.</p>
+</div>
+</div>
+<div class="section" id="code-example-auto-discovery">
+<h2>Code Example: Auto discovery<a class="headerlink" href="#code-example-auto-discovery" title="Permalink to this headline">¶</a></h2>
+<p>Using auto discovery makes the connection procedure simple. But do not forget
+to logout when you are done, otherwise you will get errors about the aiohttp
+session not being closed properly.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyatv</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="nd">@asyncio</span><span class="o">.</span><span class="n">coroutine</span>
+<span class="k">def</span> <span class="nf">print_what_is_playing</span><span class="p">(</span><span class="n">loop</span><span class="p">):</span>
+    <span class="n">atvs</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">pyatv</span><span class="o">.</span><span class="n">scan_for_apple_tvs</span><span class="p">(</span><span class="n">loop</span><span class="p">)</span>
+    <span class="n">atv</span> <span class="o">=</span> <span class="n">pyatv</span><span class="o">.</span><span class="n">connect_to_apple_tv</span><span class="p">(</span><span class="n">atvs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">loop</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Do something with atv</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">yield from</span> <span class="n">atv</span><span class="o">.</span><span class="n">logout</span><span class="p">()</span>
+
+
+<span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+<span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">print_what_is_playing</span><span class="p">(</span><span class="n">loop</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>API Reference: <a class="reference internal" href="api.html#pyatv.connect_to_apple_tv" title="pyatv.connect_to_apple_tv"><code class="xref py py-meth docutils literal"><span class="pre">pyatv.connect_to_apple_tv()</span></code></a></p>
+</div>
+<div class="section" id="code-example-manual-details">
+<h2>Code Example: Manual details<a class="headerlink" href="#code-example-manual-details" title="Permalink to this headline">¶</a></h2>
+<p>Manually specifying the required details is not that hard either (also here
+you need to logout):</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyatv</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="n">NAME</span> <span class="o">=</span> <span class="s1">&#39;My Apple TV&#39;</span>
+<span class="n">ADDRESS</span> <span class="o">=</span> <span class="s1">&#39;10.0.10.22&#39;</span>
+<span class="n">LOGIN_ID</span> <span class="o">=</span> <span class="s1">&#39;00000000-1111-2222-3333-444444444444&#39;</span> <span class="c1"># HSGID</span>
+<span class="c1"># LOGIN_ID = &#39;0000000000000001&#39;                   # Pairing guid</span>
+<span class="n">DETAILS</span> <span class="o">=</span> <span class="n">pyatv</span><span class="o">.</span><span class="n">AppleTVDevice</span><span class="p">(</span><span class="n">NAME</span><span class="p">,</span> <span class="n">ADDRESS</span><span class="p">,</span> <span class="n">LOGIN_ID</span><span class="p">)</span>
+
+<span class="nd">@asyncio</span><span class="o">.</span><span class="n">coroutine</span>
+<span class="k">def</span> <span class="nf">print_what_is_playing</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+    <span class="n">atv</span> <span class="o">=</span> <span class="n">pyatv</span><span class="o">.</span><span class="n">connect_to_apple_tv</span><span class="p">(</span><span class="n">details</span><span class="p">,</span> <span class="n">loop</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Do something with atv</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># Do not forget to logout</span>
+        <span class="k">yield from</span> <span class="n">atv</span><span class="o">.</span><span class="n">logout</span><span class="p">()</span>
+
+<span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+<span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">print_what_is_playing</span><span class="p">(</span><span class="n">loop</span><span class="p">,</span> <span class="n">DETAILS</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Specify <code class="docutils literal"><span class="pre">LOGIN_ID</span></code> to be either HSGID or the pairing guid used when pairing
+with your device.</p>
+<p>API Reference: <a class="reference internal" href="api.html#pyatv.connect_to_apple_tv" title="pyatv.connect_to_apple_tv"><code class="xref py py-meth docutils literal"><span class="pre">pyatv.connect_to_apple_tv()</span></code></a>, <a class="reference internal" href="api.html#pyatv.AppleTVDevice" title="pyatv.AppleTVDevice"><code class="xref py py-class docutils literal"><span class="pre">pyatv.AppleTVDevice</span></code></a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Connecting</a><ul>
+<li><a class="reference internal" href="#custom-aiohttp-session">Custom aiohttp session</a></li>
+<li><a class="reference internal" href="#code-example-auto-discovery">Code Example: Auto discovery</a></li>
+<li><a class="reference internal" href="#code-example-manual-details">Code Example: Manual details</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="pairing.html" title="previous chapter">Pairing with a device</a></li>
+      <li>Next: <a href="controlling.html" title="next chapter">Controlling a device</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/connecting.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Pierre Ståhl.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/connecting.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
