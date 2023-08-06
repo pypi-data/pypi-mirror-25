@@ -1,0 +1,29 @@
+class ExprParser(GenericParser):
+    """A simple expression parser for numbers and arithmetic operators: +, , *, and /.
+
+    Note: methods that begin p_ have docstrings that are grammar rules interpreted
+    by SPARK.
+    """
+
+    def __init__(self, start='expr', debug=DEFAULT_DEBUG):
+        GenericParser.__init__(self, start, debug)
+
+    def p_expr_add_term(self, args):
+        ' expr ::= expr ADD_OP term '
+        return AST('add', [args[0], args[2]])
+
+    def p_expr2term(self, args):
+        ' expr ::= term '
+        return AST('single', [args[0]])
+
+    def p_term_mult_factor(self, args):
+        ' term ::= term MULT_OP factor '
+        return AST('multiply', [args[0], args[2]])
+
+    def p_term2factor(self, args):
+        ' term ::= factor '
+        return AST('single', [args[0]])
+
+    def p_factor2integer(self, args):
+        ' factor ::= INTEGER '
+        return AST('single', [args[0]])
