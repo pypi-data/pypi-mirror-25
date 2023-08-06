@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+{% load i18n staticfiles admin_urls admin_static admin_list pcart_core %}
+{% load datacollections expressions %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static "admin/css/changelists.css" %}" />
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-list{% endblock %}
+
+{% if not is_popup %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='pcart_data_collections' %}">{% trans  "Data collections" %}</a>
+&rsaquo; <a href="{% url 'admin:pcart_data_collections_datacollection_changelist' %}">{% trans "Data collections" %}</a>
+&rsaquo; <a href="{% url 'admin:pcart_data_collections_datacollection_change' data_collection.pk %}">{{data_collection.title}}</a>
+&rsaquo; {% trans "Data Records" %}
+</div>
+{% endblock %}
+{% endif %}
+
+{% block coltype %}flex{% endblock %}
+
+{% block content %}
+<h1>{{data_collection.name}}</h1>
+  <div id="content-main">
+    {% block object-tools %}
+        <ul class="object-tools">
+            <li><a href="{% url 'admin:datacollection_import_from_csv_view' data_collection.pk %}">
+              {% trans "Import from CSV" %}
+            </a></li>
+            <li><a href="{% url 'admin:datacollection_export_to_csv_view' data_collection.pk %}">
+              {% trans "Export to CSV" %}
+            </a></li>
+            <li><a href="{% url 'admin:datacollection_records_add' data_collection.pk %}" class="addlink">
+              {% trans "Add data record" %}
+            </a></li>
+        </ul>
+    {% endblock %}
+
+    {% save data_collection.fields.admin_list_display as admin_fields %}
+    <div class="module" id="changelist">
+      <div class="results">
+      <table id="result_list">
+      <thead>
+      <tr>
+          <th scope="col column-name"><div class="text"><a href="">
+              {% trans "Title" as f_title %}{{ data_collection.title_field_label|default:f_title }}
+          </a></div></th>
+          <th scope="col column-name"><div class="text"><a href="">
+              {% trans "Active" as f_active %}{{ data_collection.active_field_label|default:f_active }}
+          </a></div></th>
+          <th scope="col column-name"><div class="text"><a href="">{% trans "Added" %}</a></div></th>
+          {% for field in admin_fields %}
+          <th scope="col column-name"><div class="text"><a href="">{{field.title}}</a></div></th>
+          {% endfor %}
+      </tr>
+      </thead>
+      <tbody>
+      {% for record in data_records %}
+      <tr class="{% cycle 'row1' 'row2' %}">
+          <td><a href="{% url 'admin:datacollection_records_change' data_collection.pk record.pk %}">{{ record.title }}</a></td>
+          <td>
+              {% if record.active %}
+              <img src="{% static 'admin/img/icon-yes.svg' %}" alt="True">
+              {% else %}
+              <img src="{% static 'admin/img/icon-no.svg' %}" alt="False">
+              {% endif %}
+          </td>
+          <td>{{record.added|date:"Y-m-d"}}</td>
+          {% for field in admin_fields %}
+          <td>{% render_field_value_as_html record field %}</td>
+          {% endfor %}
+      </tr>
+      {% endfor %}
+      </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

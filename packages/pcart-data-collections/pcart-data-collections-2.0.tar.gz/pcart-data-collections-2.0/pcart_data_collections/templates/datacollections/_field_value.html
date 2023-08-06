@@ -1,0 +1,31 @@
+{% load get_media_prefix from static %}
+{% load i18n staticfiles datacollections %}
+{% if value == None %}
+    <strong>{% trans "Not set" %}</strong>
+{% else %}
+{% if field_obj.field_type == 'boolean' %}
+    {% if value %}
+    <img src="{{domain}}{% static 'admin/img/icon-yes.svg' %}" alt="True">
+    {% else %}
+    <img src="{{domain}}{% static 'admin/img/icon-no.svg' %}" alt="False">
+    {% endif %}
+{% elif field_obj.field_type == 'file' %}
+    <a href="{{domain}}{% get_media_prefix %}{{value}}" target="_blank">
+    {% if value|is_image %}
+    <img src="{{domain}}{% get_media_prefix %}{{value}}" alt="{{value|file_name}}" width="{{image_width}}">
+    {% else %}
+        {{domain}}{{value|file_name}}
+    {% endif %}
+    </a>
+{% elif field_obj.field_type == 'multiple_choice' %}
+    {{value|join:', '}}
+{% elif field_obj.field_type == 'wysiwyg' %}
+    {{value|striptags|linebreaksbr}}
+{% elif field_obj.field_type == 'code' %}
+    <pre>{{value|linebreaks}}</pre>
+{% elif field_obj.field_type == 'text' %}
+    <pre>{{value|linebreaks}}</pre>
+{% else %}
+    {{value}}
+{% endif %}
+{% endif %}
