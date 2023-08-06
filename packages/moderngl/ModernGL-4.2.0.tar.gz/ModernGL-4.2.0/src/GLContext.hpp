@@ -1,0 +1,32 @@
+#pragma once
+
+#if defined(_WIN32) || defined(_WIN64)
+
+struct GLContext {
+	void * hwnd;
+	void * hrc;
+	void * hdc;
+	bool standalone;
+};
+
+#elif defined(__APPLE__)
+
+struct GLContext {
+	void * context;
+	bool standalone;
+};
+
+#else
+
+struct GLContext {
+	void * display;
+	void * window;
+	void * context;
+	bool standalone;
+};
+
+#endif
+
+GLContext LoadCurrentGLContext();
+GLContext CreateGLContext(int width, int height);
+void DestroyGLContext(const GLContext & context);
