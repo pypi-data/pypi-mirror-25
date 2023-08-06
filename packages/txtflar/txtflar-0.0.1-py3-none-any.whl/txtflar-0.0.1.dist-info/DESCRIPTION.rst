@@ -1,0 +1,6 @@
+Text file language-aware renamer (txtflar)
+
+Automatically rename subtitles (and text files) based on the
+language of its contents.
+
+
