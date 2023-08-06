@@ -1,0 +1,34 @@
+{% load l10n i18n pcart_core parler_tags %}{% spaceless %}
+<?xml version="1.0" encoding="UTF-8" ?>
+<price>
+    <date>{% now 'Y-m-d H:i' %}</date>
+    <firmName>{{ site.name }}</firmName>
+    <firmId>{{ account_id }}</firmId>
+    <categories>
+      {% for c in collections %}<category id="{{c.pk}}">{{c.title}}</category>
+      {% endfor %}
+    </categories>
+    <items>
+      {% for item in products %}
+      <item>
+        <id>{{ item.pk }}</id>
+        <categoryId>{{ item.get_collection.pk }}</categoryId>
+        {% if item.sku %}<code>{{ item.sku }}</code>{% endif %}
+        {% if item.barcode %}<barcode>{{ item.barcode }}</barcode>{% endif %}
+        <vendor>{{ item.vendor }}</vendor>
+        <name>{{ item.title }}</name>
+        <description>{{ item.description }}</description>
+        <url>{{ protocol }}://{{ site.domain }}{{ item.get_absolute_url }}</url>
+        <image>{{ protocol }}://{{ site.domain }}{{ item.get_image.image.url }}</image>
+        <priceRUAH>{{ item.price|unlocalize }}</priceRUAH>
+        {% if item.compare_at_price %}<oldprice>{{ item.compare_at_price|unlocalize }}</oldprice>{% endif %}
+        {% if item.status.show_buy_button %}<stock>В наличии</stock>{% endif %}
+{#        <guarantee>12 месяцев, от производителя</guarantee>#}
+        {% for prop in item.product_type.get_visible_properties %}
+        {% with value=item.properties|get_element:prop.title %}
+        {% if value %}<param name="{{ prop.title }}">{{ value }}</param>{% endif %}{% endwith %}{% endfor %}
+{#        <condition>1</condition>#}
+      </item>
+      {% endfor %}
+    </items>
+</price>{% endspaceless %}
