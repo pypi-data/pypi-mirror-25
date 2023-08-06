@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load filters_deploys %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static "css/pages/event-list.css" %}">
+{% endblock %}
+
+{% block bar %}
+<div class="bar">
+  <a href="/">dashboard</a> <span class="arrow">></span>
+  events
+
+  {% if event.Cancelable and event.Running %}
+  <button id="cancel-button">Cancel</button>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+{% if request.GET.kindName == "healer" %}
+  {% include "sidebar.html" with active="healing" %}
+{% elif request.GET.kindName == "app.deploy" %}
+  {% include "sidebar.html" with active="deploys" %}
+{% else %}
+  {% include "sidebar.html" with active="events" %}
+{% endif %}
+{% endblock %}
+
+{% block header %}
+<h1>Events</h1>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12">
+      <div id="controls"></div>
+      </form>
+      <table class="events table" id="list">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Target</th>
+            <th>Owner</th>
+            <th>Start</th>
+            <th>Duration</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in events %}
+          <tr {% if event.Error %}data-container="body" data-toggle="tooltip" title="{{ event.Error|truncatechars:300 }}"{% endif %}>
+            <td>
+              <a href="{% url 'event-info' event.UniqueID %}">
+                {{ event.Kind.Name }}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'event-info' event.UniqueID %}">
+                {{ event.Target.Type }}: {{ event.Target.Value }}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'event-info' event.UniqueID %}">
+                {{ event.Owner.Type }}{% if event.Owner.Name %}: {{ event.Owner.Name }}{% endif %}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'event-info' event.UniqueID %}">
+                {% if event.StartTime %}
+                {{ event.StartTime|date:" d-m-Y H:i:s " }}
+                {% endif %}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'event-info' event.UniqueID %}">
+                {% if event.EndTime %}
+                {{ event.StartTime|timesince:event.EndTime }}
+                {% endif %}
+              </a>
+            </td>
+            <td class="status-col {% if not event.Running and not event.CancelInfo.Canceled and not event.Error %}status-success{% endif %}{% if event.Running %}status-running{% endif %}{% if event.Error %}status-error{% endif %}">
+              <a href="{% url 'event-info' event.UniqueID %}">
+                <div class="status-block">
+                  {% if event.Running %}
+                  Running
+                  {% endif %}
+                  {% if event.Error %}
+                  Error
+                  {% endif %}
+                  {% if not event.Running and not event.CancelInfo.Canceled and not event.Error %}
+                  Success
+                  {% endif %}
+                </div>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="pager">
+        {% if previous is not None %}
+        <span class="page">
+          <a href="?{{ previous }}">&lt; Prev</a>
+        </span>
+        {% endif %}
+
+        {% if next is not None %}
+        <span class="page">
+          <a href="?{{ next }}">Next &gt;</a>
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static "js/event-list.js" %}"></script>
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip();
+})
+</script>
+{% endblock %}
