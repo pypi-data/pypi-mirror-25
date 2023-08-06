@@ -1,0 +1,6 @@
+PipelineAI API:  http://pipeline.io/api/
+
+
+Requirements:
+['pipeline-logger==1.0.0', 'pipeline-monitor==1.0.0', 'pipeline-model==1.0.2', 'cloudpickle==0.3.1']
+
