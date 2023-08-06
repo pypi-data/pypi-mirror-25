@@ -1,0 +1,1 @@
+from yn_input.__yn_input import yn_input
