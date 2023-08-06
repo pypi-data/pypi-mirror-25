@@ -1,0 +1,384 @@
+=========================================
+Parser methods, operators and combinators
+=========================================
+
+Parser methods
+==============
+
+Parser objects are returned by any of the built-in parser :doc:`primitives`. They
+can be used and manipulated as below.
+
+.. currentmodule:: parsy
+
+.. class:: Parser
+
+   .. method:: __init__(wrapped_fn)
+
+      This is a low level function to create new parsers that is used internally
+      but is rarely needed by users of the parsy library. It should be passed a
+      parsing function, which takes two arguments - a string/list to be parsed
+      and the current index into the list - and returns a :class:`Result` object,
+      as described in :doc:`/ref/parser_instances`.
+
+   The following methods are for actually **using** the parsers that you have
+   created:
+
+   .. method:: parse(string_or_list)
+
+      Attempts to parse the given string (or list). If the parse is successful
+      and consumes the entire string, the result is returned - otherwise, a
+      ``ParseError`` is raised.
+
+      Instead of passing a string, you can in fact pass a list of tokens. Almost
+      all the examples assume strings for simplicity. Some of the primitives are
+      also clearly string specific, and a few of the combinators (such as
+      :meth:`Parser.concat`) are string specific, but most of the rest of the
+      library will work with tokens just as well. See :doc:`/howto/lexing` for
+      more information.
+
+   .. method:: parse_partial(string_or_list)
+
+      Similar to ``parse``, except that it does not require the entire
+      string (or list) to be consumed. Returns a tuple of
+      ``(result, remainder)``, where ``remainder`` is the part of
+      the string (or list) that was left over.
+
+   The following methods are essentially **combinators** that produce new
+   parsers from the existing one. They are provided as methods on ``Parser`` for
+   convenience. More combinators are documented below.
+
+   .. method:: desc(string)
+
+      Adds a desciption to the parser, which is used in the error message
+      if parsing fails.
+
+      >>> year = regex(r'[0-9]{4}').desc('4 digit year')
+      >>> year.parse('123')
+      ParseError: expected 4 digit year at 0:0
+
+   .. method:: then(other_parser)
+
+      Returns a parser which, if the initial parser succeeds, will continue parsing
+      with ``other_parser``. This will produce the value produced by
+      ``other_parser``.
+
+      .. code:: python
+
+         >>> string('x').then(string('y')).parse('xy')
+         'y'
+
+      See also :ref:`parser-rshift`.
+
+   .. method:: skip(other_parser)
+
+      Similar to :meth:`Parser.then`, except the resulting parser will use
+      the value produced by the first parser.
+
+      .. code:: python
+
+         >>> string('x').skip(string('y')).parse('xy')
+         'x'
+
+      See also :ref:`parser-lshift`.
+
+   .. method:: many()
+
+      Returns a parser that expects the initial parser 0 or more times, and
+      produces a list of the results. Note that this parser does not fail if
+      nothing matches, but instead consumes nothing and produces an empty list.
+
+      .. code:: python
+
+         >>> parser = regex(r'[a-z]').many()
+         >>> parser.parse('')
+         []
+         >>> parser.parse('abc')
+         ['a', 'b', 'c']
+
+   .. method:: times(min [, max=min])
+
+      Returns a parser that expects the initial parser at least ``min`` times,
+      and at most ``max`` times, and produces a list of the results. If only one
+      argument is given, the parser is expected exactly that number of times.
+
+   .. method:: at_most(n)
+
+      Returns a parser that expects the initial parser at most ``n`` times, and
+      produces a list of the results.
+
+   .. method:: at_least(n)
+
+      Returns a parser that expects the initial parser at least ``n`` times, and
+      produces a list of the results.
+
+   .. method:: map(fn)
+
+      Returns a parser that transforms the produced value of the initial parser
+      with ``fn``.
+
+      .. code:: python
+
+         >>> regex(r'[0-9]+').map(int).parse('1234')
+         1234
+
+      This is the simplest way to convert parsed strings into the data types
+      that you need.
+
+   .. method:: combine(fn)
+
+      Returns a parser that transforms the produced values of the initial parser
+      with ``fn``, passing the arguments using ``*args`` syntax.
+
+      Where the current parser produces an iterable of values, this can be a
+      more convenient way to combine them than :meth:`~Parser.map`.
+
+      Example 1 - the argument order of our callable already matches:
+
+      .. code:: python
+
+         >>> from datetime import date
+         >>> yyyymmdd = seq(regex(r'[0-9]{4}').map(int),
+         ...                regex(r'[0-9]{2}').map(int),
+         ...                regex(r'[0-9]{2}').map(int)).combine(date)
+         >>> yyyymmdd.parse('20140506')
+         datetime.date(2014, 5, 6)
+
+      Example 2 - the argument order of our callable doesn't match, and
+      we need to adjust a parameter, so we can fix it using a lambda.
+
+      .. code:: python
+
+         >>> ddmmyy = regex(r'[0-9]{2}').map(int).times(3).combine(
+         ...                lambda d, m, y: date(2000 + y, m, d))
+         >>> ddmmyy.parse('060514')
+         datetime.date(2014, 5, 6)
+
+      The equivalent ``lambda`` to use with ``map`` would be ``lambda res:
+      date(2000 + res[2], res[1], res[0])``, which is less readable. The version
+      with ``combine`` also ensures that exactly 3 items are generated by the
+      previous parser, otherwise you get a ``TypeError``.
+
+   .. method:: concat()
+
+      Returns a parser that concatenates together (as a string) the previously
+      produced values. Usually used after :meth:`~Parser.many` and similar
+      methods that produce multiple values.
+
+      .. code:: python
+
+         >>> letter.at_least(1).parse("hello")
+         ['h', 'e', 'l', 'l', 'o']
+         >>> letter.at_least(1).concat().parse("hello")
+         'hello'
+
+   .. method:: result(val)
+
+      Returns a parser that, if the initial parser succeeds, always produces
+      ``val``.
+
+      .. code:: python
+
+         >>> string('foo').result(42).parse('foo')
+         42
+
+   .. method:: should_fail(description)
+
+      Returns a parser that fails when the initial parser succeeds, and succeeds
+      when the initial parser fails (consuming no input). A description must
+      be passed which is used in parse failure messages.
+
+      This is essentially a negative lookahead:
+
+      .. code:: python
+
+         >>> p = letter << string(" ").should_fail("not space")
+         >>> p.parse('A')
+         'A'
+         >>> p.parse('A ')
+         ParseError: expected 'not space' at 0:1
+
+      It is also useful for implementing things like parsing repeatedly until a
+      marker:
+
+      .. code:: python
+
+         >>> (string(";").should_fail("not ;") >> letter).many().concat().parse_partial('ABC;')
+         ('ABC', ';')
+
+   .. method:: bind(fn)
+
+      Returns a parser which, if the initial parser is successful, passes the
+      result to ``fn``, and continues with the parser returned from ``fn``.
+      This is the monadic binding operation.
+
+   .. method:: sep_by(sep, min=0, max=inf)
+
+      Like :meth:`Parser.times`, this returns a new parser that repeats
+      the initial parser and collects the results in a list, but in this case separated
+      by the parser ``sep`` (whose return value is discarded). By default it
+      repeats with no limit, but minimum and maximum values can be supplied.
+
+      .. code:: python
+
+         >>> csv = letter.at_least(1).concat().sep_by(string(","))
+         >>> csv.parse("abc,def")
+         ['abc', 'def']
+
+.. _operators:
+
+Parser operators
+================
+
+This section describes operators that you can use on :class:`Parser` objects to
+build new parsers.
+
+
+.. _parser-or:
+
+``|`` operator
+--------------
+
+``parser | other_parser``
+
+Returns a parser that tries ``parser`` and, if it fails, backtracks
+and tries ``other_parser``. These can be chained together.
+
+The resulting parser will produce the value produced by the first
+successful parser.
+
+.. code:: python
+
+   >>> parser = string('x') | string('y') | string('z')
+   >>> parser.parse('x')
+   'x'
+   >>> parser.parse('y')
+   'y'
+   >>> parser.parse('z')
+   'z'
+
+   >>> (string('x') >> string('y')).parse('xy')
+   'y'
+
+.. _parser-lshift:
+
+``<<`` operator
+---------------
+
+``parser << other_parser``
+
+The same as ``parser.skip(other_parser)`` - see :meth:`Parser.skip`.
+
+(Hint - the arrows point at the important parser!)
+
+.. code:: python
+
+   >>> (string('x') << string('y')).parse('xy')
+   'x'
+
+.. _parser-rshift:
+
+``>>`` operator
+---------------
+
+``parser >> other_parser``
+
+The same as ``parser.then(other_parser)`` - see :meth:`Parser.then`.
+
+(Hint - the arrows point at the important parser!)
+
+.. code-block:: python
+
+   >>> (string('x') >> string('y')).parse('xy')
+   'y'
+
+
+.. _parser-plus:
+
+``+`` operator
+--------------
+
+``parser1 + parser2``
+
+Requires both parsers to match in order, and adds the two results together using
+the + operator. This will only work if the results support the plus operator
+(e.g. strings and lists):
+
+
+.. code-block:: python
+
+   >>> (string("x") + regex("[0-9]")).parse("x1")
+   "x1"
+
+   >>> (string("x").many() + regex("[0-9]").map(int).many()).parse("xx123")
+   ['x', 'x', 1, 2, 3]
+
+The plus operator is a convenient shortcut for:
+
+   >>> seq(parser1, parser2).combine(lambda a, b: a + b)
+
+.. _parser-times:
+
+``*`` operator
+--------------
+
+``parser1 * number``
+
+This is a shortcut for doing :meth:`Parser.times`:
+
+.. code-block:: python
+
+   >>> (string("x") * 3).parse("xxx")
+   ["x", "x", "x"]
+
+You can also set both upper and lower bounds by multiplying by a range:
+
+.. code-block:: python
+
+   >>> (string("x") * range(0, 3)).parse("xxx")
+   ParseError: expected EOF at 0:2
+
+(Note the normal semantics of ``range`` are respected - the second number is an
+*exclusive* upper bound, not inclusive).
+
+Parser combinators
+==================
+
+.. function:: alt(*parsers)
+
+   Creates a parser from the passed in argument list of alternative parsers,
+   which are tried in order, moving to the next one if the current one fails, as
+   per the :ref:`parser-or` - in other words, it matches any one of the
+   alternative parsers.
+
+   Example using `*arg` syntax to pass a list of parsers that have been
+   generated by mapping :func:`string` over a list of characters:
+
+   .. code-block:: python
+
+      >>> hexdigit = alt(*map(string, "0123456789abcdef"))
+
+   (In this case you would be better off using :func:`char_from`)
+
+.. function:: seq(*parsers)
+
+   Creates a parser that runs a sequence of parsers in order and combines
+   their results in a list.
+
+
+   .. code-block:: python
+
+      >>> x_bottles_of_y_on_the_z = \
+      ...    seq(regex(r"[0-9]+").map(int) << string(" bottles of "),
+      ...        regex(r"\S+") << string(" on the "),
+      ...        regex(r"\S+")
+      ...        )
+      >>> x_bottles_of_y_on_the_z.parse("99 bottles of beer on the wall")
+      [99, 'beer', 'wall']
+
+Other combinators
+=================
+
+Parsy does not try to include every possible combinator - there is no reason why
+you cannot create your own for your needs using the built-in combinators and
+primitives. If you find something that is very generic and would be very useful
+to have as a built-in, please :doc:`submit </contributing>`: as a PR!
