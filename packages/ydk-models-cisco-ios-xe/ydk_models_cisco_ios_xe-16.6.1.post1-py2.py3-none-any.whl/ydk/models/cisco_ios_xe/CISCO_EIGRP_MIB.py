@@ -1,0 +1,1222 @@
+""" CISCO_EIGRP_MIB 
+
+Enhanced Interior Gateway Protocol (EIGRP) is a Cisco
+proprietary distance vector routing protocol.   It is based on
+the Diffusing Update Algorithm (DUAL), which is a method of
+finding loop\-free paths through a network.   Directly
+connected routers running EIGRP form neighbor adjacencies in
+order to propagate best\-path and alternate\-path routing
+information for configured and learned routes.
+
+The tables defined within the MIB are closely aligned with how
+the router command\-line interface for EIGRP displays
+information on EIGRP configurations, i.e., the topology table
+contains objects associated with the EIGRP topology commands,
+and the peer table contains objects associated withe EIGRP
+neighbor commands, etc.
+
+There are five main tables within this mib\:
+
+   EIGRP VPN table
+      Contains information regarding which virtual private
+      networks (VPN) are configured with EIGRP.
+
+   EIGRP traffic statistics table
+      Contains counter & statistcs regarding specific types of
+      EIGRP packets sent and related collective information
+      per VPN and per autonomous system (AS).
+
+   EIGRP topology table
+      Contains information regarding EIGRP routes received in
+      updates and originated locally.   EIGRP sends and
+      receives routing updates from adjacent routers running
+      EIGRP with which it formed a peer relationship.
+
+   EIGRP peer (neighbor) table
+      Contains information about neighbor EIGRP routers with
+      which peer adjacencies have been established.   EIGRP
+      uses a Hello protocol to form neighbor relationships
+      with directly connected routers also running EIGRP.
+
+   EIGRP interfaces table
+      Contains information and statistics on each of the
+      interfaces on the router over which EIGRP has been
+      configured to run.
+
+"""
+from ydk.types import Entity, EntityPath, Identity, Enum, YType, YLeaf, YLeafList, YList, LeafDataList, Bits, Empty, Decimal64
+from ydk.filters import YFilter
+from ydk.errors import YPYError, YPYModelError
+from ydk.errors.error_handler import handle_type_error as _handle_type_error
+
+
+
+class CISCOEIGRPMIB(Entity):
+    """
+    
+    
+    .. attribute:: ceigrpinterfacetable
+    
+    	The table of interfaces over which EIGRP is running, and their associated statistics.   This table is independent of whether any peer adjacencies have been formed over the interfaces or not.   Interfaces running EIGRP are determined by whether their assigned IP addresses fall within configured EIGRP network statements
+    	**type**\:   :py:class:`Ceigrpinterfacetable <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpinterfacetable>`
+    
+    .. attribute:: ceigrppeertable
+    
+    	The table of established EIGRP peers (neighbors) in the selected autonomous system.   Peers are indexed by their unique internal handle id, as well as the AS number and VPN id.   The peer entry is removed from the table if the peer is declared down
+    	**type**\:   :py:class:`Ceigrppeertable <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrppeertable>`
+    
+    .. attribute:: ceigrptopotable
+    
+    	The table of EIGRP routes and their associated attributes for an Autonomous System (AS) configured in a VPN is called a topology table.  All route entries in the topology table will be indexed by IP network type, IP network number and network mask (prefix) size
+    	**type**\:   :py:class:`Ceigrptopotable <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrptopotable>`
+    
+    .. attribute:: ceigrptraffstatstable
+    
+    	Table of EIGRP traffic statistics and information associated with all EIGRP autonomous systems
+    	**type**\:   :py:class:`Ceigrptraffstatstable <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrptraffstatstable>`
+    
+    .. attribute:: ceigrpvpntable
+    
+    	This table contains information on those VPN's configured to run EIGRP.  The VPN creation on a router is independent of the routing protocol to be used over it.   A VPN is given a name and has a dedicated routing table associated with it.  This routing table is identified internally by a unique integer value
+    	**type**\:   :py:class:`Ceigrpvpntable <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpvpntable>`
+    
+    
+
+    """
+
+    _prefix = 'CISCO-EIGRP-MIB'
+    _revision = '2004-11-16'
+
+    def __init__(self):
+        super(CISCOEIGRPMIB, self).__init__()
+        self._top_entity = None
+
+        self.yang_name = "CISCO-EIGRP-MIB"
+        self.yang_parent_name = "CISCO-EIGRP-MIB"
+        self.is_top_level_class = True
+        self.has_list_ancestor = False
+        self._child_container_classes = {"cEigrpInterfaceTable" : ("ceigrpinterfacetable", CISCOEIGRPMIB.Ceigrpinterfacetable), "cEigrpPeerTable" : ("ceigrppeertable", CISCOEIGRPMIB.Ceigrppeertable), "cEigrpTopoTable" : ("ceigrptopotable", CISCOEIGRPMIB.Ceigrptopotable), "cEigrpTraffStatsTable" : ("ceigrptraffstatstable", CISCOEIGRPMIB.Ceigrptraffstatstable), "cEigrpVpnTable" : ("ceigrpvpntable", CISCOEIGRPMIB.Ceigrpvpntable)}
+        self._child_list_classes = {}
+
+        self.ceigrpinterfacetable = CISCOEIGRPMIB.Ceigrpinterfacetable()
+        self.ceigrpinterfacetable.parent = self
+        self._children_name_map["ceigrpinterfacetable"] = "cEigrpInterfaceTable"
+        self._children_yang_names.add("cEigrpInterfaceTable")
+
+        self.ceigrppeertable = CISCOEIGRPMIB.Ceigrppeertable()
+        self.ceigrppeertable.parent = self
+        self._children_name_map["ceigrppeertable"] = "cEigrpPeerTable"
+        self._children_yang_names.add("cEigrpPeerTable")
+
+        self.ceigrptopotable = CISCOEIGRPMIB.Ceigrptopotable()
+        self.ceigrptopotable.parent = self
+        self._children_name_map["ceigrptopotable"] = "cEigrpTopoTable"
+        self._children_yang_names.add("cEigrpTopoTable")
+
+        self.ceigrptraffstatstable = CISCOEIGRPMIB.Ceigrptraffstatstable()
+        self.ceigrptraffstatstable.parent = self
+        self._children_name_map["ceigrptraffstatstable"] = "cEigrpTraffStatsTable"
+        self._children_yang_names.add("cEigrpTraffStatsTable")
+
+        self.ceigrpvpntable = CISCOEIGRPMIB.Ceigrpvpntable()
+        self.ceigrpvpntable.parent = self
+        self._children_name_map["ceigrpvpntable"] = "cEigrpVpnTable"
+        self._children_yang_names.add("cEigrpVpnTable")
+        self._segment_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB"
+
+
+    class Ceigrpinterfacetable(Entity):
+        """
+        The table of interfaces over which EIGRP is running, and
+        their associated statistics.   This table is independent
+        of whether any peer adjacencies have been formed over
+        the interfaces or not.   Interfaces running EIGRP are
+        determined by whether their assigned IP addresses fall
+        within configured EIGRP network statements.
+        
+        .. attribute:: ceigrpinterfaceentry
+        
+        	Information for a single interface running EIGRP in the AS and VPN
+        	**type**\: list of    :py:class:`Ceigrpinterfaceentry <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpinterfacetable.Ceigrpinterfaceentry>`
+        
+        
+
+        """
+
+        _prefix = 'CISCO-EIGRP-MIB'
+        _revision = '2004-11-16'
+
+        def __init__(self):
+            super(CISCOEIGRPMIB.Ceigrpinterfacetable, self).__init__()
+
+            self.yang_name = "cEigrpInterfaceTable"
+            self.yang_parent_name = "CISCO-EIGRP-MIB"
+            self.is_top_level_class = False
+            self.has_list_ancestor = False
+            self._child_container_classes = {}
+            self._child_list_classes = {"cEigrpInterfaceEntry" : ("ceigrpinterfaceentry", CISCOEIGRPMIB.Ceigrpinterfacetable.Ceigrpinterfaceentry)}
+
+            self.ceigrpinterfaceentry = YList(self)
+            self._segment_path = lambda: "cEigrpInterfaceTable"
+            self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/%s" % self._segment_path()
+
+        def __setattr__(self, name, value):
+            self._perform_setattr(CISCOEIGRPMIB.Ceigrpinterfacetable, [], name, value)
+
+
+        class Ceigrpinterfaceentry(Entity):
+            """
+            Information for a single interface running EIGRP in the
+            AS and VPN.
+            
+            .. attribute:: ceigrpvpnid  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**refers to**\:  :py:class:`ceigrpvpnid <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry>`
+            
+            .. attribute:: ceigrpasnumber  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**refers to**\:  :py:class:`ceigrpasnumber <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrptraffstatstable.Ceigrptraffstatsentry>`
+            
+            .. attribute:: ifindex  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 1..2147483647
+            
+            	**refers to**\:  :py:class:`ifindex <ydk.models.cisco_ios_xe.IF_MIB.IFMIB.Iftable.Ifentry>`
+            
+            .. attribute:: ceigrpackssuppressed
+            
+            	The total number of individual EIGRP acknowledgement packets that have been suppressed and combined in an already enqueued outbound reliable packet on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpauthkeychain
+            
+            	The name of the authentication key\-chain configured on this interface.   The key\-chain is a reference to which set of secret keys are to be accessed in order to determine which secret key string to use.  The key chain name is not the secret key string password and can also be used in other routing protocols, such as RIP and ISIS
+            	**type**\:  str
+            
+            .. attribute:: ceigrpauthmode
+            
+            	The EIGRP authentication mode of the interface. none  \:  no authentication enabled on the interface md5   \:  MD5 authentication enabled on the interface
+            	**type**\:   :py:class:`Ceigrpauthmode <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpinterfacetable.Ceigrpinterfaceentry.Ceigrpauthmode>`
+            
+            .. attribute:: ceigrpcrpkts
+            
+            	The total number EIGRP Conditional\-Receive packets sent on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrphellointerval
+            
+            	The configured time interval between Hello packet transmissions for this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: seconds
+            
+            .. attribute:: ceigrpmcastexcepts
+            
+            	The total number of EIGRP multicast exception transmissions that have occurred on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpmeansrtt
+            
+            	The average of all the computed smooth round trip time values for a packet to and from all peers established on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: milliseconds
+            
+            .. attribute:: ceigrpmflowtimer
+            
+            	The configured multicast flow control timer value for this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: milliseconds
+            
+            .. attribute:: ceigrpoosrvcd
+            
+            	The total number of out\-of\-sequence EIGRP packets received
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrppacingreliable
+            
+            	The configured time interval between EIGRP packet transmissions on the interface when the reliable transport method is used
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: milliseconds
+            
+            .. attribute:: ceigrppacingunreliable
+            
+            	The configured time interval between EIGRP packet transmissions on the interface when the unreliable transport method is used
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: milliseconds
+            
+            .. attribute:: ceigrppeercount
+            
+            	The number of EIGRP adjacencies currently formed with peers reached through this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrppendingroutes
+            
+            	The number of queued EIGRP routing updates awaiting transmission on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpretranssent
+            
+            	The total number EIGRP packet retransmissions sent on the interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrprmcasts
+            
+            	The total number of reliable (acknowledgement required) EIGRP multicast packets sent on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrprucasts
+            
+            	The total number of reliable (acknowledgement required) unicast packets sent on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpumcasts
+            
+            	The total number of unreliable (no acknowledgement required) EIGRP multicast packets sent on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpuucasts
+            
+            	The total number of unreliable (no acknowledgement required) EIGRP unicast packets sent on this interface
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpxmitnextserial
+            
+            	The serial number of the next EIGRP packet that is to be queued for transmission on this interface
+            	**type**\:  int
+            
+            	**range:** 0..18446744073709551615
+            
+            .. attribute:: ceigrpxmitreliableq
+            
+            	The number of EIGRP packets currently waiting in the reliable transport (acknowledgement\-required)  transmission queue to be sent to a peer
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpxmitunreliableq
+            
+            	The number EIGRP of packets currently waiting in the unreliable transport (no acknowledgement required) transmission queue
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            
+
+            """
+
+            _prefix = 'CISCO-EIGRP-MIB'
+            _revision = '2004-11-16'
+
+            def __init__(self):
+                super(CISCOEIGRPMIB.Ceigrpinterfacetable.Ceigrpinterfaceentry, self).__init__()
+
+                self.yang_name = "cEigrpInterfaceEntry"
+                self.yang_parent_name = "cEigrpInterfaceTable"
+                self.is_top_level_class = False
+                self.has_list_ancestor = False
+                self._child_container_classes = {}
+                self._child_list_classes = {}
+
+                self.ceigrpvpnid = YLeaf(YType.str, "cEigrpVpnId")
+
+                self.ceigrpasnumber = YLeaf(YType.str, "cEigrpAsNumber")
+
+                self.ifindex = YLeaf(YType.str, "ifIndex")
+
+                self.ceigrpackssuppressed = YLeaf(YType.uint32, "cEigrpAcksSuppressed")
+
+                self.ceigrpauthkeychain = YLeaf(YType.str, "cEigrpAuthKeyChain")
+
+                self.ceigrpauthmode = YLeaf(YType.enumeration, "cEigrpAuthMode")
+
+                self.ceigrpcrpkts = YLeaf(YType.uint32, "cEigrpCRpkts")
+
+                self.ceigrphellointerval = YLeaf(YType.uint32, "cEigrpHelloInterval")
+
+                self.ceigrpmcastexcepts = YLeaf(YType.uint32, "cEigrpMcastExcepts")
+
+                self.ceigrpmeansrtt = YLeaf(YType.uint32, "cEigrpMeanSrtt")
+
+                self.ceigrpmflowtimer = YLeaf(YType.uint32, "cEigrpMFlowTimer")
+
+                self.ceigrpoosrvcd = YLeaf(YType.uint32, "cEigrpOOSrvcd")
+
+                self.ceigrppacingreliable = YLeaf(YType.uint32, "cEigrpPacingReliable")
+
+                self.ceigrppacingunreliable = YLeaf(YType.uint32, "cEigrpPacingUnreliable")
+
+                self.ceigrppeercount = YLeaf(YType.uint32, "cEigrpPeerCount")
+
+                self.ceigrppendingroutes = YLeaf(YType.uint32, "cEigrpPendingRoutes")
+
+                self.ceigrpretranssent = YLeaf(YType.uint32, "cEigrpRetransSent")
+
+                self.ceigrprmcasts = YLeaf(YType.uint32, "cEigrpRMcasts")
+
+                self.ceigrprucasts = YLeaf(YType.uint32, "cEigrpRUcasts")
+
+                self.ceigrpumcasts = YLeaf(YType.uint32, "cEigrpUMcasts")
+
+                self.ceigrpuucasts = YLeaf(YType.uint32, "cEigrpUUcasts")
+
+                self.ceigrpxmitnextserial = YLeaf(YType.uint64, "cEigrpXmitNextSerial")
+
+                self.ceigrpxmitreliableq = YLeaf(YType.uint32, "cEigrpXmitReliableQ")
+
+                self.ceigrpxmitunreliableq = YLeaf(YType.uint32, "cEigrpXmitUnreliableQ")
+                self._segment_path = lambda: "cEigrpInterfaceEntry" + "[cEigrpVpnId='" + self.ceigrpvpnid.get() + "']" + "[cEigrpAsNumber='" + self.ceigrpasnumber.get() + "']" + "[ifIndex='" + self.ifindex.get() + "']"
+                self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/cEigrpInterfaceTable/%s" % self._segment_path()
+
+            def __setattr__(self, name, value):
+                self._perform_setattr(CISCOEIGRPMIB.Ceigrpinterfacetable.Ceigrpinterfaceentry, ['ceigrpvpnid', 'ceigrpasnumber', 'ifindex', 'ceigrpackssuppressed', 'ceigrpauthkeychain', 'ceigrpauthmode', 'ceigrpcrpkts', 'ceigrphellointerval', 'ceigrpmcastexcepts', 'ceigrpmeansrtt', 'ceigrpmflowtimer', 'ceigrpoosrvcd', 'ceigrppacingreliable', 'ceigrppacingunreliable', 'ceigrppeercount', 'ceigrppendingroutes', 'ceigrpretranssent', 'ceigrprmcasts', 'ceigrprucasts', 'ceigrpumcasts', 'ceigrpuucasts', 'ceigrpxmitnextserial', 'ceigrpxmitreliableq', 'ceigrpxmitunreliableq'], name, value)
+
+            class Ceigrpauthmode(Enum):
+                """
+                Ceigrpauthmode
+
+                The EIGRP authentication mode of the interface.
+
+                none  \:  no authentication enabled on the interface
+
+                md5   \:  MD5 authentication enabled on the interface
+
+                .. data:: none = 1
+
+                .. data:: md5 = 2
+
+                """
+
+                none = Enum.YLeaf(1, "none")
+
+                md5 = Enum.YLeaf(2, "md5")
+
+
+
+    class Ceigrppeertable(Entity):
+        """
+        The table of established EIGRP peers (neighbors) in the
+        selected autonomous system.   Peers are indexed by their
+        unique internal handle id, as well as the AS number and
+        VPN id.   The peer entry is removed from the table if
+        the peer is declared down.
+        
+        .. attribute:: ceigrppeerentry
+        
+        	Statistics and operational parameters for a single peer in the AS
+        	**type**\: list of    :py:class:`Ceigrppeerentry <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrppeertable.Ceigrppeerentry>`
+        
+        
+
+        """
+
+        _prefix = 'CISCO-EIGRP-MIB'
+        _revision = '2004-11-16'
+
+        def __init__(self):
+            super(CISCOEIGRPMIB.Ceigrppeertable, self).__init__()
+
+            self.yang_name = "cEigrpPeerTable"
+            self.yang_parent_name = "CISCO-EIGRP-MIB"
+            self.is_top_level_class = False
+            self.has_list_ancestor = False
+            self._child_container_classes = {}
+            self._child_list_classes = {"cEigrpPeerEntry" : ("ceigrppeerentry", CISCOEIGRPMIB.Ceigrppeertable.Ceigrppeerentry)}
+
+            self.ceigrppeerentry = YList(self)
+            self._segment_path = lambda: "cEigrpPeerTable"
+            self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/%s" % self._segment_path()
+
+        def __setattr__(self, name, value):
+            self._perform_setattr(CISCOEIGRPMIB.Ceigrppeertable, [], name, value)
+
+
+        class Ceigrppeerentry(Entity):
+            """
+            Statistics and operational parameters for a single peer
+            in the AS.
+            
+            .. attribute:: ceigrpvpnid  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**refers to**\:  :py:class:`ceigrpvpnid <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry>`
+            
+            .. attribute:: ceigrpasnumber  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**refers to**\:  :py:class:`ceigrpasnumber <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrptraffstatstable.Ceigrptraffstatsentry>`
+            
+            .. attribute:: ceigrphandle  <key>
+            
+            	The unique internal identifier for the peer in the AS. This is a unique value among peer entries in a selected table
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpholdtime
+            
+            	The count\-down timer indicating how much time must pass without receiving a hello packet from this EIGRP peer before this router declares the peer down. A peer declared as down is removed from the table and is no longer visible
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: seconds
+            
+            .. attribute:: ceigrplastseq
+            
+            	All transmitted EIGRP packets have a sequence number assigned. This is the sequence number of the last EIGRP packet sent to this peer
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrppeeraddr
+            
+            	The source IP address used by the peer to establish the EIGRP adjacency with this router.  The format is governed by object cEigrpPeerAddrType
+            	**type**\:  str
+            
+            	**length:** 0..255
+            
+            .. attribute:: ceigrppeeraddrtype
+            
+            	The format of the remote source IP address used by the peer to establish the EIGRP adjacency with this router
+            	**type**\:   :py:class:`InetAddressType <ydk.models.cisco_ios_xe.INET_ADDRESS_MIB.InetAddressType>`
+            
+            .. attribute:: ceigrppeerifindex
+            
+            	The ifIndex of the interface on this router through which this peer can be reached
+            	**type**\:  int
+            
+            	**range:** 0..2147483647
+            
+            .. attribute:: ceigrppktsenqueued
+            
+            	The number of any EIGRP packets currently enqueued waiting to be sent to this peer
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpretrans
+            
+            	The cumulative number of retransmissions to this peer during the period that the peer adjacency has remained up
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpretries
+            
+            	The number of times the current unacknowledged packet has been retried, i.e. resent to this peer to be acknowledged
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrprto
+            
+            	The computed retransmission timeout for the peer. This value is computed over time as packets are sent to the peer and acknowledgements are received from it, and is the amount of time to wait before resending a packet from the retransmission queue to the peer when an expected acknowledgement has not been received
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: milliseconds
+            
+            .. attribute:: ceigrpsrtt
+            
+            	The computed smooth round trip time for packets to and from the peer
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**units**\: milliseconds
+            
+            .. attribute:: ceigrpuptime
+            
+            	The elapsed time since the EIGRP adjacency was first established with the peer
+            	**type**\:  str
+            
+            .. attribute:: ceigrpversion
+            
+            	The EIGRP version information reported by the remote peer
+            	**type**\:  str
+            
+            
+
+            """
+
+            _prefix = 'CISCO-EIGRP-MIB'
+            _revision = '2004-11-16'
+
+            def __init__(self):
+                super(CISCOEIGRPMIB.Ceigrppeertable.Ceigrppeerentry, self).__init__()
+
+                self.yang_name = "cEigrpPeerEntry"
+                self.yang_parent_name = "cEigrpPeerTable"
+                self.is_top_level_class = False
+                self.has_list_ancestor = False
+                self._child_container_classes = {}
+                self._child_list_classes = {}
+
+                self.ceigrpvpnid = YLeaf(YType.str, "cEigrpVpnId")
+
+                self.ceigrpasnumber = YLeaf(YType.str, "cEigrpAsNumber")
+
+                self.ceigrphandle = YLeaf(YType.uint32, "cEigrpHandle")
+
+                self.ceigrpholdtime = YLeaf(YType.uint32, "cEigrpHoldTime")
+
+                self.ceigrplastseq = YLeaf(YType.uint32, "cEigrpLastSeq")
+
+                self.ceigrppeeraddr = YLeaf(YType.str, "cEigrpPeerAddr")
+
+                self.ceigrppeeraddrtype = YLeaf(YType.enumeration, "cEigrpPeerAddrType")
+
+                self.ceigrppeerifindex = YLeaf(YType.int32, "cEigrpPeerIfIndex")
+
+                self.ceigrppktsenqueued = YLeaf(YType.uint32, "cEigrpPktsEnqueued")
+
+                self.ceigrpretrans = YLeaf(YType.uint32, "cEigrpRetrans")
+
+                self.ceigrpretries = YLeaf(YType.uint32, "cEigrpRetries")
+
+                self.ceigrprto = YLeaf(YType.uint32, "cEigrpRto")
+
+                self.ceigrpsrtt = YLeaf(YType.uint32, "cEigrpSrtt")
+
+                self.ceigrpuptime = YLeaf(YType.str, "cEigrpUpTime")
+
+                self.ceigrpversion = YLeaf(YType.str, "cEigrpVersion")
+                self._segment_path = lambda: "cEigrpPeerEntry" + "[cEigrpVpnId='" + self.ceigrpvpnid.get() + "']" + "[cEigrpAsNumber='" + self.ceigrpasnumber.get() + "']" + "[cEigrpHandle='" + self.ceigrphandle.get() + "']"
+                self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/cEigrpPeerTable/%s" % self._segment_path()
+
+            def __setattr__(self, name, value):
+                self._perform_setattr(CISCOEIGRPMIB.Ceigrppeertable.Ceigrppeerentry, ['ceigrpvpnid', 'ceigrpasnumber', 'ceigrphandle', 'ceigrpholdtime', 'ceigrplastseq', 'ceigrppeeraddr', 'ceigrppeeraddrtype', 'ceigrppeerifindex', 'ceigrppktsenqueued', 'ceigrpretrans', 'ceigrpretries', 'ceigrprto', 'ceigrpsrtt', 'ceigrpuptime', 'ceigrpversion'], name, value)
+
+
+    class Ceigrptopotable(Entity):
+        """
+        The table of EIGRP routes and their associated
+        attributes for an Autonomous System (AS) configured
+        in a VPN is called a topology table.  All route entries in
+        the topology table will be indexed by IP network type,
+        IP network number and network mask (prefix) size.
+        
+        .. attribute:: ceigrptopoentry
+        
+        	The entry for a single EIGRP topology table in the given AS
+        	**type**\: list of    :py:class:`Ceigrptopoentry <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrptopotable.Ceigrptopoentry>`
+        
+        
+
+        """
+
+        _prefix = 'CISCO-EIGRP-MIB'
+        _revision = '2004-11-16'
+
+        def __init__(self):
+            super(CISCOEIGRPMIB.Ceigrptopotable, self).__init__()
+
+            self.yang_name = "cEigrpTopoTable"
+            self.yang_parent_name = "CISCO-EIGRP-MIB"
+            self.is_top_level_class = False
+            self.has_list_ancestor = False
+            self._child_container_classes = {}
+            self._child_list_classes = {"cEigrpTopoEntry" : ("ceigrptopoentry", CISCOEIGRPMIB.Ceigrptopotable.Ceigrptopoentry)}
+
+            self.ceigrptopoentry = YList(self)
+            self._segment_path = lambda: "cEigrpTopoTable"
+            self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/%s" % self._segment_path()
+
+        def __setattr__(self, name, value):
+            self._perform_setattr(CISCOEIGRPMIB.Ceigrptopotable, [], name, value)
+
+
+        class Ceigrptopoentry(Entity):
+            """
+            The entry for a single EIGRP topology table in the given
+            AS.
+            
+            .. attribute:: ceigrpvpnid  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**refers to**\:  :py:class:`ceigrpvpnid <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry>`
+            
+            .. attribute:: ceigrpasnumber  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**refers to**\:  :py:class:`ceigrpasnumber <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrptraffstatstable.Ceigrptraffstatsentry>`
+            
+            .. attribute:: ceigrpdestnettype  <key>
+            
+            	The format of the destination IP network number for a single route in the topology table in the AS specified in cEigrpDestNet
+            	**type**\:   :py:class:`InetAddressType <ydk.models.cisco_ios_xe.INET_ADDRESS_MIB.InetAddressType>`
+            
+            .. attribute:: ceigrpdestnet  <key>
+            
+            	The destination IP network number for a single route in the topology table in the AS.  The format is governed by object cEigrpDestNetType
+            	**type**\:  str
+            
+            	**length:** 0..255
+            
+            .. attribute:: ceigrpdestnetprefixlen  <key>
+            
+            	The prefix length associated with the destination IP network address for a single route in the topology table in the AS.  The format is governed by the object cEigrpDestNetType
+            	**type**\:  int
+            
+            	**range:** 0..2040
+            
+            .. attribute:: ceigrpactive
+            
+            	A value of true(1) indicates the route to the destination network has failed and an active (query) search for an alternative path is in progress.  A value of false(2) indicates the route is stable (passive)
+            	**type**\:  bool
+            
+            .. attribute:: ceigrpdestsuccessors
+            
+            	A successor is the next routing hop for a path to the destination IP network number for a single route in the topology table in the AS.  There can be several potential successors if there are multiple paths to the destination.   This is the total number of successors for a topology entry
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpdistance
+            
+            	The computed distance to the destination network entry from this router
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpfdistance
+            
+            	The feasibility (best) distance is the minimum distance from this router to the destination IP network in this topology entry.  The feasibility distance is used in determining the best successor for a path to the destination network
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpnexthopaddress
+            
+            	This is the next hop IP address for the route represented by the topology entry.   The next hop is where network traffic will be routed to in order to reach the destination network for this topology entry.  The format is governed by cEigrpNextHopAddressType
+            	**type**\:  str
+            
+            	**length:** 0..255
+            
+            .. attribute:: ceigrpnexthopaddresstype
+            
+            	The format of the next hop IP address for the route represented by the topology entry
+            	**type**\:   :py:class:`InetAddressType <ydk.models.cisco_ios_xe.INET_ADDRESS_MIB.InetAddressType>`
+            
+            .. attribute:: ceigrpnexthopinterface
+            
+            	The interface through which the next hop IP address is reached to send network traffic to the destination network represented by the topology entry
+            	**type**\:  str
+            
+            .. attribute:: ceigrpreportdistance
+            
+            	The computed distance to the destination network in the topology entry reported to this router by the originator of this route
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrprouteoriginaddr
+            
+            	If the origin of the topology route entry is external to this router, then this object is the IP address of the router from which it originated.  The format  is governed by object cEigrpRouteOriginAddrType
+            	**type**\:  str
+            
+            	**length:** 0..255
+            
+            .. attribute:: ceigrprouteoriginaddrtype
+            
+            	The format of the IP address defined as the origin of this topology route entry
+            	**type**\:   :py:class:`InetAddressType <ydk.models.cisco_ios_xe.INET_ADDRESS_MIB.InetAddressType>`
+            
+            .. attribute:: ceigrprouteorigintype
+            
+            	This is a text string describing the internal origin of the EIGRP route represented by the topology entry
+            	**type**\:  str
+            
+            .. attribute:: ceigrpstuckinactive
+            
+            	A value of true(1) indicates that that this route which is in active state (cEigrpActive = true(1)) has not received any replies to queries for alternate paths, and a second EIGRP route query, called a stuck\-in\-active query, has now been sent
+            	**type**\:  bool
+            
+            
+
+            """
+
+            _prefix = 'CISCO-EIGRP-MIB'
+            _revision = '2004-11-16'
+
+            def __init__(self):
+                super(CISCOEIGRPMIB.Ceigrptopotable.Ceigrptopoentry, self).__init__()
+
+                self.yang_name = "cEigrpTopoEntry"
+                self.yang_parent_name = "cEigrpTopoTable"
+                self.is_top_level_class = False
+                self.has_list_ancestor = False
+                self._child_container_classes = {}
+                self._child_list_classes = {}
+
+                self.ceigrpvpnid = YLeaf(YType.str, "cEigrpVpnId")
+
+                self.ceigrpasnumber = YLeaf(YType.str, "cEigrpAsNumber")
+
+                self.ceigrpdestnettype = YLeaf(YType.enumeration, "cEigrpDestNetType")
+
+                self.ceigrpdestnet = YLeaf(YType.str, "cEigrpDestNet")
+
+                self.ceigrpdestnetprefixlen = YLeaf(YType.uint32, "cEigrpDestNetPrefixLen")
+
+                self.ceigrpactive = YLeaf(YType.boolean, "cEigrpActive")
+
+                self.ceigrpdestsuccessors = YLeaf(YType.uint32, "cEigrpDestSuccessors")
+
+                self.ceigrpdistance = YLeaf(YType.uint32, "cEigrpDistance")
+
+                self.ceigrpfdistance = YLeaf(YType.uint32, "cEigrpFdistance")
+
+                self.ceigrpnexthopaddress = YLeaf(YType.str, "cEigrpNextHopAddress")
+
+                self.ceigrpnexthopaddresstype = YLeaf(YType.enumeration, "cEigrpNextHopAddressType")
+
+                self.ceigrpnexthopinterface = YLeaf(YType.str, "cEigrpNextHopInterface")
+
+                self.ceigrpreportdistance = YLeaf(YType.uint32, "cEigrpReportDistance")
+
+                self.ceigrprouteoriginaddr = YLeaf(YType.str, "cEigrpRouteOriginAddr")
+
+                self.ceigrprouteoriginaddrtype = YLeaf(YType.enumeration, "cEigrpRouteOriginAddrType")
+
+                self.ceigrprouteorigintype = YLeaf(YType.str, "cEigrpRouteOriginType")
+
+                self.ceigrpstuckinactive = YLeaf(YType.boolean, "cEigrpStuckInActive")
+                self._segment_path = lambda: "cEigrpTopoEntry" + "[cEigrpVpnId='" + self.ceigrpvpnid.get() + "']" + "[cEigrpAsNumber='" + self.ceigrpasnumber.get() + "']" + "[cEigrpDestNetType='" + self.ceigrpdestnettype.get() + "']" + "[cEigrpDestNet='" + self.ceigrpdestnet.get() + "']" + "[cEigrpDestNetPrefixLen='" + self.ceigrpdestnetprefixlen.get() + "']"
+                self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/cEigrpTopoTable/%s" % self._segment_path()
+
+            def __setattr__(self, name, value):
+                self._perform_setattr(CISCOEIGRPMIB.Ceigrptopotable.Ceigrptopoentry, ['ceigrpvpnid', 'ceigrpasnumber', 'ceigrpdestnettype', 'ceigrpdestnet', 'ceigrpdestnetprefixlen', 'ceigrpactive', 'ceigrpdestsuccessors', 'ceigrpdistance', 'ceigrpfdistance', 'ceigrpnexthopaddress', 'ceigrpnexthopaddresstype', 'ceigrpnexthopinterface', 'ceigrpreportdistance', 'ceigrprouteoriginaddr', 'ceigrprouteoriginaddrtype', 'ceigrprouteorigintype', 'ceigrpstuckinactive'], name, value)
+
+
+    class Ceigrptraffstatstable(Entity):
+        """
+        Table of EIGRP traffic statistics and information
+        associated with all EIGRP autonomous systems.
+        
+        .. attribute:: ceigrptraffstatsentry
+        
+        	The set of statistics and information for a single EIGRP Autonomous System
+        	**type**\: list of    :py:class:`Ceigrptraffstatsentry <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrptraffstatstable.Ceigrptraffstatsentry>`
+        
+        
+
+        """
+
+        _prefix = 'CISCO-EIGRP-MIB'
+        _revision = '2004-11-16'
+
+        def __init__(self):
+            super(CISCOEIGRPMIB.Ceigrptraffstatstable, self).__init__()
+
+            self.yang_name = "cEigrpTraffStatsTable"
+            self.yang_parent_name = "CISCO-EIGRP-MIB"
+            self.is_top_level_class = False
+            self.has_list_ancestor = False
+            self._child_container_classes = {}
+            self._child_list_classes = {"cEigrpTraffStatsEntry" : ("ceigrptraffstatsentry", CISCOEIGRPMIB.Ceigrptraffstatstable.Ceigrptraffstatsentry)}
+
+            self.ceigrptraffstatsentry = YList(self)
+            self._segment_path = lambda: "cEigrpTraffStatsTable"
+            self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/%s" % self._segment_path()
+
+        def __setattr__(self, name, value):
+            self._perform_setattr(CISCOEIGRPMIB.Ceigrptraffstatstable, [], name, value)
+
+
+        class Ceigrptraffstatsentry(Entity):
+            """
+            The set of statistics and information for a single EIGRP
+            Autonomous System.
+            
+            .. attribute:: ceigrpvpnid  <key>
+            
+            	
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            	**refers to**\:  :py:class:`ceigrpvpnid <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry>`
+            
+            .. attribute:: ceigrpasnumber  <key>
+            
+            	The Autonomous System number which is unique integer per VPN
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpacksrcvd
+            
+            	The total number packet acknowledgements that have been received from all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpackssent
+            
+            	The total number packet acknowledgements that have been sent to all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpasrouterid
+            
+            	The router\-id configured or automatically selected for the EIGRP AS.   Each EIGRP routing process has a unique router\-id selected from each autonomous system configured. The format is governed by object cEigrpAsRouterIdType
+            	**type**\:  str
+            
+            	**length:** 0..255
+            
+            .. attribute:: ceigrpasrouteridtype
+            
+            	The format of the router\-id configured or automatically selected for the EIGRP AS
+            	**type**\:   :py:class:`InetAddressType <ydk.models.cisco_ios_xe.INET_ADDRESS_MIB.InetAddressType>`
+            
+            .. attribute:: ceigrpheadserial
+            
+            	Routes in a topology table for an AS are assigned serial numbers and are sequenced internally as they are inserted and deleted.   The serial number of the first route in that internal sequence is called the head serial number. Each AS has its own topology table, and its own serial number space, each of which begins with the value 1. A serial number of zero implies that there are no routes in the topology
+            	**type**\:  int
+            
+            	**range:** 0..18446744073709551615
+            
+            .. attribute:: ceigrphellosrcvd
+            
+            	The total number Hello packets that have been received from all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrphellossent
+            
+            	The total number Hello packets that have been sent to all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpinputqdrops
+            
+            	The number of EIGRP packets dropped from the input queue due to it being full within the AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpinputqhighmark
+            
+            	The highest number of EIGRP packets in the input queue waiting to be processed internally addressed to this AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpnbrcount
+            
+            	The total number of live EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured in the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpnextserial
+            
+            	The serial number that would be assigned to the next new or changed route in the topology table for the AS
+            	**type**\:  int
+            
+            	**range:** 0..18446744073709551615
+            
+            .. attribute:: ceigrpqueriesrcvd
+            
+            	The total number alternate route query packets that have been received from all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpqueriessent
+            
+            	The total number alternate route query packets that have been sent to all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrprepliesrcvd
+            
+            	The total number query reply packets that have been received from all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrprepliessent
+            
+            	The total number query reply packets that have been sent to all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpsiaqueriesrcvd
+            
+            	The total number of Stuck\-In\-Active (SIA) query packets received from all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpsiaqueriessent
+            
+            	The total number of Stuck\-In\-Active (SIA) query packets sent to all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrptoporoutes
+            
+            	The total number of EIGRP derived routes currently existing in the topology table for the AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpupdatesrcvd
+            
+            	The total number routing update packets that have been received from all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpupdatessent
+            
+            	The total number routing update packets that have been sent to all EIGRP neighbors formed on all interfaces whose IP addresses fall under networks configured for the EIGRP AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpxmitdummies
+            
+            	A dummy is a temporary internal entity used as a place holder in the topology table for an AS. They are not transmitted in routing updates.  This is the total number currently in existence associated with the AS
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpxmitpendreplies
+            
+            	When alternate route query packets are sent to adjacent EIGRP peers in an AS, replies are expected.   This object is the total number of outstanding replies expected to queries that have been sent to peers in the current AS. It remains at zero most of the time until an EIGRP route becomes active
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            
+
+            """
+
+            _prefix = 'CISCO-EIGRP-MIB'
+            _revision = '2004-11-16'
+
+            def __init__(self):
+                super(CISCOEIGRPMIB.Ceigrptraffstatstable.Ceigrptraffstatsentry, self).__init__()
+
+                self.yang_name = "cEigrpTraffStatsEntry"
+                self.yang_parent_name = "cEigrpTraffStatsTable"
+                self.is_top_level_class = False
+                self.has_list_ancestor = False
+                self._child_container_classes = {}
+                self._child_list_classes = {}
+
+                self.ceigrpvpnid = YLeaf(YType.str, "cEigrpVpnId")
+
+                self.ceigrpasnumber = YLeaf(YType.uint32, "cEigrpAsNumber")
+
+                self.ceigrpacksrcvd = YLeaf(YType.uint32, "cEigrpAcksRcvd")
+
+                self.ceigrpackssent = YLeaf(YType.uint32, "cEigrpAcksSent")
+
+                self.ceigrpasrouterid = YLeaf(YType.str, "cEigrpAsRouterId")
+
+                self.ceigrpasrouteridtype = YLeaf(YType.enumeration, "cEigrpAsRouterIdType")
+
+                self.ceigrpheadserial = YLeaf(YType.uint64, "cEigrpHeadSerial")
+
+                self.ceigrphellosrcvd = YLeaf(YType.uint32, "cEigrpHellosRcvd")
+
+                self.ceigrphellossent = YLeaf(YType.uint32, "cEigrpHellosSent")
+
+                self.ceigrpinputqdrops = YLeaf(YType.uint32, "cEigrpInputQDrops")
+
+                self.ceigrpinputqhighmark = YLeaf(YType.uint32, "cEigrpInputQHighMark")
+
+                self.ceigrpnbrcount = YLeaf(YType.uint32, "cEigrpNbrCount")
+
+                self.ceigrpnextserial = YLeaf(YType.uint64, "cEigrpNextSerial")
+
+                self.ceigrpqueriesrcvd = YLeaf(YType.uint32, "cEigrpQueriesRcvd")
+
+                self.ceigrpqueriessent = YLeaf(YType.uint32, "cEigrpQueriesSent")
+
+                self.ceigrprepliesrcvd = YLeaf(YType.uint32, "cEigrpRepliesRcvd")
+
+                self.ceigrprepliessent = YLeaf(YType.uint32, "cEigrpRepliesSent")
+
+                self.ceigrpsiaqueriesrcvd = YLeaf(YType.uint32, "cEigrpSiaQueriesRcvd")
+
+                self.ceigrpsiaqueriessent = YLeaf(YType.uint32, "cEigrpSiaQueriesSent")
+
+                self.ceigrptoporoutes = YLeaf(YType.uint32, "cEigrpTopoRoutes")
+
+                self.ceigrpupdatesrcvd = YLeaf(YType.uint32, "cEigrpUpdatesRcvd")
+
+                self.ceigrpupdatessent = YLeaf(YType.uint32, "cEigrpUpdatesSent")
+
+                self.ceigrpxmitdummies = YLeaf(YType.uint32, "cEigrpXmitDummies")
+
+                self.ceigrpxmitpendreplies = YLeaf(YType.uint32, "cEigrpXmitPendReplies")
+                self._segment_path = lambda: "cEigrpTraffStatsEntry" + "[cEigrpVpnId='" + self.ceigrpvpnid.get() + "']" + "[cEigrpAsNumber='" + self.ceigrpasnumber.get() + "']"
+                self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/cEigrpTraffStatsTable/%s" % self._segment_path()
+
+            def __setattr__(self, name, value):
+                self._perform_setattr(CISCOEIGRPMIB.Ceigrptraffstatstable.Ceigrptraffstatsentry, ['ceigrpvpnid', 'ceigrpasnumber', 'ceigrpacksrcvd', 'ceigrpackssent', 'ceigrpasrouterid', 'ceigrpasrouteridtype', 'ceigrpheadserial', 'ceigrphellosrcvd', 'ceigrphellossent', 'ceigrpinputqdrops', 'ceigrpinputqhighmark', 'ceigrpnbrcount', 'ceigrpnextserial', 'ceigrpqueriesrcvd', 'ceigrpqueriessent', 'ceigrprepliesrcvd', 'ceigrprepliessent', 'ceigrpsiaqueriesrcvd', 'ceigrpsiaqueriessent', 'ceigrptoporoutes', 'ceigrpupdatesrcvd', 'ceigrpupdatessent', 'ceigrpxmitdummies', 'ceigrpxmitpendreplies'], name, value)
+
+
+    class Ceigrpvpntable(Entity):
+        """
+        This table contains information on those VPN's configured
+        to run EIGRP.  The VPN creation on a router is independent
+        of the routing protocol to be used over it.   A VPN is
+        given a name and has a dedicated routing table associated
+        with it.  This routing table is identified internally
+        by a unique integer value.
+        
+        .. attribute:: ceigrpvpnentry
+        
+        	Information relating to a single VPN which is configured to run EIGRP
+        	**type**\: list of    :py:class:`Ceigrpvpnentry <ydk.models.cisco_ios_xe.CISCO_EIGRP_MIB.CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry>`
+        
+        
+
+        """
+
+        _prefix = 'CISCO-EIGRP-MIB'
+        _revision = '2004-11-16'
+
+        def __init__(self):
+            super(CISCOEIGRPMIB.Ceigrpvpntable, self).__init__()
+
+            self.yang_name = "cEigrpVpnTable"
+            self.yang_parent_name = "CISCO-EIGRP-MIB"
+            self.is_top_level_class = False
+            self.has_list_ancestor = False
+            self._child_container_classes = {}
+            self._child_list_classes = {"cEigrpVpnEntry" : ("ceigrpvpnentry", CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry)}
+
+            self.ceigrpvpnentry = YList(self)
+            self._segment_path = lambda: "cEigrpVpnTable"
+            self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/%s" % self._segment_path()
+
+        def __setattr__(self, name, value):
+            self._perform_setattr(CISCOEIGRPMIB.Ceigrpvpntable, [], name, value)
+
+
+        class Ceigrpvpnentry(Entity):
+            """
+            Information relating to a single VPN which is configured
+            to run EIGRP.
+            
+            .. attribute:: ceigrpvpnid  <key>
+            
+            	The unique VPN identifier.  This is a unique integer relative to all other VPN's defined on the router.  It also identifies internally the routing table instance
+            	**type**\:  int
+            
+            	**range:** 0..4294967295
+            
+            .. attribute:: ceigrpvpnname
+            
+            	The name given to the VPN
+            	**type**\:  str
+            
+            
+
+            """
+
+            _prefix = 'CISCO-EIGRP-MIB'
+            _revision = '2004-11-16'
+
+            def __init__(self):
+                super(CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry, self).__init__()
+
+                self.yang_name = "cEigrpVpnEntry"
+                self.yang_parent_name = "cEigrpVpnTable"
+                self.is_top_level_class = False
+                self.has_list_ancestor = False
+                self._child_container_classes = {}
+                self._child_list_classes = {}
+
+                self.ceigrpvpnid = YLeaf(YType.uint32, "cEigrpVpnId")
+
+                self.ceigrpvpnname = YLeaf(YType.str, "cEigrpVpnName")
+                self._segment_path = lambda: "cEigrpVpnEntry" + "[cEigrpVpnId='" + self.ceigrpvpnid.get() + "']"
+                self._absolute_path = lambda: "CISCO-EIGRP-MIB:CISCO-EIGRP-MIB/cEigrpVpnTable/%s" % self._segment_path()
+
+            def __setattr__(self, name, value):
+                self._perform_setattr(CISCOEIGRPMIB.Ceigrpvpntable.Ceigrpvpnentry, ['ceigrpvpnid', 'ceigrpvpnname'], name, value)
+
+    def clone_ptr(self):
+        self._top_entity = CISCOEIGRPMIB()
+        return self._top_entity
+
