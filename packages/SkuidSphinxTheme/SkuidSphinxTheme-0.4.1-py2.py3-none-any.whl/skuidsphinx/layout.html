@@ -1,0 +1,118 @@
+{% extends "basic/layout.html" %}
+
+{% set theme_css_files = [] %}
+
+{% set theme_css_files = theme_css_files + [
+    '_static/skuid.css',
+    '_static/bootstrap-theme.css',
+    '_static/bootstrap.css'
+  ]
+%}
+
+{% set css_files = css_files + theme_css_files %}
+
+{% set script_files = script_files + [
+    '_static/js/jquery-1.11.0.min.js',
+    '_static/js/jquery-fix.js',
+    '_static/js/skuid-sphinx.js',
+    '_static/js/bootstrap.js'
+  ]
+%}
+
+{%- set render_sidebar = (not embedded) and (not theme_nosidebar|tobool) and sidebars %}
+
+{%- set bs_content_width = render_sidebar and "9" or "12"%}
+
+{%- block doctype -%}
+<!DOCTYPE html>
+{%- endblock %}
+
+{% macro navBar() %}
+{% include "navbar.html" %}
+{% endmacro %}
+
+{%- macro globalSidebar() %}
+    {%- if render_sidebar %}
+    <div class="sidebar-global" role="complementary">
+      {%- for sidebartemplate in sidebars %}
+        <div class="version-and-toc">
+          {%- include 'version-select.html' %}
+          {%- include 'globaltoc.html' %}
+        </div>
+      {%- endfor %}
+    </div>
+    {%- endif %}
+{%- endmacro %}
+
+{%- macro localSidebar() %}
+    {%- if render_sidebar %}
+    <div class="sidebar-local" role="complementary">
+      {%- for sidebartemplate in sidebars %}
+        {%- include 'localtoc.html' %}
+      {%- endfor %}
+    </div>
+    {%- endif %}
+{%- endmacro %}
+
+{%- block extrahead %}
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="https://use.fontawesome.com/685baec918.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i" rel="stylesheet">
+{% endblock %}
+
+{# Silence the sidebar's, relbar's #}
+{% block header %}{% endblock %}
+{% block relbar1 %}{% endblock %}
+{% block relbar2 %}{% endblock %}
+{% block sidebarsourcelink %}{% endblock %}
+
+{%- block content %}
+<div id="app">
+{{ navBar() }}
+  <div class="container">
+    {% block sidebar1 %}{{ globalSidebar() }}{% endblock %}
+    {% block sidebar2 %}{{ localSidebar() }}{% endblock %}
+    <div id="main" data-spy="scroll" data-target="#menu">
+      {% block body %}{% endblock %}
+    </div>
+  </div>
+{%- endblock %}
+
+{%- block footer %}
+  <footer>
+    <div class="footer-page">
+      <p class="back-to-top"><a href="#">Back to top</a></p>
+        {%- if last_updated %}
+      <p>{% trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}</p>
+        {%- endif %}
+    </div>
+    <div class="footer-site">
+      <div class="footer-content">
+        <h3>About Skuid</h3>
+        <p>Bespoke UX at blazing speed.™ It means giving you tailored solutions at the speed of your business. It's what Skuid believes in. It's what we enjoy doing. We create the tools. You invent the solutions. No code. No kidding.™</p>
+        <p>Chattanooga | San Francisco | London | Zürich</p>
+        <p>Have feedback? Contact us at <a href="mailto:documentation@skuid.com" style="color: #ee8b21;">documentation@skuid.com</a>.</p>
+        {% if show_copyright %}
+        <p class="copyright"> &copy; Copyright Skuid, Inc. 2015-{{ theme_copyright_year }} | All rights reserved. <a href="https://docs.skuid.com/latest/{{ theme_lang }}/skuid/skuid_terms_conditions.html">Legal terms and conditions.</a></p>
+        {% endif %}
+      </div>
+        {% if theme_visit_link and theme_visit_link_text %}
+      <a href="{{ theme_visit_link }}" class="btn-visit">{{ theme_visit_link_text }}</a>
+        {% endif %}
+    </div>
+</footer>
+</div>
+{% if theme_analytics_id %}
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', '{{ theme_analytics_id }}', 'auto');
+  ga('send', 'pageview');
+</script>
+{% endif %}
+{%- endblock %}
