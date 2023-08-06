@@ -1,0 +1,18 @@
+machine:
+  post:
+    - pyenv global 3.4.4 3.5.3 3.6.1
+
+dependencies:
+  override:
+    # CircleCI seems to be having an old setuptools/pip on 3.4 that cannot handle ruamel
+    - pip3.4 install --upgrade pip setuptools
+
+    - python3.4 setup.py install
+    - python3.5 setup.py install
+    - python3.6 setup.py install
+
+test:
+  override:
+    - python3.4 setup.py test --cover-html --cover-html-dir=$CIRCLE_ARTIFACTS/coverage/python3.4
+    - python3.5 setup.py test --cover-html --cover-html-dir=$CIRCLE_ARTIFACTS/coverage/python3.5
+    - python3.6 setup.py test --cover-html --cover-html-dir=$CIRCLE_ARTIFACTS/coverage/python3.6
