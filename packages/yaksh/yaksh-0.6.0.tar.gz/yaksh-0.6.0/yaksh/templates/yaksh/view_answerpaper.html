@@ -1,0 +1,126 @@
+{% extends "user.html" %}
+
+{% block pagetitle %} Answer Paper  for {{ quiz.description }}{% endblock pagetitle %}
+
+{% block script %}
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+{% endblock script %}
+
+{% block main %}
+
+{% if not data.papers %}
+    <p><b> You have not attempted the quiz {{ quiz.description }} </b></p>
+{% else %}
+    {% for paper in data.papers %}
+    {% if forloop.counter == 2 and data.questionpaperid %}
+    <U><h2> Previous attempts </h2></U>
+    {% endif %}
+    <h2> Quiz: {{ paper.question_paper.quiz.description }} </h2>
+
+    <p>
+    Attempt Number: {{ paper.attempt_number }}<br/>
+    Questions correctly answered: {{ paper.get_answered_str }} <br/>
+    Marks obtained: {{ paper.marks_obtained }} <br/>
+    Start time: {{ paper.start_time }} <br/>
+    End time : {{ paper.end_time }} <br/>
+    Percentage obtained: {{ paper.percent }}% <br/>
+    {% if paper.passed == 0 %}
+    Status : <b style="color: red;"> Failed </b><br/>
+    {% else %}
+    Status : <b style="color: green;"> Passed </b><br/>
+    {% endif %}
+    </p>
+
+    {% if paper.answers.count %}
+    <h3> Answerpaper: </h3>
+    {% for question, answers in paper.get_question_answers.items %}
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <strong> Details: {{forloop.counter}}. {{ question.summary }} 
+            <span class="marks pull-right"> Mark(s): {{ question.points }} </span>
+            </strong>
+        </div>
+        <div class="panel-body">
+            <h5><u>Question:</u></h5> <strong>{{ question.description|safe }}</strong>
+            {% if question.type == "mcq" or question.type == "mcc" %}
+                <h5> <u>Choices:</u></h5>
+                {% for testcase in question.get_test_cases %}
+                {% if testcase.correct %}
+                   <br/>
+                   <strong>{{ forloop.counter }}. {{ testcase.options|safe }}</strong>
+                   <span class="label label-success"> Correct</span>
+                {% else %}
+                <br/><strong>
+                {{ forloop.counter }}. {{ testcase.options|safe }}</strong>
+                {% endif %}
+                {% endfor %}
+
+            {% elif question.type == "integer" or "string" or "float" %}
+                <h5> <u>Correct Answer:</u></h5>
+                    {% for testcase in question.get_test_cases %}
+                    <strong>{{ testcase.correct|safe }}</strong>
+                    {% endfor %}
+
+            {% else %}
+                <h5> <u>Test cases: </u></h5>
+                    {% for testcase in question.get_test_cases %}
+                        <br/><strong>{{ forloop.counter }}. {{ testcase }}</strong>
+                    {% endfor %}
+            {% endif %}
+            
+        </div>
+    </div>
+    {% if question.type != "code" %}
+        {% if "Correct answer" in answers.0.error_list %}
+            <div class="panel panel-success">
+        {% else %}
+            <div class="panel panel-danger">
+        {% endif %}
+            <div class="panel-heading">
+                Autocheck: {{ answers.0.error_list.0 }}
+            </div>
+            <div class="panel-body">
+                <h5><u>Student answer:</u></h5>
+                <div class="well well-sm">
+                 {{ answers.0.answer|safe }}
+                 {% if question.type == "upload" and has_user_assignment %}
+                <a href="{{URL_ROOT}}/exam/download/user_assignment/{{question.id}}/{{data.user.id}}/{{paper.question_paper.quiz.id}}">
+                <div class="panel">
+                Assignment File for {{ data.user.get_full_name.title }}
+                </div></a>
+                {% endif %}
+                </div>
+            </div>
+            </div>
+    {% else %}
+    <h5>Student answer: </h5>
+    {% for answer in answers %}
+    {% if not answer.skipped %}
+    {% if "Correct answer" in answer.error %}
+            <div class="panel panel-success">
+        {% else %}
+            <div class="panel panel-danger">
+        {% endif %}
+    <div class="panel-heading">Autocheck: {{ answer.error }}</div>
+    <div class="panel-body">
+    <pre><code>{{ answer.answer.answer.strip }}</code></pre>
+    </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% with answers|last as answer %}
+    <p><em><mark>Obtained Marks: {{answer.answer.marks}}</mark></em> </p>
+    {% endwith %}
+    <hr>
+    {% endfor %} {# for question, answers ... #}
+    <h3>Teacher comments: </h3>
+    {{ paper.comments|default:"None" }}
+    <hr><hr>
+    {% endif %} {# if paper.answers.count #}
+
+    {% endfor %} {# for paper in data.papers #}
+
+{% endif %} {# if not data.papers #}
+{% endblock %}
